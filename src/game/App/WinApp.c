@@ -12,6 +12,7 @@
 #include "scrap/crt.h"
 #include "scrap/e3dutil.h"
 #include "scrap/filesys.h"
+#include "scrap/inputtape.h"
 #include "scrap/instance.h"
 #include "scrap/play.h"
 #include "scrap/replicate.h"
@@ -343,11 +344,16 @@ int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow)
 		TestDet_Seed(1);
 	}
 	for (;;) {
+		/* not in the original: the run of an input tape is over (include/scrap/inputtape.h), before the next step of
+		 * the clock, so a replay ends where its recording did */
+		if (g_InputTape && InputTape_Ended()) {
+			break;
+		}
 		byte waiting = App_Waiting();
 		/* the deterministic test mode: one step of its clock per pass; none in the pass that loads a level (the load
 		 * comes first in the frame, whether a command file waits or not) and none while the test channel holds the
 		 * game */
-		if (TestDet_On() && (waiting || !(g_pApp->loadPending || TestChannel_Hold()))) {
+		if (TestDet_On() && (waiting || !(g_pApp->loadPending || TestChannel_Hold() || InputTape_Hold()))) {
 			TestDet_Tick();
 		}
 		if (Plat_PumpEvents(waiting)) {

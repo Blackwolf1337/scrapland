@@ -69,6 +69,9 @@ void Rep_Close(void);
 /* the level of the instance has started (its first pass): the items it made then are every game's, the ones made
  * later are replicated (NETREP_ITEM) */
 void Rep_Open(void);
+/* the solo instance (-solo, include/scrap/inputtape.h): its one player, without a connection (conn -1), its input
+ * from the input tape */
+void Rep_SoloJoin(void);
 /* player i's parked own ship old in place of the ship of its state (Travel_OwnShip: the ship its hangar flies now,
  * include/scrap/sputniks.h): the new one, NULL */
 struct cEntity *Rep_ReplaceShip(int i, struct cEntity *old);

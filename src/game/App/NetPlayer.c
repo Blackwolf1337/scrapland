@@ -9,6 +9,7 @@
 #include "scrap/global.h"
 #include "scrap/mathlib.h"
 #include "scrap/input.h"
+#include "scrap/inputtape.h"
 #include "scrap/play.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
@@ -109,10 +110,18 @@ void NetPl_StepPart(cEntity *e, const NetRepInput *in, byte local, byte replay, 
 	if (OBJ_MIN_DT >= NETPL_SLOT * k) {
 		return;
 	}
+	/* the solo instance: the exact controls of the input tape (include/scrap/inputtape.h) */
+	byte taped = g_InputTape == INPUTTAPE_SOLO && !local;
+	if (taped) {
+		InputTape_SoloApply(e, part);
+	}
 	if (!part && !replay && w->actCtrl) {
 		cActCtrl_Tick(w->actCtrl, NETPL_TICK * k);
 	}
 	Obj_Tick(e, NETPL_SLOT * k);
+	if (taped) {
+		InputTape_SlotDone(e);
+	}
 }
 
 void NetPl_Step(cEntity *e, const NetRepInput *in, byte local, byte replay) {

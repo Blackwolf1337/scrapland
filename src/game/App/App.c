@@ -14,6 +14,7 @@
 #include "scrap/filesys.h"
 #include "scrap/input.h"
 #include "scrap/coop.h"
+#include "scrap/inputtape.h"
 #include "scrap/instance.h"
 #include "scrap/play.h"
 #include "scrap/travel.h"
@@ -782,7 +783,7 @@ byte CApp_ParseParam(CApp *self, const char *param, const char *ext) {
 		return 1;
 	}
 	if (Instance_ParseParam(param, ext) || Watch_ParseParam(param, ext) || Play_ParseParam(param, ext) ||
-		Travel_ParseParam(param, ext) || Join_ParseParam(param, ext)) {
+		Travel_ParseParam(param, ext) || Join_ParseParam(param, ext) || InputTape_ParseParam(param, ext)) {
 		return 1;
 	}
 	if (!crt_stricmp("dedicated", param)) {
