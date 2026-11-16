@@ -2,7 +2,8 @@
 # The gates of the multiplayer rewrite (plan mp2): one table per gate, the numbers as JSON next to it, an exit code
 # (0 pass, 1 fail, 2 a gate that could not run). Everything is in tools/test/parity/mp2.py (its --help).
 #
-#   tools/test/mp2.sh parity [--levels A,B:dm] [--points N]   parity of single player and the clients, per level and route
+#   tools/test/mp2.sh parity [--levels A,B:dm] [--points N] [--mp2]   parity per level and route (--mp2: replication
+#                                                                    v2 with the mirror diff and the sound census)
 #   tools/test/mp2.sh feel [--cells 0,50,150] [--sides join,host]   key to frame latency, jitter, corrections
 #   tools/test/mp2.sh coop <chapter> --points-dir DIR          a coop chapter (tools/test/coop/chapters.txt) and coopparity
 #   tools/test/mp2.sh sp [--levels-time 30]                    regress.py check, golden.sh, levels.sh
