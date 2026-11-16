@@ -34,7 +34,7 @@
  *
  * While a tape is on, the deterministic trace (SCRAP_TEST_DET_TRACE) leaves out the window and input events and the
  * command files of the test channel (the tape holds the input) and gets a line per slot tick of the player's entity:
- *   pl <slot> <c|s> <action class> pos <x y z> ang <x y z> vel <x y z> view <x y> life <n> act <layer 0/1/2/3> money <n>
+ *   pl <slot> <c|s|-> <action class> pos <x y z> ang <x y z> vel <x y z> view <x y> life <n> act <layer 0/1/2/3> money <n>
  *     alarm <value> <on>
  * so tools/test/solo.sh can compare single player with the solo instance. Without a tape nothing here changes the
  * game or the trace.

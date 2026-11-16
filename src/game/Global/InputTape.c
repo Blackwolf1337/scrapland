@@ -310,7 +310,8 @@ void InputTape_SlotDone(cEntity *e) {
 		cWithLifeEntity *w = WLife(e);
 		cObjEntity *o = Obj(e);
 		const char *act[ACT_LAYERS];
-		byte ch = NetPl_Kind(e) == NETREP_CHAR;
+		int kind = NetPl_Kind(e);
+		byte ch = kind == NETREP_CHAR;
 		int pi = Players_Of(e);
 		const cAlarm *al = Players_Alarm(pi < 0 ? 0 : pi);
 		for (int i = 0; i < ACT_LAYERS; i++) {
@@ -321,7 +322,7 @@ void InputTape_SlotDone(cEntity *e) {
 		const char *cls = w->actCtrl && w->actCtrl->cls && w->actCtrl->cls->name ? w->actCtrl->cls->name :
 			Entity_GetClassName(e);
 		TestDet_Trace("pl %u %c %s pos %.9g %.9g %.9g ang %.9g %.9g %.9g vel %.9g %.9g %.9g view %.9g %.9g life %d "
-			"act %s/%s/%s/%s money %d alarm %.9g %d", tape.slots, ch ? 'c' : 's', cls,
+			"act %s/%s/%s/%s money %d alarm %.9g %d", tape.slots, ch ? 'c' : kind == NETREP_SHIP ? 's' : '-', cls,
 			(double)e->pos.x, (double)e->pos.y, (double)e->pos.z, (double)o->ang.x, (double)o->ang.y,
 			(double)o->ang.z, (double)o->vel.x, (double)o->vel.y, (double)o->vel.z,
 			ch ? (double)WChar(e)->view.x : 0.0, ch ? (double)WChar(e)->view.y : 0.0, w->life, act[0], act[1], act[2],

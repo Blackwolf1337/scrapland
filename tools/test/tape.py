@@ -93,7 +93,8 @@ class Rec:
 
 
 def yaw_to(src, dst):
-    """the yaw in degrees (the game's: 0 looks to -z, the angle grows to the left) from src to dst"""
+    """the yaw in degrees from src to dst (the game's: 0 looks to -z, forward is (-sin yaw, 0, -cos yaw), the angle
+    grows with Walk.TurnRight)"""
     return math.degrees(math.atan2(-(dst[0] - src[0]), -(dst[2] - src[2]))) % 360.0
 
 
@@ -101,99 +102,120 @@ def turn_err(want, have):
     return (want - have + 180.0) % 360.0 - 180.0
 
 
+def walk_to(r, me, target, secs, use=False):
+    """turns and walks the character me to target (x, y, z) for at most secs; with use the use button every 0.6 s
+    from 1200 away; 1 when it got there (or, with use, the action set is no longer Walk)"""
+    end = r.t + secs
+    while r.t < end and not r.done() and r.set() == 3:
+        e = r.ent(me, 'Pos', 'ViewAng')
+        if not e['Pos'] or not e['ViewAng']:
+            return 0
+        err = turn_err(yaw_to(e['Pos'], target), e['ViewAng'][1])
+        d = math.hypot(target[0] - e['Pos'][0], target[2] - e['Pos'][2])
+        if d < 450 and not use:
+            return 1
+        keys = {}
+        if abs(err) > 4:
+            keys['Walk.TurnRight' if err > 0 else 'Walk.TurnLeft'] = min(1.0, abs(err) / 45.0)
+        if d > 450 and abs(err) < 60:
+            keys['Walk.Forward'] = 1 if d > 900 else 0.6
+        if use and d < 1200 and int(round(r.t / PACE)) % 6 < 2:
+            keys['Walk.Use'] = 1
+        r.step(keys)
+    return r.set() != 3
+
+
+def fly_to(r, ship, target, secs, land):
+    """flies the ship over target (x, y, z) with the thrust, strafe and vertical strafe keys in the ship's own frame
+    (forward (-sin yaw, -cos yaw), left (cos yaw, -sin yaw) on the ground), the height of target + 1500 until it is
+    above it; with land it goes down onto it then; 1 when the action set is no longer Racer (the ship parked) or, without
+    land, it is there"""
+    end = r.t + secs
+    while r.t < end and not r.done() and r.set() == 1:
+        e = r.ent(ship, 'Pos', 'Ang', 'Vel')
+        if not e['Pos'] or not e['Ang']:
+            return 0
+        v = e['Vel'] or (0.0, 0.0, 0.0)
+        dx, dy, dz = (target[i] - e['Pos'][i] for i in range(3))
+        yaw = math.radians(e['Ang'][1])
+        fwd = -math.sin(yaw) * dx - math.cos(yaw) * dz
+        left = math.cos(yaw) * dx - math.sin(yaw) * dz
+        vf = -math.sin(yaw) * v[0] - math.cos(yaw) * v[2]
+        vl = math.cos(yaw) * v[0] - math.sin(yaw) * v[2]
+        flat = math.hypot(fwd, left)
+        if flat < 200 and not land and math.hypot(vf, vl) < 300:
+            return 1
+        keys = {}
+        cf = max(-0.6, min(0.6, fwd / 6000.0 - vf / 3000.0))
+        cl = max(-1.0, min(1.0, left / 2000.0 - vl / 1000.0))
+        if cf > 0.03:
+            keys['Racer.TrustUp'] = cf
+        elif cf < -0.03:
+            keys['Racer.Backward'] = -cf
+        if cl > 0.05:
+            keys['Racer.StrafeLeft'] = cl
+        elif cl < -0.05:
+            keys['Racer.StrafeRight'] = -cl
+        cy = (dy + (0.0 if land and flat < 250 else 1500.0)) / 1000.0 - v[1] / 1500.0
+        if cy > 0.05:
+            keys['Racer.StrafeUp'] = min(1.0, cy)
+        elif cy < -0.05:
+            keys['Racer.StrafeDown'] = min(1.0, -cy)
+        r.step(keys)
+    return r.set() != 1
+
+
 def drive(r, level):
     """the four parts on the level; a list of what happened"""
     # walk
-    r.step({'Walk.Forward': 1}, n=15)
-    r.step({'Walk.Forward': 1, 'Walk.StrafeUp': 1}, n=3)
-    r.step({'Walk.Forward': 1, 'Walk.TurnRight': 0.6}, n=8)
-    r.step({'Walk.TurnLeft': 0.6}, n=8)
-    r.step({'Walk.Action': 1}, n=2)
-    r.step({}, n=3)
-    r.log.append('walk done at %.1f s, player %s' % (r.t, r.player()))
-    # board
+    r.step({'Walk.Forward': 1}, n=20)
+    r.step({'Walk.Forward': 1, 'Walk.StrafeUp': 1}, n=5)
+    r.step({'Walk.Forward': 1, 'Walk.TurnRight': 0.6}, n=15)
+    r.step({'Walk.Forward': 0.6, 'Walk.TurnLeft': 0.6}, n=15)
+    r.step({'Walk.Action': 1}, n=3)
+    r.step({}, n=5)
     me = r.player()
-    ships = [n for n in r.ents('Vehicles') if n == 'PlayerShip' or n.startswith('Parked')]
-    best = None
+    r.log.append('walk done at %.1f s, player %s' % (r.t, me))
+    # board: the player's own ship or the nearest parked one
     pos = r.ent(me, 'Pos')['Pos']
-    for n in ships:
+    best = None
+    # around the player only: "ents" over the whole world loops in some levels (Police)
+    near = r.ents('Vehicles %g %g %g 30000' % tuple(pos)) if pos else []
+    for n in [n for n in near if n == 'PlayerShip' or n.startswith('Parked')]:
         p = r.ent(n, 'Pos')['Pos']
-        if p:
-            d = math.dist(pos, p)
-            if best is None or (n == 'PlayerShip' and d < 20000) or (best[0] != 'PlayerShip' and d < best[1]):
+        if p and pos:
+            d = math.dist(pos, p) - (1e6 if n == 'PlayerShip' else 0)
+            if best is None or d < best[1]:
                 best = (n, d, p)
-    end = r.t + 25.0
-    while best and r.t < end and not r.done() and r.set() == 3:
-        e = r.ent(me, 'Pos', 'ViewAng')
-        if not e['Pos'] or not e['ViewAng']:
-            break
-        err = turn_err(yaw_to(e['Pos'], best[2]), e['ViewAng'][1])
-        d = math.hypot(best[2][0] - e['Pos'][0], best[2][2] - e['Pos'][2])
-        keys = {}
-        if abs(err) > 4:
-            keys['Walk.TurnLeft' if err > 0 else 'Walk.TurnRight'] = min(1.0, abs(err) / 45.0)
-        if d > 450 and abs(err) < 60:
-            keys['Walk.Forward'] = 1 if d > 900 else 0.6
-        if d < 1200 and int(r.t / PACE) % 6 < 2:
-            keys['Walk.Use'] = 1
-        r.step(keys, n=1)
-    # the boarding scene runs with the action set Inactive or none: wait for the ship's set
-    end = r.t + 12.0
+    if best:
+        walk_to(r, me, best[2], 25.0, use=True)
+    # the boarding scene runs with the action set Inactive: wait for the ship's
+    end = r.t + (12.0 if best else 0.0)
     while r.t < end and r.set() != 1 and not r.done():
         r.step({}, n=2)
     r.log.append('board %s at %.1f s, player %s, set %d' % (best[0] if best else '-', r.t, r.player(), r.set()))
     if r.set() == 1:
         # fly
         ship = r.player()
+        home = r.ent(ship, 'Pos')['Pos']
         r.step({'Racer.StrafeUp': 1}, n=15)
-        r.step({'Racer.TrustUp': 1}, n=20)
-        r.step({'Racer.TrustUp': 1, 'Racer.Right': 0.7}, n=12)
-        r.step({'Racer.Fire': 1}, n=6)
-        r.step({'Racer.TrustUp': 1, 'Racer.Fire': 1}, n=6)
-        r.step({'Racer.Backward': 1}, n=15)
+        r.step({'Racer.TrustUp': 0.3}, n=20)
+        r.step({'Racer.Right': 0.5}, n=10)
+        r.step({'Racer.Fire': 1}, n=10)
+        r.step({'Racer.Up': 0.4}, n=3)
+        r.step({'Racer.Down': 0.4}, n=3)
+        r.step({'Racer.TrustUp': 0.2, 'Racer.Fire': 1}, n=10)
+        r.step({'Racer.Backward': 0.6}, n=10)
         r.log.append('fly done at %.1f s, player %s' % (r.t, r.player()))
-        # park: the nearest parking box, with the strafe and thrust keys in the ship's own frame
-        boxes = [n for n in r.ents('Vehicles') if n.startswith('ParkParking_')]
-        p = r.ent(ship, 'Pos')['Pos']
-        target = None
-        for n in boxes:
-            q = r.ent(n, 'Pos')['Pos']
-            if q and (target is None or math.dist(p, q) < math.dist(p, target[1])):
-                target = (n, q)
-        end = r.t + 30.0
-        while target and r.t < end and r.set() == 1 and not r.done():
-            e = r.ent(ship, 'Pos', 'Ang', 'Vel')
-            if not e['Pos'] or not e['Ang']:
-                break
-            dx, dy, dz = (target[1][i] - e['Pos'][i] for i in range(3))
-            yaw = math.radians(e['Ang'][1])
-            # forward (-sin yaw, -cos yaw) and left (-cos yaw, sin yaw) on the ground
-            fwd = -math.sin(yaw) * dx - math.cos(yaw) * dz
-            left = -math.cos(yaw) * dx + math.sin(yaw) * dz
-            v = e['Vel'] or (0, 0, 0)
-            vf = -math.sin(yaw) * v[0] - math.cos(yaw) * v[2]
-            vl = -math.cos(yaw) * v[0] + math.sin(yaw) * v[2]
-            keys = {}
-            cf = fwd / 3000.0 - vf / 1500.0
-            cl = left / 3000.0 - vl / 1500.0
-            if cf > 0.05:
-                keys['Racer.TrustUp'] = min(1.0, cf)
-            elif cf < -0.05:
-                keys['Racer.Backward'] = min(1.0, -cf)
-            if cl > 0.05:
-                keys['Racer.StrafeLeft'] = min(1.0, cl)
-            elif cl < -0.05:
-                keys['Racer.StrafeRight'] = min(1.0, -cl)
-            flat = math.hypot(fwd, left)
-            cy = (dy + (0 if flat < 1500 else 1500)) / 2000.0 - v[1] / 1500.0
-            if cy > 0.05:
-                keys['Racer.StrafeDown'] = min(1.0, cy)
-            elif cy < -0.05:
-                keys['Racer.StrafeUp'] = min(1.0, -cy)
-            r.step(keys, n=1)
-        r.log.append('park %s at %.1f s, player %s, set %d' % (target[0] if target else '-', r.t, r.player(),
-                                                               r.set()))
-    # the rest of the time on foot (or wherever the player is)
+        # park: back over the place the ship stood and down onto it (the scripts' parking lets the player out)
+        if home:
+            fly_to(r, ship, home, 20.0, land=False)
+            fly_to(r, ship, home, 15.0, land=True)
+        end = r.t + 8.0
+        while r.t < end and r.set() != 3 and not r.done():
+            r.step({}, n=2)
+        r.log.append('park at %.1f s, player %s, set %d' % (r.t, r.player(), r.set()))
+    # the rest of the time
     while not r.done():
         if r.set() == 3:
             r.step({'Walk.Forward': 1, 'Walk.TurnLeft': 0.3}, n=5)
