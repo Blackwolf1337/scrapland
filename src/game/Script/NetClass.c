@@ -4,6 +4,7 @@
  * runs as '#' ("snd03_vol0" as "snd#_vol#"), and each form also as the longest start that has a '*' row ("AI_*").
  * Plain C with no engine calls, so the unit test (tools/script/netclass_test.c) links it alone.
  */
+#include <stdio.h>
 #include <string.h>
 
 #include "scrap/netclass.h"
@@ -13,6 +14,7 @@
 static const char *const nc_tagNames[NC_TAGS] = {
 	"untagged", "SIM", "DEF", "PRES_STATE", "PRES_EVENT", "UI", "QUERY", "CLIENT", "NET_OLD", "STATE", "EVENT",
 	"SERVER_ONLY", "CLIENT_ONLY", "WORLD_SETTING", "SCENE", "WORLD", "PLAYER", "PARTY", "STORY", "PLAYER_ENTER",
+	"NEAREST", "ANY", "PLAYER_SHARED", "PARTY_SHARED", "GROUP",
 };
 
 static const netClassRow_t *NC_Search(const netClassTable_t *t, const char *name) {
@@ -83,6 +85,26 @@ const netClassRow_t *NetClass_Row(netTable_t t, const char *name) {
 netTag_t NetClass_Find(netTable_t t, const char *name) {
 	const netClassRow_t *r = NetClass_Row(t, name);
 	return r ? (netTag_t)r->tag : NC_ABSENT;
+}
+
+netTag_t NetClass_ModuleTag(const char *module, const char *func, const char *level) {
+	char key[4][NC_NAME];
+	int n = 2;
+
+	snprintf(key[0], NC_NAME, "%s.%s", module, func);
+	snprintf(key[1], NC_NAME, "%s", module);
+	if (level && level[0]) {
+		snprintf(key[2], NC_NAME, "%s/%s.%s", level, module, func);
+		snprintf(key[3], NC_NAME, "%s/%s", level, module);
+		n = 4;
+	}
+	for (int i = 0; i < n; i++) {
+		netTag_t tag = NetClass_Find(NCT_MODULE, key[i]);
+		if (tag != NC_ABSENT) {
+			return tag;
+		}
+	}
+	return NC_ABSENT;
 }
 
 const char *NetClass_TagName(netTag_t tag) {

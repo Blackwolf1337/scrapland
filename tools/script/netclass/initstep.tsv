@@ -1,12 +1,15 @@
 # The steps of a level's start (the calls in In_InitN and In_Game of src/game/Script/InitLevel.c, Om_Init and
 # Om_InitOutMap of OutMap.c, InMap_Init and InMap_Start of InMap.c, found by netclass.py --scan in their order):
 # File:call, tag, why. Tags: WORLD (once for the world, on the server), PLAYER_ENTER (for each player that enters:
-# the startup player, the arrival, the camera, the HUD), DEF (definitions both sides make). netclass.py counts the
-# rows without a tag.
+# the startup player, the arrival, the camera, the HUD), DEF (definitions both sides make), GROUP (a group of steps
+# whose own steps have rows: it runs where any of them runs). The rail traffic is the server's (stage 2.2,
+# include/scrap/viewers.h). A -mp2 client with a split start runs DEF and GROUP steps only (include/scrap/initsteps.h); a row of a function that is no module call names the C function. netclass.py
+# counts the rows without a tag.
 InitLevel:Scrap.PreloadLibrary	DEF	the map libraries
 InitLevel:Init.PreloadMlibs	DEF	the map libraries
 InitLevel:Init.AddMLib	DEF	the Xbox menu library
 InitLevel:Map.InitStatus	WORLD	the state of the map from the story
+InitLevel:InitSteps_LevelStatus	DEF	a -mp2 client: the definitions of Map.InitStatus (the level's client part, Levels.h)
 InitLevel:Init.MLibInitStatus	WORLD	the state of the map libraries from the story
 InitLevel:In_BossShip	WORLD	the boss's ship
 InitLevel:SuperDealModule.InitStatus	WORLD	the state of the super deal
@@ -19,7 +22,7 @@ InitLevel:GVar.MainMissionEvent	DEF	the mission info key of the client
 InitLevel:Chat.SetChatProc	DEF	the chat
 InitLevel:Sound.Init	DEF	the sound tables and loops
 InitLevel:Scrap.CreateElements	DEF	the map elements
-InitLevel:In_Game	WORLD	the game part of the start (its steps below)
+InitLevel:In_Game	GROUP	the game part of the start (its steps below)
 InitLevel:MissionsFuncs.CreateBertos	WORLD	the Bertos that hunt the player
 InitLevel:In_BossRobots	WORLD	the robots of the boss
 InitLevel:GVar.OnCrazyDealFinished	WORLD	callback of the crazy deals
@@ -27,7 +30,9 @@ InitLevel:GVar.OnCrazyDealTarget	WORLD	callback of the crazy deals
 InitLevel:Coop_ClientLevelStart	PLAYER_ENTER	a coop client's camera at the start
 InitLevel:Coop_StandIn	WORLD	the coop instance's stand-in player
 InitLevel:In_MapInit	WORLD	the setup of the map: NPCs, missions
+InitLevel:InitSteps_LevelInit	DEF	a -mp2 client: the definitions of Map.Init (Levels.h)
 InitLevel:MapSnd.Init	DEF	the sound loops of the level
+InitLevel:Init.SetMapLabelText	DEF	the station label on the screen, 0.5 s after the start
 InitLevel:Init.MLibInit	WORLD	the setup of the map libraries
 InitLevel:SuperDealModule.Init	WORLD	the super deal
 InitLevel:Places_LevelInit	WORLD	the places of a free world
@@ -35,36 +40,39 @@ InitLevel:SaveVar.Player.NumLives	PLAYER_ENTER	the demo's lives of the player
 InitLevel:GVar.R_SceneBlurValue	DEF	the blur of the scene (client view)
 InitLevel:Scrap.CreateSaveVar	WORLD	the game skill save variable
 InitLevel:GVar.GameSkill	WORLD	the game skill (a world setting)
-InitLevel:Bureaucracy.Init	DEF	the bureaucracy class and table
+InitLevel:Bureaucracy.Init	WORLD	the desks of the functionaries and their classes
+InitLevel:Bureaucracy_InitClasses	DEF	a -mp2 client: the classes of the desks (Bureaucracy.Init without them)
 InitLevel:GVar.isActionMusic	DEF	the action music of a deal map (client)
 InitLevel:Chars.Init	DEF	the character classes
+Chars:CharsNPC.BrowseNPC	WORLD	the spawn points of the NPCs and the missions' hooks (in Chars.Init)
 InitLevel:PhoneCab.CreatePhoneCabClass	DEF	the phone cab class
 InitLevel:PhoneCab.CreateAudioComClass	DEF	the audio com class
 InitLevel:Vehicles.Init	DEF	the vehicle classes
 InitLevel:Weapons.Init	DEF	the weapon classes
 InitLevel:Fx.Init	DEF	the effect files
 InitLevel:Alarm.Init	WORLD	the alarm
-InitLevel:MisItems.Init	WORLD	the mission items
+InitLevel:MisItems.Init	DEF	the models of the coins and mission items (preloads)
 InitLevel:Doors.Init	WORLD	the doors
-InitLevel:OutMap.Init	WORLD	the outdoor start (its steps under OutMap)
-InitLevel:InMap.Init	WORLD	the indoor start (its steps under InMap)
+InitLevel:Doors_InitClasses	DEF	a -mp2 client: the classes of the doors (Doors.Init without the doors)
+InitLevel:OutMap.Init	GROUP	the outdoor start (its steps under OutMap)
+InitLevel:InMap.Init	GROUP	the indoor start (its steps under InMap)
 InitLevel:SaveGame.InitVars	WORLD	the save variables of the story
 InitLevel:MissionsFuncs.Init	WORLD	the missions
 OutMap:GVar.FileNameMap2D	DEF	the map picture of the radar
 OutMap:GVar.CharGrav	DEF	the gravity of the characters (a world setting both sides set)
 OutMap:OutMap.BrowseAtmospherePos	DEF	the atmosphere limits from the dummies
-OutMap:OutMap.BrowseSpawnPos	WORLD	the spawn places
+OutMap:OutMap.BrowseSpawnPos	DEF	the spawn places (dummies of the map; the client's rail traffic starts at them)
 OutMap:GVar.GridUseTopLimit	DEF	the collision grid
 OutMap:Mode_SetGrid	DEF	the collision grid
 OutMap:GVar.Max_Rad_Obj	DEF	the object radius limit
-OutMap:OutMap.InitOutMap	WORLD	the outdoor world: its steps below
+OutMap:OutMap.InitOutMap	GROUP	the outdoor world: its steps below
 OutMap:Items.Init	WORLD	the items
 OutMap:Ffa.InitClient	PLAYER_ENTER	the original's network client
 OutMap:Accelerator.Init	WORLD	the accelerators
 OutMap:PhoneCab.Init	WORLD	the phone cabs
 OutMap:Parking.Init	WORLD	the parking
-OutMap:Traffic.InitAIProfiles	WORLD	the traffic profiles
-OutMap:Traffic.InitCivilTraffic	WORLD	the rail traffic
+OutMap:Traffic.InitAIProfiles	WORLD	the profiles of the traffic and the rail traffic (server)
+OutMap:Traffic.InitCivilTraffic	WORLD	the rail traffic (server, around every player: include/scrap/viewers.h)
 OutMap:Split.Init	WORLD	the split screen game
 OutMap:Ffa.InitServer	WORLD	the original's network server
 OutMap:Chars.CreateStartupPlayer	PLAYER_ENTER	the startup player
@@ -86,7 +94,9 @@ InMap:GVar.CameraCloudDistance	DEF	the clouds (client view)
 InMap:GVar.AtmosphereLimit	DEF	the atmosphere limit
 InMap:GVar.TopLimit	DEF	the top limit
 InMap:CharConversor.Init	WORLD	the conversors
+InMap:CharConversor.CreateConversorClass	DEF	a -mp2 client: the class of the conversors
 InMap:DTritusDesktop.Init	WORLD	Dtritus' desktops
+InMap:DTritusDesktop_InitClasses	DEF	a -mp2 client: the classes of the desktops (DTritusDesktop.Init without them)
 InMap:NewsPanel.Init	WORLD	the news panels
 InMap:Chars.CreateStartupPlayer	PLAYER_ENTER	the startup player
 InMap:CharsNPC.Init	WORLD	the NPCs

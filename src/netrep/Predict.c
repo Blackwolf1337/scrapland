@@ -51,8 +51,6 @@ int NetRepInBuf_Take(NetRepInBuf *b, uint32_t tick, NetRepInput *out) {
 		b->have[i] = 2;
 	} else {
 		b->last.tick = tick;
-		/* a bump is of its own tick only */
-		b->last.buttons &= (uint16_t)~NETREP_IN_BUMP;
 		b->missed++;
 		b->have[i] = 0;
 	}

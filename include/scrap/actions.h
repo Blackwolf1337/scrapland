@@ -238,9 +238,10 @@ void cActCtrl_Present(cActCtrl *self, float dt);
 typedef byte (*actEventFilter_t)(const cActEvent *ev);
 /* a replica's layers (include/scrap/replicate.h): the actions (index + 1 in the class, 0 none) of the network at
  * their rates (time a second, 0 keeps it), each started when it changes, the model advanced by dt; no ends of
- * actions; of the events those that pass fire */
-void cActCtrl_NetDrive(cActCtrl *self, const uint16_t *act, const float *rate, int layers, float dt,
-	actEventFilter_t fire);
+ * actions; of the events those that pass fire. target (NULL none): the time each layer's action has on the network
+ * now (s, < 0 none), the rate (< 0: not known, 1) goes faster or slower until the layer is there, 0 stops it */
+void cActCtrl_NetDrive(cActCtrl *self, const uint16_t *act, const float *rate, const float *target, int layers,
+	float dt, actEventFilter_t fire);
 /* layer i (> 0) stopped */
 void cActCtrl_StopChan(cActCtrl *self, int i);
 byte cActCtrl_IsActive(void *ctrl, const char *action);

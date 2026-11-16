@@ -9,6 +9,7 @@
 
 #include "scrap/chartype.h"
 #include "scrap/scrapmodel.h"
+#include "scrap/viewers.h"
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
 #include "scrap/players.h"
@@ -104,21 +105,23 @@ static void cLittlePoliceLocalLogic_UpdateBribe(cLittlePoliceLocalLogic *self) {
 	if (self->bribe == old) {
 		return;
 	}
-	cArrowIndicator *arrow = &WLife(p)->arrow;
+	/* the arrow's options through the entity's variables (ArrnOpt 0 clears them, AddArrOpt adds one), so the variable
+	 * journal of the replication v2 sees them (include/scrap/repent.h) */
+	int zero = 0;
+	char *opt = buf;
+	Entity_VarI(p, "ArrnOpt", &zero, 1);
 	if (self->bribe) {
-		cArrowIndicator_ClearOpts(arrow);
 		Str_PrintfQuiet(buf, sizeof(buf), "GiveWhy:%s", Lang_GetStr("Generics_PoliceBribeGiveWhyOpt"));
-		cArrowIndicator_AddOpt(arrow, buf);
+		Entity_VarS(p, "AddArrOpt", &opt, 1);
 		memcpy(buf, "GiveYes:", 9);
 		int amount = g_PoliceStealAmount;
 		Str_PrintfQuiet(buf + 8, sizeof(buf) - 8, Lang_GetStr("Generics_PoliceBribeGiveYesOpt"), amount);
-		cArrowIndicator_AddOpt(arrow, buf);
+		Entity_VarS(p, "AddArrOpt", &opt, 1);
 		Str_PrintfQuiet(buf, sizeof(buf), "GiveNo:%s", Lang_GetStr("Generics_PoliceBribeGiveNoOpt"));
 	} else {
-		cArrowIndicator_ClearOpts(arrow);
 		Str_PrintfQuiet(buf, sizeof(buf), "Talk:%s", Lang_GetStr("TalkOpt"));
 	}
-	cArrowIndicator_AddOpt(arrow, buf);
+	Entity_VarS(p, "AddArrOpt", &opt, 1);
 }
 
 /* the special attack ends without a target, or when the AI lost it and it is out of view for longer than
@@ -360,7 +363,7 @@ alert:
 				Logic_RestartState(self);
 				return;
 			}
-			if (!Players_SeesModel(Obj_GetModel(p))) {
+			if (!Viewers_SeesModel(Obj_GetModel(p))) {
 				const vec3_t *up = Entity_GetPos(usr, &t1);
 				if (LP_DistSq(Entity_GetPos(p, &t2), up) >
 					g_LittlePoliceStopAcusingMaxDistFromUser * g_LittlePoliceStopAcusingMaxDistFromUser) {
@@ -390,7 +393,7 @@ alert:
 				Logic_RestartState(self);
 				return;
 			}
-			if (!Players_SeesModel(Obj_GetModel(p))) {
+			if (!Viewers_SeesModel(Obj_GetModel(p))) {
 				const vec3_t *up = Entity_GetPos(usr, &t1);
 				if (LP_DistSq(Entity_GetPos(p, &t2), up) >
 					g_LittlePoliceStopAcusingMaxDistFromUser * g_LittlePoliceStopAcusingMaxDistFromUser) {

@@ -26,6 +26,7 @@
 #include "scrap/platform.h"
 #include "scrap/play.h"
 #include "scrap/replicate.h"
+#include "scrap/repent.h"
 #include "scrap/coord.h"
 #include "scrap/travel.h"
 #include "scrap/scrap.h"
@@ -142,7 +143,7 @@ static void Watch_Free(int slot) {
 }
 
 /* the model file or its compiled .sm3 (the loader takes either) */
-static byte Watch_ModelExists(const char *path) {
+byte Watch_ModelExists(const char *path) {
 	char alt[260];
 	size_t n = strlen(path);
 
@@ -235,14 +236,15 @@ static void Watch_MissileHit(WatchProxy *p, const NetRepState *st, byte end) {
 	cMissileEntity_Hit(m, lost, 0.0f);
 }
 
-/* S|model|pilot|motor 0..3|class|weapon slots, C|class or M|model|weapon|effect|level (Replicate.c) */
+/* S|model|pilot|motor 0..3|class|weapon slots|T for the rail traffic, C|class or M|model|weapon|effect|level
+ * (Replicate.c) */
 cEntity *Watch_Build(const char *name, int kind, const char *look, const NetRepState *st, byte proxy) {
 	char buf[NETREP_LOOK_MAX + 1];
-	char *part[9];
+	char *part[10];
 	int n = 0;
 
 	Str_Copy(buf, look, sizeof(buf));
-	for (char *p = buf; n < 9;) {
+	for (char *p = buf; n < 10;) {
 		part[n++] = p;
 		p = strchr(p, '|');
 		if (!p) {
@@ -295,6 +297,10 @@ cEntity *Watch_Build(const char *name, int kind, const char *look, const NetRepS
 		return NULL;
 	}
 	Obj(e)->replica = proxy;
+	/* the rail traffic's embedded effect, chosen when the model comes (the client's copy has no AI state) */
+	if (n > 9 && part[9][0] == 'T') {
+		Veh(e)->traffic.active = 1;
+	}
 	if (part[1][0]) {
 		Entity_SetModel(e, part[1], 1.0f, 1.0f, 1.0f, 0);
 	}
@@ -350,10 +356,42 @@ static void Watch_Sample(WatchProxy *p, uint32_t tick, const NetRepState *st) {
 	p->n++;
 }
 
+void Watch_FreeSlot(int slot) {
+	Watch_Free(slot);
+}
+
+const NetRepState *Watch_SlotState(int slot, int *kind, const char **look, uint32_t *tick) {
+	int id;
+	const NetRepState *st = watch.view ? NetRepCli_State(watch.view, slot, kind, &id) : NULL;
+	if (st) {
+		*look = NetRepCli_LookString(watch.view, id);
+		*look = *look ? *look : "";
+		*tick = NetRepCli_Tick(watch.view);
+	}
+	return st;
+}
+
+void Watch_Attach(int slot, cEntity *e, int kind, uint32_t tick, const NetRepState *st) {
+	WatchProxy *p = &watch.px[slot];
+	Watch_Free(slot);
+	p->e = e;
+	p->kind = kind;
+	watch.proxies++;
+	Watch_Sample(p, tick, st);
+}
+
 static void Ev_Create(void *ctx, int slot, int kind, const char *look, uint32_t tick, const NetRepState *st) {
 	char name[32];
 	(void)ctx;
 	Watch_Free(slot);
+	if (g_Mp2) {
+		/* made once its create message is there too (ReplicaEnt_Frame) */
+		if (slot == Play_OwnSlot()) {
+			Play_OwnRemove();
+		}
+		ReplicaEnt_Want(slot);
+		return;
+	}
 	if (slot == Play_OwnSlot()) {
 		Play_OwnCreate(kind, look, tick, st);
 		return;
@@ -370,6 +408,9 @@ static void Ev_Create(void *ctx, int slot, int kind, const char *look, uint32_t 
 
 static void Ev_Update(void *ctx, int slot, uint32_t tick, const NetRepState *st) {
 	(void)ctx;
+	if (g_Mp2) {
+		ReplicaEnt_Update(slot, st);
+	}
 	if (slot == Play_OwnSlot()) {
 		Play_OwnUpdate(tick, st);
 	} else if (watch.px[slot].e) {
@@ -379,6 +420,9 @@ static void Ev_Update(void *ctx, int slot, uint32_t tick, const NetRepState *st)
 
 static void Ev_Remove(void *ctx, int slot) {
 	(void)ctx;
+	if (g_Mp2) {
+		ReplicaEnt_Unwant(slot);
+	}
 	if (slot == Play_OwnSlot()) {
 		Play_OwnRemove();
 	}
@@ -403,6 +447,9 @@ static void Watch_Player(const uint8_t *data, int size) {
 	if (st && watch.px[slot].e) {
 		Watch_Free(slot);
 		Play_OwnCreate(k, NetRepCli_LookString(watch.view, look), NetRepCli_Tick(watch.view), st);
+		if (g_Mp2) {
+			ReplicaEnt_Journal(slot, Play_Entity());
+		}
 	}
 }
 
@@ -566,6 +613,13 @@ static void Watch_Place(int slot, WatchProxy *p, double rt, float dt) {
 
 	Watch_Pick(p, rt, &a, &b, &f, &ext);
 	const NetRepState *sa = &a->st, *sb = &b->st;
+	float span = (float)(b->t - a->t);
+	if (p->kind == REPENT_BASE) {
+		vec3_t at = { NetRep_UPos(sb->pos[0]), NetRep_UPos(sb->pos[1]), NetRep_UPos(sb->pos[2]) };
+		e->pos = at;
+		e->active = (sa->flags & NETREP_FL_ACTIVE) != 0;
+		return;
+	}
 	if (p->kind == NETREP_ITEM) {
 		vec3_t at = { NetRep_UPos(sb->pos[0]), NetRep_UPos(sb->pos[1]), NetRep_UPos(sb->pos[2]) };
 		vec3_t an = { NetRep_UAng(sb->ang[0]), NetRep_UAng(sb->ang[1]), NetRep_UAng(sb->ang[2]) };
@@ -575,6 +629,9 @@ static void Watch_Place(int slot, WatchProxy *p, double rt, float dt) {
 		}
 		if (((sa->flags & NETREP_FL_ACTIVE) != 0) != e->active) {
 			Entity_SetActive(e, (sa->flags & NETREP_FL_ACTIVE) != 0);
+		}
+		if (g_Mp2) {
+			ReplicaEnt_Present(e, p->kind, sa, sb, span, f, dt);
 		}
 		return;
 	}
@@ -625,7 +682,7 @@ static void Watch_Place(int slot, WatchProxy *p, double rt, float dt) {
 		o->proxyIdle = (sa->flags & NETREP_FL_INPLACE) != 0;
 		Watch_Weapon(e, sa);
 		Faction_EntityFlags(e, p->s[p->n - 1].st.flags);
-	} else {
+	} else if (p->kind == NETREP_CHAR) {
 		cWalkCharEntity *c = WChar(e);
 		w->life = sa->life;
 		c->view.x = Watch_LerpAng(sa->view[0], sb->view[0], f);
@@ -643,12 +700,15 @@ static void Watch_Place(int slot, WatchProxy *p, double rt, float dt) {
 			rates[l] = b != a && sb->act[l] == sa->act[l] && tb > ta ? (tb - ta) / (float)(b->t - a->t) : 0.0f;
 			rates[l] = rates[l] > 4.0f ? 4.0f : rates[l];
 		}
-		if (w->actCtrl && w->actCtrl->cls) {
+		if (w->actCtrl && w->actCtrl->cls && !g_Mp2) {
 			/* only the sounds: the effect events look entities up by the instance's names, which the watcher's
-			 * replicas do not have */
-			cActCtrl_NetDrive(w->actCtrl, act, rates, NETREP_LAYERS, dt, Event_IsSound);
+			 * replicas do not have (the v2's replicas have them: ReplicaEnt_Present drives all layers) */
+			cActCtrl_NetDrive(w->actCtrl, act, rates, NULL, NETREP_LAYERS, dt, Event_IsSound);
 		}
 		cWalkCharEntity_NetWalking(e, c->walking);
+	}
+	if (g_Mp2) {
+		ReplicaEnt_Present(e, p->kind, sa, sb, span, f, dt);
 	}
 	if (watch.log && rt >= p->s[0].t) {
 		fprintf(watch.log, "%.4f,%d,%.2f,%.2f,%.2f\n", rt, slot, (double)pos.x, (double)pos.y, (double)pos.z);
@@ -659,16 +719,11 @@ byte Watch_ArenaWorld(void) {
 	return (watch.welcome & REP_WELCOME_ARENA) != 0;
 }
 
-void Watch_RailKill(void) {
-	uint8_t m = REP_MSG_RAILKILL;
-	Watch_SendReliable(&m, 1);
-}
-
-/* characters and ships the level scripts made: the instance has the real ones (not the client's own rail traffic) */
+/* characters and ships the level scripts made: the instance has the real ones (the rail traffic too) */
 static void Watch_Purge(void) {
 	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
 		if (e->deadNode.target || (!Entity_IsType(e, TYEN_CAR) && !Entity_IsType(e, TYEN_WALKCHAR)) ||
-			e == Play_Entity() || Rep_LocalAmbient(e)) {
+			e == Play_Entity()) {
 			continue;
 		}
 		if (!Obj(e)->replica && !Coop_ClientKeeps(e)) {
@@ -948,6 +1003,7 @@ static void Watch_Reset(void) {
 	for (int s = 0; s < NETREP_MAX_ENTS; s++) {
 		Watch_Free(s);
 	}
+	ReplicaEnt_Reset();
 	Play_Reset();
 	Faction_ClientReset();
 	Coop_ClientReset(0);
@@ -1079,6 +1135,8 @@ void Watch_PreFrame(void) {
 				Coop_ClientMessage(ev.data, ev.size);
 			} else if (ev.channel == REP_CH_RELIABLE && ev.data[0] == ARENA_MSG) {
 				Arena_ClientMessage(ev.data, ev.size);
+			} else if (ev.channel == REP_CH_RELIABLE && ev.data[0] == REPENT_MSG) {
+				ReplicaEnt_Message(ev.data, ev.size);
 			} else if (ev.channel == REP_CH_RELIABLE && ev.data[0] == SPUTNIKS_MSG) {
 				Sputniks_ClientMessage(ev.data, ev.size);
 			} else if (ev.channel == REP_CH_RELIABLE && ev.data[0] == REP_MSG_STATICS && watch.phase == WATCH_RUN) {
@@ -1112,7 +1170,11 @@ void Watch_PreFrame(void) {
 		watch.lastNs = ns;
 		return;
 	}
-	Watch_Purge();
+	if (g_Mp2) {
+		ReplicaEnt_Frame();
+	} else {
+		Watch_Purge();
+	}
 	float dt = watch.lastNs ? (float)((double)(ns - watch.lastNs) / 1e9) : 0.0f;
 	watch.lastNs = ns;
 	/* the proxies at the time of the newest samples (half a round trip ago) minus the interpolation delay */

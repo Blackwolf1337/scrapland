@@ -59,6 +59,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "scrap/repent.h"
 #include "scrap/app.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
@@ -1192,6 +1193,34 @@ static void TC_Sounds(tcBuf *b, const char *arg) {
 		}
 		return;
 	}
+	/* "sounds src <x> <y> <z> <radius>": the positional sound sources within radius of the point, the positional sets
+	 * "ps <name> <sound> <loop> <x> <y> <z> <playing>" and the sound items of the objects "es <entity> <item> <sound>
+	 * <loop> <x> <y> <z> <playing>" (the census of the second multiplayer design's stage 3.3) */
+	float cx, cy, cz, r;
+	if (arg && sscanf(arg, "src %f %f %f %f", &cx, &cy, &cz, &r) == 4) {
+		for (cSoundPS *ps = SndPS_First(); ps; ps = ps->next) {
+			float dx = ps->pos.x - cx, dy = ps->pos.y - cy, dz = ps->pos.z - cz;
+			if (dx * dx + dy * dy + dz * dz <= r * r) {
+				TC_Addf(b, "ps\t%s\t%s\t%d\t%.0f\t%.0f\t%.0f\t%d\n", ps->name ? ps->name : "", ps->sound.name, ps->loop,
+					(double)ps->pos.x, (double)ps->pos.y, (double)ps->pos.z, ps->sound.handle != 0);
+			}
+		}
+		for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
+			float dx = e->pos.x - cx, dy = e->pos.y - cy, dz = e->pos.z - cz;
+			if (e->deadNode.target || !e->name || !Entity_IsType(e, "Obj") || dx * dx + dy * dy + dz * dz > r * r) {
+				continue;
+			}
+			cSndInterface *snd = &Obj(e)->snd;
+			for (int i = 0; i < snd->nsnd; i++) {
+				cSndItem *it = snd->snds[i];
+				if (it && it->sound.name[0]) {
+					TC_Addf(b, "es\t%s\t%d\t%s\t%d\t%.0f\t%.0f\t%.0f\t%d\n", e->name, i, it->sound.name,
+						it->sound.desc.loop, (double)e->pos.x, (double)e->pos.y, (double)e->pos.z, it->playing);
+				}
+			}
+		}
+		return;
+	}
 	for (int ch = 0; ch < SND_CHANNELS; ch++) {
 		if (!Snd_IsPlaying(ch)) {
 			continue;
@@ -1548,6 +1577,11 @@ static void TC_Line(tcBuf *b, const char *line) {
 	}
 	if (TC_Verb(line, "audit", &arg)) {
 		TC_Audit(b, arg);
+		return;
+	}
+	/* mirror [json]: the replicated entities of the replication v2 (include/scrap/repent.h) */
+	if (TC_Verb(line, "mirror", &arg)) {
+		RepEnt_Mirror(b, arg);
 		return;
 	}
 	/* tape [key <Set>.<Action> <value> | key clear | end]: the input tape (include/scrap/inputtape.h) */

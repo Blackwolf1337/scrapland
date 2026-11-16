@@ -45,7 +45,7 @@ FEEL_RETRIES = 1
 # hand-back): an absolute allowance and a share of the old value, whichever is larger
 NOISE = {
     'parity.entity': (2, 0.0), 'parity.radar': (1, 0.0), 'parity.hud': (0, 0.0), 'parity.sound': (2, 0.0),
-    'parity.fx': (2, 0.0), 'parity.audit': (0, 0.2),
+    'parity.fx': (2, 0.0), 'parity.audit': (0, 0.2), 'parity.mirror': (2, 0.0), 'parity.census': (2, 0.0),
     'feel.latency': (12.0, 0.15), 'feel.jitter': (0.5, 0.5), 'feel.corr_per_min': (1.0, 0.0),
     'coop.gaps': (1, 0.0),
 }
@@ -93,6 +93,8 @@ def gate_parity(a):
            '--pvp-mode', a.pvp_mode]
     if a.levels:
         cmd += ['--levels', a.levels]
+    if a.mp2:
+        cmd.append('--mp2')
     if a.report_only:
         cmd.append('--report-only')
     run(cmd)
@@ -104,7 +106,7 @@ def gate_parity(a):
     got = {s['tag'] for s in sums}
     missing = [parity.tag_of(s) for s in want if parity.tag_of(s) not in got]
     errors = [s for s in sums if 'error' in s]
-    gaps = sum(s[c] for s in sums if 'error' not in s for c in parity.SUMMARY_COLS)
+    gaps = sum(parity.gap_total(s) for s in sums if 'error' not in s)
     status = 'error' if errors or missing else 'fail' if gaps else 'pass'
     table = ['# Parity (%d levels, %d points)' % (len(sums), sum(s['points'] for s in sums)), ''] + \
         parity.summary_table(sums) + ([''] + ['missing: ' + ', '.join(missing)] if missing else [])
@@ -175,7 +177,7 @@ def gate_feel(a):
     os.makedirs(out, exist_ok=True)
     base = [sys.executable, os.path.join(HERE, 'feel.py'), '--out', out, '--scratch', os.path.join(a.scratch, 'feel'),
             '--port', str(a.port), '--build', a.build, '--device', a.device, '--level', a.level,
-            '--walks', str(a.walks), '--bumps', '0']
+            '--walks', str(a.walks), '--bumps', '0'] + (['--mp2'] if a.mp2 else [])
     jobs = [('sp', 'sp', [])]
     for cell in [c for c in a.cells.split(',') if c]:
         d, j, l = CELLS[cell]
@@ -425,7 +427,9 @@ def gate_numbers(r):
         au = [s['audit'] for s in sums if s.get('audit') is not None]
         return '%d levels, gaps entity %d radar %d HUD %d sound %d particle %d, audit %s%s' % (
             len(sums), *[sum(s[c] for s in sums) for c in parity.SUMMARY_COLS], sum(au) if au else 'n/a',
-            ', %d levels with errors' % (len(r['levels']) - len(sums)) if len(r.get('levels', [])) > len(sums) else '')
+            ', %d levels with errors' % (len(r['levels']) - len(sums)) if len(r.get('levels', [])) > len(sums) else '') + (
+            ', mirror %d, census %d' % tuple(sum(s.get(k) or 0 for s in sums) for k in ('mirror', 'census'))
+            if any(s.get('mp2') for s in sums) else '')
     if g == 'feel':
         return '; '.join('%s %s over: %s' % (x['cell'], x['side'], ','.join(x['over']))
                          for x in r.get('rows', []) if x.get('over')) or 'all cells within the limits'
@@ -479,7 +483,7 @@ def gate_diff(a):
                     add('parity %s ran' % s['tag'], 'x', 'error' if 'error' in p else 'ok',
                         'error' if 'error' in s else 'ok')
                     continue
-                for c in parity.SUMMARY_COLS + ('audit',):
+                for c in parity.SUMMARY_COLS + ('audit', 'mirror', 'census'):
                     add('parity %s %s' % (s['tag'], c), 'parity.' + c, p.get(c), s.get(c))
         elif gate == 'feel':
             om = {(r['cell'], r['side']): r for r in o['rows']}
@@ -535,6 +539,8 @@ def main():
     ap.add_argument('--port', type=int, default=29940)
     ap.add_argument('--device', default=None)
     ap.add_argument('--report-only', action='store_true', help='the tables of the JSON files already in --out')
+    ap.add_argument('--mp2', action='store_true', help='parity and feel on the replication v2 (-mp2 for the host, its '
+                    'instance and the joined client); parity adds the mirror diff and the sound census')
     # parity
     ap.add_argument('--levels', default=None, help='parity: Level or Level:mode, comma separated')
     ap.add_argument('--points', dest='route_points', type=int, default=4, help='parity: the points of a route at most')

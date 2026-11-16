@@ -21,6 +21,7 @@
 #include "scrap/scrapmain.h"
 #include "scrap/timer.h"
 #include "scrap/vehicleentity.h"
+#include "scrap/viewers.h"
 #include "scrap/staticinit.h"
 
 #define CAIVEHICLEGROUP_VFTABLE (&cAIVehicleGroup_vftable)
@@ -1918,9 +1919,16 @@ static void cAIVehicleGroup_Free(cAIEntityGroup *base) {
 }
 
 /* the time since ResetRepos reached MinTimeReposAI */
+/* not in the original: the repositionings since reposTime; the instance places for each leader of its viewers
+ * (include/scrap/viewers.h) as many in MinTimeReposAI as single player places for its camera */
+static int g_ReposDone;
+
 byte cAIVehicleGroup_ReposReady(cAIVehicleGroup *self) {
 	float d = Timer_GetTime(&g_pWorld->timer) - self->reposTime;
 
+	if (Viewers_Server() && g_ReposDone < Viewers_Leaders()) {
+		return 1;
+	}
 	return d >= g_MinTimeReposAI;
 }
 
@@ -1973,7 +1981,14 @@ static void cAIVehicleGroup_FindElevators(cAIVehicleGroup *self) {
 }
 
 void cAIVehicleGroup_ResetRepos(cAIVehicleGroup *self) {
-	self->reposTime = Timer_GetTime(&g_pWorld->timer);
+	float now = Timer_GetTime(&g_pWorld->timer);
+
+	if (Viewers_Server() && now - self->reposTime < g_MinTimeReposAI) {
+		g_ReposDone++;
+		return;
+	}
+	g_ReposDone = 1;
+	self->reposTime = now;
 }
 
 /* the vtable of cAIVehicleGroup */

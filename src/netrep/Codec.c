@@ -190,6 +190,9 @@ uint32_t NetRep_Diff(const NetRepState *a, const NetRepState *b) {
 	if (a->weapon != b->weapon) {
 		m |= NETREP_F_WEAP;
 	}
+	if (memcmp(a->x, b->x, sizeof(a->x))) {
+		m |= NETREP_F_X;
+	}
 	return m;
 }
 
@@ -235,6 +238,18 @@ void NetRep_WriteFields(NetRepBuf *w, const NetRepState *base, const NetRepState
 	}
 	if (mask & NETREP_F_WEAP) {
 		NetRep_PutU8(w, s->weapon);
+	}
+	if (mask & NETREP_F_X) {
+		uint32_t xm = 0;
+		for (int i = 0; i < NETREP_X; i++) {
+			xm |= (uint32_t)(s->x[i] != base->x[i]) << i;
+		}
+		NetRep_PutVar(w, xm);
+		for (int i = 0; i < NETREP_X; i++) {
+			if (xm & (1u << i)) {
+				NetRep_PutSVar(w, Rep_Sub(s->x[i], base->x[i]));
+			}
+		}
 	}
 }
 
@@ -293,6 +308,17 @@ int NetRep_ReadFields(NetRepReader *r, const NetRepState *base, NetRepState *out
 	}
 	if (mask & NETREP_F_WEAP) {
 		s.weapon = (uint8_t)NetRep_GetU8(r);
+	}
+	if (mask & NETREP_F_X) {
+		uint32_t xm = NetRep_GetVar(r);
+		if (xm >> NETREP_X) {
+			return 0;
+		}
+		for (int i = 0; i < NETREP_X; i++) {
+			if (xm & (1u << i)) {
+				s.x[i] = Rep_Add(base->x[i], NetRep_GetSVar(r));
+			}
+		}
 	}
 	if (r->bad) {
 		return 0;
@@ -567,9 +593,6 @@ int NetRep_WriteAckInput(uint8_t *buf, int cap, uint16_t newest, uint32_t bits, 
 		NetRep_PutU16(&w, in[i].buttons);
 		NetRep_PutU8(&w, in[i].weapon);
 		NetRep_PutU16(&w, in[i].slot);
-		for (int k = 0; (in[i].buttons & NETREP_IN_BUMP) && k < 6; k++) {
-			NetRep_PutSVar(&w, in[i].bump[k]);
-		}
 	}
 	return w.bad ? 0 : size + w.size;
 }
@@ -614,9 +637,6 @@ int NetRep_ReadAckInput(const uint8_t *data, int size, uint16_t *newest, uint32_
 		x.buttons = (uint16_t)NetRep_GetU16(&r);
 		x.weapon = (uint8_t)NetRep_GetU8(&r);
 		x.slot = (uint16_t)NetRep_GetU16(&r);
-		for (int k = 0; k < 6; k++) {
-			x.bump[k] = x.buttons & NETREP_IN_BUMP ? NetRep_GetSVar(&r) : 0;
-		}
 		if (r.bad) {
 			return 0;
 		}

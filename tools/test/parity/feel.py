@@ -229,15 +229,17 @@ def run_side(a, side):
         env['SCRAP_PLAYLOG'] = os.path.join(a.scratch, 'play-%s.csv' % side)
     port = a.port
     hostg = None
+    v2 = ['-mp2'] if a.mp2 else []
     if side == 'sp':
         g = parity.Game(a, 'fs', ['-imap:Levels/' + a.level], env)
     elif side == 'host':
-        g = parity.Game(a, 'fh', ['-host:' + a.level, '-port:%d' % port, '-mode:freeroam', '-name:Host'], env)
+        g = parity.Game(a, 'fh', ['-host:' + a.level, '-port:%d' % port, '-mode:freeroam', '-name:Host'] + v2, env)
     elif side == 'menuhost':
         g = parity.Game(a, 'fm', [], env)
     else:
-        hostg = parity.Game(a, 'fo', ['-host:' + a.level, '-port:%d' % port, '-mode:freeroam', '-name:Host'], dict(a.net))
-        g = parity.Game(a, 'fj', ['-join:127.0.0.1', '-port:%d' % port, '-name:Join'], env)
+        hostg = parity.Game(a, 'fo', ['-host:' + a.level, '-port:%d' % port, '-mode:freeroam', '-name:Host'] + v2,
+                            dict(a.net))
+        g = parity.Game(a, 'fj', ['-join:127.0.0.1', '-port:%d' % port, '-name:Join'] + v2, env)
     inst_dir = hostg or g
     try:
         if hostg:
@@ -522,6 +524,7 @@ def main():
     ap.add_argument('--loss', type=float, default=0.0, help='percent (SCRAP_NET2_LOSS)')
     ap.add_argument('--cell', default='', help='a name added to the JSON files of the sides (<side>-<cell>.json)')
     ap.add_argument('--no-boost', dest='boost', action='store_false', help='flights without the boost button')
+    ap.add_argument('--mp2', action='store_true', help='the multiplayer sides on the replication v2 (-mp2)')
     ap.add_argument('--fly-from', dest='fly_from_json', default=None,
                     help='the JSON of an earlier side (single player): its flight start for every flight of this run')
     ap.add_argument('--report-only', action='store_true')

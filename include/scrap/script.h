@@ -421,6 +421,9 @@ extern const portFn_t g_MercenaryLMethods[];
  * (src/game/Script/Bureaucracy.c) */
 extern const portFn_t g_InMapMethods[];
 extern const portFn_t g_BureaucracyMethods[];
+/* the classes of the desks of the functionaries, as Bureaucracy.Init makes them, without the desks (a -mp2 client's
+ * level start, include/scrap/initsteps.h): 0 with the error set */
+byte Bureaucracy_InitClasses(void);
 /* the chat of a network game (src/game/Script/Chat.c) and the credits text (src/game/Script/CreditsText.c) */
 extern const portFn_t g_ChatMethods[];
 extern const portFn_t g_CreditsTextMethods[];
@@ -434,6 +437,9 @@ extern const portFn_t g_OutPoliceMethods[];
 extern const portFn_t g_InPoliceMethods[];
 extern const portFn_t g_PhoneCabMethods[];
 extern const portFn_t g_DTritusDesktopMethods[];
+/* the classes of Dtritus' and the journalists' desktops of the level, as DTritusDesktop.Init makes them, without the
+ * desktops (a -mp2 client's level start, include/scrap/initsteps.h): 0 with the error set */
+byte DTritusDesktop_InitClasses(void);
 extern const portFn_t g_MetroMethods[];
 extern const portFn_t g_ChallengeMethods[];
 /* the options of a challenge against foe of the kind type ("Race", "Combat") on the entity ch, with the rewards or
@@ -446,6 +452,9 @@ byte Challenge_SetOptions(const struct nativeVal_s *ch, const struct nativeVal_s
 extern const portFn_t g_AlarmMethods[];
 extern const portFn_t g_NewsPanelMethods[];
 extern const portFn_t g_DoorsMethods[];
+/* the classes of the doors at the DM_Door_ dummies, as Doors.Init makes them, without the doors (the definitions of a
+ * -mp2 client's level start, include/scrap/initsteps.h): 0 with the error set */
+byte Doors_InitClasses(void);
 extern const portFn_t g_ElevatorMethods[];
 extern const portFn_t g_TeleportMethods[];
 extern const portFn_t g_MisItemsMethods[];

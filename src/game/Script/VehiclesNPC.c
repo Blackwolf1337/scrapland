@@ -19,6 +19,7 @@
  */
 #include <string.h>
 
+#include "scrap/initsteps.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -446,8 +447,9 @@ static byte Npc_InitN(void) {
 		return 0;
 	}
 	int u = LvN_GTrue(NPC, "UseMercs");
-	if (u <= 0) {
-		return u == 0;
+	/* a -mp2 client's split start (include/scrap/initsteps.h): the mercenaries are the server's */
+	if (u <= 0 || InitSteps_Client()) {
+		return u >= 0;
 	}
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *map = Mode_V(&t), *deals = Mode_V(&t), *time = Mode_V(&t), *name = Mode_V(&t);

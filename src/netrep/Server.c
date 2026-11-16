@@ -15,7 +15,7 @@
 
 #define REP_MAX_CLIENTS 1024
 #define REP_MSG_RECS (NETREP_MSG_MAX / 3)	/* a record is at least 3 bytes */
-#define REP_REC_MAX (32 + NETREP_LOOK_MAX + 3 * 5 * 3 + 2 * 5 * 3)
+#define REP_REC_MAX (32 + NETREP_LOOK_MAX + 3 * 5 * 3 + 2 * 5 * 3 + 5 + NETREP_X * 5)
 
 typedef struct RepHist {
 	uint32_t snap, tick;
@@ -60,6 +60,8 @@ struct NetRepClient {
 	float accum[NETREP_MAX_ENTS];
 	uint8_t lookKnown[NETREP_MAX_LOOKS / 8];
 	uint16_t lookMsg[NETREP_MAX_LOOKS];	/* the message of this build that carries the string, + 1 */
+	uint16_t created[NETREP_MAX_ENTS];	/* the creates of the last build */
+	int ncreated;
 	NetRepClientStats st;
 };
 
@@ -71,6 +73,8 @@ struct NetRepServer {
 	RepSlot slot[NETREP_MAX_ENTS];
 	RepHist hist[NETREP_MAX_ENTS][NETREP_HIST];
 	NetRepGrid grid;
+	uint16_t level[NETREP_MAX_ENTS];	/* the slots of the snapshot set with NETREP_SET_LEVEL */
+	int nlevel;
 	int numLooks;
 	char looks[NETREP_MAX_LOOKS][NETREP_LOOK_MAX + 1];
 	uint32_t lookHash[NETREP_MAX_LOOKS];
@@ -132,17 +136,22 @@ static int Rep_Exists(const NetRepClient *c, int slot) {
 	return c->lastSent[slot] > c->removeAck[slot];
 }
 
+int NetRepSrv_SlotFree(const NetRepServer *s, int slot) {
+	if (slot < 0 || slot >= NETREP_MAX_ENTS || (s->slot[slot].liveSnap && s->slot[slot].liveSnap + 1 >= s->snap)) {
+		return 0;
+	}
+	for (int i = 0; i < s->numClients; i++) {
+		if (Rep_Exists(s->clients[i], slot)) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
 int NetRepSrv_FreeSlot(const NetRepServer *s) {
 	for (int k = 0; k < NETREP_MAX_ENTS; k++) {
 		int slot = (s->cursor + k) % NETREP_MAX_ENTS;
-		if (s->slot[slot].liveSnap && s->slot[slot].liveSnap + 1 >= s->snap) {
-			continue;
-		}
-		int held = 0;
-		for (int i = 0; i < s->numClients && !held; i++) {
-			held = Rep_Exists(s->clients[i], slot);
-		}
-		if (!held) {
+		if (NetRepSrv_SlotFree(s, slot)) {
 			((NetRepServer *)s)->cursor = (slot + 1) % NETREP_MAX_ENTS;
 			return slot;
 		}
@@ -154,11 +163,16 @@ uint32_t NetRepSrv_Begin(NetRepServer *s, uint32_t tick) {
 	s->snap++;
 	s->tick = tick;
 	s->live = 0;
+	s->nlevel = 0;
 	NetRepGrid_Clear(&s->grid, NETREP_CELL);
 	return s->snap;
 }
 
 void NetRepSrv_Set(NetRepServer *s, int slot, int kind, int look, const NetRepState *st) {
+	NetRepSrv_SetEx(s, slot, kind, look, st, 0);
+}
+
+void NetRepSrv_SetEx(NetRepServer *s, int slot, int kind, int look, const NetRepState *st, int flags) {
 	if (slot < 0 || slot >= NETREP_MAX_ENTS || look < 0) {
 		return;
 	}
@@ -173,7 +187,11 @@ void NetRepSrv_Set(NetRepServer *s, int slot, int kind, int look, const NetRepSt
 	h->snap = s->snap;
 	h->tick = s->tick;
 	h->st = *st;
-	NetRepGrid_Add(&s->grid, slot, e->x, e->z);
+	if (flags & NETREP_SET_LEVEL) {
+		s->level[s->nlevel++] = (uint16_t)slot;
+	} else {
+		NetRepGrid_Add(&s->grid, slot, e->x, e->z);
+	}
 	if (slot >= s->maxSlot) {
 		s->maxSlot = slot + 1;
 	}
@@ -343,6 +361,7 @@ static void Rep_MsgEnd(NetRepClient *c, NetRepBuf *w) {
 }
 
 int NetRepSrv_Build(NetRepServer *s, NetRepClient *c, uint8_t msgs[][NETREP_MSG_MAX], int *sizes, int max) {
+	c->ncreated = 0;
 	int64_t per = (int64_t)c->rate / NETREP_SNAP_HZ;
 	c->tokens += per;
 	if (c->tokens > 2 * per) {
@@ -355,10 +374,11 @@ int NetRepSrv_Build(NetRepServer *s, NetRepClient *c, uint8_t msgs[][NETREP_MSG_
 	float keep = c->radius * NETREP_KEEP;
 	int nc = 0;
 
-	/* the interest: creates and deltas */
-	int nq = NetRepGrid_Query(&s->grid, c->view[0], c->view[2], keep, s->query, NETREP_MAX_ENTS);
+	/* the interest: creates and deltas (the grid's within the radius, the level's all) */
+	int nq = NetRepGrid_Query(&s->grid, c->view[0], c->view[2], keep, s->query, NETREP_MAX_ENTS - s->nlevel);
+	memcpy(s->query + nq, s->level, (size_t)s->nlevel * sizeof(s->level[0]));
 	int inInterest = 0;
-	for (int i = 0; i < nq; i++) {
+	for (int i = 0; i < nq + s->nlevel; i++) {
 		int slot = s->query[i];
 		const RepSlot *e = &s->slot[slot];
 		if (e->liveSnap != snap) {
@@ -366,7 +386,7 @@ int NetRepSrv_Build(NetRepServer *s, NetRepClient *c, uint8_t msgs[][NETREP_MSG_
 		}
 		float dx = e->x - c->view[0], dy = e->y - c->view[1], dz = e->z - c->view[2];
 		float d = sqrtf(dx * dx + dy * dy + dz * dz);
-		if (d > (Rep_Exists(c, slot) ? keep : c->radius)) {
+		if (i < nq && d > (Rep_Exists(c, slot) ? keep : c->radius)) {
 			continue;
 		}
 		c->mark[slot] = snap;
@@ -464,6 +484,7 @@ int NetRepSrv_Build(NetRepServer *s, NetRepClient *c, uint8_t msgs[][NETREP_MSG_
 		case NETREP_OP_CREATE:
 			c->st.creates++;
 			c->lastSent[k->slot] = snap;
+			c->created[c->ncreated++] = k->slot;
 			break;
 		case NETREP_OP_FULL:
 			c->st.fulls++;
@@ -505,6 +526,11 @@ int NetRepSrv_Build(NetRepServer *s, NetRepClient *c, uint8_t msgs[][NETREP_MSG_
 
 const NetRepClientStats *NetRepSrv_Stats(const NetRepClient *c) {
 	return &c->st;
+}
+
+int NetRepSrv_Created(const NetRepClient *c, const uint16_t **slots) {
+	*slots = c->created;
+	return c->ncreated;
 }
 
 void NetRepSrv_SetOwn(NetRepClient *c, int slot) {

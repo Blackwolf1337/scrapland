@@ -2,6 +2,7 @@
  * Actions/ActCtrl.cpp of the game: the action controller of an entity (cActCtrl), see include/scrap/actions.h.
  */
 #include <float.h>
+#include <math.h>
 #include <string.h>
 
 #include "scrap/actions.h"
@@ -27,6 +28,10 @@ static int Action_Anim(const cAction *a) {
 }
 
 /* the end of the action of the layer, -1 without one */
+#define NETDRIVE_CATCHUP 0.5f
+#define NETDRIVE_MAX_RATE 4.0f
+#define NETDRIVE_RESTART 0.5f
+
 static float Layer_End(const cActLayer *l) {
 	return l->action ? l->action->anmTotalTime : -1.0f;
 }
@@ -472,8 +477,8 @@ static void cActCtrl_NetEvents(cActCtrl *self, int chan, float t, actEventFilter
 	}
 }
 
-void cActCtrl_NetDrive(cActCtrl *self, const uint16_t *act, const float *rate, int layers, float dt,
-	actEventFilter_t fire) {
+void cActCtrl_NetDrive(cActCtrl *self, const uint16_t *act, const float *rate, const float *target, int layers,
+	float dt, actEventFilter_t fire) {
 	CGameModel *m = Ctrl_Model(self);
 	float before[ACT_LAYERS] = { 0 };
 
@@ -483,7 +488,10 @@ void cActCtrl_NetDrive(cActCtrl *self, const uint16_t *act, const float *rate, i
 		for (int i = 1; a && i < act[k]; i++) {
 			a = a->next;
 		}
-		if (a != l->action) {
+		/* the same action that is no loop started again on the network (its time far back): started again here */
+		byte again = a && a == l->action && target && target[k] >= 0.0f && !a->isLoop &&
+			target[k] + NETDRIVE_RESTART < l->time;
+		if (a != l->action || again) {
 			if (!a) {
 				if (k > 0) {
 					CGameModel_StopAnim(m, k);
@@ -500,8 +508,25 @@ void cActCtrl_NetDrive(cActCtrl *self, const uint16_t *act, const float *rate, i
 			CGameModel_SetAnim(m, Action_Anim(a), k, 0);
 		}
 		before[k] = l->time;
-		if (l->on && rate[k] > 0.0f) {
-			CGameModel_SetAnimFactor(m, Action_Anim(l->action), rate[k]);
+		float r = rate[k];
+		if (target && l->on && target[k] >= 0.0f) {
+			/* towards the time of the network: the difference (the shorter way round a loop) closed in about
+			 * NETDRIVE_CATCHUP s */
+			float end = Layer_End(l), err = target[k] - l->time;
+			if (l->action->isLoop && end > 0.0f) {
+				err = fmodf(err, end);
+				err = err > end * 0.5f ? err - end : err < -end * 0.5f ? err + end : err;
+			}
+			float base = r >= 0.0f ? r : 1.0f;
+			r = base + err / NETDRIVE_CATCHUP;
+			if (r < 0.0f && l->action->isLoop && end > 0.0f) {
+				/* behind a stopped or slower loop only by going round: forward */
+				r = base + (err + end) / NETDRIVE_CATCHUP;
+			}
+			r = r < 0.0f ? 0.0f : r > NETDRIVE_MAX_RATE ? NETDRIVE_MAX_RATE : r;
+		}
+		if (l->on && (r > 0.0f || (target && r == 0.0f))) {
+			CGameModel_SetAnimFactor(m, Action_Anim(l->action), r);
 		}
 	}
 	CGameModel_RootMotion(m, dt, NULL, NULL);

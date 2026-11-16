@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "scrap/repent.h"
 #include "scrap/arena.h"
 #include "scrap/app.h"
 #include "scrap/console.h"
@@ -167,6 +168,11 @@ static void Join_Host(void) {
 		if (join.hostFraglimit > 0) {
 			Str_PrintfQuiet(cfg.instArgs, sizeof(cfg.instArgs), "-fraglimit:%d", join.hostFraglimit);
 		}
+	}
+	/* the replication v2 (include/scrap/repent.h) on the instances too */
+	if (g_Mp2) {
+		size_t n = strlen(cfg.instArgs);
+		Str_PrintfQuiet(cfg.instArgs + n, (int)(sizeof(cfg.instArgs) - n), "%s-mp2", n ? " " : "");
 	}
 	if (join.hostPvp >= 0) {
 		cfg.pvp = join.hostPvp;

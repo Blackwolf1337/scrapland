@@ -15,6 +15,7 @@
 #include "scrap/cstring.h"
 #include "scrap/hashtable.h"
 #include "scrap/logic.h"
+#include "scrap/repent.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/world.h"
 
@@ -73,6 +74,7 @@ cEntity *cEntity_ctor(void *mem, const char *name, float x, float y, float z) {
 	self->savedMask = 0;
 	self->mask = 0;
 	self->active = 1;
+	self->netSlot = 0;
 	self->listNode.node.data = self;
 	self->lLogic = NULL;
 	self->ai = NULL;
@@ -99,6 +101,9 @@ void EntityDList_dtor(void *list) {
 
 void cEntity_dtor(cEntity *self) {
 	self->vftable = CENTITY_VFTABLE;
+	if (self->netSlot) {
+		RepEnt_Gone(self);
+	}
 	if (self->lLogic) {
 		LocalLogic_Free(self->lLogic);
 	}

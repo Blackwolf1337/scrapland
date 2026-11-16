@@ -21,6 +21,12 @@ did not run.
 
   parity.py [--levels DownTown,Outskirts,MCA:dm,...] [--port 29940] [--build build-linux64] [--out DIR]
             [--scratch DIR] [--points 4] [--radius 30000] [--settle 25] [--settle-point 12] [--no-join] [--no-shots]
+            [--mp2]
+
+--mp2: the replication v2 (-mp2 for the host, its instance and the joined client, include/scrap/repent.h); at the
+end of each level's route also the mirror diff (mirror.py: the declared state of every replicated entity, instance
+against the joined client) and the positional sound census (census.py, joined client against single player and the
+instance) at the last point, as the columns mirror and census.
 
 Default levels: every level a free world hosts (the city and the listed places of data/places/places.def, the coop
 story's levels among them) in free roam, and the PvP maps of the original in --pvp-mode (dm). Network only on
@@ -239,8 +245,15 @@ def dist(a, b):
 def label_proxies(ents, inst):
     """a proxy takes the entity list and name of the instance's entity it stands for: same model, nearest (the proxy
     is drawn ~100 ms behind)"""
+    byname = {s['name']: s for s in inst}
     for e in ents:
         if not e['proxy']:
+            continue
+        # a replica of the replication v2 has the instance's name
+        same = byname.get(e['name'])
+        if same and same['cls'] == e['cls']:
+            e['local'] = e['name']
+            e['list'], e['srv'] = same['list'], same['name']
             continue
         best, bd = None, 6000.0
         for s in inst:
@@ -518,13 +531,14 @@ def run_level(a, spec, routes=None):
     level, _, mode = spec.partition(':')
     mode = mode or 'freeroam'
     port = a.port
-    res = {'level': level, 'mode': mode, 'tag': tag_of(spec), 'radius': a.radius, 'points': []}
-    hargs = ['-host:' + level, '-port:%d' % port, '-mode:' + mode, '-name:Host']
+    res = {'level': level, 'mode': mode, 'tag': tag_of(spec), 'radius': a.radius, 'points': [], 'mp2': a.mp2}
+    v2 = ['-mp2'] if a.mp2 else []
+    hargs = ['-host:' + level, '-port:%d' % port, '-mode:' + mode, '-name:Host'] + v2
     if mode != 'freeroam':
         hargs.append('-maps:' + level)
     host = Game(a, 'ph', hargs, a.env)
     sp = Game(a, 'ps', ['-imap:Levels/' + level])
-    join = Game(a, 'pj', ['-join:127.0.0.1', '-port:%d' % port, '-name:Join'], a.env) if a.join else None
+    join = Game(a, 'pj', ['-join:127.0.0.1', '-port:%d' % port, '-name:Join'] + v2, a.env) if a.join else None
     games = [g for g in (host, sp, join) if g]
     try:
         host.start()
@@ -591,11 +605,49 @@ def run_level(a, spec, routes=None):
                 if side in pt:
                     del pt[side]['ents']
             res['points'].append(pt)
+        if a.mp2 and join:
+            res.update(mirror_census(a, res['tag'], level, host, sp, join))
         res['audit'] = audit(host, level, 'json')
     finally:
         for g in games:
             g.stop()
     return res
+
+
+def mirror_census(a, tag, level, host, sp, join):
+    """the -mp2 checks at the route's last point: mirror.py (instance against the joined client) and census.py (the
+    joined client's sound sources against single player and the instance); their JSON next to the level's"""
+    out = {}
+    for name, cmd in (('mirror', ['mirror.py', '--game', join.dir, '--instance', host.dir, '--level', level]),
+                      ('census', ['census.py', '--client', join.dir, '--instance', host.dir, '--level', level,
+                                  '--sp', sp.dir])):
+        path = os.path.join(a.out, '%s-%s.json' % (tag, name))
+        if os.path.exists(path):
+            os.remove(path)
+        try:
+            r = subprocess.run([sys.executable, os.path.join(HERE, cmd[0])] + cmd[1:] + ['--json', path],
+                               capture_output=True, text=True, timeout=600)
+            text = (r.stdout or '').strip().splitlines()
+            out[name + '_line'] = text[0] if text else ''
+            out[name] = json.load(open(path)) if os.path.exists(path) else {'error': 'exit %d' % r.returncode}
+        except (subprocess.TimeoutExpired, OSError, ValueError) as ex:
+            out[name] = {'error': str(ex)}
+    return out
+
+
+def mirror_total(res):
+    """the differences of the mirror diff (None without one)"""
+    m = res.get('mirror')
+    if not isinstance(m, dict) or 'error' in m:
+        return None
+    return sum(m.get('counts', {}).values())
+
+
+def census_total(res):
+    c = res.get('census')
+    if not isinstance(c, dict) or 'error' in c:
+        return None
+    return c.get('gaps')
 
 
 def tag_of(spec):
@@ -719,7 +771,8 @@ def summary(res):
     out = {'tag': res.get('tag', res.get('level')), 'level': res.get('level'), 'mode': res.get('mode', 'freeroam'),
            'points': 0, 'entity': 0, 'radar': 0, 'hud': 0, 'sound': 0, 'fx': 0, 'kinds': [],
            'audit': audit_total(res.get('audit')), 'secs': res.get('secs'),
-           'audit_totals': (res.get('audit') or {}).get('totals') if isinstance(res.get('audit'), dict) else None}
+           'audit_totals': (res.get('audit') or {}).get('totals') if isinstance(res.get('audit'), dict) else None,
+           'mirror': mirror_total(res), 'census': census_total(res), 'mp2': bool(res.get('mp2'))}
     if 'error' in res:
         out['error'] = res['error']
     kinds = set()
@@ -743,27 +796,38 @@ def summary(res):
 SUMMARY_COLS = ('entity', 'radar', 'hud', 'sound', 'fx')
 
 
+def gap_total(s):
+    """the gaps of a level summary: its columns, with -mp2 also the mirror differences and the census gaps"""
+    return sum(s[c] for c in SUMMARY_COLS) + sum(s.get(k) or 0 for k in ('mirror', 'census'))
+
+
 def summary_table(sums):
     """the markdown table of the level summaries"""
+    mp2 = any(s.get('mp2') for s in sums)
     lines = ['| level | mode | points | entity gaps | radar gaps | HUD gaps | sound gaps | particle gaps | audit | '
-             'player reads | entity gap kinds |', '|---|---|---|---|---|---|---|---|---|---|---|']
+             'player reads |%s entity gap kinds |' % (' mirror | census |' if mp2 else ''),
+             '|---|---|---|---|---|---|---|---|---|---|%s---|' % ('---|---|' if mp2 else '')]
     tot = {c: 0 for c in SUMMARY_COLS}
     for s in sums:
         if 'error' in s:
-            lines.append('| %s | %s | error: %s | | | | | | | | |' % (s['level'], s['mode'], s['error']))
+            lines.append('| %s | %s | error: %s | | | | | | | | |%s' % (s['level'], s['mode'], s['error'],
+                                                                     ' | |' if mp2 else ''))
             continue
         for c in SUMMARY_COLS:
             tot[c] += s[c]
         pr = (s.get('audit_totals') or {}).get('player') if s.get('audit_totals') is not None else None
-        lines.append('| %s | %s | %d | %d | %d | %d | %d | %d | %s | %s | %s |' % (
+        lines.append('| %s | %s | %d | %d | %d | %d | %d | %d | %s | %s |%s %s |' % (
             s['level'], s['mode'], s['points'], s['entity'], s['radar'], s['hud'], s['sound'], s['fx'],
             'n/a' if s['audit'] is None else s['audit'], 'n/a' if s.get('audit_totals') is None else pr or 0,
+            (' %s | %s |' % tuple('n/a' if s.get(k) is None else s[k] for k in ('mirror', 'census'))) if mp2 else '',
             ', '.join(s['kinds'][:6]) +
             (' ...' if len(s['kinds']) > 6 else '')))
     au = [s['audit'] for s in sums if s.get('audit') is not None]
-    lines.append('| all | | %d | %d | %d | %d | %d | %d | %s | | |' % (
+    lines.append('| all | | %d | %d | %d | %d | %d | %d | %s | |%s |' % (
         sum(s['points'] for s in sums if 'error' not in s), tot['entity'], tot['radar'], tot['hud'], tot['sound'],
-        tot['fx'], sum(au) if au else 'n/a'))
+        tot['fx'], sum(au) if au else 'n/a', (' %s | %s |' % tuple(
+            sum(s[k] for s in sums if s.get(k) is not None) if any(s.get(k) is not None for s in sums) else 'n/a'
+            for k in ('mirror', 'census'))) if mp2 else ''))
     return lines
 
 
@@ -849,6 +913,9 @@ def report(results, out):
                                                                           for r in rows[:12])]
             else:
                 lines += ['', 'Audit: `%s`' % json.dumps(res['audit'], sort_keys=True)[:2000]]
+        for k in ('mirror_line', 'census_line'):
+            if res.get(k):
+                lines += ['', res[k]]
         for pt in points_of(res):
             if 'sp' not in pt:
                 continue
@@ -880,6 +947,8 @@ def main():
     ap.add_argument('--device', default=None, help='Vulkan device (default the RTX with >= 3000 MiB free, else the AMD)')
     ap.add_argument('--no-join', dest='join', action='store_false')
     ap.add_argument('--no-shots', dest='shots', action='store_false')
+    ap.add_argument('--mp2', action='store_true', help='the replication v2 (-mp2 for the host, its instance and the '
+                    'joined client, include/scrap/repent.h), with the mirror diff and the sound census')
     ap.add_argument('--report-only', action='store_true', help='the report of the JSON files in --out')
     a = ap.parse_args()
     a.build = os.path.abspath(a.build)
@@ -912,7 +981,7 @@ def main():
     sums = report(results, os.path.join(a.out, 'report.md'))
     print('\n'.join(summary_table(sums)))
     errors = sum(1 for s in sums if 'error' in s) + len(specs) - len(sums)
-    total = sum(s[c] for s in sums if 'error' not in s for c in SUMMARY_COLS)
+    total = sum(gap_total(s) for s in sums if 'error' not in s)
     print('report %s: %d gaps, %d levels with errors' % (os.path.join(a.out, 'report.md'), total, errors))
     sys.exit(2 if errors else 1 if total else 0)
 

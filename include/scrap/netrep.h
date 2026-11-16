@@ -48,7 +48,8 @@
  * delta the age of its base in snapshots (varint), for a create kind u8 and look varint (+ u8 length and the text with
  * NETREP_REC_LOOK), then the field mask (varint) and the fields of the mask (delta: against the base, full: against
  * zero): pos 3 svarints, ang 3 svarints (16 bit wrap), vel 3 svarints, dt varint, life svarint, flags u8,
- * ctrl 2 x i8, act0 and act1 varint action + varint time, view 2 svarints (16 bit wrap), weapon u8.
+ * ctrl 2 x i8, act0 and act1 varint action + varint time, view 2 svarints (16 bit wrap), weapon u8, the class block:
+ * a mask of its values (varint, bit i for x[i]) and those values (svarints, delta: against the base).
  *   'E' shots, server to client, unreliable, with a snapshot: tick u32, count u8, then each shot (NetRepShot): shooter
  *       slot varint, weapon u8, shots u8, target slot u16 (NETREP_NO_SLOT: a point), the point 3 svarints (positions'
  *       quantum), the point of the shot before 3 svarints (against the point) (stage M4a)
@@ -61,7 +62,7 @@
 #define NETREP_VERSION 4
 #define NETREP_TICK_HZ 30
 #define NETREP_SNAP_HZ 20
-#define NETREP_MAX_ENTS 2048		/* slots */
+#define NETREP_MAX_ENTS 8192		/* slots */
 #define NETREP_MAX_LOOKS 1024
 #define NETREP_LOOK_MAX 200			/* bytes of a look string without its zero */
 #define NETREP_HIST 32				/* snapshots of states kept (server) and of bases (client) */
@@ -72,6 +73,7 @@
 #define NETREP_MAX_MSGS 8			/* per client and snapshot */
 #define NETREP_MSG_OVERHEAD 40		/* bytes of a Net2 packet around a message: header, tag, chunk, acks */
 #define NETREP_LAYERS 2				/* action layers of a character */
+#define NETREP_X 24					/* values of the class block (NetRepState.x) */
 
 #define NETREP_POS_SCALE 4.0f		/* steps per unit (cm) */
 #define NETREP_ANG_SCALE 10430.378f	/* steps per radian: 65536 a turn */
@@ -109,7 +111,8 @@
 #define NETREP_F_ACT1 0x100
 #define NETREP_F_VIEW 0x200
 #define NETREP_F_WEAP 0x400
-#define NETREP_F_ALL 0x7ff
+#define NETREP_F_X 0x800			/* the class block */
+#define NETREP_F_ALL 0xfff
 
 /* bits of NetRepState.flags */
 #define NETREP_FL_ACTIVE 0x01
@@ -148,6 +151,8 @@ typedef struct NetRepState {
 	uint16_t act[NETREP_LAYERS];	/* character: action of the layer + 1, 0 none */
 	uint32_t actTime[NETREP_LAYERS];	/* ms in the action */
 	uint8_t weapon;					/* ship: the weapon in use */
+	int32_t x[NETREP_X];			/* the class block: values whose meaning the kind gives (the replication v2 of
+									   include/scrap/repent.h; all 0 in the first replication) */
 } NetRepState;
 
 /* byte writer and reader; a writer that ran out of room or a reader that ran past the end sets bad */
@@ -239,9 +244,15 @@ void NetRepSrv_Destroy(NetRepServer *s);
 int NetRepSrv_Look(NetRepServer *s, const char *look);
 /* a slot that no entity and no client holds, -1 when there is none */
 int NetRepSrv_FreeSlot(const NetRepServer *s);
+/* the slot was not in the last snapshot and no client holds it */
+int NetRepSrv_SlotFree(const NetRepServer *s, int slot);
 /* a new snapshot of tick: then NetRepSrv_Set for each live entity, then NetRepSrv_End */
 uint32_t NetRepSrv_Begin(NetRepServer *s, uint32_t tick);
 void NetRepSrv_Set(NetRepServer *s, int slot, int kind, int look, const NetRepState *st);
+/* the same with flags: NETREP_SET_LEVEL puts the entity in the interest of every client (the level's static things),
+ * not in the grid */
+#define NETREP_SET_LEVEL 0x01
+void NetRepSrv_SetEx(NetRepServer *s, int slot, int kind, int look, const NetRepState *st, int flags);
 void NetRepSrv_End(NetRepServer *s);
 int NetRepSrv_Live(const NetRepServer *s);	/* entities of the last snapshot */
 int NetRepSrv_NumLooks(const NetRepServer *s);
@@ -255,6 +266,9 @@ void NetRepSrv_Ack(NetRepServer *s, NetRepClient *c, uint16_t newest, uint32_t b
 /* the messages of the snapshot for the client into msgs (each NETREP_MSG_MAX), their sizes in sizes; the count */
 int NetRepSrv_Build(NetRepServer *s, NetRepClient *c, uint8_t msgs[][NETREP_MSG_MAX], int *sizes, int max);
 const NetRepClientStats *NetRepSrv_Stats(const NetRepClient *c);
+/* the slots the last NetRepSrv_Build of the client wrote a create record for (also the creates sent again after a
+ * loss); their count */
+int NetRepSrv_Created(const NetRepClient *c, const uint16_t **slots);
 /* the client's own entity (a player's): sent first in every snapshot it changed in; NETREP_NO_SLOT none */
 void NetRepSrv_SetOwn(NetRepClient *c, int slot);
 /* the position of slot at server time t (s) from the snapshots kept, between the two samples around t as the
@@ -334,9 +348,9 @@ int NetRep_ReadAck(const uint8_t *data, int size, uint16_t *newest, uint32_t *bi
 /* ---- input and prediction (stage M3b) ---- */
 
 #define NETREP_INPUT_REDUNDANCY 4	/* inputs per ack message: the newest and the ones of the ticks before */
-/* the bytes of an ack with the most inputs, each with a bump (NetRep_WriteAckInput): the ack 19, the count, tick and
- * shown time 9, per input 16 and six variable-length ints of up to 5 bytes */
-#define NETREP_ACKINPUT_MAX (28 + NETREP_INPUT_REDUNDANCY * (16 + 6 * 5))
+/* the bytes of an ack with the most inputs (NetRep_WriteAckInput): the ack 19, the count, tick and shown time 9, per
+ * input 16 */
+#define NETREP_ACKINPUT_MAX (28 + NETREP_INPUT_REDUNDANCY * 16)
 #define NETREP_INBUF 64				/* ticks of input the server keeps per player */
 #define NETREP_INPUT_AHEAD 32		/* input more ticks ahead of the server than this is dropped */
 #define NETREP_PRED 64				/* ticks of predicted states the client keeps */
@@ -351,8 +365,6 @@ int NetRep_ReadAck(const uint8_t *data, int size, uint16_t *newest, uint32_t *bi
 #define NETREP_IN_BOOST 0x0010		/* ship: boost */
 #define NETREP_IN_SWITCH 0x0020		/* get into the nearest parked ship, out of the ship (on its press) */
 #define NETREP_IN_FULL 0x0040		/* ship: the full thrust (its second accelerate key) */
-#define NETREP_IN_BUMP 0x0080		/* ship: it bumped the client's own rail traffic (Rep_LocalAmbient) in the tick, which
-									   the server does not have: bump is its state after the tick (NetPl_Bump) */
 
 /* the input of one tick: the controls of a character (walk, strafe, jump; the view turn) or a ship (acceleration,
  * strafe, vertical strafe; the turn) */
@@ -365,7 +377,6 @@ typedef struct NetRepInput {
 	uint16_t buttons;
 	uint8_t weapon;
 	uint16_t slot;					/* the own entity's slot it was made for */
-	int32_t bump[6];				/* NETREP_IN_BUMP: the position (NetRep_QPos) and velocity (NetRep_QVel) */
 } NetRepInput;
 
 int8_t NetRep_QMove(float v);		/* -1..1 */
@@ -488,5 +499,53 @@ void NetRepSmooth_Init(NetRepSmooth *s, float halfLife, float snap);
 /* the predicted position went from before to after: the offset keeps the drawn position where it was */
 void NetRepSmooth_Correct(NetRepSmooth *s, const float *before, const float *after);
 void NetRepSmooth_Step(NetRepSmooth *s, float dt);
+
+/* ---- the entity variable journal (the replication v2, include/scrap/repent.h) ----
+ * Per owner (an entity's slot) the last value of each variable set, in the order of the last sets: a variable set
+ * again moves to the end. A replay of the journal in order gives the same values in the same order of last sets. */
+#define NETREP_JNAME 40				/* bytes of a variable's name with its end (longer names are not journaled) */
+#define NETREP_JSTR 128				/* of a text value with its end (longer ones are cut) */
+#define NETREP_JI 1					/* an int */
+#define NETREP_JF 2					/* a double */
+#define NETREP_JV 3					/* three doubles */
+#define NETREP_JS 4					/* a text */
+
+typedef struct NetRepJVal {
+	uint8_t type;					/* NETREP_J* */
+	uint8_t mark;					/* the owner's own flag (not on the wire, not compared) */
+	char name[NETREP_JNAME];
+	union {
+		int32_t i;
+		double f;
+		double v[3];
+		char s[NETREP_JSTR];
+	} u;
+} NetRepJVal;
+
+typedef struct NetRepJournal NetRepJournal;
+
+NetRepJournal *NetRepJ_Create(int owners, int entries);
+void NetRepJ_Destroy(NetRepJournal *j);
+/* the value into the owner's journal (a new name at the end, a known one moved to the end): 1 when the journal
+ * changed (the value, or the order), 0 when it is the newest entry already with that value, -1 when the pool is full
+ * (counted in NetRepJ_Lost); a changed entry is dirty */
+int NetRepJ_Set(NetRepJournal *j, int owner, const NetRepJVal *v);
+void NetRepJ_Clear(NetRepJournal *j, int owner);
+int NetRepJ_Count(const NetRepJournal *j, int owner);
+/* the entries of an owner in order: for (k = NetRepJ_First(j, o); k >= 0; k = NetRepJ_Next(j, k)) */
+int NetRepJ_First(const NetRepJournal *j, int owner);
+int NetRepJ_Next(const NetRepJournal *j, int k);
+const NetRepJVal *NetRepJ_Get(const NetRepJournal *j, int k);
+/* the entry of a name, -1 */
+int NetRepJ_Find(const NetRepJournal *j, int owner, const char *name);
+int NetRepJ_IsDirty(const NetRepJournal *j, int k);
+void NetRepJ_Clean(NetRepJournal *j, int owner);
+int NetRepJ_Used(const NetRepJournal *j);		/* entries in use */
+uint32_t NetRepJ_Lost(const NetRepJournal *j);	/* sets that found the pool full */
+int NetRepJ_Equal(const NetRepJVal *a, const NetRepJVal *b);
+/* a value on the wire: name (u8 length + text), type u8, then an int svarint, a double as u32 low and high word of
+ * its bits, three doubles so, or a text (u8 length + text) */
+void NetRep_PutJVal(NetRepBuf *w, const NetRepJVal *v);
+int NetRep_GetJVal(NetRepReader *r, NetRepJVal *v);	/* 0: bad */
 
 #endif

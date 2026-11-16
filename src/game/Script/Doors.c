@@ -230,11 +230,21 @@ static byte Dr_InitDoorInfo(void) {
 	return edit >= 0 && (!edit || (Mode_Import("ShipEdit") && Dr_PutInfo(&door_editship)));
 }
 
-/* the door of one DM_Door_<class>_<extra> dummy (only: the ElevatorsOnly of Init); 0 with the error */
-static byte Dr_Door(const nativeVal_t *dummy, byte only) {
+/* the class of a door of class name n2 (Door<n2>): the module's CreateDoorClass through its global, then DoorSound */
+static byte Dr_DoorClass(const nativeVal_t *n2) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *made = Mode_V(&t), *cls = Mode_V(&t);
+	return Mode_Done(&t, PORT_OWN(Doors, CreateDoorClass, made, "v", n2) &&
+		(!Native_True(made) || (Mode_Import("DoorSound") && Mode_Cat(&t, cls, 2, Mode_S(&t, "Door"), n2) &&
+		PORT_CALL(DoorSound, SetSlide, NULL, "v", cls))));
+}
+
+/* the door of one DM_Door_<class>_<extra> dummy (only: the ElevatorsOnly of Init; classOnly: its class, no door); 0
+ * with the error */
+static byte Dr_Door(const nativeVal_t *dummy, byte only, byte classOnly) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *d0 = Mode_V(&t), *names = Mode_V(&t), *n2 = Mode_V(&t), *info = Mode_V(&t), *a = Mode_V(&t);
-	nativeVal_t *a4 = Mode_V(&t), *v = Mode_V(&t), *made = Mode_V(&t), *cls = Mode_V(&t), *d1 = Mode_V(&t);
+	nativeVal_t *a4 = Mode_V(&t), *v = Mode_V(&t), *cls = Mode_V(&t), *d1 = Mode_V(&t);
 	nativeVal_t *x = Mode_V(&t), *y = Mode_V(&t), *z = Mode_V(&t), *l = Mode_V(&t), *d2 = Mode_V(&t), *ang = Mode_V(&t);
 	nativeVal_t *ra = Mode_V(&t), *di = Mode_V(&t), *fn = Mode_V(&t), *st = Mode_V(&t);
 	if (!LvN_Item(dummy, 0, d0) || !Native_Split(d0, "_", names) || !LvN_Item(names, 2, n2)) {
@@ -263,13 +273,12 @@ static byte Dr_Door(const nativeVal_t *dummy, byte only) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	/* the module's CreateDoorClass through its global, then DoorSound */
-	if (!PORT_OWN(Doors, CreateDoorClass, made, "v", n2) ||
-		(Native_True(made) && (!Mode_Import("DoorSound") || !Mode_Cat(&t, cls, 2, Mode_S(&t, "Door"), n2) ||
-		!PORT_CALL(DoorSound, SetSlide, NULL, "v", cls)))) {
+	if (!Dr_DoorClass(n2)) {
 		return Mode_Done(&t, 0);
 	}
-	Native_Free(cls);
+	if (classOnly) {
+		return Mode_Done(&t, 1);
+	}
 	if (!LvN_Item(dummy, 1, d1) || !LvN_Item(d1, 0, x) || !LvN_Item(d1, 1, y) || !LvN_Item(d1, 2, z) ||
 		!LvN_Create(d0, x, y, z, "WithLife", l) || !LvN_Item(dummy, 2, d2)) {
 		return Mode_Done(&t, 0);
@@ -303,10 +312,8 @@ static byte Dr_Door(const nativeVal_t *dummy, byte only) {
 		Mode_CallArgs(fn, NULL, args, 2) && LvN_Item(di, 3, st) && (!LvN_EqI(st, 1) || LvN_SetI(l, "MapCollision", 0)));
 }
 
-/* Init(ElevatorsOnly=0): a door at every DM_Door_ dummy (with ElevatorsOnly only the doors closed for the AI, and
- * those without their open state), then Elevator.Init() */
-static byte Dr_Init(const nativeVal_t *onlyArg) {
-	byte only = onlyArg && Native_True(onlyArg);
+/* the doors of the DM_Door_ dummies (Dr_Door) */
+static byte Dr_Doors(byte only, byte classOnly) {
 	if (!PORT_OWN(Doors, InitDoorInfo, NULL, "") || !Mode_Import("string") ||
 		!Mode_DummyStartSeam("DM_Door_*", 1)) {
 		return 0;
@@ -315,19 +322,25 @@ static byte Dr_Init(const nativeVal_t *onlyArg) {
 		nativeVal_t dummy = { 0 }, none;
 		Native_SetNone(&none);
 		int more = Mode_DummyNextSeam(&dummy) ? Mode_Cmp(&dummy, "!=", &none) : -1;
-		byte ok = more > 0 && Dr_Door(&dummy, only);
+		byte ok = more > 0 && Dr_Door(&dummy, only, classOnly);
 		Native_Free(&dummy);
 		if (more <= 0) {
-			if (more < 0) {
-				return 0;
-			}
-			break;
+			return more == 0;
 		}
 		if (!ok) {
 			return 0;
 		}
 	}
-	return Mode_Import("Elevator") && PORT_CALL(Elevator, Init, NULL, "");
+}
+
+/* Init(ElevatorsOnly=0): a door at every DM_Door_ dummy (with ElevatorsOnly only the doors closed for the AI, and
+ * those without their open state), then Elevator.Init() */
+static byte Dr_Init(const nativeVal_t *onlyArg) {
+	return Dr_Doors(onlyArg && Native_True(onlyArg), 0) && Mode_Import("Elevator") && PORT_CALL(Elevator, Init, NULL, "");
+}
+
+byte Doors_InitClasses(void) {
+	return Dr_Doors(0, 1);
 }
 
 /* the entries (the arity errors of the script's functions) */

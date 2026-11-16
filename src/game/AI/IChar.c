@@ -19,6 +19,7 @@
 #include "scrap/players.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapmodel.h"
+#include "scrap/viewers.h"
 #include "scrap/staticinit.h"
 
 #define CAICHAR_VFTABLE (&cAIChar_vftable)
@@ -597,56 +598,28 @@ void cAIChar_CheckActDist(cAI *base) {
 	self->ctrl->act = act;
 }
 
-void AIChar_Viewer(const vec3_t *near, AICharViewer *v) {
-	static const vec3_t fwd = { 0.0f, 0.0f, 1.0f };
-	cWorld *w = g_pWorld;
-
-	v->net = Players_Net();
-	if (v->net) {
-		cEntity *pl = Players_Closest(near);
-		v->has = pl != NULL;
-		if (pl) {
-			v->pos = pl->pos;
-			Players_Forward(pl, &v->look);
-		}
-		return;
-	}
-	v->pos = w->camPos[w->curCam];
-	cEntity *cam = World_FindEntity(cWorld_GetCamName(w, 0));
-	v->has = cam != NULL;
-	if (cam) {
-		Vec3_Rotate(&v->look, &fwd, &((cCamControl *)cam)->cam.rot);
-	}
-}
-
-byte AIChar_ViewerSees(const AICharViewer *v, const vec3_t *p) {
-	if (!v->net) {
+byte AIChar_ViewerSees(const cViewer *v, const vec3_t *p) {
+	if (!Viewers_Server()) {
 		return CNodesWorld_PointSeen(g_NodesWorld, p);
 	}
-	return Players_LineOfSight(&v->pos, p);
+	return Viewers_ViewerSees(v, p, 0.0f);
 }
 
 /* paused: out of view and far from the camera (in PATROL_ZONE not while the camera is near the zone on the same
  * floor), and not in view by InView */
 static byte AIC_PauseWanted(cAIChar *self) {
-	cWorld *w;
 	vec3_t cam, a, b;
 	const vec3_t *p;
 	float dx, dy, dz, d;
 
-	if (Players_SeesModel(Obj_GetModel(self->ent))) {
+	if (Viewers_SeesModel(Obj_GetModel(self->ent))) {
 		return 0;
 	}
-	w = g_pWorld;
-	cam = w->camPos[w->curCam];
-	if (Players_Net()) {
-		AICharViewer v;
-		AIChar_Viewer(AIC_Pos(self->ent, &a), &v);
-		if (!v.has) {
-			return 1;
-		}
-		cam = v.pos;
+	const cViewer *v = Viewers_Near(AIC_Pos(self->ent, &a));
+	if (!v) {
+		return 1;
 	}
+	cam = v->pos;
 	if (self->state == AIC_PATROL_ZONE) {
 		dx = self->base.center.x - cam.x;
 		dy = self->base.center.y - cam.y;
@@ -702,31 +675,23 @@ void cAIChar_CheckRepos(cAI *elem) {
 		return;
 	}
 	while (cSlotController_FireReset(s, &t)) {
-		cWorld *w = g_pWorld;
-		vec3_t cam = w->camPos[w->curCam];
 		CNodesWorld *nw = self->base.flying ? g_NodesWorld : (CNodesWorld *)g_NodesWorld2D;
-		AICharViewer view;
 		vec3_t at;
-
-		AIChar_Viewer(AIC_Pos(self->ent, &at), &view);
-		if (view.net) {
-			if (!view.has) {
-				return;
-			}
-			cam = view.pos;
+		const cViewer *view = Viewers_Near(AIC_Pos(self->ent, &at));
+		if (!view) {
+			return;
 		}
+		vec3_t cam = view->pos;
 
 		if (!NodesWorld_InGrid(nw, &cam)) {
 			return;
 		}
 		if (AIChar_CanRepos(self, self->state) &&
-			!Players_SeesModel(Obj_GetModel(self->ent))) {
+			!Viewers_SeesModel(Obj_GetModel(self->ent))) {
 			vec3_t a, b;
 			const vec3_t *p;
 			float dx, dy, dz, max;
 
-			w = g_pWorld;
-			cam = view.net ? view.pos : w->camPos[w->curCam];
 			p = AIC_Pos(self->ent, &a);
 			dx = p->x - cam.x;
 			dy = p->y - cam.y;
@@ -750,7 +715,6 @@ void *g_SetOriginFunc;
 byte cAIChar_Repos(cAI *elem, float minDist, float maxDist, byte flag) {
 	cAIChar *self = (cAIChar *)elem;
 	vec3_t pos, d, ang, zero, tmp;
-	cWorld *w;
 	byte r = cAICharGroup_FindRepos(g_CharGroup, &pos, self->ent, minDist, maxDist, flag);
 	byte (*origin)(cEntity *e);
 
@@ -760,10 +724,8 @@ byte cAIChar_Repos(cAI *elem, float minDist, float maxDist, byte flag) {
 	AICC_ClearAvoid(self->control);
 	self->base.reposing = 1;
 	Entity_SetPos(self->ent, &pos);
-	w = g_pWorld;
-	AICharViewer view;
-	AIChar_Viewer(&pos, &view);
-	vec3_t cam = view.net && view.has ? view.pos : w->camPos[w->curCam];
+	const cViewer *view = Viewers_Near(&pos);
+	vec3_t cam = view ? view->pos : pos;
 	d.x = pos.x - cam.x;
 	d.y = pos.y - cam.y;
 	d.z = pos.z - cam.z;
