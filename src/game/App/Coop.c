@@ -97,6 +97,7 @@
 #define CP_AUTO_GAP 8.0				/* test: the automatic player goes to its target again after this */
 #define CP_AUTO_NEAR 250.0f			/* test: units from a target it uses */
 #define CP_AUTO_LAND 3000.0f		/* test: its ship is put this near a target on foot before it gets out */
+#define CP_MSG_SHOT 1500.0f			/* test: a messenger fires its lightning at a messenger this near (it reaches 2000) */
 #define CP_WALK_FAR 600.0f			/* test: a walker steps to a target further than this */
 #define CP_WALK_STEP 300.0f			/* test: a walk comes a quarter of this further within CP_WALK_STUCK */
 #define CP_WALK_GAP 0.5				/* test: s between two looks at its way and its followers */
@@ -1819,6 +1820,30 @@ static void Cp_TalkPlayer(int i) {
 	Native_Free(&pn);
 }
 
+/* a scene of the level's start that the stand-in started (IntroHuman2's news: its end's callback gets the scene's
+ * player, Scene.usr, the stand-in that is gone) is the first member's: it is the scene's player now */
+static void Cp_ScenePlayer(int i) {
+	nativeVal_t usr, name, h;
+	cEntity *e = Players_Get(i);
+	if (!cp.inScene || cp.scenePlayer >= 0 || !e) {
+		return;
+	}
+	Native_SetNone(&usr);
+	Native_SetNone(&name);
+	Native_SetNone(&h);
+	byte gone = !Mode_ModGet("Scene", "usr", &usr) || !Native_True(&usr) || !Mode_VGet(&usr, "Name", &name) ||
+		name.type != NV_STR || !strncmp(Native_Text(&name), COOP_STANDIN, sizeof(COOP_STANDIN) - 1);
+	Native_ErrClear();
+	if (gone && Mode_EntHandle(e, &h) && Mode_SetModVar("Scene", "usr", &h)) {
+		cp.scenePlayer = i;
+		Con_Printf("coop: the scene %s of the level's start is player %d's\n", cp.sceneCls, i);
+	}
+	Native_ErrPrint();
+	Native_Free(&usr);
+	Native_Free(&name);
+	Native_Free(&h);
+}
+
 void Coop_Joined(int i) {
 	static uint8_t buf[CP_SCENE_MSG];
 	nativeVal_t h;
@@ -1838,6 +1863,7 @@ void Coop_Joined(int i) {
 		Timer_SetSpeed(&g_pWorld->timer, 1.0f);
 		Con_Printf("coop: player %d came: the level goes on\n", i);
 		Cp_TalkPlayer(i);
+		Cp_ScenePlayer(i);
 		Elevator_FirstMember();
 	}
 	/* an empty list of options: the client knows it plays the coop story (its keys) */
@@ -3187,6 +3213,55 @@ static byte Cp_BankerSlaps(int i, NetRepInput *in, cEntity *e, cEntity **all, in
 	return 1;
 }
 
+/* test: player i as a messenger plays the messengers' game of the data pack where the mission marks it
+ * (MessengerDataPackMissionArrow: GetAuthorization's tube): another messenger's pack is shot off it (the action key
+ * held at it: the lightning flashes it, it drops the pack), a free pack or one on an open desk is walked onto (the
+ * touch takes it), its own pack goes to the desk with the mission arrow (the messengers' logic drops it there); 0
+ * when it is no messenger or no pack is marked */
+static byte Cp_MessengerPack(int i, NetRepInput *in, cEntity *e, double now) {
+	cActCtrl *a = NetPl_Kind(e) == NETREP_CHAR ? WithLife_GetActCtrl(e) : NULL;
+	cEntity *pack = g_MessengerDataPack ? World_FindEntity(g_MessengerDataPack) : NULL;
+	nativeVal_t v;
+	if (!a || !a->cls || strcmp(a->cls->name, "Messenger") || !pack || !Entity_IsType(pack, "item")) {
+		return 0;
+	}
+	byte marked = Native_GVarGet("MessengerDataPackMissionArrow", &v) && Native_True(&v);
+	Native_Free(&v);
+	Native_ErrClear();
+	if (!marked) {
+		return 0;
+	}
+	cEntity *carrier = Obj(pack)->mod.link.target, *to = pack;
+	byte shoot = carrier && carrier != e && Entity_IsType(carrier, TYEN_WALKCHAR) && Players_Of(carrier) < 0 &&
+		!strcmp(ChType_ActClass(ChType_ActCtrl(carrier))->name, "Messenger");
+	if (carrier == e) {
+		to = Cp_ArrowTarget(e);
+	} else if (shoot) {
+		to = carrier;
+	}
+	if (!to) {
+		return 1;
+	}
+	if (now - cp.pl[i].autoTold >= 5.0) {
+		cp.pl[i].autoTold = now;
+		Con_Printf("coop: player %d (auto) %s %s (the pack %s)\n", i, carrier == e ? "carries the pack to" : shoot ?
+			"shoots the pack off" : "takes the pack at", to->name, carrier ? carrier->name : "free");
+	}
+	float dx = to->pos.x - e->pos.x, dz = to->pos.z - e->pos.z, d = sqrtf(dx * dx + dz * dz);
+	if ((!shoot || d > CP_MSG_SHOT) && Cp_WalkStep(i, in, e, to, now)) {
+		return 1;
+	}
+	float rot[2], dyaw = NetPl_Aim(e, &to->pos, rot, 1);
+	in->rot[0] = NetRep_QRot(rot[0]);
+	in->move[0] = NetRep_QMove(d > (shoot ? CP_MSG_SHOT * 0.25f : CP_MELEE * 0.5f) && fabsf(dyaw) < 0.6f ? 1.0f : 0.0f);
+	/* the messenger's lightning fires while the key is held */
+	vec3_t from = { e->pos.x, e->pos.y + 100.0f, e->pos.z }, at = { to->pos.x, to->pos.y + 100.0f, to->pos.z };
+	if (shoot && fabsf(dyaw) < 0.15f && !Engine_TestLine(&from, &at, NULL, NULL)) {
+		in->buttons |= NETREP_IN_ACT;
+	}
+	return 1;
+}
+
 /* test: player i plays the mission's targets on its own: fights the ones to fight, flies a race of RaceMaker, else
  * goes to the target (out of its ship) and uses its arrow, again every CP_AUTO_GAP s while no talk plays; a green ship
  * of the mission is escorted as a player does: the red ones near it fought first, else it stays with it (the helper
@@ -3211,6 +3286,10 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 			Con_Printf("coop: player %d (auto) goes onto %s (the waypoint)\n", i, wp->name);
 			Travel_TestGoto(i, wp->name, 0.0f, 0.0f);
 		}
+		return;
+	}
+	/* a messenger plays the pack's game before the fights (the messengers attack the one that carries the pack) */
+	if (cp.pl[i].autoOn != 2 && Cp_MessengerPack(i, in, e, now)) {
 		return;
 	}
 	/* a mission arrow to take (BankersCombat's blueprints while the bankers attack) before the level's red ones; one on

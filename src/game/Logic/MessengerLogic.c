@@ -12,6 +12,7 @@
 #include "scrap/embeddedfxmisc.h"
 #include "scrap/itementity.h"
 #include "scrap/modmove.h"
+#include "scrap/players.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapmodel.h"
 #include "scrap/weapons.h"
@@ -122,6 +123,8 @@ static byte Messenger_Deliver(cEntity *m, cEntity *desk, cEntity *pack) {
 	cActCtrl_Play(ChType_ActCtrl(m), "Relax", 1, 1.0f);
 	cActCtrl_SetDefLoop(ChType_ActCtrl(m), "Relax", 1);
 	if (cPy_Function_IsValid(g_MessengerDropCallback)) {
+		/* not in the original: the scripts' player is the one that drops it (an instance binds one at a time) */
+		Players_BindEntity(m);
 		cPy_Function_AddParamS(g_MessengerDropCallback, m->name);
 		cPy_Function_AddParamI(g_MessengerDropCallback, g_MessengerTubeState);
 		cPy_Function_Execute(g_MessengerDropCallback, 0);
@@ -170,6 +173,14 @@ void cMessengers_Think(void *obj) {
 		user = NULL;
 	}
 	cEntity *carrier = pack ? Obj(pack)->mod.link.target : NULL;
+	/* not in the original: an instance has no user 0: the player that carries the pack, else the bound one
+	 * (include/scrap/players.h) */
+	if (Players_Net()) {
+		user = carrier && Players_Is(carrier) ? carrier : Players_Any();
+		if (user && !Msg_IsMessenger(user)) {
+			user = NULL;
+		}
+	}
 	cEntity *msg = carrier;
 	cEntity *desk = carrier;
 	if (carrier) {

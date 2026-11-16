@@ -10,6 +10,7 @@
 #include "scrap/itementity.h"
 #include "scrap/modmove.h"
 #include "scrap/staticinit.h"
+#include "scrap/players.h"
 
 #define g_FXMessengerAttackFile (GVar_FXMessengerAttackFile.value.s)
 #define g_FXMessengerTakeDataPackFile (GVar_FXMessengerTakeDataPackFile.value.s)
@@ -193,6 +194,8 @@ void ChType_MessengerTakeDataPack(cAbstractFile *params) {
 		SoundSys_PlayAt(g_pSound, s, Entity_GetPos(m, &t4), vol);
 	}
 	if (cPy_Function_IsValid(g_MessengerTakenCallback)) {
+		/* not in the original: the scripts' player is the one that takes it (an instance binds one at a time) */
+		Players_BindEntity(m);
 		cPy_Function_AddParamS(g_MessengerTakenCallback, name);
 		cPy_Function_Execute(g_MessengerTakenCallback, 0);
 	}
