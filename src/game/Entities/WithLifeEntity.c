@@ -6,6 +6,7 @@
 
 #include "scrap/collisiongrid.h"
 #include "scrap/console.h"
+#include "scrap/coop.h"
 #include "scrap/crt.h"
 #include "scrap/embeddedfxchar.h"
 #include "scrap/fxscene.h"
@@ -560,6 +561,10 @@ byte cWithLifeEntity_VarS(cEntity *self, const char *name, char **s, int set) {
 	if (!strcmp(name, "ActCtrl")) {
 		if ((byte)set) {
 			WithLife_SetActCtrl(self, *s);
+			/* not in the original: a coop member's class (include/scrap/coop.h) */
+			if (g_Instance) {
+				Coop_ActCtrlSet(self);
+			}
 		} else {
 			*s = w->actCtrl ? w->actCtrl->cls->name : str_Empty;
 		}

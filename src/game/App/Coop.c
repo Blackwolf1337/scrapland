@@ -1712,6 +1712,15 @@ byte Coop_Adopts(int i, cEntity *e) {
 	return 1;
 }
 
+void Coop_ActCtrlSet(cEntity *e) {
+	int i = Coop_On() ? Players_Of(e) : -1;
+	cActCtrl *a = i >= 0 && NetPl_Kind(e) == NETREP_CHAR ? WLife(e)->actCtrl : NULL;
+	if (a && a->cls) {
+		Faction_SetChar(i, a->cls->name);
+		Con_Printf("coop: player %d is a %s now (its class set by the scripts)\n", i, a->cls->name);
+	}
+}
+
 /* the story to the clients' copies: the changed variables (all: the whole story) to client i (-1: all here) */
 typedef struct CpStoryOut {
 	int to;

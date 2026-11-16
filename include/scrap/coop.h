@@ -288,6 +288,9 @@ const char *Coop_MainCharName(void);
  * member's from now on (a possession or a conversor of the scripts: the member plays as that character, its class
  * kept in its state; a ship the scripts put it in); 0 elsewhere (the instance gives the player a new character) */
 byte Coop_Adopts(int i, struct cEntity *e);
+/* the scripts set the class (ActCtrl) of e: a member's character keeps it as the member's class (InfiltrateBank's
+ * scene makes the chief of bankers D-Tritus again: the next level's character) */
+void Coop_ActCtrlSet(struct cEntity *e);
 /* test: the buttons of a test press into player i's input of the tick (the line "press"), the race and the fight
  * helpers; back: how far back its client shows the other entities (s, the shots' lag compensation) */
 void Coop_TestInput(int i, struct NetRepInput *in, double back);
