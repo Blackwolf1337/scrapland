@@ -128,7 +128,7 @@ void cFunctionaryLocalLogic_UpdateView(cLocalLogic *elem) {
 		Entity_IsType(usr, TYEN_WALKCHAR);
 	}
 	int st = b->state;
-	if (!b->busy && !g_pWorld->alarm.on && st != GENCHAR_ATTACK && st != GENCHAR_CHASE && st != GENCHAR_GET_IT) {
+	if (!b->busy && !Players_CurAlarm()->on && st != GENCHAR_ATTACK && st != GENCHAR_CHASE && st != GENCHAR_GET_IT) {
 		WChar(p)->wl.arrow.canUse = 1;
 		WLife(p)->arrow.tgType = 3;
 		return;
@@ -169,7 +169,7 @@ byte cFunctionaryLocalLogic_AcceptsArrow(cLocalLogic *elem) {
 		cFunctionaryLocalLogic_NormalSpeed(self, Func_Parent(self));
 		return 1;
 	}
-	/* not in the original: an instance has no user 0, the member whose input runs is bound (include/scrap/players.h) */
+	/* not in the original: an instance has no user 0, the current member (or the one the resolver gives) (include/scrap/players.h) */
 	cEntity *usr = Players_Net() ? Players_Any() : ChType_Usr0();
 	if (!usr) {
 		return 1;

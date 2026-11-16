@@ -26,6 +26,7 @@
 #include "scrap/input.h"
 #include "scrap/platform.h"
 #include "scrap/play.h"
+#include "scrap/players.h"
 #include "scrap/replicate.h"
 #include "scrap/scorer.h"
 #include "scrap/scrapcollision.h"
@@ -301,11 +302,11 @@ void Play_OwnStatus(const NetRepStatus *st) {
 	}
 	play.status = *st;
 	play.haveStatus = 1;
-	g_pWorld->money = st->money;
+	*Players_CurMoney() = st->money;
 	/* the level held where the server has it: the client's alarm does not grow or fall by itself */
-	g_pWorld->alarm.value = st->alarm / 255.0f;
-	g_pWorld->alarm.on = (st->flags & NETREP_ST_ALARM) != 0;
-	g_pWorld->alarm.grow = 0.0f;
+	Players_CurAlarm()->value = st->alarm / 255.0f;
+	Players_CurAlarm()->on = (st->flags & NETREP_ST_ALARM) != 0;
+	Players_CurAlarm()->grow = 0.0f;
 	Play_ApplyAmmo();
 }
 

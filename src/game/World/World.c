@@ -989,6 +989,9 @@ int cWorld_SetCam(cWorld *world, int i, const char *name) {
 	cEntity *cam = NULL;
 
 	CHECK(name != NULL);
+	if (i == 0) {
+		Players_NoteCam(name);
+	}
 	if (*name) {
 		cPtrItem *it = PtrTable_Find(&world->entities, name, HashTable_Slot(&world->entities, name));
 		if (it) {
@@ -1081,30 +1084,30 @@ void cWorld_Update(cWorld *self, float dt) {
 	}
 	if (cTimer_GetSpeed(timer) > 0.0f) {
 		cTimer_Advance(timer, dt);
-		if (!Coop_BindMission()) {
-			Players_BindTurn();
-		}
 		Scheduler_Run(&self->scheduler, Timer_GetTime(timer));
 		/* not in the original: the test channel answers here while the clock runs, where the script function of the
 		 * old test harness ran (a scheduled function) */
 		TestChannel_WorldFrame();
 		for (n = self->entityList.next; n->data && n; n = n->next) {
 			cEntity *e = n->data;
-			/* the instance: the state of the player nearest to it while it updates (include/scrap/players.h) */
+			/* the instance: a player's own character or ship (and the coop story's Sputnik a member uses) updates in
+			 * that player's context, so its actions, events and arrow run for it; any other entity in the world's,
+			 * which resolves "the player" around it (include/scrap/players.h) */
+			int prev = PLAYERS_NONE;
+			cEntity *run = NULL;
 			if (g_Instance) {
-				/* a coop member's own character acts for that member (its presses run the scripts for it) */
-				if (Coop_On() && Players_Of(e) >= 0) {
-					Players_BindEntity(e);
-				} else if (Sputniks_CoopUser(e) >= 0) {
-					Players_Bind(Sputniks_CoopUser(e));
-				} else {
-					Players_BindNearest(&e->pos);
-				}
+				int i = Sputniks_CoopUser(e);
+				prev = i >= 0 ? Players_Enter(i) : Players_EnterEntity(e);
+				run = Players_Run(e);
 			}
 			if (e->active) {
 				Entity_Update(e);
 			} else {
 				Entity_UpdateOff(e);
+			}
+			if (g_Instance) {
+				Players_Run(run);
+				Players_Leave(prev);
 			}
 		}
 		for (cDebrisSys *d = self->debrisList; d; d = d->next) {

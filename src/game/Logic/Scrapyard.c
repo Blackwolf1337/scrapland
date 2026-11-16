@@ -249,7 +249,7 @@ static void ShipGroup_DeathNative(cAbstractFile *params) {
 		SaveVar_Inc("Stats.MadHunter", 1);
 		money = g_OnMadHunterDeathMoney;
 	}
-	g_pWorld->money += money;
+	*Players_CurMoney() += money;
 	WorldStrTable_Delete(&g->d->lairs, e->name);
 }
 

@@ -23,6 +23,7 @@
 #include <string.h>
 
 #include "scrap/coop.h"
+#include "scrap/initsteps.h"
 #include "scrap/modvars.h"
 #include "scrap/nativeobj.h"
 #include "scrap/places.h"
@@ -313,6 +314,8 @@ static byte In_InitN(const nativeVal_t *path) {
 	if (!Mode_Put(IN, "Path", NULL, path) || !Mode_Import("sys")) {
 		return Mode_Done(&t, 0);
 	}
+	/* not in the original: the player steps of the start (include/scrap/initsteps.h) */
+	InitSteps_Begin();
 	/* the map scripts of the level and its libraries */
 	if (!Native_Arith('+', path, Mode_S(&t, "/Scripts"), dir) || !Mode_Append("sys", "path", dir) || !Mode_Pack(dir) ||
 		!PORT_CALL(Scrap, PreloadLibrary, NULL, "ss", "Map", "Map.pyc") ||
@@ -384,7 +387,9 @@ static byte In_InitN(const nativeVal_t *path) {
 		return Mode_Done(&t, 0);
 	}
 	/* not in the original: a coop client's camera for the level's start (include/scrap/coop.h) */
-	Coop_ClientLevelStart();
+	if (InitStep_Now("InitLevel:Coop_ClientLevelStart")) {
+		Coop_ClientLevelStart();
+	}
 	/* the map (Map and MapSnd are the modules of the current level: the functions they hold through their entries);
 	 * not in the original: a coop instance's stand-in player while no member is there (include/scrap/coop.h: the
 	 * missions' Init read the player, a race's start) */
@@ -401,7 +406,7 @@ static byte In_InitN(const nativeVal_t *path) {
 	if (demo < 0) {
 		return Mode_Done(&t, 0);
 	}
-	if (demo) {
+	if (demo && InitStep_Now("InitLevel:SaveVar.Player.NumLives")) {
 		Mode_SaveVar("Player.NumLives", lives);
 		if (Native_IsStr(lives, "-1")) {
 			Mode_SaveS("Player.NumLives", "0");

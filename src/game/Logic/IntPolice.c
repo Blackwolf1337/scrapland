@@ -221,15 +221,15 @@ byte AICtrl_GearToPolice(void *ctrl, cEntity *gear) {
 static void AICtrl_UpdateSentinels(void *ctrl);
 static void AICtrl_UpdateGears(void *ctrl);
 
-/* the alarm state of the bound player and the voices of the gear nearest to it ("Chase" at random with the alarm,
+/* the alarm state of the current player and the voices of the gear nearest to it ("Chase" at random with the alarm,
  * "Abort" after it); alarm and chased: that player's flags of the think before. 0 without a player */
 static byte AICtrl_Voices(cAICtrl *self, byte *alarm, byte *chased) {
 	vec3_t t;
 
-	self->alarmOn = g_pWorld->alarm.on;
+	self->alarmOn = Players_CurAlarm()->on;
 	self->usr = Players_Any();
-	self->sameChar = self->alarmOn && !strcmp(g_pWorld->alarm.lastChars, g_pWorld->alarm.chars);
-	self->notDefChar = cString_CmpStr(g_UsrDefChar, g_pWorld->alarm.chars) != 0 && !Faction_Uniform(g_pWorld->alarm.chars);
+	self->sameChar = self->alarmOn && !strcmp(Players_CurAlarm()->lastChars, Players_CurAlarm()->chars);
+	self->notDefChar = cString_CmpStr(g_UsrDefChar, Players_CurAlarm()->chars) != 0 && !Faction_Uniform(Players_CurAlarm()->chars);
 	if (!self->usr) {
 		return 0;
 	}
@@ -271,12 +271,12 @@ static void AICtrl_Think(void *ctrl) {
 	if (Players_Net()) {
 		for (int i = 0; i < PLAYERS_MAX; i++) {
 			if (Players_Get(i)) {
-				Players_Bind(i);
+				int was = Players_Enter(i);
 				AICtrl_Voices(self, &g_AICtrlAlarm[i], &g_AICtrlChased[i]);
 				g_AICtrlAlarm[i] = self->alarmOn;
+				Players_Leave(was);
 			}
 		}
-		Players_BindTurn();
 		AICtrl_UpdateSentinels(self);
 		AICtrl_UpdateGears(self);
 		return;
@@ -376,14 +376,15 @@ bishops:
 static void AICtrl_UpdateGears(void *ctrl) {
 	cAICtrl *self = ctrl;
 	Nto1Node *n;
+	cEntity *run = Players_Run(NULL);
 
 	for (n = Logic_ListFirst(self->gears); n; n = Logic_ListNext(n)) {
 		cLocalLogic *l = Logic_GetLocalLogic(n->data);
-		/* the instance: each gear for the player it reacts to */
-		Players_BindNearest(&((cEntity *)n->data)->pos);
+		/* the instance: each gear for the player it reacts to (the resolver of include/scrap/players.h) */
+		Players_Run(n->data);
 		Logic_Update(l, 0.5f);
 	}
-	Players_BindTurn();
+	Players_Run(run);
 	self->attacking = 0;
 	for (n = Logic_ListFirst(self->gears); n; n = Logic_ListNext(n)) {
 		cBaseLocalLogic *l = (cBaseLocalLogic *)Logic_GetLocalLogic(n->data);
@@ -454,6 +455,7 @@ static void AICtrl_UpdateSentinels(void *ctrl) {
 	cBaseLocalLogic *found = NULL;
 	Nto1Node *n;
 	Nto1Node *w = &self->watch;
+	cEntity *run = Players_Run(NULL);
 
 	self->alerted = 0;
 	self->accusing = 0;
@@ -461,7 +463,7 @@ static void AICtrl_UpdateSentinels(void *ctrl) {
 	Nto1Node_Unlink(w);
 	for (n = Logic_ListFirst(self->sentinels); n; n = Logic_ListNext(n)) {
 		cBaseLocalLogic *l = (cBaseLocalLogic *)Logic_GetLocalLogic(n->data);
-		Players_BindNearest(&((cEntity *)n->data)->pos);
+		Players_Run(n->data);
 		AICtrl_SentinelUpdate(l, 0.5f, found != NULL);
 		if (l->state == SENTINEL_WATCH) {
 			cEntity *e = n->data;
@@ -481,7 +483,7 @@ static void AICtrl_UpdateSentinels(void *ctrl) {
 			found = l;
 		}
 	}
-	Players_BindTurn();
+	Players_Run(run);
 	float wt = self->watchTime - 0.5f;
 	self->watchTime = wt;
 	if (0.0f >= wt) {
@@ -509,7 +511,7 @@ byte AICtrl_SendAccuser(void *ctrl, byte check) {
 	cAICtrl *self = ctrl;
 	vec3_t t, t2, t3;
 
-	if (!g_pWorld->alarm.on) {
+	if (!Players_CurAlarm()->on) {
 		return 0;
 	}
 	cEntity *usr = Players_Any();
@@ -540,7 +542,7 @@ void AICtrl_SendSentinelToNPC(void *ctrl, cEntity *e) {
 	cAICtrl *self = ctrl;
 	vec3_t t, t2, t3;
 
-	if (!cEntityList_GetFirst((cEntityList *)self->sentinels) || self->alerted || g_pWorld->alarm.on) {
+	if (!cEntityList_GetFirst((cEntityList *)self->sentinels) || self->alerted || Players_CurAlarm()->on) {
 		return;
 	}
 	if (Entity_IsType(e, TYEN_WALKCHAR) &&
@@ -587,7 +589,7 @@ void AICtrl_Update(void *ctrl, float dt) {
 	self->timer = 0.0f;
 	AICtrl_Think(self);
 	/* the instance: no fights while some player is wanted */
-	if (!(Players_Net() ? Players_NearestWanted(&g_pWorld->camPos[0]) != NULL : g_pWorld->alarm.on)) {
+	if (!(Players_Net() ? Players_NearestWanted(&g_pWorld->camPos[0]) != NULL : Players_CurAlarm()->on)) {
 		float r = (float)(Weap_Rand01() * 99.0 + 1.0);
 		if ((float)g_PoliceLogicBelligerant > r) {
 			AICtrl_Belligerant(self);

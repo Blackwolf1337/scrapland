@@ -113,7 +113,7 @@ static void cNurseLocalLogic_Free(cLocalLogic *elem) {
 
 /* back to the relax, the alert with the alarm */
 static byte cNurseLocalLogic_Relax(cNurseLocalLogic *self) {
-	if (g_pWorld->alarm.on) {
+	if (Players_CurAlarm()->on) {
 		return Logic_SetState(self, NURSE_ALERT, NULL);
 	}
 	return Logic_SetState(self, NURSE_RELAX, NULL);
@@ -125,18 +125,18 @@ static void cNurseLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cEntity *p = b->parent;
 
 	cBaseLocalLogic_Update(&b->logic, dt);
-	WChar(b->parent)->wl.arrow.canUse = !b->busy && !g_pWorld->alarm.on && b->state != NURSE_ATTACK && b->state != NURSE_FLEE;
+	WChar(b->parent)->wl.arrow.canUse = !b->busy && !Players_CurAlarm()->on && b->state != NURSE_ATTACK && b->state != NURSE_FLEE;
 	if (b->busy) {
 		return;
 	}
 	switch (b->state) {
 	case NURSE_RELAX:
-		if (g_pWorld->alarm.on) {
+		if (Players_CurAlarm()->on) {
 			Logic_SetState(self, NURSE_ALERT, NULL);
 		}
 		return;
 	case NURSE_ALERT:
-		if (!g_pWorld->alarm.on) {
+		if (!Players_CurAlarm()->on) {
 			Logic_SetState(self, NURSE_RELAX, NULL);
 		}
 		return;
@@ -229,7 +229,7 @@ static byte cNurseLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *tar
 	cAIChar *ai = Entity_GetAI(b->parent);
 
 	if (ok) {
-		WChar(b->parent)->wl.arrow.canUse = !b->busy && !g_pWorld->alarm.on && b->state != NURSE_ATTACK && b->state != NURSE_FLEE;
+		WChar(b->parent)->wl.arrow.canUse = !b->busy && !Players_CurAlarm()->on && b->state != NURSE_ATTACK && b->state != NURSE_FLEE;
 	}
 	switch (b->state) {
 	case NURSE_RELAX:

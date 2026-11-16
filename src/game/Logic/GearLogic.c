@@ -124,12 +124,12 @@ static void Gear_ToDefault(cGearLocalLogic *self) {
 /* the view of the AI and the actions of the state */
 static void cGearLocalLogic_UpdateAnim(cGearLocalLogic *self, cEntity *p, float dt) {
 	cBaseLocalLogic *b = &self->base;
-	byte alarm = g_pWorld->alarm.on;
+	byte alarm = Players_CurAlarm()->on;
 
 	(void)dt;
 	WLife(p)->arrow.coneFov = g_GearStdFovY;
 	WLife(p)->arrow.coneDist = g_GearStdFar;
-	if (g_pWorld->alarm.on) {
+	if (Players_CurAlarm()->on) {
 		cEntity *t = b->target.target;
 		if (t && b->state == GEAR_ATTACK && Players_Is(t)) {
 			WLife(p)->arrow.coneStatus = 3;
@@ -137,7 +137,7 @@ static void cGearLocalLogic_UpdateAnim(cGearLocalLogic *self, cEntity *p, float 
 			WLife(p)->arrow.coneStatus = 2;
 		}
 	} else {
-		WLife(p)->arrow.coneStatus = g_pWorld->alarm.notGuaranteed != 0;
+		WLife(p)->arrow.coneStatus = Players_CurAlarm()->notGuaranteed != 0;
 	}
 	switch (b->state) {
 	case GEAR_RELAX:
@@ -176,7 +176,7 @@ static void cGearLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cGearLocalLogic *self = (cGearLocalLogic *)elem;
 	vec3_t tp, op;
 	cBaseLocalLogic *b = &self->base;
-	byte alarm = g_pWorld->alarm.on;
+	byte alarm = Players_CurAlarm()->on;
 	cEntity *p = b->parent;
 
 	if (alarm) {
@@ -205,7 +205,7 @@ static void cGearLocalLogic_Update(cLocalLogic *elem, float dt) {
 	if (!usr) {
 		return;
 	}
-	byte same = g_pWorld->alarm.sameChar;
+	byte same = Players_CurAlarm()->sameChar;
 	byte seen = Logic_InView(p, Entity_GetPos(usr, &tp), g_GearStdFar, g_GearStdFovY, g_GearStdFovX, 1);
 	byte locked = b->idle || b->alwaysLock;
 	switch (st) {
@@ -283,7 +283,7 @@ attack:
 	case GEAR_ATTACK: {
 		if (same && seen && Players_Is(b->target.target)) {
 			AICtrl_RaiseLevel(&g_pWorld->logic.aiCtrl, 0);
-			Alarm_Set(&g_pWorld->alarm, 1.0f);
+			Alarm_Set(Players_CurAlarm(), 1.0f);
 		}
 		cAIChar *ai = Gear_AI(self);
 		if (!b->target.target) {
@@ -294,7 +294,7 @@ attack:
 			if (Engine_TestLine(Entity_GetPos(usr, &op), gp, NULL, NULL)) {
 				goto check;
 			}
-			Alarm_SetOn(&g_pWorld->alarm, 1);
+			Alarm_SetOn(Players_CurAlarm(), 1);
 			Logic_SetState(self, GEAR_ATTACK, usr);
 			goto check;
 		}
@@ -325,8 +325,8 @@ attack:
 deflt:
 	Gear_ToDefault(self);
 check:
-	if (seen && st != GEAR_ATTACK && g_pWorld->alarm.notGuaranteed) {
-		Alarm_Set(&g_pWorld->alarm, 1.0f);
+	if (seen && st != GEAR_ATTACK && Players_CurAlarm()->notGuaranteed) {
+		Alarm_Set(Players_CurAlarm(), 1.0f);
 		Logic_SetState(self, GEAR_ATTACK, usr);
 	}
 anim:
@@ -338,7 +338,7 @@ static void cGearLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float amoun
 	cGearLocalLogic *self = (cGearLocalLogic *)elem;
 	if (amount > 0.0f && Logic_Chance(&self->base, e, g_GearRobberyDetection + amount)) {
 		if (Players_Is(e)) {
-			Alarm_Set(&g_pWorld->alarm, 1.0f);
+			Alarm_Set(Players_CurAlarm(), 1.0f);
 		}
 		Logic_SetState(self, GEAR_ATTACK, e);
 	}
@@ -350,7 +350,7 @@ static byte Gear_React(cGearLocalLogic *self, cEntity *e) {
 		return 0;
 	}
 	if (Players_Is(e)) {
-		Alarm_Set(&g_pWorld->alarm, 1.0f);
+		Alarm_Set(Players_CurAlarm(), 1.0f);
 	}
 	return 1;
 }
@@ -387,7 +387,7 @@ static byte cGearLocalLogic_Vf15(cLocalLogic *base, cEntity *e) {
 static void cGearLocalLogic_ToPolice(cLocalLogic *base, cEntity *e) {
 	cGearLocalLogic *self = (cGearLocalLogic *)base;
 	(void)self;
-	if (!g_Gear2PoliceAlways && g_pWorld->alarm.on) {
+	if (!g_Gear2PoliceAlways && Players_CurAlarm()->on) {
 		return;
 	}
 	AICtrl_GearToPolice(&g_pWorld->logic.aiCtrl, e);

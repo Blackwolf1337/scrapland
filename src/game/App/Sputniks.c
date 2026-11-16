@@ -164,7 +164,7 @@ void Sputniks_Boarded(int player, const char *text) {
 static void Spk_Assign(int i, SpkPlayer *p, cEntity *ship) {
 	nativeVal_t v, s;
 	Native_SetNone(&s);
-	Players_Bind(i);
+	int was = Players_Enter(i);
 	byte ok = Mode_EntHandle(ship, &v) && PORT_CALL(Sputnik, Assign, NULL, "v", &v);
 	Native_Free(&v);
 	cEntity *spt = ok && Mode_G("Sputnik", "spt", &s) && s.type == NV_ENT ? Native_Ent(&s) : NULL;
@@ -172,7 +172,7 @@ static void Spk_Assign(int i, SpkPlayer *p, cEntity *ship) {
 	if (!ok) {
 		Native_ErrPrint();
 	}
-	Players_BindTurn();
+	Players_Leave(was);
 	p->failed = spt ? NULL : ship;
 	if (!spt) {
 		return;
@@ -351,9 +351,9 @@ static void Spk_Fly(int i) {
 		return;
 	}
 	Travel_SetVar(i, "ship", v);
-	Players_Bind(i);
+	int was = Players_Enter(i);
 	cEntity *now = Rep_ReplaceShip(i, ship);
-	Players_BindTurn();
+	Players_Leave(was);
 	Con_Printf("sputniks: player %d takes hangar %d: %s\n", i, k, now ? now->name : "(no ship)");
 }
 
@@ -391,9 +391,9 @@ byte Sputniks_Message(Net2Host *host, int conn, const uint8_t *data, int size) {
 	}
 	/* a rebuild costs money; the client never gives more than the player has */
 	if (money < Players_Money(i)) {
-		Players_Bind(i);
-		g_pWorld->money = money;
-		Players_BindTurn();
+		int was = Players_Enter(i);
+		*Players_CurMoney() = money;
+		Players_Leave(was);
 	}
 	Con_Printf("sputniks: player %d closed its hangar (money %d)\n", i, Players_Money(i));
 	Spk_Fly(i);
@@ -453,7 +453,7 @@ byte Sputniks_ClientMessage(const uint8_t *data, int size) {
 		return 1;
 	}
 	Coop_GetHangar(&r);
-	g_pWorld->money = money;
+	*Players_CurMoney() = money;
 	spk.clientOpen = 1;
 	if (Mode_Import("ShipEdit")) {
 		Spk_ClientDummy();
@@ -482,10 +482,10 @@ void Sputniks_ClientDone(void) {
 	NetRepBuf_Init(&w, buf, sizeof(buf));
 	NetRep_PutU8(&w, SPUTNIKS_MSG);
 	NetRep_PutU8(&w, SPUTNIKS_DONE);
-	NetRep_PutU32(&w, (uint32_t)g_pWorld->money);
+	NetRep_PutU32(&w, (uint32_t)*Players_CurMoney());
 	Coop_PutHangar(&w);
 	if (!w.bad && Watch_SendReliable(buf, w.size)) {
 		const char *cur = SaveVar_Get("Hangar.iHangarShip");
-		Con_Printf("sputniks: the hangar to the instance (hangar %s, money %d)\n", cur ? cur : "-", g_pWorld->money);
+		Con_Printf("sputniks: the hangar to the instance (hangar %s, money %d)\n", cur ? cur : "-", *Players_CurMoney());
 	}
 }

@@ -12,6 +12,7 @@
 #include "scrap/arena.h"
 #include "scrap/scrap.h"
 #include "scrap/game.h"
+#include "scrap/initsteps.h"
 #include "scrap/script.h"
 #include "scrap/replicate.h"
 #include "scrap/scriptmodes.h"
@@ -375,7 +376,7 @@ static byte Om_InitOutMap(void) {
 		return Mode_Done(&t, 0);
 	}
 	if (Native_True(f)) {
-		return Mode_Done(&t, OM_START(Ffa, InitClient));
+		return Mode_Done(&t, !InitStep_Now("OutMap:Ffa.InitClient") || OM_START(Ffa, InitClient));
 	}
 	/* an instance of the PvP modes (include/scrap/arena.h) has the players and bots of the mode, as the original's
 	 * server had, and its watchers nothing more */
@@ -402,14 +403,18 @@ static byte Om_InitOutMap(void) {
 		Native_Free(f);
 		return Mode_Done(&t, Mode_Import("Ffa") && LvN_Item(net, 2, f) && PORT_CALL(Ffa, InitServer, NULL, "v", f));
 	}
-	if (!OM_START(Chars, CreateStartupPlayer) || !OM_START(OutPolice, Init) || !OM_START(Traffic, Init) ||
-		!OM_START(PhoneCab, Init) || !Mode_GVarSetS("OnTaunt", "Speech.LaunchTaunt") ||
-		!OM_START(Elevator, PlayerCreatedElevator) || !OM_START(Parking, Init) || !Mode_Import("MissionsFuncs")) {
+	/* the player steps (include/scrap/initsteps.h: the instance runs them for each player that joins) */
+	if ((InitStep_Now("OutMap:Chars.CreateStartupPlayer") && !OM_START(Chars, CreateStartupPlayer)) ||
+		!OM_START(OutPolice, Init) || !OM_START(Traffic, Init) || !OM_START(PhoneCab, Init) ||
+		!Mode_GVarSetS("OnTaunt", "Speech.LaunchTaunt") ||
+		(InitStep_Now("OutMap:Elevator.PlayerCreatedElevator") && !OM_START(Elevator, PlayerCreatedElevator)) ||
+		!OM_START(Parking, Init) || !Mode_Import("MissionsFuncs")) {
 		return Mode_Done(&t, 0);
 	}
 	Mode_SaveVar("JackInTheBox.Active", sv);
 	if (!LvN_EqS(sv, "1")) {
-		return Mode_Done(&t, Mode_GVarSetI("SuperDealAvaliable", 0) && Mode_GVarSetI("EnergyBarActive", 0));
+		return Mode_Done(&t, Mode_GVarSetI("SuperDealAvaliable", 0) &&
+			(!InitStep_Now("OutMap:GVar.EnergyBarActive") || Mode_GVarSetI("EnergyBarActive", 0)));
 	}
 	Native_SetInt(stats, 1);
 	for (long i = 1; i <= 3; i++) {
@@ -426,7 +431,8 @@ static byte Om_InitOutMap(void) {
 			Native_SetInt(stats, 0);
 		}
 	}
-	return Mode_Done(&t, Mode_GVarSet("SuperDealAvaliable", stats) && Mode_GVarSetI("EnergyBarActive", 0));
+	return Mode_Done(&t, Mode_GVarSet("SuperDealAvaliable", stats) &&
+		(!InitStep_Now("OutMap:GVar.EnergyBarActive") || Mode_GVarSetI("EnergyBarActive", 0)));
 }
 
 /* Scrap.Set(var, dummy[1][1]) */

@@ -442,7 +442,7 @@ void cBaseLocalLogic_Update(cLocalLogic *base, float dt) {
 		self->rageTime = 0.0f;
 	} else {
 		self->rageTime = dt + self->rageTime;
-		if (self->rageTime > g_GearRageMaxTime && !g_pWorld->alarm.on) {
+		if (self->rageTime > g_GearRageMaxTime && !Players_CurAlarm()->on) {
 			cEntity *t = World_FindEntity(Nto1Node_TargetName(&WChar(p)->collide));
 			if (t && !Players_Is(t) &&
 				strcmp(ChType_ActClass(ChType_ActCtrl(t))->name, g_NotCleanableByGear)) {

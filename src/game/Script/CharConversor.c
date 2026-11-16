@@ -168,14 +168,14 @@ static byte Cc_ConvertCharIn(const nativeVal_t *uname, const nativeVal_t *cname)
 }
 
 /* not in the original: on a coop instance the conversion is that of the member whose character it is (its new
- * character and money are that member's, include/scrap/players.h), whoever is bound when the scripts call it */
+ * character and money are that member's, include/scrap/players.h), whatever context the scripts call it in */
 static byte Cc_ConvertChar(const nativeVal_t *uname, const nativeVal_t *cname) {
-	int bound = Players_Bound();
+	int was = Players_Current();
 	if (uname->type == NV_STR) {
-		Players_BindOwner(World_FindEntity(Native_Text(uname)));
+		Players_EnterOwner(World_FindEntity(Native_Text(uname)));
 	}
 	byte ok = Cc_ConvertCharIn(uname, cname);
-	Players_Bind(bound);
+	Players_Leave(was);
 	return ok;
 }
 
@@ -438,9 +438,10 @@ static byte Cc_EnterCharConversor(const nativeVal_t *uname, const nativeVal_t *c
 static byte Cc_Fx(long step) {
 	nativeVal_t u = { 0 }, c = { 0 };
 	byte ok = Cc_G("_usrName", &u) && Cc_G("_charName", &c);
-	/* not in the original: a coop member that died or left in the machine has no character for the effect */
-	if (ok && Coop_On() && u.type == NV_STR && !World_FindEntity(Native_Text(&u))) {
-		Con_Printf("coop: the conversor's character %s is gone\n", Native_Text(&u));
+	/* not in the original: on an instance (a coop member, a sandbox player) a player that died or left in the machine
+	 * has no character for the effect */
+	if (ok && (Coop_On() || g_Instance) && u.type == NV_STR && !World_FindEntity(Native_Text(&u))) {
+		Con_Printf("conversor: the conversor's character %s is gone\n", Native_Text(&u));
 	} else {
 		ok = ok && PORT_CALL(SFX, CharacterConversor, NULL, "vvi", &u, &c, step);
 	}
