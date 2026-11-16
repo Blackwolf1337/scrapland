@@ -10,6 +10,7 @@
 #include "scrap/faction.h"
 #include "scrap/fxmisc.h"
 #include "scrap/mathlib.h"
+#include "scrap/players.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/world.h"
 #include "scrap/staticinit.h"
@@ -491,7 +492,7 @@ static void cFXVehicleSirens_Update(cFXVehicleSirens *self) {
 	if (net == 0 || (net < 0 && Vehicle_Player(v) && !g_pApp->flags)) {
 		return;
 	}
-	byte alarm = net > 0 ? 1 : g_pWorld->alarm.on;
+	byte alarm = net > 0 ? 1 : Players_CurAlarm()->on;
 	float dt = cTimer_GetDelta(&g_pWorld->timer);
 	cEmbeddedFXVehicle *fx = self->owner;
 	if (fx->followed) {

@@ -109,7 +109,9 @@ void *cStaticBuffer_Get(cStaticBuffer *self, uint32_t size);
 void cStaticBuffer_Unlock(cStaticBuffer *self);
 cStaticBuffer *cStaticBuffer_ctor(cStaticBuffer *self);
 void cStaticBuffer_dtor(cStaticBuffer *self);
-float cWorld_GetMinCamDistSq(cWorld *world, const vec3_t *pos);
+/* site names the caller for the network audit (include/scrap/netaudit.h: a read on a headless process counts) */
+float cWorld_GetMinCamDistSqAt(cWorld *world, const vec3_t *pos, const char *site);
+#define cWorld_GetMinCamDistSq(world, pos) cWorld_GetMinCamDistSqAt(world, pos, __func__)
 void Parking_AddZone(void *parking, int flag, const vec3_t *pos, const char *name);
 /* nearest (farest != 0: farest) parked vehicle from pos; its position into out */
 const char *Parking_Find(void *parking, int flag, const vec3_t *pos, vec3_t *out, int farest);

@@ -1,0 +1,372 @@
+# The engine variables (GVars) that the scripts (src/game/Script) or the data (call Scrap.Set) set: name, tag, why.
+# Tags: WORLD_SETTING (one value for the whole world that the server sets and the clients take: physics, rules, the
+# level's limits), STATE (presentation a client must keep in step: replicate the value), EVENT (a one-shot), SIM (a
+# value of the simulation on the server only), SERVER_ONLY (callbacks and bookkeeping of the server's scripts),
+# CLIENT_ONLY (the client's view, sound, menus, input, video). netclass.py counts the rows without a tag.
+FXBankerStealFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXBankMasterAttackFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXBankMasterSuctionFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXBertoAttackFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXBertoFlashFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXBettyAttackFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXBettyKillFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXBishopSellLifeFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXBishopAttackFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXDesktopFallEndFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXDTritusAttackFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXDTritusKillFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXFunctionarySpecialActionFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXGearMissileFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXMaintenanceWorkFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXMercenaryDrinkFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXMercenaryDrinkSmokeFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXMessengerAttackFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXMessengerTakeDataPackFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXHammerHitFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXPoliceStealFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXPoliceGearConversionFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+PoliceBossBrupBaseFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXRustyHitFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXSebastianFlashFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXCharacterSputnikFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXItemFadeFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXCharacterDeathFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXVehicleEmbeddedFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXTrafficEmbeddedFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+WindFxSmokeFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXVehicleDamageFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXMotorSmokeFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXDumbMotorFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXShipExplosionFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXVehicleDeathTrailFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXVehicleEMIFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXVehicleSputnikFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXFiredDebrisFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXSmokeDebrisFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXVehicleFireFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXMotorCalimaFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXItemBlinkFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXItemTakeFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXCharacterDazedFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXCharacterTeleportFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXCharacterConversorFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXCharacterConversionFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXCharacterBlaBliBlaFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXMoneyTransferFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXShipEditBuildFile	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXEngineGlowDistFadeMult	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+MaxTalkLineSizePix	CLIENT_ONLY	view, video, input or configuration of the client
+AlarmFallDelta	SIM	AI, logic or rule value of the server simulation
+AlarmGrowDelta	SIM	AI, logic or rule value of the server simulation
+SentinelAcuseSpeed	SIM	AI, logic or rule value of the server simulation
+SentinelAcuseTime	SIM	AI, logic or rule value of the server simulation
+SentinelSuspectSpeed	SIM	AI, logic or rule value of the server simulation
+SentinelSuspectTime	SIM	AI, logic or rule value of the server simulation
+SentinelInspectSpeed	SIM	AI, logic or rule value of the server simulation
+SentinelInspectTime	SIM	AI, logic or rule value of the server simulation
+SentinelBankerDetect	SIM	AI, logic or rule value of the server simulation
+GearChaseSpeed	SIM	AI, logic or rule value of the server simulation
+GearAttackSpeed	SIM	AI, logic or rule value of the server simulation
+GearLostTargetTime	SIM	AI, logic or rule value of the server simulation
+GearRobberyDetection	SIM	AI, logic or rule value of the server simulation
+ShootGearAI	SIM	AI, logic or rule value of the server simulation
+ShootBishopAI	SIM	AI, logic or rule value of the server simulation
+ShootMessengerAI	SIM	AI, logic or rule value of the server simulation
+VelRotDinamicMessengerAI	SIM	AI, logic or rule value of the server simulation
+MessengerGotoSpeed	SIM	AI, logic or rule value of the server simulation
+AlarmFallMission	SIM	AI, logic or rule value of the server simulation
+BankerSteal1Sound	CLIENT_ONLY	sound and music of the client
+BankerSteal2Sound	CLIENT_ONLY	sound and music of the client
+BankerSteal3Sound	CLIENT_ONLY	sound and music of the client
+BankerStealSoundVol	CLIENT_ONLY	sound and music of the client
+BertoFlashSound	CLIENT_ONLY	sound and music of the client
+BertoFlashSoundVol	CLIENT_ONLY	sound and music of the client
+BishopShootSound	CLIENT_ONLY	sound and music of the client
+BishopShootSoundVol	CLIENT_ONLY	sound and music of the client
+BishopHitSound	CLIENT_ONLY	sound and music of the client
+BishopHitSoundVol	CLIENT_ONLY	sound and music of the client
+CharacterTeleportUpSound	CLIENT_ONLY	sound and music of the client
+CharacterTeleportDownSound	CLIENT_ONLY	sound and music of the client
+CharacterTeleportSoundVol	CLIENT_ONLY	sound and music of the client
+FunctionaryEffectFastSound	CLIENT_ONLY	sound and music of the client
+FunctionaryEffectFastSoundVol	CLIENT_ONLY	sound and music of the client
+GearLoadWeaponSound	CLIENT_ONLY	sound and music of the client
+GearLoadWeaponSoundVol	CLIENT_ONLY	sound and music of the client
+GearShootSound	CLIENT_ONLY	sound and music of the client
+GearShootSoundVol	CLIENT_ONLY	sound and music of the client
+GearHitSound	CLIENT_ONLY	sound and music of the client
+GearHitSoundVol	CLIENT_ONLY	sound and music of the client
+GearMissileSound	CLIENT_ONLY	sound and music of the client
+GearMissileSoundVol	CLIENT_ONLY	sound and music of the client
+GearMissileThunder1Sound	CLIENT_ONLY	sound and music of the client
+GearMissileThunder2Sound	CLIENT_ONLY	sound and music of the client
+GearMissileThunderSoundVol	CLIENT_ONLY	sound and music of the client
+MaintenanceWorkSound	CLIENT_ONLY	sound and music of the client
+MaintenanceWorkSoundVol	CLIENT_ONLY	sound and music of the client
+MaintenanceWorkSoundAttIni	CLIENT_ONLY	sound and music of the client
+MaintenanceWorkSoundAttEnd	CLIENT_ONLY	sound and music of the client
+MessengerShootSound	CLIENT_ONLY	sound and music of the client
+MessengerShootSoundVol	CLIENT_ONLY	sound and music of the client
+MessengerTakeDataPackSound	CLIENT_ONLY	sound and music of the client
+MessengerTakeDataPackSoundVol	CLIENT_ONLY	sound and music of the client
+EMIThunderSoundVol	CLIENT_ONLY	sound and music of the client
+EMIThunderSoundAttIni	CLIENT_ONLY	sound and music of the client
+EMIThunderSoundAttEnd	CLIENT_ONLY	sound and music of the client
+EMIThunder1Sound	CLIENT_ONLY	sound and music of the client
+EMIThunder2Sound	CLIENT_ONLY	sound and music of the client
+SwarmBeeSoundAttIni	CLIENT_ONLY	sound and music of the client
+SwarmBeeSoundAttEnd	CLIENT_ONLY	sound and music of the client
+SwarmBeeSoundVol	CLIENT_ONLY	sound and music of the client
+SwarmHitSoundAttIni	CLIENT_ONLY	sound and music of the client
+SwarmHitSoundAttEnd	CLIENT_ONLY	sound and music of the client
+SwarmHitSoundVol	CLIENT_ONLY	sound and music of the client
+SwarmEngineSoundAttIni	CLIENT_ONLY	sound and music of the client
+SwarmEngineSoundAttEnd	CLIENT_ONLY	sound and music of the client
+SwarmEngineSoundVol	CLIENT_ONLY	sound and music of the client
+VulcanRic0SoundVol	CLIENT_ONLY	sound and music of the client
+VulcanRic0Sound	CLIENT_ONLY	sound and music of the client
+VulcanRic1SoundVol	CLIENT_ONLY	sound and music of the client
+VulcanRic1Sound	CLIENT_ONLY	sound and music of the client
+VulcanRic2SoundVol	CLIENT_ONLY	sound and music of the client
+VulcanRic2Sound	CLIENT_ONLY	sound and music of the client
+DevastatorBoomSoundVol	CLIENT_ONLY	sound and music of the client
+DevastatorBoomSoundAttIni	CLIENT_ONLY	sound and music of the client
+DevastatorBoomSoundAttEnd	CLIENT_ONLY	sound and music of the client
+DevastatorBoomSound	CLIENT_ONLY	sound and music of the client
+ATPCHitSoundVol	CLIENT_ONLY	sound and music of the client
+ATPCHitSound	CLIENT_ONLY	sound and music of the client
+ATPCCapsuleSoundVol	CLIENT_ONLY	sound and music of the client
+ATPCCapsuleSound	CLIENT_ONLY	sound and music of the client
+ATPCCapsuleExtendedSoundVol	CLIENT_ONLY	sound and music of the client
+ATPCCapsuleExtendedSound	CLIENT_ONLY	sound and music of the client
+LaserRicSoundVol	CLIENT_ONLY	sound and music of the client
+LaserRicSound	CLIENT_ONLY	sound and music of the client
+TargetScorerSwitchSound	CLIENT_ONLY	sound and music of the client
+TargetScorerSwitchSoundVol	CLIENT_ONLY	sound and music of the client
+CannonScorerNoAmmoSound	CLIENT_ONLY	sound and music of the client
+CannonScorerNoAmmoSoundVol	CLIENT_ONLY	sound and music of the client
+WindFxScorerSound	CLIENT_ONLY	sound and music of the client
+WindFxScorerSoundVol	CLIENT_ONLY	sound and music of the client
+WindFxScorerSpeedVol	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+WindFxScorerSpeedPitch	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+WindFxScorerHorizontal	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+WindFxScorerVertical	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+WindFxScorerFadeFactor	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+WindFxScorerFwAngle	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+WindFxScorerShow	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+FXElementsFireDropSound	CLIENT_ONLY	sound and music of the client
+FXElementsFireDropSoundVol	CLIENT_ONLY	sound and music of the client
+FXElementsFireDropSoundAttIni	CLIENT_ONLY	sound and music of the client
+FXElementsFireDropSoundAttEnd	CLIENT_ONLY	sound and music of the client
+SoundAutoplayVolume	CLIENT_ONLY	sound and music of the client
+SoundDopplerLevel	CLIENT_ONLY	sound and music of the client
+SoundDistAttenuation	CLIENT_ONLY	sound and music of the client
+NPCSndMotorVolFactor	CLIENT_ONLY	sound and music of the client
+PoliceBossBrupBounce1Sound	CLIENT_ONLY	sound and music of the client
+PoliceBossBrupBounce2Sound	CLIENT_ONLY	sound and music of the client
+PoliceBossBrupBounceSoundVol	CLIENT_ONLY	sound and music of the client
+FXRustyChispasSound	CLIENT_ONLY	sound and music of the client
+FXRustyChispasSoundVol	CLIENT_ONLY	sound and music of the client
+CharacterDeathSound	CLIENT_ONLY	sound and music of the client
+CharacterDeathSoundVol	CLIENT_ONLY	sound and music of the client
+OnAcceptSound	CLIENT_ONLY	sound and music of the client
+OnAcceptSoundVol	CLIENT_ONLY	sound and music of the client
+OnFocusSound	CLIENT_ONLY	sound and music of the client
+OnFocusSoundVol	CLIENT_ONLY	sound and music of the client
+DangerLifeSound	CLIENT_ONLY	sound and music of the client
+DangerLifeSoundVol	CLIENT_ONLY	sound and music of the client
+RegenerationSound	CLIENT_ONLY	sound and music of the client
+RegenerationSoundVol	CLIENT_ONLY	sound and music of the client
+RegenerationSoundPitchMin	CLIENT_ONLY	sound and music of the client
+RegenerationSoundPitchMax	CLIENT_ONLY	sound and music of the client
+InitRegenerationSound	CLIENT_ONLY	sound and music of the client
+InitRegenerationSoundVol	CLIENT_ONLY	sound and music of the client
+EndRegenerationSound	CLIENT_ONLY	sound and music of the client
+EndRegenerationSoundVol	CLIENT_ONLY	sound and music of the client
+TextTypingSound	CLIENT_ONLY	sound and music of the client
+TextTypingSoundVol	CLIENT_ONLY	sound and music of the client
+CharacterConversionSound	CLIENT_ONLY	sound and music of the client
+CharacterConversionSoundVol	CLIENT_ONLY	sound and music of the client
+OutRelaxMusic	CLIENT_ONLY	sound and music of the client
+iOutRelaxMusic	CLIENT_ONLY	sound and music of the client
+OutRelaxMusicVolume	CLIENT_ONLY	sound and music of the client
+OutActionMusic	CLIENT_ONLY	sound and music of the client
+iOutActionMusic	CLIENT_ONLY	sound and music of the client
+OutActionMusicVolume	CLIENT_ONLY	sound and music of the client
+isActionIndoor	CLIENT_ONLY	sound and music of the client
+ActionMusicTimeFade	CLIENT_ONLY	sound and music of the client
+MusicTimeChange	CLIENT_ONLY	sound and music of the client
+NewsPanelActive	STATE	HUD or mission state the players' clients show
+NewsPanelShowHead	STATE	HUD or mission state the players' clients show
+RemainTalkTime	STATE	HUD or mission state the players' clients show
+FirstPhotoMessage	STATE	HUD or mission state the players' clients show
+AbortSelectDistance	SIM	AI, logic or rule value of the server simulation
+AfterDrawCallback	CLIENT_ONLY	a key or chat event of the client
+S_PitchScale	CLIENT_ONLY	sound and music of the client
+MotionBlurFactorBegin	CLIENT_ONLY	view, video, input or configuration of the client
+MotionBlurFactorEnd	CLIENT_ONLY	view, video, input or configuration of the client
+MotionBlurTime	CLIENT_ONLY	view, video, input or configuration of the client
+MotionBlurEndTime	CLIENT_ONLY	view, video, input or configuration of the client
+MotionBlurOffVar	CLIENT_ONLY	view, video, input or configuration of the client
+NoiseFactorBegin	CLIENT_ONLY	view, video, input or configuration of the client
+NoiseFactor	CLIENT_ONLY	view, video, input or configuration of the client
+NoiseTime	CLIENT_ONLY	view, video, input or configuration of the client
+NoiseEndTime	CLIENT_ONLY	view, video, input or configuration of the client
+MessengerDataPack	STATE	HUD or mission state the players' clients show
+ChatEvent	CLIENT_ONLY	a key or chat event of the client
+OnChatString	CLIENT_ONLY	a key or chat event of the client
+FullScreenConsoleCallback	CLIENT_ONLY	view, video, input or configuration of the client
+QChatEvent1	CLIENT_ONLY	a key or chat event of the client
+QChatEvent2	CLIENT_ONLY	a key or chat event of the client
+QChatEvent3	CLIENT_ONLY	a key or chat event of the client
+QChatEvent4	CLIENT_ONLY	a key or chat event of the client
+QChatEvent5	CLIENT_ONLY	a key or chat event of the client
+QChatEvent6	CLIENT_ONLY	a key or chat event of the client
+DrawNextFrame	CLIENT_ONLY	view, video, input or configuration of the client
+PlayerTeamID	CLIENT_ONLY	view, video, input or configuration of the client
+EscapeEvent	CLIENT_ONLY	a key or chat event of the client
+SndLoopCharNPCMul	CLIENT_ONLY	sound and music of the client
+GridUseTopLimit	WORLD_SETTING	physics, limits or rules of the level
+Max_Rad_Obj	WORLD_SETTING	physics, limits or rules of the level
+CameraCloudDistance	CLIENT_ONLY	view, video, input or configuration of the client
+AtmosphereLimit	WORLD_SETTING	physics, limits or rules of the level
+TopLimit	WORLD_SETTING	physics, limits or rules of the level
+CharGrav	WORLD_SETTING	physics, limits or rules of the level
+FileNameMap2D	CLIENT_ONLY	view, video, input or configuration of the client
+isActionMusic	CLIENT_ONLY	sound and music of the client
+MainMissionEvent	CLIENT_ONLY	a key or chat event of the client
+OnCrazyDealFinished	SERVER_ONLY	callback of the server scripts
+OnCrazyDealTarget	SERVER_ONLY	callback of the server scripts
+R_SceneBlurValue	CLIENT_ONLY	view, video, input or configuration of the client
+GameSkill	WORLD_SETTING	physics, limits or rules of the level
+ProgressBar	CLIENT_ONLY	view, video, input or configuration of the client
+MouseSensitivityH	CLIENT_ONLY	view, video, input or configuration of the client
+MouseSensitivityV	CLIENT_ONLY	view, video, input or configuration of the client
+InvertMouse	CLIENT_ONLY	view, video, input or configuration of the client
+AlwaysRun	CLIENT_ONLY	view, video, input or configuration of the client
+CheckInactivityFunc	CLIENT_ONLY	view, video, input or configuration of the client
+CinemaBlackBandHeight	CLIENT_ONLY	view, video, input or configuration of the client
+ShowCredits	CLIENT_ONLY	view, video, input or configuration of the client
+R_StencilTog	CLIENT_ONLY	view, video, input or configuration of the client
+SuperDealAvaliable	STATE	HUD or mission state the players' clients show
+DefaultServerPort	SERVER_ONLY	the original's network settings
+OnNetBrowseCallback	SERVER_ONLY	the original's network settings
+MasterCommandFunc	SERVER_ONLY	the original's network settings
+ServerMapList	SERVER_ONLY	the original's network settings
+ServerType	SERVER_ONLY	the original's network settings
+DefaultServerAddress	SERVER_ONLY	the original's network settings
+ClientPassword	SERVER_ONLY	the original's network settings
+ServerPassword	SERVER_ONLY	the original's network settings
+ForceServerVehicle	SERVER_ONLY	the original's network settings
+UseServerPassword	SERVER_ONLY	the original's network settings
+ReRunAtExitParams	CLIENT_ONLY	view, video, input or configuration of the client
+ServerDataRateLimit	SERVER_ONLY	the original's network settings
+ServerName	SERVER_ONLY	the original's network settings
+DefaultMaxPlayersOnServer	SERVER_ONLY	the original's network settings
+FragLimit	SERVER_ONLY	the original's network settings
+R_TexFilter	CLIENT_ONLY	view, video, input or configuration of the client
+R_MipFilter	CLIENT_ONLY	view, video, input or configuration of the client
+R_Anisotropy	CLIENT_ONLY	view, video, input or configuration of the client
+R_VideoLockMode	CLIENT_ONLY	view, video, input or configuration of the client
+R_VideoLockBuf	CLIENT_ONLY	view, video, input or configuration of the client
+R_FogEnable	CLIENT_ONLY	view, video, input or configuration of the client
+VideoGammaRGB	CLIENT_ONLY	view, video, input or configuration of the client
+FullScreen	CLIENT_ONLY	view, video, input or configuration of the client
+VideoDesktop	CLIENT_ONLY	view, video, input or configuration of the client
+R_StencilSelf	CLIENT_ONLY	view, video, input or configuration of the client
+R_StencilMult	CLIENT_ONLY	view, video, input or configuration of the client
+PlayerName	CLIENT_ONLY	view, video, input or configuration of the client
+ForceReload	CLIENT_ONLY	view, video, input or configuration of the client
+r_SplitScreen	CLIENT_ONLY	view, video, input or configuration of the client
+SplitScreen	CLIENT_ONLY	view, video, input or configuration of the client
+CameraDefViewAspect	CLIENT_ONLY	view, video, input or configuration of the client
+R_SceneRTargetSwap	CLIENT_ONLY	view, video, input or configuration of the client
+IsSecondMission	STATE	HUD or mission state the players' clients show
+CurrentWaypointName	STATE	HUD or mission state the players' clients show
+OnClientJoin	SERVER_ONLY	the original's network settings
+OnUsrString	SERVER_ONLY	the original's network settings
+OnTaunt	SERVER_ONLY	callback of the server scripts
+EnergyBarActive	STATE	HUD or mission state the players' clients show
+ShipPathFmt	WORLD_SETTING	physics, limits or rules of the level
+DoResetOutPolice	SIM	AI, logic or rule value of the server simulation
+TimeToCancelCurrentMission	STATE	HUD or mission state the players' clients show
+PrimaryMissionDesc	STATE	HUD or mission state the players' clients show
+SecondaryMissionDesc	STATE	HUD or mission state the players' clients show
+R_CreditsRTarget	CLIENT_ONLY	view, video, input or configuration of the client
+XboxSavingMsg	CLIENT_ONLY	view, video, input or configuration of the client
+XboxSavingMsgStr	CLIENT_ONLY	view, video, input or configuration of the client
+PlayVideo	CLIENT_ONLY	view, video, input or configuration of the client
+R_SceneMotionBlurValue	CLIENT_ONLY	view, video, input or configuration of the client
+ForceNoActionMusic	CLIENT_ONLY	sound and music of the client
+DisableSkipSlot	CLIENT_ONLY	view, video, input or configuration of the client
+PauseInactivityTime	CLIENT_ONLY	view, video, input or configuration of the client
+CameraScene	CLIENT_ONLY	view, video, input or configuration of the client
+MaxChasingShips	SIM	AI, logic or rule value of the server simulation
+iTrafficNumber	SIM	AI, logic or rule value of the server simulation
+VehicleEditingMode	STATE	HUD or mission state the players' clients show
+PilotModel	CLIENT_ONLY	view, video, input or configuration of the client
+iHangarShip	CLIENT_ONLY	view, video, input or configuration of the client
+FullTalkTime	STATE	HUD or mission state the players' clients show
+CurrentWaypointName2	STATE	HUD or mission state the players' clients show
+LeaderFlag	STATE	HUD or mission state the players' clients show
+PlayerCTFTeamIsWinning	STATE	HUD or mission state the players' clients show
+OnDominFriendDeath	SERVER_ONLY	callback of the server scripts
+OnDominEnemyDeath	SERVER_ONLY	callback of the server scripts
+LeaderName	STATE	HUD or mission state the players' clients show
+MaxFightingTrafficSize	SIM	AI, logic or rule value of the server simulation
+OnItemTakenAI	SERVER_ONLY	callback of the server scripts
+OnNeedMoreTraffic	SERVER_ONLY	callback of the server scripts
+OnNeedMoreChasingTraffic	SERVER_ONLY	callback of the server scripts
+OnPlayerHelpedPolice	SERVER_ONLY	callback of the server scripts
+PoliceWaveEliminated	SIM	AI, logic or rule value of the server simulation
+CreateGear	SIM	AI, logic or rule value of the server simulation
+CreatePolice	SIM	AI, logic or rule value of the server simulation
+InfernoTurnSpeed	WORLD_SETTING	physics, limits or rules of the level
+useDynamicMusic	CLIENT_ONLY	sound and music of the client
+LifeReachedCallback	SERVER_ONLY	callback of the server scripts
+RegenerationItem	SIM	AI, logic or rule value of the server simulation
+LifeToLaunchCallback	SERVER_ONLY	callback of the server scripts
+FreeSpaceMagnet	WORLD_SETTING	physics, limits or rules of the level
+FreeSpaceMagnetHiRadius	WORLD_SETTING	physics, limits or rules of the level
+FreeSpaceMagnetAccel	WORLD_SETTING	physics, limits or rules of the level
+FadeOutFinalTime	STATE	HUD or mission state the players' clients show
+MessengerDataPackMissionArrow	STATE	HUD or mission state the players' clients show
+OnFunctionaryStartsWorking	SERVER_ONLY	callback of the server scripts
+OnFinishAutoUpdate	SERVER_ONLY	callback of the server scripts
+OnDefStateCallback	SERVER_ONLY	callback of the server scripts
+CameraCloudRed	CLIENT_ONLY	view, video, input or configuration of the client
+CameraCloudGreen	CLIENT_ONLY	view, video, input or configuration of the client
+CameraCloudBlue	CLIENT_ONLY	view, video, input or configuration of the client
+TimeSpecialUseTimer	STATE	HUD or mission state the players' clients show
+CounterType	STATE	HUD or mission state the players' clients show
+OnGeneralDamage	SERVER_ONLY	callback of the server scripts
+R_UseMLOD	CLIENT_ONLY	view, video, input or configuration of the client
+FXVehicleFloatingFactor	WORLD_SETTING	effect file or effect parameter (the same on both sides)
+PoliceTauntRace	SIM	AI, logic or rule value of the server simulation
+SpecialActionActive	STATE	HUD or mission state the players' clients show
+DefInterpTime	WORLD_SETTING	physics, limits or rules of the level
+JoinServerOnStartup	CLIENT_ONLY	view, video, input or configuration of the client
+IsMapOutDoor	WORLD_SETTING	physics, limits or rules of the level
+CameraCloudAlpha	CLIENT_ONLY	view, video, input or configuration of the client
+DominFightingFreezeCadenceShoot	SIM	AI, logic or rule value of the server simulation
+DominFightingFreezeControlAim	SIM	AI, logic or rule value of the server simulation
+FunctionaryMinTimeToSitDown	SIM	AI, logic or rule value of the server simulation
+FunctionaryMaxTimeToSitDown	SIM	AI, logic or rule value of the server simulation
+OnLifeItemTaken	SERVER_ONLY	callback of the server scripts
+LittlePoliceAsksForMoney	SIM	AI, logic or rule value of the server simulation
+NotCleanableByGear	SIM	AI, logic or rule value of the server simulation
+GenCharSpecialChaseSpeed	SIM	AI, logic or rule value of the server simulation
+GuaranteedChars	SIM	AI, logic or rule value of the server simulation
+PoliceLogicBelligerant	SIM	AI, logic or rule value of the server simulation
+BossWorkPlace	SIM	AI, logic or rule value of the server simulation
+FXElementsMentalControllerDamageSound	CLIENT_ONLY	sound and music of the client
+FXElementsMentalControllerDamageSoundVol	CLIENT_ONLY	sound and music of the client
+NewsHead	STATE	HUD or mission state the players' clients show
+DefActionRadius	SIM	AI, logic or rule value of the server simulation
+GenCharAttackActive	SIM	AI, logic or rule value of the server simulation
+MaxMosquitosDist	SIM	AI, logic or rule value of the server simulation
+MaxMadHuntersDist	SIM	AI, logic or rule value of the server simulation
+BishopAttackOnAlarm	SIM	AI, logic or rule value of the server simulation
+NewsLogoBmp	CLIENT_ONLY	view, video, input or configuration of the client
+BackNewsBmp	CLIENT_ONLY	view, video, input or configuration of the client
+RadarMMSelect	CLIENT_ONLY	view, video, input or configuration of the client

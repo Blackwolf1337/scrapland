@@ -6,6 +6,7 @@
 #include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/e3dutil.h"
+#include "scrap/netaudit.h"
 #include "scrap/vertlist.h"
 #include "scrap/light.h"
 #include "scrap/meshd3d.h"
@@ -226,8 +227,9 @@ byte CGameModel_IsEnabled(const CGameModel *self) {
 	return self->Model->enable;
 }
 
-byte CGameModel_IsVisible(const CGameModel *self) {
+byte CGameModel_IsVisibleAt(const CGameModel *self, const char *site) {
 	GM_CHECK(self);
+	NetAudit_Headless(NA_VISIBLE, "visible.read.headless:", site);
 	if (g_SplitScreen) {
 		return 1;
 	}

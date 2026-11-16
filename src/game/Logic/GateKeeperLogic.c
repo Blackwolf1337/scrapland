@@ -92,7 +92,7 @@ static void cGateKeeperLocalLogic_Free(cLocalLogic *base) {
 static void cGateKeeperLocalLogic_UpdateView(cGateKeeperLocalLogic *self) {
 	cEntity *p = self->base.parent;
 
-	WChar(p)->wl.arrow.canUse = !self->base.busy && !g_pWorld->alarm.on && self->base.state != GATEKEEPER_HIDDEN;
+	WChar(p)->wl.arrow.canUse = !self->base.busy && !Players_CurAlarm()->on && self->base.state != GATEKEEPER_HIDDEN;
 }
 
 /* of the gatekeepers and the gears: they never run from the police */
@@ -124,7 +124,7 @@ static void cGateKeeperLocalLogic_Update(cLocalLogic *elem, float dt) {
 			self->hiddenTime = self->hiddenTime - dt;
 			return;
 		}
-		if (!g_pWorld->alarm.on) {
+		if (!Players_CurAlarm()->on) {
 			Logic_SetState(self, GATEKEEPER_SHOWN, NULL);
 		}
 		return;
@@ -155,7 +155,7 @@ static void cGateKeeperLocalLogic_Update(cLocalLogic *elem, float dt) {
 		}
 	}
 alarm:
-	if (g_pWorld->alarm.on) {
+	if (Players_CurAlarm()->on) {
 		Logic_SetState(self, GATEKEEPER_HIDDEN, NULL);
 	}
 }
@@ -199,7 +199,7 @@ static void cGateKeeperLocalLogic_Vf11(cLocalLogic *elem, cEntity *e) {
 /* hidden while the alarm is on */
 static void cGateKeeperLocalLogic_RestartState(cLocalLogic *elem) {
 	cGateKeeperLocalLogic *self = (cGateKeeperLocalLogic *)elem;
-	Logic_SetState(self, g_pWorld->alarm.on != 0, NULL);
+	Logic_SetState(self, Players_CurAlarm()->on != 0, NULL);
 }
 
 /* state 1 needs the action Hide */

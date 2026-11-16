@@ -2,6 +2,7 @@
  * Python module SSound (function table SSound_methods): sounds, music, voices and sound property
  * sets. The original source file is not known (no CHECK in it); the other modules are PyInterface/S*Py.cpp.
  */
+#include "scrap/netaudit.h"
 #include "scrap/scriptapi.h"
 #include "scrap/sound.h"
 
@@ -55,6 +56,7 @@ void Sound_PlayAt(const vec3_t *pos, const char *name, double volume, double p1,
 	desc.param3 = (float)p3;
 	cSoundDesc_SetPos(&desc, pos);
 	desc.volume += Snd_Volume((float)volume);
+	NetAudit_Site(NA_SOUNDSRC, "snd.script.playsound");
 	SoundSys_PlaySound(g_pSound, name, &desc, 0);
 }
 
@@ -77,6 +79,7 @@ API_FN(SSound, Play) {
 		return 0;
 	}
 	int ipan = (int)(pan * 10000.0);
+	NetAudit_Site(NA_SOUNDSRC, "snd.script.play");
 	SoundSys_Play(g_pSound, name, Snd_Volume((float)volume), ipan);
 	return 1;
 }

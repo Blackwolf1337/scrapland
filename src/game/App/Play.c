@@ -26,6 +26,7 @@
 #include "scrap/input.h"
 #include "scrap/platform.h"
 #include "scrap/play.h"
+#include "scrap/players.h"
 #include "scrap/replicate.h"
 #include "scrap/scorer.h"
 #include "scrap/scrapcollision.h"
@@ -301,11 +302,11 @@ void Play_OwnStatus(const NetRepStatus *st) {
 	}
 	play.status = *st;
 	play.haveStatus = 1;
-	g_pWorld->money = st->money;
+	*Players_CurMoney() = st->money;
 	/* the level held where the server has it: the client's alarm does not grow or fall by itself */
-	g_pWorld->alarm.value = st->alarm / 255.0f;
-	g_pWorld->alarm.on = (st->flags & NETREP_ST_ALARM) != 0;
-	g_pWorld->alarm.grow = 0.0f;
+	Players_CurAlarm()->value = st->alarm / 255.0f;
+	Players_CurAlarm()->on = (st->flags & NETREP_ST_ALARM) != 0;
+	Players_CurAlarm()->grow = 0.0f;
 	Play_ApplyAmmo();
 }
 
@@ -520,7 +521,7 @@ static cEntity *Play_BotNearest(cEntity *e, int kind, byte player, byte still) {
 	cEntity *best = NULL;
 	float bestD = 40000.0f * 40000.0f;
 	for (cEntity *o = cWorld_GetFirstEntity(g_pWorld); o; o = cEntity_Next(o)) {
-		if (o == e || !Obj(o)->proxy || o->deadNode.target || Watch_IsPlayer(o) != player ||
+		if (o == e || !Obj(o)->replica || o->deadNode.target || Watch_IsPlayer(o) != player ||
 			(kind && NetPl_Kind(o) != kind) ||
 			(still && (still == 1) == (Obj(o)->vel.x != 0.0f || Obj(o)->vel.z != 0.0f))) {
 			continue;

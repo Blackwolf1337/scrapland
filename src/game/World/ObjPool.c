@@ -9,6 +9,7 @@
 #include "scrap/fxmisc.h"
 #include "scrap/fxscene.h"
 #include "scrap/missileentity.h"
+#include "scrap/netaudit.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/scrapfont.h"
 #include "scrap/scrapmodel.h"
@@ -206,6 +207,7 @@ void cDebris_Step(cDebris *d, float dt) {
 }
 
 void cDebrisSys_Drop(cDebrisSys *sys, cDebris *d) {
+	NetAudit_Site(NA_DEBRIS, "debris.drop");
 	float t;
 
 	if (!d->fx && !(sys->radiusSq > cWorld_GetMinCamDistSq(g_pWorld, &d->drop[0]))) {
@@ -248,6 +250,7 @@ void cDebrisSys_FreeIdle(cDebrisSys *sys) {
 }
 
 cDebris *cDebrisSys_NewElement(cDebrisSys *sys) {
+	NetAudit_Site(NA_DEBRIS, "debris.new");
 	cDebris *d;
 	vec3_t scale;
 	void *mem;
@@ -302,6 +305,7 @@ cDebris *cDebrisSys_GetIdle(cDebrisSys *sys) {
 
 /* n debris of the effect type made and put back into the pool (the ones over maxIdle freed) */
 void cDebrisSys_Init(cDebrisSys *sys, int n, int type) {
+	NetAudit_Site(NA_DEBRIS, "debris.sys");
 	cDebris *d = NULL;
 
 	sys->fxType = type;

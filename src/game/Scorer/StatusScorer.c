@@ -5,6 +5,7 @@
 #include "scrap/gvar.h"
 #include "scrap/crt.h"
 #include "scrap/logic.h"
+#include "scrap/players.h"
 #include "scrap/scorerhud.h"
 #include "scrap/scrap.h"
 #include "scrap/sound.h"
@@ -53,8 +54,8 @@ cStatusScorer *cStatusScorer_ctor(cStatusScorer *self) {
 	self->lifeIconIndex = 0;
 	self->hullIconIndex = 0;
 	self->moneyIconIndex = 0;
-	self->money = g_pWorld->money;
-	self->lastMoney = g_pWorld->money;
+	self->money = *Players_CurMoney();
+	self->lastMoney = *Players_CurMoney();
 	self->moneyBlink = 0.0f;
 	self->boostIconIndex = 0;
 	self->boostTurboIndex = 0;
@@ -292,7 +293,7 @@ static void Status_DrawBoost(cStatusScorer *self, float frameTime) {
 static void Status_DrawMoney(cStatusScorer *self, float time, float frameTime) {
 	CPsaImage *img = self->img;
 
-	int m = g_pWorld->money;
+	int m = *Players_CurMoney();
 	self->money = m;
 	if (m != self->lastMoney) {
 		self->moneyBlink = 0.5f;

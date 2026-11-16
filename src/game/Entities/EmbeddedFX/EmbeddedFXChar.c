@@ -12,6 +12,7 @@
 #include "scrap/fxmisc.h"
 #include "scrap/global.h"
 #include "scrap/mathlib.h"
+#include "scrap/players.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/timer.h"
 #include "scrap/withlifeentity.h"
@@ -1215,7 +1216,7 @@ static void EFX_SentinelClear(cEmbeddedFXSentinel *self) {
 static void cEmbeddedFXSentinel_Update(cEmbeddedFX *elem, float dt) {
 	cEmbeddedFXSentinel *self = (cEmbeddedFXSentinel *)elem;
 	cEntity *e = self->base.ent;
-	byte on = g_pWorld->alarm.on;
+	byte on = Players_CurAlarm()->on;
 
 	if (WLife(e)->obj.cam) {
 		on = 0;

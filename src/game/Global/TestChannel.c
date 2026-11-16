@@ -43,6 +43,10 @@
  *                            variable, e.g. __main__.f or CharAct.onNPCDeath): each call appends its argument tuple
  *                            to the list __main__.<list> and returns the literal (None), or raises
  *   native [str|check] <literal>   native values without Python objects (TestNative.c)
+ *   audit [json|reset]       the counts of the network audit (include/scrap/netaudit.h) since the last reset: a head
+ *                            line, "total\t<category>\t<sum>", then "<count>\t<category>\t<key>" by count down (an
+ *                            entity variable with its tag of include/scrap/netclass.h after a tab); json the same as
+ *                            one line of JSON for tools
  * An error answers "error: <type>: <value>". The channel statements and expressions (TestExpr.c) are a small part of
  * Python's syntax read and run in C (operators, comparisons, lambdas, assignments, no Python code). The verbs work on
  * native values (scrap/scriptnative.h, scrap/nativeobj.h) and the error state in C; the names of __main__ and of the
@@ -62,8 +66,11 @@
 #include "scrap/global.h"
 #include "scrap/game.h"
 #include "scrap/gvar.h"
+#include "scrap/inputtape.h"
 #include "scrap/instance.h"
 #include "scrap/modvars.h"
+#include "scrap/netaudit.h"
+#include "scrap/netclass.h"
 #include "scrap/pyfunction.h"
 #include "scrap/objentity.h"
 #include "scrap/particlesystem.h"
@@ -1124,7 +1131,7 @@ static void TC_EntInfo(tcBuf *b, const char *arg) {
 			CGameModel *m = &Obj(e)->model;
 			model = CGameModel_IsLoaded(m) && m->Model->scene && m->Model->scene->name ? m->Model->scene->name : "";
 			radar = Obj(e)->radarShow;
-			proxy = Obj(e)->proxy;
+			proxy = Obj(e)->replica;
 		}
 		if (Entity_IsType(e, TYEN_WITH_LIFE)) {
 			tg = WLife(e)->arrow.tgType;
@@ -1311,6 +1318,98 @@ static void TC_Click(tcBuf *b, const char *arg) {
 	}
 }
 
+/* ---- the network audit (include/scrap/netaudit.h) ---- */
+
+typedef struct {
+	tcBuf *b;
+	byte json;
+	int n;						/* rows written */
+	uint32_t totals[NA_CATS];
+} tcAudit;
+
+static void TC_AuditTotal(void *ctx, netAuditCat_t cat, const char *key, uint32_t count) {
+	(void)key;
+	((tcAudit *)ctx)->totals[cat] += count;
+}
+
+/* a JSON string: quotes, backslashes and the bytes below 0x20 and above 0x7e escaped (the texts are Windows-1252) */
+static void TC_AddJsonStr(tcBuf *b, const char *s) {
+	TC_Add(b, "\"", 1);
+	for (; *s; s++) {
+		uint8_t c = (uint8_t)*s;
+		if (c == '"' || c == '\\') {
+			TC_Addf(b, "\\%c", c);
+		} else if (c < 0x20 || c > 0x7e) {
+			TC_Addf(b, "\\u%04x", c);
+		} else {
+			TC_Add(b, s, 1);
+		}
+	}
+	TC_Add(b, "\"", 1);
+}
+
+static void TC_AuditRow(void *ctx, netAuditCat_t cat, const char *key, uint32_t count) {
+	tcAudit *a = ctx;
+	/* an entity variable's tag of the classification table (include/scrap/netclass.h): "untagged", "absent" */
+	const char *tag = cat == NA_ENTVAR && !strncmp(key, "entvar.set:", 11) ?
+		NetClass_TagName(NetClass_Find(NCT_ENTVAR, key + 11)) : NULL;
+
+	if (!a->json) {
+		TC_Addf(a->b, "%u\t%s\t%s%s%s\n", count, NetAudit_CatName(cat), key, tag ? "\t" : "", tag ? tag : "");
+		return;
+	}
+	TC_Add(a->b, a->n ? "," : "", -1);
+	TC_Add(a->b, "{\"key\":", -1);
+	TC_AddJsonStr(a->b, key);
+	TC_Addf(a->b, ",\"cat\":\"%s\",\"count\":%u", NetAudit_CatName(cat), count);
+	if (tag) {
+		TC_Addf(a->b, ",\"tag\":\"%s\"", tag);
+	}
+	TC_Add(a->b, "}", 1);
+	a->n++;
+}
+
+/* "audit": the counts since the last reset, a head line, the totals by category, then "<count>\t<category>\t<key>"
+ * by count down; "audit json" the same as one line of JSON; "audit reset" starts them again */
+static void TC_Audit(tcBuf *b, const char *arg) {
+	char word[0x20];
+	tcAudit a = { .b = b };
+
+	if (TC_Word(&arg, word, sizeof(word))) {
+		if (!strcmp(word, "reset")) {
+			NetAudit_Reset();
+			TC_Add(b, "ok\n", -1);
+			return;
+		}
+		if (strcmp(word, "json")) {
+			TC_Add(b, "error: audit [json|reset]\n", -1);
+			return;
+		}
+		a.json = 1;
+	}
+	int keys = NetAudit_Each(TC_AuditTotal, &a);
+	if (a.json) {
+		TC_Addf(b, "{\"secs\":%.1f,\"keys\":%d,\"lost\":%u,\"totals\":{", NetAudit_Since(), keys, NetAudit_Lost());
+		for (int c = 0, n = 0; c < NA_CATS; c++) {
+			if (a.totals[c]) {
+				TC_Addf(b, "%s\"%s\":%u", n++ ? "," : "", NetAudit_CatName((netAuditCat_t)c), a.totals[c]);
+			}
+		}
+		TC_Add(b, "},\"rows\":[", -1);
+	} else {
+		TC_Addf(b, "audit %.1f s, %d keys, %u lost\n", NetAudit_Since(), keys, NetAudit_Lost());
+		for (int c = 0; c < NA_CATS; c++) {
+			if (a.totals[c]) {
+				TC_Addf(b, "total\t%s\t%u\n", NetAudit_CatName((netAuditCat_t)c), a.totals[c]);
+			}
+		}
+	}
+	NetAudit_Each(TC_AuditRow, &a);
+	if (a.json) {
+		TC_Add(b, "]}\n", -1);
+	}
+}
+
 /* ---- console lines ---- */
 
 static tcBuf *tc_capture;
@@ -1445,6 +1544,17 @@ static void TC_Line(tcBuf *b, const char *line) {
 	}
 	if (TC_Verb(line, "native", &arg)) {
 		TC_Native(b, arg);
+		return;
+	}
+	if (TC_Verb(line, "audit", &arg)) {
+		TC_Audit(b, arg);
+		return;
+	}
+	/* tape [key <Set>.<Action> <value> | key clear | end]: the input tape (include/scrap/inputtape.h) */
+	if (TC_Verb(line, "tape", &arg)) {
+		char out[0x200];
+		InputTape_Command(arg, out, sizeof(out));
+		TC_Add(b, out, -1);
 		return;
 	}
 	if (!g_PythonReady) {
@@ -1689,7 +1799,8 @@ static void TC_Poll(void) {
 	}
 	tcBuf b = { 0 };
 	tc_seq = seq;
-	if (g_TestDetTrace) {
+	/* with an input tape the tape holds the input (include/scrap/inputtape.h) */
+	if (g_TestDetTrace && !g_InputTape) {
 		TestDet_Trace("command file%s: %.60s", tc_hold ? " (clock held)" : "", nl + 1);
 	}
 	TC_Run(&b, nl + 1);

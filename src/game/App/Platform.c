@@ -27,6 +27,7 @@
 #include "scrap/console.h"
 #include "scrap/dxutil.h"
 #include "scrap/input.h"
+#include "scrap/inputtape.h"
 #include "scrap/platform.h"
 #include "scrap/rdev.h"
 #include "scrap/scrapmain.h"
@@ -603,7 +604,8 @@ static void Plat_Key(const SDL_KeyboardEvent *k) {
 }
 
 static void Plat_Event(const SDL_Event *ev, byte *quit) {
-	if (g_TestDetTrace) {
+	/* with an input tape the tape holds the input (include/scrap/inputtape.h) */
+	if (g_TestDetTrace && !g_InputTape) {
 		TestDet_Trace("event %x", (unsigned)ev->type);
 	}
 	switch (ev->type) {

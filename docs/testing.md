@@ -17,7 +17,7 @@ The game starts with the test channel, and `golden/run.py` sends the checks of `
 
 `src/game/Global/TestChannel.c` lets a test tool ask the game things without a script engine. It is off unless the game starts with `-TestChannel` or `SCRAP_TEST_CHANNEL=1`. At the start of each frame (at most every 5 ms, also while the world clock stands) the game reads `test_cmd.txt` in the game folder. A new number on line 1 runs the commands below it, and the answers go to `test_reply.txt` through a temp file and a rename. It never sleeps or blocks, a missing or unchanged file does nothing. It does not answer during a level load.
 
-The commands are expressions and assignments, `do`, `check`, `print`, `con`, `get`, `ent`, `ents`, `dump`, `menu`, `click`, `recorder` and `native`. The tool side is `tools/test/channel.py`, the scrap MCP server uses it (see `tools/mcp/README.md`).
+The commands are expressions and assignments, `do`, `check`, `print`, `con`, `get`, `ent`, `ents`, `dump`, `menu`, `click`, `recorder`, `native` and `audit`. The tool side is `tools/test/channel.py`, the scrap MCP server uses it (see `tools/mcp/README.md`).
 
 `native <literal>` answers the repr of what the native literal reader of the script ports (`src/game/Script/ScriptNative.c`) makes of the text, `native str <literal>` its str, `native check <literal>` the text the golden `check()` writes (floats with 17 digits). A text the reader does not take answers an error. `native esc [str|check] <text>` is the same with `\n` for a line end and `\\` for a backslash, because the channel reads lines (`litstore.py` sends the stored texts that have a line end this way). `channel.py` has an optional encoding (latin-1 passes the bytes of the game). The command lives in `src/game/Global/TestNative.c`.
 
@@ -30,6 +30,37 @@ The stored output was checked against the frozen i686 reference before it was st
 When two runs differ, set `REGRESS_DET_TRACE=<folder>` and compare the traces with `tools/test/regress/dettrace.py`. It shows where the two runs part.
 
 The server port lock is one file for the machine (`~/.cache/scrapland/regress-port.lock`), so runs from several checkouts do not take the same port. `REGRESS_VK_DEVICE` may be a comma list of GPUs. The old switches `SCRAP_NULL_CHECK`, `SCRAP_NULL_CHECK_ENGINE`, `SCRAP_NATIVE_REF` and `SCRAP_PORT_SLOW` are gone.
+
+## Input tape and solo instance
+
+The input tape records the input of a single player run and plays it back in the deterministic test mode, so a replay repeats the run byte for byte (the same deterministic trace). A solo instance (the headless instance without network, one player whose controls come from the tape) can then be compared with single player. It is for test tools only, the original has nothing like it.
+
+```
+ScrapC -imap:Levels/DownTown -inputtape:rec:<file>
+ScrapC -imap:Levels/DownTown -inputtape:play:<file>
+ScrapC -instance:DownTown -solo:<file>
+```
+
+A tape is a text file with two layers. The D lines (device layer) hold the values of all input actions right after the devices wrote them, and a replay writes them back in place of the devices. The C lines (control layer) hold the controls of the player's character or ship per slot tick of 1/60 s. A single player replay checks them, and the solo instance writes them into its player's controls. A start line holds the place, the yaw and the money of the player, and an E line ends the tape. Floats are the hex of their bits. The line format is in `include/scrap/inputtape.h`.
+
+While a tape is on, the trace leaves out the event and command file lines and gets a `pl` line per slot tick of the player's entity: kind, type, pos, ang, vel, view, life, the action of each of the four layers, money and alarm. Without a tape the trace is unchanged, so the regress traces stay the same.
+
+```
+tools/test/tape.py rec <level> <tape> [--secs 60]
+tools/test/tape.py play <level> <tape>
+tools/test/tape.py solo <level> <tape>
+tools/test/tape.py cmp <trace A> <trace B>
+```
+
+`rec` drives a recording through the test channel verb `tape` (`tape key <Set>.<Action> <value>`, `tape key clear`, `tape end`, and `tape` alone for the state). It runs with `SCRAP_TEST_CHANNEL=step`, so the game clock stands while the driver thinks. The driver walks, boards the player's ship, flies and parks. `play` and `solo` run a tape, and `cmp` compares the `pl` lines of two traces.
+
+```
+tools/test/solo.sh <level> <tape> [secs]
+```
+
+`solo.sh` runs the replay and the solo instance and prints the first differing slot of the player's state, or `equal`, and the first differing slot per field. The two runs differ today on purpose. The instance steps its players before the frame and its action controllers once per 1/30 s tick, single player does it inside the world update every 1/60 s frame, and the instance lacks single player's setup, such as the boarding of the player's own ship. Stage 3.6 of the multiplayer plan makes them equal.
+
+A replay whose controls differ from the tape prints `inputtape: the controls of slot ... differ from the tape` in the console.
 
 ## Regress cases and the channel
 
@@ -73,6 +104,13 @@ ctest --test-dir build-linux64
 | `coord_test` | the coordinator library (`src/coord`): the key and ticket formats, the player store, the story and party, the places table, the list server registry, the quoting of command lines |
 | `faction_test` | the faction table `data/factions/factions.def` (parser, errors, ranks, key order, PvP rules, loan, bounty, courier) |
 | `arena_test` | the rules, scores, scorer order and wire format of the seven PvP modes (`src/arena`) |
+| `netclass_test` | the lookup of the network classification tables (`src/game/Script/NetClass.c`, `NetClassTable.c`): sorted tables, every row found, the families of the entity variables |
+| `modvarover_test` | the per player overlay of the module variables (`src/game/Script/ModVarOver.c`): which netclass tags get an overlay (PLAYER always, PARTY outside coop, not PLAYER_SHARED, PARTY_SHARED, WORLD, CLIENT), values and deletes per player, a player that has not written a variable reads the module's value, clearing by module and by player |
+| `netclass_check` | `tools/script/netclass.py --check`: the generated tables are up to date, every engine API function has a tag, and the untagged rows of the other tables |
+
+`tools/script/netclass.py` makes the tables from `tools/script/netclass/*.tsv` (engine API functions, entity variables, engine variables, script modules, module variables, save variable prefixes, level init steps, `playerread`; the tags are explained at the top of each file). The build runs `netclass.py --check --quiet` before the game code: an engine API function (a row of an engine module's function table) without a tag fails the build. `--scan` adds the names the code and data have that a table lacks.
+
+The table `playerread` lists the reads of "the player" in the world's context of an instance, one row per C function (or `Module.variable` for a module variable tagged PLAYER). The tag is NEAREST (the player nearest to the entity that runs), ANY (some player, the next one each frame), PARTY (coop: the party's acting member, its mission's) or WORLD (no player). Its rows come from the audit of instance runs. The module variable table has the tags PLAYER_SHARED and PARTY_SHARED: state of one player or party whose flow still runs in the world's context of a machine, an NPC, a race or a scene. Such a variable stays one shared value until a later stage moves it to PLAYER or PARTY.
 
 `coord_test`, `faction_test` and `arena_test` also ran under Wine as win64 programs. `net2_test` passes with `-m32`, with ASan and UBSan and under valgrind, `netrep_test` with `-m32` and with ASan and UBSan.
 
@@ -92,6 +130,10 @@ python3 tools/test/parity/storyedit.py <data folder> [--level L] [name=value ...
 `coopparity.py` is the same comparison for the coop story. A story point is the data folder of a coop world and a level. The tool gives a single player game the party's save variables and loads the level, starts a coordinator with a copy of the data and a rendered member, and compares them. `storyedit.py` edits the saved story of such a data folder (variables, level, entrance and door of the players) to make a story point.
 
 The test channel has verbs for this (`src/game/Global/TestChannel.c`). `entinfo` lists the entities around a place (class, list, model, action class, position, radar flag, and for a proxy the entity it stands for), `radar`, `fx` and `sounds` list what the last frame drew and played, `entsnd <object>` the sounds of one object, `ents`, `menu` and `get` are the old ones. `iline <line>` sends a line to the standard input of the instance, and `channel.py <game folder> -i <level> ...` talks to an instance's own channel (it answers `test_cmd_<level>.txt` in the game folder), so a hosting game's children can be reached.
+
+`audit` answers the counters of the network audit (`src/game/Global/NetAudit.c`, `include/scrap/netaudit.h`) since the last `audit reset`: the sound, voice and music sinks, effects, debris, animation events, HUD operations and texts, fade, cinema, camera, action set, time speed, the entity variables the scripts set, the reads of "the player" on an instance (a read in a player's context counts as `player.read.bound:<function>` or `player.any.bound:<function>`, a read in the world's context as `player.world.<rule>:<site>` with the rule of its row in the `playerread` table: nearest, any, party or world, and as `player.world.norule:<site>` for a site without a row, stage 1.3 gate: none on the 11 city levels with 8 bots) and the reads of the render flag and the camera distance on a headless process. One line per key, by count down. `audit json` gives the same as one line of JSON. The counters are always on and change no output.
+
+`SCRAP_PLAYER_TRACE=1` in the environment of an instance prints `pltrace` lines to its log. Each change of a player's money or alarm is printed with the context it happened in (`in player N` or `in the world`) and the dispatch point that entered that context. Each callback dispatched to a player prints `pltrace callback <function> for player N`. `pltrace WRONG` means a player's context changed another player's money or alarm. The frame loops (the entity updates, the input step, the alarm updates) print no callback lines.
 
 Instances read test lines on their standard input (or through `iline`): `status`, `money`, `use`, `goto`, `switch`, `call`, `alarm`, `life`, `faction ...`, `arena ...`, `story ...`, and a few more for the coop story. A client plays by itself with `SCRAP_PLAYBOT` (modes such as `idle`, `use`, `face`, or `1` to fight) and sends faction requests with `SCRAP_PLAYBOT_FACTION=<s>:<ability>,...`. `SCRAP_NET2_LOSS`, `SCRAP_NET2_DELAY` and `SCRAP_NET2_JITTER` add packet loss, delay and jitter to the sends of the process.
 

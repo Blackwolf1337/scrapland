@@ -1,0 +1,318 @@
+# The script modules (tools/modules/modules.tsv; a module of a level as level/Module): name, tag, why. Tags: DEF
+# (classes, resources, the HUD skeleton, map elements, a level's sound loops: runs on both sides), SIM (NPCs,
+# traffic, police, missions, activities: the server only), UI (menus, hangar, ship editor, conversor: the client,
+# ending in a transaction the server checks), SCENE (scene tables: both sides, started by the server). The first
+# tags were proposed by netclass.py --scan from the engine calls of each module's C file ("proposed: ..."), then
+# corrected by reading.
+Sound	DEF	sound tables and loops of the level
+Parking	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+gamblinden/Map	SIM	the setup of the level: NPCs, missions, traffic
+BankDirectorSound	DEF	the sounds of a character class
+BankMasterSound	DEF	the sounds of a character class
+BertoSound	DEF	the sounds of a character class
+BettySound	DEF	the sounds of a character class
+BishopSound	DEF	the sounds of a character class
+BossSound	DEF	the sounds of a character class
+CrazyGamblerSound	DEF	the sounds of a character class
+DesktopSound	DEF	the sounds of a character class
+DoorSound	DEF	sound tables and loops of the level
+DtritusSound	DEF	the sounds of a character class
+FunctionarySound	DEF	the sounds of a character class
+GateKeeperSound	DEF	the sounds of a character class
+GearSound	DEF	the sounds of a character class
+HumanSound	DEF	the sounds of a character class
+HumphreySound	DEF	the sounds of a character class
+MaintenanceSound	DEF	the sounds of a character class
+MayorSound	DEF	the sounds of a character class
+MercenarySound	DEF	the sounds of a character class
+MessengerSound	DEF	the sounds of a character class
+NurseSound	DEF	the sounds of a character class
+OutSound	DEF	sound tables and loops of the level
+PoliceBossSound	DEF	the sounds of a character class
+PoliceSound	DEF	the sounds of a character class
+RustySound	DEF	the sounds of a character class
+SebastianSound	DEF	the sounds of a character class
+SentinelSound	DEF	the sounds of a character class
+SputnikJunkyardSound	DEF	the sounds of a character class
+SputnikSound	DEF	the sounds of a character class
+BankMaster	DEF	character class definition (its callbacks run with the entity on the server)
+Berto	DEF	character class definition (its callbacks run with the entity on the server)
+Betty	DEF	character class definition (its callbacks run with the entity on the server)
+Boss	DEF	character class definition (its callbacks run with the entity on the server)
+Bureaucracy	DEF	character class definition (its callbacks run with the entity on the server)
+CrazyGambler	DEF	character class definition (its callbacks run with the entity on the server)
+Desktop	DEF	character class definition (its callbacks run with the entity on the server)
+Dtritus	DEF	character class definition (its callbacks run with the entity on the server)
+Functionary	DEF	character class definition (its callbacks run with the entity on the server)
+Human	DEF	character class definition (its callbacks run with the entity on the server)
+Humphrey	DEF	character class definition (its callbacks run with the entity on the server)
+InMap	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+Maintenance	DEF	character class definition (its callbacks run with the entity on the server)
+MakeChar	DEF	character class definition (its callbacks run with the entity on the server)
+Mayor	DEF	character class definition (its callbacks run with the entity on the server)
+MercenaryA	DEF	character class definition (its callbacks run with the entity on the server)
+MercenaryB	DEF	character class definition (its callbacks run with the entity on the server)
+MercenaryC	DEF	character class definition (its callbacks run with the entity on the server)
+MercenaryL	DEF	character class definition (its callbacks run with the entity on the server)
+Messenger	DEF	character class definition (its callbacks run with the entity on the server)
+Nurse	DEF	character class definition (its callbacks run with the entity on the server)
+Police	DEF	character class definition (its callbacks run with the entity on the server)
+PoliceBoss	DEF	character class definition (its callbacks run with the entity on the server)
+Rusty	DEF	character class definition (its callbacks run with the entity on the server)
+Sebastian	DEF	character class definition (its callbacks run with the entity on the server)
+Sentinel	DEF	character class definition (its callbacks run with the entity on the server)
+Speech	UI	the conversations of the acting player (texts, answers); taunts and remote coms start from the world
+Sputnik	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+SputnikJunkyard	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+ATPC	DEF	weapon class definition
+Accelerator	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+CharScorer	UI	menu or machine interface of the acting player
+Chat	UI	menu or machine interface of the acting player
+Cloud	DEF	clouds of the level
+CreditsText	UI	menu or machine interface of the acting player
+Devastator	DEF	weapon class definition
+EMI	DEF	weapon class definition
+Fx	DEF	effect files and motor effects (data/fx/fx.def)
+InTraffic	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+Inferno	DEF	weapon class definition
+Items	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+Laser	DEF	weapon class definition
+MisItems	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+OutMap	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+RacerScorer	UI	menu or machine interface of the acting player
+Sonic	DEF	weapon class definition
+SputnikInterface	UI	menu or machine interface of the acting player
+Swarm	DEF	weapon class definition
+Tesla	DEF	weapon class definition
+Vulcan	DEF	weapon class definition
+CTF	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+Challenge	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+DeathMatch	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+Doors	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+Elevator	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+InPolice	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+Metro	UI	menu or machine interface of the acting player
+MortalRace	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+OutPolice	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+PhoneCab	UI	menu or machine interface of the acting player
+Scene	SCENE	the scene tables
+Teleport	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+TeamDeathMatch	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+Ffa	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+NDeathMatch	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+NDeathMatchBots	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+NFlagHunt	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+NPostman	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+NTeamDM	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+NTeamFlag	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+NTeamPost	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+SDeathMatch	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+SFlagHunt	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+SPostman	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+SRace	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+Weapons	DEF	weapon class definition
+BankDirector	DEF	character class definition (its callbacks run with the entity on the server)
+Bishop	DEF	character class definition (its callbacks run with the entity on the server)
+CharAct	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+Gear	DEF	character class definition (its callbacks run with the entity on the server)
+HullTab	UI	menu or machine interface of the acting player
+Scorer	UI	menu or machine interface of the acting player
+Chars	DEF	character class definition (its callbacks run with the entity on the server)
+GateKeeper	DEF	character class definition (its callbacks run with the entity on the server)
+Vehicles	DEF	vehicle classes and death effects
+ShipMaker	UI	menu or machine interface of the acting player
+WeaponsTab	UI	menu or machine interface of the acting player
+EnginesTab	UI	menu or machine interface of the acting player
+VehiclesNPC	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+SaveGame	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+HangarTab	UI	menu or machine interface of the acting player
+ShipEdit	UI	menu or machine interface of the acting player
+Menu	UI	menu or machine interface of the acting player
+Alarm	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+DTritusDesktop	UI	menu or machine interface of the acting player
+CrazyWing	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+Versus	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+Traffic	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+CharConversor	UI	menu or machine interface of the acting player
+Domination	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+RaceMaker	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+MissionsFuncs	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+Net	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+Split	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+Init	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+NewsPanel	UI	menu or machine interface of the acting player
+CharsNPC	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
+PCMenu	UI	menu or machine interface of the acting player
+string	DEF	library
+ab/Map	SIM	the setup of the level: NPCs, missions, traffic
+ab/MapFinalFight	SIM	a part of the level setup
+ab/MapSnd	DEF	the sound loops of the level
+abindoor/Map	SIM	the setup of the level: NPCs, missions, traffic
+abindoor/MapSnd	DEF	the sound loops of the level
+bank/Map	SIM	the setup of the level: NPCs, missions, traffic
+bank/MapSnd	DEF	the sound loops of the level
+bank/MapTreasure	SIM	a part of the level setup
+bank/Mission_CatchRudolph	SIM	a mission
+bank/Mission_GetDataPart2	SIM	a mission
+bank/Mission_InfiltrateBank	SIM	a mission
+ca/Map	SIM	the setup of the level: NPCs, missions, traffic
+ca/MapSnd	DEF	the sound loops of the level
+ca/Mission_IgorCombat	SIM	a mission
+ca/SuperDeal_Eighth	SIM	a mission
+ca/SuperDeal_First	SIM	a mission
+ca/SuperDeal_Third	SIM	a mission
+commercial/Map	SIM	the setup of the level: NPCs, missions, traffic
+commercial/MapRace	SIM	a part of the level setup
+commercial/MapSnd	DEF	the sound loops of the level
+commercial/Mission_DefeatCrazyGambler3	SIM	a mission
+commercial/Mission_DestroyCommSats2	SIM	a mission
+commercial/Mission_DestroyMickus	SIM	a mission
+commercial/Mission_DestroyPorkinsTransports	SIM	a mission
+commercial/Mission_DestroyStupidus	SIM	a mission
+commercial/Mission_FirstMeetDeepThroat	SIM	a mission
+commercial/Mission_GetDataPart3	SIM	a mission
+commercial/Mission_ProtectGus	SIM	a mission
+commercial/Mission_Win1stRace	SIM	a mission
+downtown/Map	SIM	the setup of the level: NPCs, missions, traffic
+downtown/MapRace	SIM	a part of the level setup
+downtown/MapSnd	DEF	the sound loops of the level
+downtown/Mission_BertoMassacre	SIM	a mission
+downtown/Mission_DefeatCrazyGambler1	SIM	a mission
+downtown/Mission_DestroyCommSats3	SIM	a mission
+downtown/Mission_DistractHumphrey	SIM	a mission
+downtown/Mission_FaceTheMayor	SIM	a mission
+downtown/Mission_FirstContactPress	SIM	a mission
+downtown/Mission_GetDataPart1	SIM	a mission
+downtown/Mission_HumphreyRace	SIM	a mission
+downtown/Mission_Massacre	SIM	a mission
+downtown/Mission_MultiplusRace	SIM	a mission
+downtown/Mission_ProtectMayorTransport	SIM	a mission
+downtown/Mission_StealMayorShip	SIM	a mission
+fake/Map	SIM	the setup of the level: NPCs, missions, traffic
+fake/MapSnd	DEF	the sound loops of the level
+fz/Map	SIM	the setup of the level: NPCs, missions, traffic
+fz/MapSnd	DEF	the sound loops of the level
+fz/Mission_MortalRace	SIM	a mission
+fz/SuperDeal_Fifth	SIM	a mission
+fz/SuperDeal_Ninth	SIM	a mission
+fz/SuperDeal_Second	SIM	a mission
+fz/SuperDeal_Seventh	SIM	a mission
+fz/SuperDeal_Twelfth	SIM	a mission
+gamblinden/MapSnd	DEF	the sound loops of the level
+gamblinden/Mission_AfterFinalFight	SIM	a mission
+gamblinden/Mission_ArrangeBankersCombat	SIM	a mission
+gamblinden/Mission_ArrangeBankersCTF	SIM	a mission
+gamblinden/Mission_ArrangeIgorCombat	SIM	a mission
+gamblinden/Mission_ArrangeMortalRace	SIM	a mission
+gamblinden/Mission_BackFromMortalRace	SIM	a mission
+gamblinden/Mission_BeforeFinalFight	SIM	a mission
+gamblinden/Mission_CrazyGamblerFirstContact	SIM	a mission
+gamblinden/Mission_GoToGamblinDen	SIM	a mission
+gamblinden/Mission_IgorFirstContact	SIM	a mission
+gamblinden/Mission_TalkToTraitoriusAfterCTF	SIM	a mission
+gamblinden/Mission_ThreeStooges	SIM	a mission
+gdb/Map	SIM	the setup of the level: NPCs, missions, traffic
+gdb/MapMatrix	SIM	a part of the level setup
+gdb/MapSnd	DEF	the sound loops of the level
+gdb/Mission_IntoTheGDB	SIM	a mission
+gdb/Mission_ReinsertOwnMatrix	SIM	a mission
+gdb/Mission_ReinsertOwnMatrix2	SIM	a mission
+junkyard/Map	SIM	the setup of the level: NPCs, missions, traffic
+junkyard/MapShipEdit	UI	the ship editor of the Junkyard
+junkyard/MapSnd	DEF	the sound loops of the level
+junkyard/Mission_RustyFirstContact	SIM	a mission
+mca/Map	SIM	the setup of the level: NPCs, missions, traffic
+mca/MapSnd	DEF	the sound loops of the level
+mcb/Map	SIM	the setup of the level: NPCs, missions, traffic
+mcb/MapSnd	DEF	the sound loops of the level
+mda/Map	SIM	the setup of the level: NPCs, missions, traffic
+mda/MapSnd	DEF	the sound loops of the level
+mdb/Map	SIM	the setup of the level: NPCs, missions, traffic
+mdb/MapSnd	DEF	the sound loops of the level
+menu/Map	UI	the main menu level
+menu/MapSnd	DEF	the sound loops of the level
+moa/Map	SIM	the setup of the level: NPCs, missions, traffic
+moa/MapSnd	DEF	the sound loops of the level
+mob/Map	SIM	the setup of the level: NPCs, missions, traffic
+mob/MapSnd	DEF	the sound loops of the level
+msa/Map	SIM	the setup of the level: NPCs, missions, traffic
+msa/MapSnd	DEF	the sound loops of the level
+msb/Map	SIM	the setup of the level: NPCs, missions, traffic
+msb/MapSnd	DEF	the sound loops of the level
+om/Map	SIM	the setup of the level: NPCs, missions, traffic
+om/MapSnd	DEF	the sound loops of the level
+om/Mission_BankersCTF	SIM	a mission
+om/SuperDeal_Sixth	SIM	a mission
+om/SuperDeal_Tenth	SIM	a mission
+orbit/Map	SIM	the setup of the level: NPCs, missions, traffic
+orbit/MapDecont	SIM	a part of the level setup
+orbit/MapSnd	DEF	the sound loops of the level
+orbit/Mission_IntroHuman	SIM	a mission
+outskirts/Map	SIM	the setup of the level: NPCs, missions, traffic
+outskirts/MapRace	SIM	a part of the level setup
+outskirts/MapSnd	DEF	the sound loops of the level
+outskirts/Mission_AttackTraitorius	SIM	a mission
+outskirts/Mission_DestroyBadDebtors	SIM	a mission
+outskirts/Mission_DestroyCommSats1	SIM	a mission
+outskirts/Mission_DestroyHumphrey	SIM	a mission
+outskirts/Mission_FunctionaryHunting	SIM	a mission
+outskirts/Mission_GoToOutskirts	SIM	a mission
+outskirts/Mission_IdentifyMerc	SIM	a mission
+outskirts/Mission_KillPolice	SIM	a mission
+outskirts/Mission_KillRudolph	SIM	a mission
+outskirts/Mission_TransportKiller	SIM	a mission
+outskirts/Mission_Win2ndRace	SIM	a mission
+police/Map	SIM	the setup of the level: NPCs, missions, traffic
+police/MapPlanes	SIM	a part of the level setup
+police/MapSnd	DEF	the sound loops of the level
+police/Mission_BeatPickus	SIM	a mission
+police/Mission_FicusDead	SIM	a mission
+police/Mission_GetAuthorization	SIM	a mission
+police/Mission_InitEpilogue	SIM	a mission
+police/Mission_JailBreak	SIM	a mission
+police/Mission_PoliceBossCheats	SIM	a mission
+press/Map	SIM	the setup of the level: NPCs, missions, traffic
+press/MapPlanes	SIM	a part of the level setup
+press/MapSnd	DEF	the sound loops of the level
+press/Mission_FicusBanker	SIM	a mission
+press/Mission_GetCrazyData	SIM	a mission
+press/Mission_GoToPress	SIM	a mission
+press/Mission_GoWithHuman	SIM	a mission
+press/Mission_HumphreyArchbishopKilled	SIM	a mission
+press/Mission_IntroHuman2	SIM	a mission
+press/Mission_MeetBoss	SIM	a mission
+press/Mission_PressMeeting	SIM	a mission
+press/Mission_TalkToBoss	SIM	a mission
+press/Mission_WhoIsDeepThroat	SIM	a mission
+press/Mission_WhoIsTheBaddie	SIM	a mission
+qf/Map	SIM	the setup of the level: NPCs, missions, traffic
+qf/MapSnd	DEF	the sound loops of the level
+qf/Mission_BankersCombat	SIM	a mission
+qf/SuperDeal_Eleventh	SIM	a mission
+qf/SuperDeal_Fourth	SIM	a mission
+scrapyard/Map	SIM	the setup of the level: NPCs, missions, traffic
+scrapyard/MapSnd	DEF	the sound loops of the level
+scrapyard/MapTriggers	SIM	a part of the level setup
+scrapyard/Mission_Ambush	SIM	a mission
+scrapyard/Mission_DefeatCrazyGambler2	SIM	a mission
+scrapyard/Mission_FindDtritusMatrix	SIM	a mission
+scrapyard/Mission_MeetBerto	SIM	a mission
+scrapyard/Mission_MosquitoClue	SIM	a mission
+scrapyard/Mission_StupidMerc	SIM	a mission
+scrapyard/Mission_StupidMercAgain	SIM	a mission
+scrapyard/Mission_TalkToDeepThroat	SIM	a mission
+shipedit/Map	SIM	the setup of the level: NPCs, missions, traffic
+shipedit/MapSnd	DEF	the sound loops of the level
+temple/Map	SIM	the setup of the level: NPCs, missions, traffic
+temple/MapExtraLifes	SIM	a part of the level setup
+temple/MapSnd	DEF	the sound loops of the level
+temple/Mission_ArchbishopDead	SIM	a mission
+temple/Mission_AskGus	SIM	a mission
+temple/Mission_MeetArchbishop	SIM	a mission
+temple/Mission_TalkToDeepThroat	SIM	a mission
+townhall/Map	SIM	the setup of the level: NPCs, missions, traffic
+townhall/MapSnd	DEF	the sound loops of the level
+townhall/Mission_ApologizeMayor	SIM	a mission
+townhall/Mission_CatchTrurl	SIM	a mission
+townhall/Mission_SheriffMayor	SIM	a mission
+townhall/Mission_TalkToMayor	SIM	a mission

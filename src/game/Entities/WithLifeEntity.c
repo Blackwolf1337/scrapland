@@ -122,20 +122,31 @@ void cWithLifeEntity_SetSndTime(cEntity *self, float t, int i) {
 }
 
 /* the fire of the Napalm over dt: the fire sound, the hits of the burner and the life it takes (not on clients) */
-static void cWithLifeEntity_Burn(cEntity *self, float dt) {
+static inline byte WL_Burning(const cWithLifeEntity *w) {
+	return w->fireRemain > 0.0f && w->fireDelay > 0.0f && w->fireAtt > -1.0f;
+}
+
+/* Present: the fire sound stays on while the entity burns */
+static void cWithLifeEntity_BurnSound(cEntity *self) {
 	cWithLifeEntity *w = WLife(self);
 
-	if (!(w->fireRemain > 0.0f) || !(w->fireDelay > 0.0f) || !(w->fireAtt > -1.0f)) {
+	if (!WL_Burning(w)) {
 		return;
 	}
-	float k = w->fireAtt + 1.0f;
 	cSndItem *s = PtrArray_Get(&w->lifeSounds, WL_SND_FIRE);
 	if (s) {
 		s->time = -0.3f;
 	}
-	if (g_pApp->flags & APPF_CLIENT) {
+}
+
+/* Advance: the fire takes the life points (not on a client of the original's network game) */
+static void cWithLifeEntity_Burn(cEntity *self, float dt) {
+	cWithLifeEntity *w = WLife(self);
+
+	if (!WL_Burning(w) || (g_pApp->flags & APPF_CLIENT)) {
 		return;
 	}
+	float k = w->fireAtt + 1.0f;
 	w->burnAcc = w->burnAcc - dt;
 	cEntity *burner = w->burner.target;
 	cVehicleAttack_HitBy(&w->attack, burner ? burner->name : str_Empty);
@@ -257,11 +268,13 @@ void cWithLifeEntity_UpdateOff(cEntity *self) {
 	}
 	cSndInterface_StopAll(&w->hitSounds, WL_FloatBits(dt));
 	cSndInterface_StopAll(&w->lifeSounds, WL_FloatBits(dt));
-	w->fireRemain = 0.0f;
-	w->fireDelay = 0.0f;
-	w->fireAtt = -1.0f;
-	cWithLifeEntity_Burn(self, dt);
-	WithLife_CheckLife(self);
+	/* Advance: the fire goes out (so it burns nothing here) and the life is checked */
+	if (Obj_Advances(self)) {
+		w->fireRemain = 0.0f;
+		w->fireDelay = 0.0f;
+		w->fireAtt = -1.0f;
+		WithLife_CheckLife(self);
+	}
 	cObjEntity_UpdateOff(self);
 }
 
@@ -381,9 +394,17 @@ static void cWithLifeEntity_FadeSounds(cEntity *self, float dt) {
 	}
 }
 
+/* the slot step (the halves in include/scrap/withlifeentity.h) */
 void cWithLifeEntity_Tick(cEntity *self, float dt) {
-	WithLife_CheckLife(self);
-	cWithLifeEntity_Burn(self, dt);
+	byte adv = Obj_Advances(self);
+
+	if (adv) {
+		WithLife_CheckLife(self);
+	}
+	cWithLifeEntity_BurnSound(self);
+	if (adv) {
+		cWithLifeEntity_Burn(self, dt);
+	}
 	cWithLifeEntity_FadeSounds(self, dt);
 	Grid_Add(&g_pWorld->grid, self);
 	cObjEntity_Tick(self, dt);
@@ -392,11 +413,12 @@ void cWithLifeEntity_Tick(cEntity *self, float dt) {
 /* the OnDamage or OnDeath function of the entity, then of its entity list: name, attacker (and damage) */
 static void WL_RunFunc(cEntity *self, cPy_Function *own, size_t listOff, const int *damage) {
 	cWithLifeEntity *w = WLife(self);
+	int was = PLAYERS_NONE;
 
 	/* the instance: the scripts' player is the attacker when it is a player, else the entity when it is one */
 	if (g_Instance) {
 		cEntity *by = w->attack.hitBy.target ? World_FindEntity(Nto1Node_TargetName(&w->attack.hitBy)) : NULL;
-		Players_BindEntity(Players_Is(by) ? by : self);
+		was = Players_EnterEntity(Players_Is(by) ? by : self);
 		Faction_Crime(self, by, damage == NULL);
 	}
 	cPy_Function_AddParamS(own, self->name);
@@ -415,6 +437,7 @@ static void WL_RunFunc(cEntity *self, cPy_Function *own, size_t listOff, const i
 		}
 		cPy_Function_Execute(f, 0);
 	}
+	Players_Leave(was);
 }
 
 void cWithLifeEntity_OnDamage(cEntity *self, int damage) {
@@ -480,7 +503,11 @@ void cWithLifeEntity_SetActive(cEntity *self, byte on) {
 	cArrowIndicator_SetModels(&w->arrow, on);
 	cObjEntity_SetActive(self, on);
 	if (was != on && on && w->actCtrl) {
-		cActCtrl_Tick(w->actCtrl, 0.005f);
+		if (Obj_Advances(self)) {
+			cActCtrl_Tick(w->actCtrl, 0.005f);
+		} else {
+			cActCtrl_Present(w->actCtrl, 0.005f);
+		}
 	}
 }
 
@@ -522,10 +549,13 @@ void cWithLifeEntity_Update(cEntity *self) {
 	}
 	cSndInterface_Tick(&w->hitSounds, dt);
 	cSndInterface_Tick(&w->lifeSounds, dt);
-	/* a character proxy's actions come from the watcher (cActCtrl_NetDrive), a player's of the network are run by
-	 * tick (NetPl_Step) */
-	if (w->actCtrl && (!w->obj.proxy || w->actCtrl->cls->dynShip) && !w->obj.netStep) {
-		cActCtrl_Tick(w->actCtrl, dt);
+	/* the actions of a player's entity of the network run by tick (NetPl_Step); a replica's only show */
+	if (w->actCtrl && !w->obj.netStep) {
+		if (Obj_Advances(self)) {
+			cActCtrl_Tick(w->actCtrl, dt);
+		} else {
+			cActCtrl_Present(w->actCtrl, dt);
+		}
 	}
 	cObjEntity_Update(self);
 	cArrowIndicator_Update(&w->arrow);

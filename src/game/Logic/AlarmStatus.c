@@ -1,5 +1,6 @@
 /*
- * Logic/AlarmStatus.cpp of the game: the alarm of the world (cAlarm at g_pWorld->alarm, include/scrap/logic.h). It
+ * Logic/AlarmStatus.cpp of the game: the alarm of the player (cAlarm at g_pWorld->alarm; the instance keeps one per
+ * player in its context, Players_CurAlarm of include/scrap/players.h). It
  * grows or falls by its rate every frame; at 1 it goes on (the AlarmCallback, the gears and sentinels of an indoor
  * map after the player), at 0 off. Nothing changes while it is locked or the action set is not the one of the
  * game (1 or 3). The type of the player character is kept with the tests of UsrDefChar and GuaranteedChars.
@@ -87,8 +88,16 @@ static void Alarm_Reset(cAlarm *self) {
 	cString_Assign(g_PoliceTauntRace, g_PoliceTauntRace + 1);
 }
 
-/* on: the callback and the attack; while on the type is kept and the gears and a sentinel go for the player */
+static void Alarm_SetOnIn(cAlarm *self, byte on);
+/* on: the callback and the attack; while on the type is kept and the gears and a sentinel go for the player (the
+ * instance: in the context of the player whose alarm it is) */
 void Alarm_SetOn(cAlarm *self, byte on) {
+	int was = Players_Enter(Players_OfAlarm(self));
+	Alarm_SetOnIn(self, on);
+	Players_Leave(was);
+}
+
+static void Alarm_SetOnIn(cAlarm *self, byte on) {
 	vec3_t tmp;
 
 	if (!Alarm_Open(self)) {

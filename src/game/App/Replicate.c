@@ -20,6 +20,8 @@
 #include "scrap/crt.h"
 #include "scrap/faction.h"
 #include "scrap/global.h"
+#include "scrap/initsteps.h"
+#include "scrap/inputtape.h"
 #include "scrap/instance.h"
 #include "scrap/model.h"
 #include "scrap/node3d.h"
@@ -749,9 +751,42 @@ static void Rep_DropCorpse(RepPlayer *pl) {
 
 /* the player's character at pos (a spawn point when pos is NULL): its class of the faction or the state
  * (include/scrap/faction.h), Dtritus by default */
+/* the place of player i's new character: pos, else its faction's jail, else a spawn point of the level */
+static void Rep_SpawnPlace(int i, const vec3_t *pos, vec3_t *p, float *yaw) {
+	RepPlayer *pl = &rep.pl[i];
+	if (pos) {
+		*p = *pos;
+	} else if (Faction_SpawnPlace(i, p, yaw)) {
+		/* a member that died in its office level: its jail dummy */
+	} else if (!Rep_PickSpawn(p, yaw, &pl->spawnAt)) {
+		*p = rep.spawn[0];
+		*yaw = rep.spawnYaw[0];
+	}
+}
+
+/* e as player i's character: its faction's class, the instance's death, the heading yaw */
+static void Rep_CharAt(int i, cEntity *e, float yaw) {
+	/* a level that loads no character scripts of its own (GDB) has not even the default class */
+	const char *cls = Faction_CharClass(i);
+	Faction_EnsureClass(cls);
+	if (!WLife(e)->actCtrl || !WLife(e)->actCtrl->cls || strcmp(WLife(e)->actCtrl->cls->name, cls)) {
+		WithLife_SetActCtrl(e, cls);
+	}
+	Rep_SetVarS(e, "TgType", "Green");
+	/* its death is the instance's (Rep_Death), not an NPC's of the scripts (CharAct: respawn from CharsNPC) nor single
+	 * player's (the list Players of the startup player: Chars.MainCharDeath) */
+	Rep_SetVarS(e, "OnDeath", "");
+	Rep_SetVarS(e, "EntityList", "");
+	vec3_t ang = { 0.0f, yaw, 0.0f };
+	Obj_SetAng(e, &ang);
+}
+
+/* player i's entity e is its own now: its slot, the replication of its steps, the state of a new character */
+static cEntity *Rep_OwnNew(int i, cEntity *e, const vec3_t *p);
+
 static cEntity *Rep_SpawnChar(int i, const vec3_t *pos, float yaw) {
 	char name[REP_NAME];
-	vec3_t p, ang;
+	vec3_t p;
 
 	RepPlayer *pl = &rep.pl[i];
 	pl->spawnAt = -1;
@@ -764,27 +799,46 @@ static cEntity *Rep_SpawnChar(int i, const vec3_t *pos, float yaw) {
 		}
 		p = e->pos;
 	} else {
-		if (pos) {
-			p = *pos;
-		} else if (Faction_SpawnPlace(i, &p, &yaw)) {
-			/* a member that died in its office level: its jail dummy */
-		} else if (!Rep_PickSpawn(&p, &yaw, &pl->spawnAt)) {
-			p = rep.spawn[0];
-			yaw = rep.spawnYaw[0];
-		}
+		Rep_SpawnPlace(i, pos, &p, &yaw);
 		if ((e = cWorld_CreateEntity(g_pWorld, name, p.x, p.y, p.z, TYEN_WALKCHAR)) == NULL) {
 			return NULL;
 		}
-		/* a level that loads no character scripts of its own (GDB) has not even the default class */
-		const char *cls = Faction_CharClass(i);
-		Faction_EnsureClass(cls);
-		WithLife_SetActCtrl(e, cls);
-		Rep_SetVarS(e, "TgType", "Green");
-		/* its death is the instance's (Rep_Death), not an NPC's of the scripts (CharAct: respawn from CharsNPC) */
-		Rep_SetVarS(e, "OnDeath", "");
-		ang = (vec3_t){ 0.0f, yaw, 0.0f };
-		Obj_SetAng(e, &ang);
+		Rep_CharAt(i, e, yaw);
 	}
+	return Rep_OwnNew(i, e, &p);
+}
+
+/* the name Rep_EnterChar gives the startup player's character */
+static char rep_enterName[REP_NAME];
+
+const char *Rep_EnterName(void) {
+	return rep_enterName;
+}
+
+/* player i's character of the level's start: single player's startup player, made by the player steps of the level
+ * (include/scrap/initsteps.h) in its context, at the place of the instance's spawn rules; the instance's own where
+ * the level made none (the PvP modes, a level without the steps) */
+static cEntity *Rep_EnterChar(int i, const vec3_t *pos, float yaw) {
+	RepPlayer *pl = &rep.pl[i];
+	if (Arena_On()) {
+		return Rep_SpawnChar(i, pos, yaw);
+	}
+	pl->spawnAt = -1;
+	Str_PrintfQuiet(rep_enterName, sizeof(rep_enterName), REP_PLAYER_PREFIX "%d_%u", i, ++pl->spawns);
+	cEntity *e = InitSteps_Enter(i) ? World_FindEntity(rep_enterName) : NULL;
+	if (!e || !Entity_IsType(e, TYEN_WALKCHAR)) {
+		return Rep_SpawnChar(i, pos, yaw);
+	}
+	vec3_t p;
+	Rep_SpawnPlace(i, pos, &p, &yaw);
+	Entity_SetPos(e, &p);
+	Rep_CharAt(i, e, yaw);
+	Con_Printf("instance: player %d's startup player %s\n", i, e->name);
+	return Rep_OwnNew(i, e, &p);
+}
+
+static cEntity *Rep_OwnNew(int i, cEntity *e, const vec3_t *p) {
+	RepPlayer *pl = &rep.pl[i];
 	Rep_SetSlot(e, PLAYERS_NET_SLOT + i);
 	Obj(e)->netStep = 1;
 	Rep_DropCorpse(pl);
@@ -795,7 +849,7 @@ static cEntity *Rep_SpawnChar(int i, const vec3_t *pos, float yaw) {
 	pl->lost = 0;
 	pl->dead = 0;
 	pl->spawnTick = rep.tick;
-	pl->spawnY = p.y;
+	pl->spawnY = p->y;
 	Faction_Spawned(i, e);
 	Coop_Spawned(e);
 	return e;
@@ -831,7 +885,7 @@ static void Rep_Disown(int i, int k) {
 
 /* a parked ship no one sits in that player i may take: no other player owns it */
 static byte Rep_IsParked(cEntity *e, int i) {
-	if (!Entity_IsType(e, TYEN_CAR) || e->deadNode.target || Obj(e)->proxy || strncmp(e->name, "Parked", 6) ||
+	if (!Entity_IsType(e, TYEN_CAR) || e->deadNode.target || Obj(e)->replica || strncmp(e->name, "Parked", 6) ||
 		cVehicleEntity_GetOwnerSlot(e) != -1 || WLife(e)->life <= 0) {
 		return 0;
 	}
@@ -894,8 +948,8 @@ static cEntity *Rep_CallShip(int i, cEntity *ch, byte side) {
 	cEntity *ship = NULL;
 	vec3_t at, p;
 
-	/* the money is the bound player's (Rep_PreFrame binds it); the coop story calls no ship indoors */
-	if ((pl->rebuild > 0 && g_pWorld->money < pl->rebuild) || Coop_NoShipCall()) {
+	/* the money is the current player's (Rep_PreFrame enters its context); the coop story calls no ship indoors */
+	if ((pl->rebuild > 0 && *Players_CurMoney() < pl->rebuild) || Coop_NoShipCall()) {
 		return NULL;
 	}
 	float yaw = WChar(ch)->view.y;
@@ -938,7 +992,7 @@ static cEntity *Rep_CallShip(int i, cEntity *ch, byte side) {
 	if (ship) {
 		pl->calls++;
 		if (pl->rebuild > 0) {
-			g_pWorld->money -= pl->rebuild;
+			*Players_CurMoney() -= pl->rebuild;
 			Con_Printf("instance: player %d paid %d for its ship\n", i, pl->rebuild);
 			pl->rebuild = 0;
 		}
@@ -1044,7 +1098,7 @@ static void Rep_DropOwn(int i) {
 	if (!e) {
 		return;
 	}
-	Players_Bind(i);
+	int was = Players_Enter(i);
 	Obj(e)->netStep = 0;
 	if (NetPl_Kind(e) == NETREP_SHIP) {
 		Rep_SetSlot(e, -1);
@@ -1064,7 +1118,7 @@ static void Rep_DropOwn(int i) {
 			Str_Copy(pl->corpseName, e->name, sizeof(pl->corpseName));
 		}
 	}
-	Players_BindTurn();
+	Players_Leave(was);
 }
 
 /* the game's cost of a death (MissionsFuncs.SinglePlayerDeath and Vehicles.OnDeath of single player): the alarm
@@ -1075,8 +1129,8 @@ static void Rep_Death(int i, cEntity *e) {
 
 	pl->deaths++;
 	pl->dead = 1;
-	Players_Bind(i);
-	Alarm_Set(&g_pWorld->alarm, 0.0f);
+	int was = Players_Enter(i);
+	Alarm_Set(Players_CurAlarm(), 0.0f);
 	Faction_Died(i);
 	Arena_Died(i, e);
 	if (sand.rebuild && NetPl_Kind(e) == NETREP_SHIP && Rep_ShipOwner(e) == i) {
@@ -1084,7 +1138,7 @@ static void Rep_Death(int i, cEntity *e) {
 	}
 	if (sand.lives && --pl->lives <= 0) {
 		pl->lives = sand.lives;
-		g_pWorld->money = Instance_StartMoney();
+		*Players_CurMoney() = Instance_StartMoney();
 		pl->rebuild = 0;
 		Con_Printf("instance: player %d has no lives left: starts again\n", i);
 	}
@@ -1099,7 +1153,7 @@ static void Rep_Death(int i, cEntity *e) {
 		}
 	}
 	Coop_Died(i, e);
-	Players_BindTurn();
+	Players_Leave(was);
 }
 
 byte Rep_PlayerDead(int i) {
@@ -1138,12 +1192,18 @@ static int Rep_Join(int conn) {
 		if (!Travel_Admit(conn, i, &sp)) {
 			return -1;
 		}
+		/* the solo instance's player (conn -1) starts where and with the money single player's did on its input tape */
+		if (conn < 0) {
+			float pos[3];
+			sp.have = InputTape_SoloStart(pos, &sp.yaw, &sp.money);
+			sp.pos = (vec3_t){ pos[0], pos[1], pos[2] };
+		}
 		Players_Join(i, sp.money);
 		if (Arena_On()) {
 			/* the PvP modes: no ship before its join and its first spawn (Arena_SpawnDue) */
 			pl->lost = rep.tick ? rep.tick : 1;
 			Arena_Joined(i);
-		} else if (!Rep_SpawnChar(i, sp.have ? &sp.pos : NULL, sp.yaw)) {
+		} else if (!Rep_EnterChar(i, sp.have ? &sp.pos : NULL, sp.yaw)) {
 			Players_Part(i);
 			Travel_Left(i);
 			return -1;
@@ -1156,13 +1216,19 @@ static int Rep_Join(int conn) {
 		/* the sandbox and freeroam: a player who arrives on foot in an outdoor level finds its own ship beside it, as
 		 * single player's waits in the level's parking with Sputnik (include/scrap/sputniks.h) */
 		if (Places_On() && Sputniks_Outdoor() && NetPl_Kind(Rep_Own(pl)) == NETREP_CHAR) {
-			Players_Bind(i);
+			int was = Players_Enter(i);
 			Rep_CallShip(i, Rep_Own(pl), 1);
-			Players_BindTurn();
+			Players_Leave(was);
 		}
 		return i;
 	}
 	return -1;
+}
+
+void Rep_SoloJoin(void) {
+	if (Rep_Join(-1) < 0) {
+		Con_Printf("instance: no solo player\n");
+	}
 }
 
 static void Rep_Leave(int i) {
@@ -1195,13 +1261,13 @@ void Rep_TestSwitch(int i, byte call) {
 		Con_Printf("instance: no player %d\n", i);
 		return;
 	}
-	Players_Bind(i);
+	int was = Players_Enter(i);
 	if (!call) {
 		Rep_SwitchTo(i, e, NULL);
 	} else if (NetPl_Kind(e) == NETREP_CHAR) {
 		Rep_CallShip(i, e, 0);
 	}
-	Players_BindTurn();
+	Players_Leave(was);
 }
 
 cEntity *Rep_ReplaceShip(int i, cEntity *old) {
@@ -1293,11 +1359,16 @@ void Rep_PreFrame(uint64_t tick) {
 	NetRepInput in;
 
 	rep.tick = tick;
+	InputTape_SoloTick();
+	int prev = Players_Current();
 	for (int i = 0; i < PLAYERS_MAX; i++) {
 		RepPlayer *pl = &rep.pl[i];
 		if (!pl->used) {
 			continue;
 		}
+		/* its death, its new character, its input and its use in its context: the money, the alarm, the module
+		 * variables and the scripts' player are its own */
+		Players_Enter(i);
 		cEntity *e = Players_Get(i);
 		if (e && e == pl->own && WLife(e)->life <= 0 && !pl->lost) {
 			/* dead: the game's death runs on (the effects, the wreck) without the player */
@@ -1341,9 +1412,13 @@ void Rep_PreFrame(uint64_t tick) {
 			pl->told = -2;
 			continue;
 		}
-		/* the money, the alarm and the scripts' player of this player while its input runs */
-		Players_Bind(i);
-		NetRepInBuf_Take(&pl->in, (uint32_t)tick, &in);
+		if (pl->conn < 0) {
+			/* the solo instance's player: the input of its tape (include/scrap/inputtape.h) */
+			InputTape_SoloInput(e, &in);
+		} else {
+			NetRepInBuf_Take(&pl->in, (uint32_t)tick, &in);
+		}
+		Players_Cur()->input = &in;
 		pl->shownNow = pl->shown[tick % NETREP_INBUF];
 		Coop_TestInput(i, &in, (double)tick / NETREP_TICK_HZ - pl->shownNow / 1000.0);
 		Faction_Input(i, e, &in);
@@ -1354,6 +1429,7 @@ void Rep_PreFrame(uint64_t tick) {
 		byte use = (in.buttons & NETREP_IN_ACT3) && !(pl->buttons & NETREP_IN_ACT3) && !Arena_On();
 		if (use && NetPl_Kind(e) == NETREP_CHAR && WChar_Victim(e) && Rep_IsParked(WChar_Victim(e), i)) {
 			pl->buttons = in.buttons;
+			Players_Cur()->input = NULL;
 			Rep_SwitchTo(i, e, WChar_Victim(e));
 			continue;
 		}
@@ -1364,14 +1440,16 @@ void Rep_PreFrame(uint64_t tick) {
 			Coop_BeforeUse(i, WChar(e)->listenOn && WChar_Listen(e) ? WChar_Listen(e) : WChar_Victim(e));
 		} else if ((in.buttons & NETREP_IN_SWITCH) && !(pl->buttons & NETREP_IN_SWITCH) && !Arena_On()) {
 			pl->buttons = in.buttons;
+			Players_Cur()->input = NULL;
 			Rep_SwitchTo(i, e, NULL);
 			continue;
 		}
 		pl->buttons = in.buttons;
 		NetPl_Step(e, &in, 0, 0);
 		NetPl_Bump(e, &in, NETPL_BUMP_REACH);
+		Players_Cur()->input = NULL;
 	}
-	Players_BindTurn();
+	Players_Leave(prev);
 	Sputniks_Frame();
 }
 
@@ -1677,13 +1755,13 @@ static void Rep_RailKill(int i) {
 	if (i < 0 || !rep.pl[i].used) {
 		return;
 	}
-	Players_Bind(i);
+	int was = Players_Enter(i);
 	nativeVal_t one;
 	Native_SetInt(&one, 1);
 	if (!Mode_SetAlarm(&one) || !Mode_IncSaveVar("Stats.Traffic")) {
 		Native_ErrClear();
 	}
-	Players_BindTurn();
+	Players_Leave(was);
 }
 
 byte Rep_Message(Net2Host *host, int conn, int channel, const uint8_t *data, int size) {

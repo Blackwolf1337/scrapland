@@ -45,13 +45,16 @@ byte cGenCharGroup_TakeAttack(cGenCharGroup *self) {
 	return n < 2;
 }
 
+/* the logic of each character of the list (the instance: for the player near it, the resolver of
+ * include/scrap/players.h) */
 static void GenCharGroup_UpdateList(cEntityListData *list) {
-	vec3_t t;
+	cEntity *run = Players_Run(NULL);
 	for (Nto1Node *n = Logic_ListFirst(list); n; n = Logic_ListNext(n)) {
 		cLocalLogic *l = Logic_GetLocalLogic(n->data);
-		Players_BindNearest(Entity_GetPos(n->data, &t));
+		Players_Run(n->data);
 		Logic_Update(l, 0.13f);
 	}
+	Players_Run(run);
 }
 
 static void cGenCharGroup_Think(cGenCharGroup *self) {
@@ -61,7 +64,6 @@ static void cGenCharGroup_Think(cGenCharGroup *self) {
 	GenCharGroup_UpdateList(self->police);
 	GenCharGroup_UpdateList(self->bishops);
 	cMessengers_Think(self->messengers);
-	Players_BindTurn();
 }
 
 int cGenCharGroup_GetLevel(cGenCharGroup *self) {

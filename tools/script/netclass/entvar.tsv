@@ -1,0 +1,337 @@
+# The entity variables (the names the Var functions of the entity classes compare, with the start the dispatch puts
+# before a part's names: AI_, LLogic, Hit_, Traf_, InCtrl_; and the names the scripts set): name, tag, why. A name
+# may end in '*' (a family by its start) or hold '#' for a run of digits. Tags: STATE (part of what a client shows:
+# replicate the value, the journal of the entity keeps it), EVENT (a one-shot trigger: replicate the set as an
+# event), SIM (a simulation value that changes the world on the server only and reaches the client through other
+# state, or a value that is only read), SERVER_ONLY (server bookkeeping a client never needs: script callbacks,
+# logic and AI states and targets), CLIENT_ONLY (the client's own view: cameras, look). netclass.py counts the rows
+# without a tag (an error from stage 3.2).
+snd#_n	STATE	what a client shows of the entity
+snd#_loop	STATE	what a client shows of the entity
+snd#_int#	STATE	what a client shows of the entity
+snd#_ini	STATE	what a client shows of the entity
+snd#_end	STATE	what a client shows of the entity
+snd#_dopp	STATE	what a client shows of the entity
+snd#_vol	STATE	what a client shows of the entity
+snd#_time	STATE	what a client shows of the entity
+snd#_pitch	STATE	what a client shows of the entity
+snd#_vol#	STATE	what a client shows of the entity
+snd#_pitch#	STATE	what a client shows of the entity
+snd#_time#	STATE	what a client shows of the entity
+snd#_name	STATE	what a client shows of the entity
+NodePos_*	SIM	read only: a node place of the model
+NT_NodePos_*	SIM	read only: a node place of the model
+AI_*	SERVER_ONLY	the AI of the entity (cEntity_VarF: AI_ before the names of the AI)
+LLogic*	SERVER_ONLY	the local logic of the entity (cEntity_VarF: LLogic before its names)
+Hit_*	SERVER_ONLY	the attack bookkeeping (cWithLifeEntity_VarI: Hit_ before its names)
+Traf_*	SERVER_ONLY	the traffic part of a vehicle (cVehicleEntity_VarF: Traf_)
+InCtrl_*	SIM	the control input of a vehicle or character (InCtrl_)
+Fov	CLIENT_ONLY	the client's own view
+clipNear	CLIENT_ONLY	the client's own view
+clipFar	CLIENT_ONLY	the client's own view
+UsrControl	STATE	what a client shows of the entity
+EntityLink	CLIENT_ONLY	the client's own view
+camPos	CLIENT_ONLY	the client's own view
+camAng	CLIENT_ONLY	the client's own view
+Time	CLIENT_ONLY	time of a camera path
+nWayPoint	CLIENT_ONLY	the client's own view
+OnEnd	SERVER_ONLY	script callback or server bookkeeping
+InCtrl_Walk	SIM	control input of the entity (the server steps it)
+InCtrl_Str	SIM	control input of the entity (the server steps it)
+InCtrl_HRot	SIM	control input of the entity (the server steps it)
+InCtrl_VRot	SIM	control input of the entity (the server steps it)
+InCtrl_Act	SIM	control input of the entity (the server steps it)
+SlidingAndFallingTime	SIM	simulation value of the server
+EnergyBarDecr	SIM	simulation value of the server
+EnergyBarConstantDecr	SIM	simulation value of the server
+TimeToExtraRelax	SIM	simulation value of the server
+EnergyToRecharge	SIM	simulation value of the server
+Battery	STATE	what a client shows of the entity
+Energy	STATE	what a client shows of the entity
+FloorDist	SIM	simulation value of the server
+DisplAng	STATE	what a client shows of the entity
+YModelDisp	STATE	what a client shows of the entity
+CanFly	SIM	simulation value of the server
+Money	STATE	what a client shows of the entity
+nBatteries	STATE	what a client shows of the entity
+MoneyReward	SERVER_ONLY	script callback or server bookkeeping
+AIState	SERVER_ONLY	script callback or server bookkeeping
+ActionPriority	SERVER_ONLY	script callback or server bookkeeping
+IgnoreUsrControl	SERVER_ONLY	script callback or server bookkeeping
+DisableControl	SERVER_ONLY	script callback or server bookkeeping
+AutoSelect	SERVER_ONLY	script callback or server bookkeeping
+isFalling	STATE	what a client shows of the entity
+isWalking	STATE	what a client shows of the entity
+ActionPress	EVENT	a one-shot change of the entity
+UsePress	EVENT	a one-shot change of the entity
+OnEnergyBarFull	SERVER_ONLY	script callback or server bookkeeping
+CollideEntity	SERVER_ONLY	script callback or server bookkeeping
+AutoSelectedEntity	SERVER_ONLY	script callback or server bookkeeping
+AbortSelectFunc	SERVER_ONLY	script callback or server bookkeeping
+OutSelectFunc	SERVER_ONLY	script callback or server bookkeeping
+SelectedEntity	SERVER_ONLY	script callback or server bookkeeping
+ViewPos	STATE	what a client shows of the entity
+ViewAng	STATE	what a client shows of the entity
+ActiveCMask	SIM	simulation value of the server
+Active	STATE	what a client shows of the entity
+isLocalLogic	SERVER_ONLY	script callback or server bookkeeping
+isAI	SERVER_ONLY	script callback or server bookkeeping
+NextInSlot	SERVER_ONLY	script callback or server bookkeeping
+NextInList	SERVER_ONLY	script callback or server bookkeeping
+EntityList	SERVER_ONLY	script callback or server bookkeeping
+Name	STATE	what a client shows of the entity
+Type	STATE	what a client shows of the entity
+Pos	STATE	what a client shows of the entity
+QuakeFactor	CLIENT_ONLY	the client's own view
+QuakeTime	CLIENT_ONLY	the client's own view
+HSpeed	CLIENT_ONLY	the client's own view
+VSpeed	CLIENT_ONLY	the client's own view
+RetSpd	CLIENT_ONLY	the client's own view
+CamDist	CLIENT_ONLY	the client's own view
+CamAng	CLIENT_ONLY	the client's own view
+CamRot	CLIENT_ONLY	the client's own view
+AddTurn	CLIENT_ONLY	the client's own view
+AddTurnSpeed	CLIENT_ONLY	the client's own view
+FreeCam	CLIENT_ONLY	the client's own view
+OnSwitch	SERVER_ONLY	script callback or server bookkeeping
+MainTarget	CLIENT_ONLY	the client's own view
+Target	SERVER_ONLY	script callback or server bookkeeping
+TakeSoundVol	CLIENT_ONLY	the client's own view
+Radius	SIM	simulation value of the server
+rTime	SERVER_ONLY	script callback or server bookkeeping
+BackTime	SERVER_ONLY	script callback or server bookkeeping
+FadeInEffect	STATE	what a client shows of the entity
+FadeOutEffect	STATE	what a client shows of the entity
+Blink	STATE	what a client shows of the entity
+AutoFace	SIM	simulation value of the server
+AppearsIfFree	SERVER_ONLY	script callback or server bookkeeping
+OnlyUser	SERVER_ONLY	script callback or server bookkeeping
+TakeSound	CLIENT_ONLY	the client's own view
+OnReset	SERVER_ONLY	script callback or server bookkeeping
+OnTake	SERVER_ONLY	script callback or server bookkeeping
+Owner	STATE	what a client shows of the entity
+TgTypeMarker	STATE	what a client shows of the entity
+Origin	SERVER_ONLY	script callback or server bookkeeping
+Vel	STATE	what a client shows of the entity
+SwDthTime	SIM	simulation value of the server
+RadiusGrow	SIM	simulation value of the server
+TopRadius	SIM	simulation value of the server
+SwarmSpeed	SIM	simulation value of the server
+TurnSpeed	SIM	simulation value of the server
+LifeTime	SIM	simulation value of the server
+Speed	SIM	simulation value of the server
+HideMain	STATE	what a client shows of the entity
+AddToSwarm	EVENT	a one-shot change of the entity
+nSwarm	SIM	simulation value of the server
+NetnSwarm	SIM	simulation value of the server
+FallOutAtmosphere	SIM	simulation value of the server
+HiddenSwarm	STATE	what a client shows of the entity
+NoWorldHit	SIM	simulation value of the server
+OnBeeDeath	SERVER_ONLY	script callback or server bookkeeping
+OnHit	SERVER_ONLY	script callback or server bookkeeping
+HitType	STATE	what a client shows of the entity
+Parent	SERVER_ONLY	script callback or server bookkeeping
+None	SIM	simulation value of the server
+Linear	SIM	simulation value of the server
+ConeDist	SERVER_ONLY	script callback or server bookkeeping
+ConeFOV	SERVER_ONLY	script callback or server bookkeeping
+CanPhoto	STATE	what a client shows of the entity
+AlwaysUse	SERVER_ONLY	script callback or server bookkeeping
+ArrowCanView	STATE	what a client shows of the entity
+ArrowCanMission	STATE	what a client shows of the entity
+ArrowCanUse	STATE	what a client shows of the entity
+ArrnOpt	STATE	what a client shows of the entity
+ArriOpt	STATE	what a client shows of the entity
+UseAngSel	SERVER_ONLY	script callback or server bookkeeping
+UseMapCheck	SERVER_ONLY	script callback or server bookkeeping
+UseAbsAngSel	SERVER_ONLY	script callback or server bookkeeping
+AddArrOpt	STATE	what a client shows of the entity
+ConeStatus	STATE	what a client shows of the entity
+TgType	STATE	what a client shows of the entity
+UseFunc	SERVER_ONLY	script callback or server bookkeeping
+ViewFunc	SERVER_ONLY	script callback or server bookkeeping
+ArrowModUse	STATE	what a client shows of the entity
+ArrowModMission	STATE	what a client shows of the entity
+OffMul	SIM	simulation value of the server
+DeltaOffMul	SIM	simulation value of the server
+OffModPosAsPos	STATE	what a client shows of the entity
+UseLinkAng	STATE	what a client shows of the entity
+LinkModel	STATE	what a client shows of the entity
+OffModPos	STATE	what a client shows of the entity
+VRadius	SIM	simulation value of the server
+MoveTime	EVENT	a one-shot change of the entity
+TimeSpeed	STATE	what a client shows of the entity
+EndTimeSpeed	STATE	what a client shows of the entity
+FadeTimeSpeed	STATE	what a client shows of the entity
+RenderEffectParam0	STATE	what a client shows of the entity
+RadarShow	STATE	what a client shows of the entity
+MoveFade	EVENT	a one-shot change of the entity
+UseRealTime	SIM	simulation value of the server
+MoveViewAng	EVENT	a one-shot change of the entity
+MapCollision	SIM	simulation value of the server
+RenderEffect	STATE	what a client shows of the entity
+OnEndMove	SERVER_ONLY	script callback or server bookkeeping
+CamName	CLIENT_ONLY	the client's own view
+NetRes	SERVER_ONLY	script callback or server bookkeeping
+OnObjSlot	SERVER_ONLY	script callback or server bookkeeping
+MoveAng	EVENT	a one-shot change of the entity
+MovePos	EVENT	a one-shot change of the entity
+SndPos	CLIENT_ONLY	the client's own view
+CamTgt	CLIENT_ONLY	the client's own view
+Ang	STATE	what a client shows of the entity
+PvRot	CLIENT_ONLY	the client's own view
+PvPos	CLIENT_ONLY	the client's own view
+X	SIM	simulation value of the server
+Y	SIM	simulation value of the server
+DistLimit	SIM	auto aim of the vehicle (server)
+HiAng	SIM	auto aim of the vehicle (server)
+DeltaAng	SIM	auto aim of the vehicle (server)
+LoAng	SIM	auto aim of the vehicle (server)
+AngLimit	SIM	auto aim of the vehicle (server)
+Status	EVENT	a one-shot change of the entity
+InCtrl_Acc	SIM	control input of the entity (the server steps it)
+InCtrl_VStr	SIM	control input of the entity (the server steps it)
+Hit_Target	SERVER_ONLY	attack bookkeeping of the server
+Hit_Pos	SERVER_ONLY	attack bookkeeping of the server
+FxBoostEngineTime	SIM	simulation value of the server
+VerticalBalance	SIM	simulation value of the server
+BoostTime	STATE	what a client shows of the entity
+FxEngineTime	SIM	simulation value of the server
+EMICounter	SIM	simulation value of the server
+MotorDCnt	STATE	what a client shows of the entity
+MaxSpeed	SIM	simulation value of the server
+Fric	SIM	simulation value of the server
+TrustTime	SIM	simulation value of the server
+StrTrust	SIM	simulation value of the server
+BackTrust	SIM	simulation value of the server
+FrwTrust	SIM	simulation value of the server
+WRadius	SIM	simulation value of the server
+AcMass	SIM	simulation value of the server
+Style	STATE	what a client shows of the entity
+Engine	STATE	what a client shows of the entity
+FixedModel	STATE	what a client shows of the entity
+SpeedKmH	STATE	what a client shows of the entity
+AvoidCrash	SERVER_ONLY	script callback or server bookkeeping
+isInit	SERVER_ONLY	script callback or server bookkeeping
+LaunchTaunts	SERVER_ONLY	script callback or server bookkeeping
+ForceVel	EVENT	a one-shot change of the entity
+ForceAll	EVENT	a one-shot change of the entity
+MinLife	SIM	simulation value of the server
+MaxLife	STATE	what a client shows of the entity
+isBoost	STATE	what a client shows of the entity
+BoostDeact	SIM	simulation value of the server
+Model	STATE	what a client shows of the entity
+Traf_Speed	SERVER_ONLY	traffic of the server
+Traf_Active	SERVER_ONLY	traffic of the server
+Traf_Type	SERVER_ONLY	traffic of the server
+Traf_Begin	SERVER_ONLY	traffic of the server
+Traf_End	SERVER_ONLY	traffic of the server
+iUAmmo	SIM	simulation value of the server
+AcUAmmo	SIM	simulation value of the server
+Ammoi	SIM	simulation value of the server
+AmmoAc	SIM	simulation value of the server
+FireStamp	SIM	simulation value of the server
+CMStamp	SIM	simulation value of the server
+WeapSnd	SIM	simulation value of the server
+iWeaponNeed	SIM	simulation value of the server
+AcUpgrd	SIM	simulation value of the server
+iUpgrd	SIM	simulation value of the server
+AcAmmo	SIM	simulation value of the server
+AcWeap	STATE	what a client shows of the entity
+iWeap	SIM	simulation value of the server
+iAmmo	SIM	simulation value of the server
+WeapList	STATE	what a client shows of the entity
+Mass	SIM	simulation value of the server
+FireRemainTime	SIM	simulation value of the server
+FireAtenuationFactor	SIM	simulation value of the server
+FireDelayTime	SIM	simulation value of the server
+HeadAnimIndex	STATE	what a client shows of the entity
+Invulnerable	STATE	what a client shows of the entity
+Life	STATE	what a client shows of the entity
+PrevLife	SIM	simulation value of the server
+Descriptor	STATE	what a client shows of the entity
+Attacker	SERVER_ONLY	script callback or server bookkeeping
+ActCtrl	STATE	what a client shows of the entity
+HeadModel	STATE	what a client shows of the entity
+Pyromaniac	SIM	simulation value of the server
+OnDeath	SERVER_ONLY	script callback or server bookkeeping
+OnDamage	SERVER_ONLY	script callback or server bookkeeping
+AI_Target	SERVER_ONLY	AI of the server
+AI_Repos	SERVER_ONLY	AI of the server
+LLogicActionRadius	SERVER_ONLY	local logic of the server
+LLogicLock	SERVER_ONLY	local logic of the server
+LLogicAlwaysLock	SERVER_ONLY	local logic of the server
+LLogicIdle	SERVER_ONLY	local logic of the server
+LLogicState	SERVER_ONLY	local logic of the server
+LLogicTarget	SERVER_ONLY	local logic of the server
+LLogicOrigin	SERVER_ONLY	local logic of the server
+LLogicOriginAng	SERVER_ONLY	local logic of the server
+LLogicIsLeader	SERVER_ONLY	local logic of the server
+LLogicIgnoreFriends	SERVER_ONLY	local logic of the server
+LLogicProbTalkWhenWorking	SERVER_ONLY	local logic of the server
+LLogicProbTalkWhenPlaying	SERVER_ONLY	local logic of the server
+LLogicProbTalkWhenWalking	SERVER_ONLY	local logic of the server
+LLogicEscapeRadiusSqr	SERVER_ONLY	local logic of the server
+LLogicGoToWorkSpeed	SERVER_ONLY	local logic of the server
+LLogicTimeToSitDown	SERVER_ONLY	local logic of the server
+LLogicTimeToStopWorking	SERVER_ONLY	local logic of the server
+LLogicWorkArea	SERVER_ONLY	local logic of the server
+LLogicKeepWorking	SERVER_ONLY	local logic of the server
+LLogicForceSpecialBehaviour	SERVER_ONLY	local logic of the server
+LLogicForceCancelSpecialBehaviour	SERVER_ONLY	local logic of the server
+LLogicEscapeWithinRadius	SERVER_ONLY	local logic of the server
+LLogicFastEscape	SERVER_ONLY	local logic of the server
+LLogicIgnoreAlarm	SERVER_ONLY	local logic of the server
+LLogicIgnoreBankerAttack	SERVER_ONLY	local logic of the server
+LLogicStopInRelax	SERVER_ONLY	local logic of the server
+LLogicForcedDesktopAssigned	SERVER_ONLY	local logic of the server
+LLogicDefaultState	SERVER_ONLY	local logic of the server
+LLogicDefaultTarget	SERVER_ONLY	local logic of the server
+LLogicPoliceResult	SERVER_ONLY	local logic of the server
+LLogicGotoMainMission	SERVER_ONLY	local logic of the server
+LLogicRepositionPoint	SERVER_ONLY	local logic of the server
+LLogicLairPos	SERVER_ONLY	local logic of the server
+StopSecondary	EVENT	a one-shot change of the entity
+ForceAction	EVENT	a one-shot change of the entity
+ForceDefLoop	EVENT	a one-shot change of the entity
+Action	EVENT	a one-shot change of the entity
+DefLoop	STATE	what a client shows of the entity
+CharacterDeath	EVENT	the death effect of a character
+ArrOpt#	STATE	an option of the arrow indicator
+repos	SERVER_ONLY	AI or script parameter of the server
+sdd_n	STATE	the number of sound items of the entity
+sdl_n	STATE	the number of sound items of the entity
+snd_n	STATE	the number of sound items of the entity
+ShipEditBuild	EVENT	the build effect of the ship editor
+CadenceShootCM	SERVER_ONLY	AI or script parameter of the server
+AngAttack	SERVER_ONLY	AI or script parameter of the server
+EnableAI	SERVER_ONLY	AI or script parameter of the server
+TgtCam#	CLIENT_ONLY	a step of a camera path or camera shake (the client view)
+Time#	CLIENT_ONLY	a step of a camera path or camera shake (the client view)
+FadeIn#	CLIENT_ONLY	a step of a camera path or camera shake (the client view)
+FadeOut#	CLIENT_ONLY	a step of a camera path or camera shake (the client view)
+MPil#	STATE	a pilot of the ship model
+Pos#	CLIENT_ONLY	a step of a camera path or camera shake (the client view)
+Ang#	CLIENT_ONLY	a step of a camera path or camera shake (the client view)
+FOV#	CLIENT_ONLY	a step of a camera path or camera shake (the client view)
+Near#	CLIENT_ONLY	a step of a camera path or camera shake (the client view)
+Far#	CLIENT_ONLY	a step of a camera path or camera shake (the client view)
+Ship	SERVER_ONLY	AI or script parameter of the server
+Quake#	CLIENT_ONLY	a step of a camera path or camera shake (the client view)
+AnmP#	STATE	a pilot animation of the ship model
+CadenceShoot	SERVER_ONLY	AI or script parameter of the server
+ControlAim	SERVER_ONLY	AI or script parameter of the server
+FactorHookMap	SERVER_ONLY	AI or script parameter of the server
+Ammo#	SIM	ammunition of a weapon slot
+DancePos	SERVER_ONLY	AI or script parameter of the server
+MEng#	STATE	an engine of the ship model
+StupidPathFinding	SERVER_ONLY	AI or script parameter of the server
+ControlBoost	SERVER_ONLY	AI or script parameter of the server
+ExtraInfo	SERVER_ONLY	AI or script parameter of the server
+sdd#_*	STATE	the sound items of an entity with the sound id sdd (cSndInterface, as snd#_)
+sdl#_*	STATE	the sound items of an entity with the sound id sdl (cSndInterface, as snd#_)
+EngAnmF#	STATE	the animation of motor n of a vehicle (VehicleMotors.c)
+EngAnmM#	STATE	the animation of motor n of a vehicle (VehicleMotors.c)
+EngFxClass#	STATE	the effect type of motor n of a vehicle (VehicleMotors.c)
+WeapA#	SIM	weapon value of slot n (seen in the stage 0.1 baseline)
+isWpn#	SIM	the weapon slots of weapon n (WeaponManager.c)

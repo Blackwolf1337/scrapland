@@ -9,6 +9,7 @@
 #include "scrap/fxcountermeasures.h"
 #include "scrap/fxmisc.h"
 #include "scrap/fxscene.h"
+#include "scrap/netaudit.h"
 #include "scrap/objentity.h"
 #include "scrap/scorer.h"
 #include "scrap/scrapmain.h"
@@ -86,6 +87,7 @@ static int FX_NameEq(const char *a, const char *b) {
 }
 
 void *FX_DropNew(const char *file, float life) {
+	NetAudit_Site(NA_SFX, "sfx.drop");
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, file);
 	cDebris *d = cDebrisSys_NewElement(sys);
 
@@ -153,6 +155,7 @@ byte FX_IsVisible(float x, float y, float z, float radius, float maxDist, const 
 static uint32_t FX_ItemBlinkRamp[9] = { 0x80669eff, 0x84669eff, 0x94669eff, 0xa4669eff, 0xb9669eff, 0xcd669eff, 0xe8669eff, 0xff669eff, 0xff669eff };
 
 void FX_ItemBlink(cEntity *e) {
+	NetAudit_Site(NA_SFX, "sfx.ItemBlink");
 	CGameModel *m = Obj_GetModel(e);
 
 	CHECK(m && CGameModel_IsLoaded(m));
@@ -206,6 +209,7 @@ void FX_ItemBlink(cEntity *e) {
 static void cObjElementFXItemFade_Start(cObjElementFXItemFade *self, cEntity *e);
 static void cObjElementFXItemTake_Start(cObjElementFXItemTake *self, cEntity *e);
 void FX_ItemFade(cEntity *e, int mode, float scale, cEntity *target) {
+	NetAudit_Site(NA_SFX, "sfx.ItemFade");
 	cObjElementFXItemFade *fade = FX_DropNew(g_FXItemFadeFile, 0.5f);
 
 	if (fade) {
@@ -254,6 +258,7 @@ void FX_ItemFade(cEntity *e, int mode, float scale, cEntity *target) {
 }
 
 void FX_Sputnik(cEntity *e, const char *name) {
+	NetAudit_Name(NA_SFX, "sfx.sputnik:", name);
 	if (!crt_strncmp(name, "CharacterSputnik", 16)) {
 		if (!CGameModel_IsLoaded(Obj_GetModel(e)) || strcmp(name, "CharacterSputnikSceneMecanicFinal")) {
 			return;

@@ -62,9 +62,9 @@ static void cLittlePoliceLocalLogic_UpdateView(cLocalLogic *base) {
 	cLittlePoliceLocalLogic *self = (cLittlePoliceLocalLogic *)base;
 	cEntity *p = LP_BASE(self)->parent;
 
-	WChar(p)->wl.arrow.canUse = !LP_BASE(self)->busy && !g_pWorld->alarm.on && (self->bribe ||
+	WChar(p)->wl.arrow.canUse = !LP_BASE(self)->busy && !Players_CurAlarm()->on && (self->bribe ||
 		LP_BASE(self)->state != GENCHAR_ATTACK);
-	WLife(p)->arrow.tgType = g_pWorld->alarm.on ? 0 : 2;
+	WLife(p)->arrow.tgType = Players_CurAlarm()->on ? 0 : 2;
 }
 
 /* the money of the player in state 4: the bribe options of the arrow while the talk runs, else the talk option */
@@ -280,7 +280,7 @@ static void cLittlePoliceLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cLittlePoliceLocalLogic_UpdateLook(self);
 	cLittlePoliceLocalLogic_UpdateBribe(self);
 	int st = b->state;
-	byte alarm = g_pWorld->alarm.on;
+	byte alarm = Players_CurAlarm()->on;
 	if (alarm) {
 		self->sirenTime = self->sirenTime - dt;
 	}
@@ -303,7 +303,7 @@ static void cLittlePoliceLocalLogic_Update(cLocalLogic *elem, float dt) {
 		if (!usr || b->busy) {
 			return;
 		}
-		byte accuse = g_pWorld->alarm.sameChar && b->target.target;
+		byte accuse = Players_CurAlarm()->sameChar && b->target.target;
 		cAIChar *ai = Entity_GetAI(b->parent);
 		switch (b->state) {
 		case GENCHAR_ACCUSE: {
@@ -319,7 +319,7 @@ static void cLittlePoliceLocalLogic_Update(cLocalLogic *elem, float dt) {
 				}
 				cGenCharLocalLogic_Discover(&self->base);
 				cGenCharGroup_RaiseLevel((&g_pWorld->logic.genChars), 0);
-				Alarm_Set(&g_pWorld->alarm, 1.0f);
+				Alarm_Set(Players_CurAlarm(), 1.0f);
 				AICtrl_GearAttack(&g_pWorld->logic.aiCtrl, usr, 0);
 				return;
 			}
@@ -425,7 +425,7 @@ alert:
 static void cLittlePoliceLocalLogic_OnHit(cLocalLogic *elem, cEntity *attacker) {
 	cLittlePoliceLocalLogic *self = (cLittlePoliceLocalLogic *)elem;
 	if (Players_Is(attacker)) {
-		Alarm_Set(&g_pWorld->alarm, 1.0f);
+		Alarm_Set(Players_CurAlarm(), 1.0f);
 	}
 	cGenCharLocalLogic_OnHit(&self->base.base.logic, attacker);
 }
@@ -437,7 +437,7 @@ static void cLittlePoliceLocalLogic_OnSeen(cLocalLogic *base, cEntity *e) {
 		return;
 	}
 	if (Players_Is(e)) {
-		Alarm_Set(&g_pWorld->alarm, 1.0f);
+		Alarm_Set(Players_CurAlarm(), 1.0f);
 		Logic_SetState(self, GENCHAR_ACCUSE, e);
 	}
 }
@@ -462,7 +462,7 @@ static void cLittlePoliceLocalLogic_UpdateLook(cLittlePoliceLocalLogic *self) {
 	cEntity *usr = Players_Nearest(&p->pos);
 	WLife(p)->arrow.coneFov = g_GenCharStdFovY;
 	WLife(p)->arrow.coneDist = g_LittlePoliceMaxDistFar;
-	if (g_pWorld->alarm.on) {
+	if (Players_CurAlarm()->on) {
 		cEntity *te = b->target.target;
 		if (te && b->state == GENCHAR_ACCUSE && Players_Is(te)) {
 			WLife(p)->arrow.coneStatus = 3;
@@ -471,14 +471,14 @@ static void cLittlePoliceLocalLogic_UpdateLook(cLittlePoliceLocalLogic *self) {
 		}
 		return;
 	}
-	if (!g_pWorld->alarm.notGuaranteed) {
+	if (!Players_CurAlarm()->notGuaranteed) {
 		WLife(p)->arrow.coneStatus = 0;
 		return;
 	}
 	WLife(p)->arrow.coneStatus = 1;
 	if (usr && Logic_InView(p, Entity_GetPos(usr, &t), g_LittlePoliceMaxDistFar, g_GenCharStdFovY,
 		g_GenCharStdFovX, 1)) {
-		Alarm_Set(&g_pWorld->alarm, 1.0f);
+		Alarm_Set(Players_CurAlarm(), 1.0f);
 		Logic_SetState(self, GENCHAR_ACCUSE, usr);
 	}
 }

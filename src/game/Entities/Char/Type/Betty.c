@@ -6,6 +6,7 @@
 
 #include "scrap/chartype.h"
 #include "scrap/crt.h"
+#include "scrap/players.h"
 #include "scrap/primitive.h"
 #include "scrap/scorer.h"
 #include "scrap/vehicleattack.h"
@@ -151,7 +152,7 @@ static void ChType_BettyKill(cAbstractFile *params) {
 	}
 	cEntity_CollisionOff(e);
 	cPrimitive_SetSize(&WChar(e)->wl.prim, 0.0f);
-	Alarm_Set(&g_pWorld->alarm, 1.0f);
+	Alarm_Set(Players_CurAlarm(), 1.0f);
 	cObjElementFXKill *el = FX_DropNew(g_FXBettyKillFile, 1.0f);
 	if (!el) {
 		return;

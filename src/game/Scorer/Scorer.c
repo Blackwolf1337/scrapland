@@ -13,6 +13,7 @@
 #include "scrap/fonts.h"
 #include "scrap/itementity.h"
 #include "scrap/missileentity.h"
+#include "scrap/netaudit.h"
 #include "scrap/nodestraffic.h"
 #include "scrap/nodesworld.h"
 #include "scrap/nodesworld2d.h"
@@ -313,6 +314,7 @@ cScorerModel *cScorer_FindModel(cScorer *scorer, const char *name) {
 /* ---- the items ---- */
 
 void cScorer_Clear(cScorer *scorer) {
+	NetAudit_Site(NA_HUD, "scorer.clear");
 	scorer->found = NULL;
 	cString_Set(&scorer->defaultItem, NULL);
 	scorer->cursor = NULL;
@@ -435,6 +437,7 @@ void Scorer_Tick(int player) {
 
 /* a new item of the class type, first in the list or last (append) */
 cScorerItem *cScorer_AddItem(cScorer *scorer, const char *name, const char *type, byte append) {
+	NetAudit_Name(NA_HUD, "scorer.add:", type);
 	/* the item classes of SScorer.Add by type name, in the order the original compares them */
 	const struct {
 		const char *type;
@@ -846,6 +849,7 @@ uint32_t Scorer_ColorLerp(uint32_t a, uint32_t b, float t) {
 }
 
 void ScorerFade_Start(ScorerFade *fade, uint32_t from, uint32_t to, float time) {
+	NetAudit_Site(NA_FADE, "fade");
 	fade->from[0] = (float)(int)(from >> 16 & 0xff);
 	fade->from[1] = (float)(int)(from >> 8 & 0xff);
 	fade->from[2] = (float)(int)(from & 0xff);
@@ -880,6 +884,7 @@ static void ScorerFade_Draw(ScorerFade *fade, int player, float dt) {
 }
 
 void ScorerCinema_Set(ScorerCinema *cinema, byte on, float time) {
+	NetAudit_Site(NA_CINEMA, "cinema");
 	CHECK(time >= 0);
 	if (time == 0.0f) {
 		cinema->time = 1.0f;

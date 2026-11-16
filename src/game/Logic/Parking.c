@@ -155,14 +155,14 @@ static void Parking_Look(const cParkingZone *z) {
 
 static void Parking_Call(cPy_Function *f, cEntity *e, const cParkingZone *z) {
 	/* the instance: the scripts' player is the owner of the ship (its Parking.PlayerShip) */
-	Players_BindEntity(e);
+	int was = Players_EnterEntity(e);
 	cPy_Function_AddParamS(f, e->name);
 	cPy_Function_AddParamF(f, z->pos.x);
 	cPy_Function_AddParamF(f, z->pos.y);
 	cPy_Function_AddParamF(f, z->pos.z);
 	cPy_Function_AddParamS(f, z->name);
 	cPy_Function_Execute(f, 0);
-	Players_BindTurn();
+	Players_Leave(was);
 }
 
 static inline float Parking_Dist2(const cParkingZone *z, const vec3_t *p) {

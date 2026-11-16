@@ -5,6 +5,7 @@
 #include "scrap/chartype.h"
 #include "scrap/fxelements.h"
 #include "scrap/play.h"
+#include "scrap/players.h"
 #include "scrap/primitive.h"
 #include "scrap/vehicleattack.h"
 #include "scrap/staticinit.h"
@@ -25,7 +26,7 @@ static inline cFollowCamEntity *Dtritus_Cam(cEntity *v) {
 /* the relax action of the class: RelaxAlarm while the alarm runs, when the class has one */
 static const char *Dtritus_Relax(cEntity *v) {
 	if (ChType_ActCtrl(v) && ChType_ActClass(ChType_ActCtrl(v))->relaxAlarm &&
-		(g_pWorld->alarm.hasGuaranteed || g_pWorld->alarm.on)) {
+		(Players_CurAlarm()->hasGuaranteed || Players_CurAlarm()->on)) {
 		return "RelaxAlarm";
 	}
 	return "Relax";
@@ -83,7 +84,7 @@ static void ChType_DtritusKill(cAbstractFile *params) {
 	}
 	cEntity_CollisionOff(e);
 	cPrimitive_SetSize(&WChar(e)->wl.prim, 0.0f);
-	Alarm_Set(&g_pWorld->alarm, 1.0f);
+	Alarm_Set(Players_CurAlarm(), 1.0f);
 	cTimer_SetSpeedChecked(&g_pWorld->timer, g_DTritusHitTimeSpeed);
 	cTimer_SetSpeedTo(&g_pWorld->timer, 1.0f);
 	cTimer_SetBlend(&g_pWorld->timer, g_DTritusHitTimeFader);

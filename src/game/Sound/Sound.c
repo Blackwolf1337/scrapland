@@ -7,6 +7,7 @@
 
 #include "scrap/console.h"
 #include "scrap/musicfmod.h"
+#include "scrap/netaudit.h"
 #include "scrap/scrap.h"
 #include "scrap/sound.h"
 #include "scrap/staticinit.h"
@@ -431,16 +432,19 @@ void CSoundSys_StopMusic(CSoundSys *self) {
 /* the voices, also ScrapEngMain.cpp */
 int CSoundSys_OpenVoice(CSoundSys *self, const char *name, int voice, int arg) {
 	(void)self;
+	NetAudit_Site(NA_VOICE, "voice.open");
 	return Voice_Open(name, voice, arg);
 }
 
 int CSoundSys_PlayVoice(CSoundSys *self, int voice) {
 	(void)self;
+	NetAudit_Site(NA_VOICE, "voice.play");
 	return Voice_Play(voice);
 }
 
 int CSoundSys_StopVoice(CSoundSys *self, int voice) {
 	(void)self;
+	NetAudit_Site(NA_VOICE, "voice.stop");
 	return Voice_Stop(voice);
 }
 

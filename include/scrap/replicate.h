@@ -12,8 +12,9 @@
  * -imap:Levels/<level> to load the
  * server's level at once (else the menu loads first and the level of the welcome after it). The level runs without
  * the single player setup (no player, traffic, police, startup characters; InitOutMap of OutMap.c); characters and
- * ships the level scripts still make are deleted, the replicated ones are proxies (cObjEntity.proxy) that the
- * snapshots place, behind the server's time by the interpolation delay (NetRepDelay), interpolated. A free camera
+ * ships the level scripts still make are deleted, the replicated ones are replicas (cObjEntity.replica: only the
+ * Present half of their update runs) that the snapshots place, behind the server's time by the interpolation delay
+ * (NetRepDelay), interpolated. A free camera
  * ("WatchCam", an FCam with FreeCam on) flies with the input, starts above the view point of the welcome and takes
  * its camPos and camAng variables (the test channel: e = Scrap.GetEntity("WatchCam"); e.camPos = (x, y, z)). Its
  * position is the view point.
@@ -69,6 +70,9 @@ void Rep_Close(void);
 /* the level of the instance has started (its first pass): the items it made then are every game's, the ones made
  * later are replicated (NETREP_ITEM) */
 void Rep_Open(void);
+/* the solo instance (-solo, include/scrap/inputtape.h): its one player, without a connection (conn -1), its input
+ * from the input tape */
+void Rep_SoloJoin(void);
 /* player i's parked own ship old in place of the ship of its state (Travel_OwnShip: the ship its hangar flies now,
  * include/scrap/sputniks.h): the new one, NULL */
 struct cEntity *Rep_ReplaceShip(int i, struct cEntity *old);
@@ -92,6 +96,9 @@ void Rep_Remove(int i);
 void Rep_Rebody(int i, const vec3_t *pos, float yaw);
 /* the names of the players' characters on an instance */
 #define REP_PLAYER_PREFIX "NetPlayer"
+/* the name of the character a joining player's startup player gets (the player steps of the level's start,
+ * include/scrap/initsteps.h; Chars.CreateMainChar) */
+const char *Rep_EnterName(void);
 /* the replication slot of an entity of the last snapshot, -1 */
 int Rep_SlotOf(const struct cEntity *e);
 /* a free place for a character around at (the place k of the rings around it on, 0 at itself): 1 with *out */

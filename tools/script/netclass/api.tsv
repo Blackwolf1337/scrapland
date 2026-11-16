@@ -1,0 +1,323 @@
+# The engine API (the function tables of the engine modules, src/game/PyInterface/*.c with SD_PY_MODULE, and the
+# original's PvP mode modules of src/game/Script/Split.c): Module.Function, tag, why. Tags: SIM (changes the world,
+# server only), DEF (definitions both sides make the same way: classes, resources, graphs of the level's data),
+# PRES_STATE (presentation a late joiner must see: kept state), PRES_EVENT (one-shot presentation), UI (the acting
+# player's menu, HUD or input), QUERY (reads, no change), CLIENT (client only: video, config, console, files),
+# NET_OLD (the original's network API). tools/script/netclass.py checks that every function has a tag.
+SAI.AnalizeMap	SIM	analyses the level and makes the AI graph when there is none (server AI)
+SAI.AnalizeGraph	SIM	analysis of the AI graph (server AI)
+SAI.AnalizeGraph2D	SIM	analysis of the indoor AI graph (server AI)
+SAI.AnalizeTraffic	SIM	analysis of the traffic graph (server AI)
+SAI.BuildGraph	SIM	builds the outdoor AI graph (server AI)
+SAI.BuildGraph2D	SIM	builds the indoor AI graph (server AI)
+SAI.SetStateVehicle	SIM	sets the state of a vehicle AI
+SAI.SetStateChar	SIM	sets the state of a character AI
+SAI.GetStateVehicle	QUERY	state number of a vehicle AI
+SAI.GetStateChar	QUERY	state number of a character AI
+SAI.EnableAIVehicle	SIM	gives a vehicle its AI and parameters
+SAI.EnableAIChar	SIM	gives a character its AI
+SAI.IniAI	SIM	navigation graphs, traffic, A* and AI groups of the level (server AI)
+SAI.GetNextRacePoint	QUERY	next point of a race path
+SAI.GetNearestItemLife	QUERY	nearest life item for an AI
+SAI.GetRandomVisibilityPoint	QUERY	random point of the visibility graph (draws from the game's random numbers: server side)
+SAI.GetReposCharPos	QUERY	free place for a character
+SAI.InitVehicleRace	SIM	starts the race group
+SAI.AddVehicleRace	SIM	adds a vehicle to the race group
+SAI.SetRotStaticObj	SIM	rotation of a static vehicle AI
+SAI.SetInertia	SIM	inertia of a vehicle AI
+SAI.GetOD	QUERY	the object 1 of the level
+SAct.CreateClass	DEF	creates an animated object class
+SAct.DelClass	DEF	deletes an animated object class
+SAct.GetClass	DEF	selects the current class for SetCls (a definition step)
+SAct.SetCls	DEF	a variable of the current class
+SAct.GetCls	QUERY	a variable of the current class
+SAct.CreateAction	DEF	creates an action of the current class
+SAct.GetAction	DEF	selects the current action for SetAct (a definition step)
+SAct.SetAct	DEF	a variable of the current action (events, functions)
+SAct.GetAct	QUERY	a variable of the current action
+SAct.DumpEvents	CLIENT	writes the classes to a file (ScrapC debug)
+SFX.ShipExplosion	PRES_EVENT	explosion effect of a ship
+SFX.CharacterConversor	PRES_EVENT	effect of the character conversor
+SFX.CharacterConversion	PRES_EVENT	effect of a conversion between two characters
+SFX.BishopSellLife	PRES_EVENT	effect of giving life
+SFX.MoneyTransfer	PRES_EVENT	effect of a money transfer
+SFX.EmbeddedSet	PRES_STATE	sets the embedded effect controller of an entity (kept with the entity)
+SInput.SetActionSet	UI	the action set of the acting player's input
+SInput.GetActionSet	QUERY	name of the current action set
+SInput.AssingEntry	CLIENT	control configuration
+SInput.GetEntry	CLIENT	control configuration
+SInput.ListenToDefine	CLIENT	waits for a key to define (controls menu)
+SInput.AbortListenToDefine	CLIENT	controls menu
+SInput.GetDefinedList	CLIENT	controls menu
+SInput.GetDefinedEntry	CLIENT	controls menu
+SInput.ClearDefinedList	CLIENT	controls menu
+SInput.ResetToDefault	CLIENT	controls menu
+SInput.SetString	UI	text input of a player (menus)
+SInput.GetString	UI	text input of a player (menus)
+SInput.GetCursorChar	UI	text cursor of a player (menus)
+SInput.GetVirtualKeyboard	UI	virtual keyboard text
+SInput.SetVirtualKeyboard	UI	virtual keyboard text
+SInput.SetInputFunc	UI	input callback of a local player
+SInput.Bind	CLIENT	binds a local player's control
+SInput.Rumble	CLIENT	pad rumble of a local pad
+SInput.ResetToSplit	CLIENT	split screen controls, nothing on PC
+SInput.CheckPadButton	CLIENT	pad button, always 0 on PC
+SLogic.SendSentinelToWatch	SIM	sends a sentinel to a place
+SLogic.GearAttack	SIM	sends a gear against an entity
+SLogic.SetCharState	SIM	logic state and target of a character
+SLogic.IsEnemyActive	QUERY	an enemy is active (enemy lists and traffic)
+SLogic.GetNearestShip	QUERY	nearest ship to a place
+SLogic.SetOnFloor	SIM	puts an entity on the floor
+SLogic.Flash	SIM	flash that blinds the characters around (OnFlash of the gears)
+SLogic.SetShipToRegenerate	SIM	a ship regenerates
+SLogic.SetDominationZones	SIM	zones of the domination mode
+SLogic.ChangeZoneState	SIM	state of a domination zone
+SLogic.ChangeBatonState	SIM	state of the baton of the domination mode
+SLogic.UpdateTauntEndTime	SIM	end time of the taunts
+SNet.InitServer	NET_OLD	the original's server
+SNet.CloseServer	NET_OLD	the original's server
+SNet.ServerChangeLevel	NET_OLD	the original's server
+SNet.IsServer	NET_OLD	the original's server flag
+SNet.IsDedicated	NET_OLD	the original's dedicated flag
+SNet.GetServerData	NET_OLD	the original's server data
+SNet.AddResource	NET_OLD	the original's server resources
+SNet.ModifyUsrData	NET_OLD	the original's client data from the server
+SNet.GetBotName	NET_OLD	the original's bots
+SNet.GetObjName	NET_OLD	the original's network object
+SNet.Kick	NET_OLD	the original's server
+SNet.InitClient	NET_OLD	the original's client
+SNet.CloseClient	NET_OLD	the original's client
+SNet.IsClient	NET_OLD	the original's client flag
+SNet.GetClientData	NET_OLD	the original's client data
+SNet.GetMyClientShip	NET_OLD	the original's client ship
+SNet.InitBrowser	NET_OLD	the original's server browser
+SNet.DoneBrowser	NET_OLD	the original's server browser
+SNet.SendUsrString	NET_OLD	the original's messages
+SNet.SendChatString	NET_OLD	the original's chat
+SNet.SendCtrlString	NET_OLD	the original's control messages
+SNet.SendMasterString	NET_OLD	the original's master server
+SNet.IsMaster	NET_OLD	the original's master server
+SNet.PingInetSvrs	NET_OLD	the original's internet servers
+SNet.GetPing	NET_OLD	the original's ping
+SScorer.Add	UI	adds a HUD or menu item to a player's scorer
+SScorer.Clear	UI	clears a player's scorer
+SScorer.Set	UI	sets a variable of a scorer item (HUD texts, menus)
+SScorer.Get	QUERY	a variable of a scorer item
+SScorer.Show	UI	shows a player's scorer
+SScorer.Hide	UI	hides a player's scorer
+SScorer.SetCursor	UI	menu cursor
+SScorer.SetDefault	UI	default menu item
+SScorer.GetDefault	QUERY	default menu item
+SScorer.GetActual	QUERY	current menu item
+SScorer.SetOnCancel	UI	menu callback
+SScorer.SetOnNext	UI	menu callback
+SScorer.SetOnPrev	UI	menu callback
+SScorer.SetOnSpecialHint	UI	menu hint callback
+SScorer.AddModel	UI	3D model in a menu
+SScorer.SetMPFunc	UI	nothing (always None)
+SScorer.PreloadTexture	DEF	loads a texture of the HUD
+SScorer.AddChatMsg	PRES_EVENT	a chat line
+SScorer.SetConsole	CLIENT	the console on or off
+SScorer.SetSpeechText	PRES_EVENT	subtitle of a speech
+SScorer.SetSpeechCallback	UI	callback at the end of the speech (the conversation of the acting player)
+SScorer.CancelSpeech	PRES_EVENT	ends the speech text
+SScorer.SetHeadMonitor	PRES_STATE	the talking head monitor
+SScorer.Fade	PRES_STATE	fade of the screen (the end color stays)
+SScorer.SetCinema	PRES_STATE	cinema bars
+SScorer.SetMsgText	PRES_EVENT	message text
+SScorer.SetLabelText	PRES_EVENT	label text
+SScorer.Get2DPos	QUERY	screen place of a world point (reads the camera)
+SScorer.GetTextArea	QUERY	size of a text
+SScorer.GetMenuAccept	QUERY	the accept action is held (local input)
+SScorer.SetMarkerSprite	PRES_STATE	the marker sprite of a player's HUD
+SScorer.GetItem	QUERY	handle of a scorer item
+SScorer.New	UI	makes a scorer item and returns its handle
+SScorer.Items	QUERY	names of the scorer items (ScrapC tools)
+SScorer.Accept	UI	runs the OnAccept of an item (ScrapC tools)
+SSound.LoadSound	DEF	loads a sound
+SSound.PlaySound	PRES_EVENT	sound at a place
+SSound.Play	PRES_EVENT	2D sound
+SSound.StopAllSounds	PRES_EVENT	stops all sounds
+SSound.SetPS	PRES_STATE	a variable of a positional sound set (loops, volumes)
+SSound.GetPS	QUERY	a variable of a positional sound set
+SSound.UsePS	PRES_STATE	positional sound sets on or off
+SSound.CreatePS	DEF	creates a positional sound set (the level's sound loops)
+SSound.SetMusic	PRES_STATE	the music that plays
+SSound.SetMusicVolume	PRES_STATE	the music volume
+SSound.OpenVoice	PRES_EVENT	opens a voice
+SSound.PlayVoice	PRES_EVENT	plays a voice with its subtitle
+SSound.StopVoice	PRES_EVENT	stops a voice
+SSound.VoiceRemain	QUERY	time left of a voice
+SSound.SetVoiceVolume	PRES_EVENT	volume of a voice
+SSound.SetVoiceString	PRES_EVENT	subtitle of a voice
+SSound.DeleteAllSounds	DEF	unloads the sound table
+SVec.Add	QUERY	vector math
+SVec.Sub	QUERY	vector math
+SVec.Mod	QUERY	vector math
+SVec.ModSqr	QUERY	vector math
+SVec.Norm	QUERY	vector math
+SVec.Prod	QUERY	vector math
+SVec.DProd	QUERY	vector math
+SVec.CProd	QUERY	vector math
+SVec.Rotate3D	QUERY	vector math
+SVec.GetAngle	QUERY	vector math
+SVec.GetRotAng	QUERY	vector math
+SVec.NormAng	QUERY	vector math
+SWeap.GetNWeap	QUERY	number of weapons
+SWeap.GetNAmmo	QUERY	number of ammunitions
+SWeap.InitWeap	DEF	weapon table
+SWeap.InitAmmo	DEF	ammunition table
+SWeap.GetFAmmo	QUERY	ammunition value
+SWeap.GetSAmmo	QUERY	ammunition value
+SWeap.SetFAmmo	DEF	ammunition value (weapons.def)
+SWeap.SetSAmmo	DEF	ammunition value (weapons.def)
+SWeap.GetFWeap	QUERY	weapon value
+SWeap.GetSWeap	QUERY	weapon value
+SWeap.SetFWeap	DEF	weapon value (weapons.def)
+SWeap.SetSWeap	DEF	weapon value (weapons.def)
+SWeap.FillPriority	DEF	weapon priorities
+SWeap.GetFirstiWeap	QUERY	first weapon
+SWeap.NetExec	NET_OLD	the original's network missile commands
+Scrap.Print	CLIENT	console output
+Scrap.ConsoleOut	CLIENT	console output
+Scrap.ConsoleError	CLIENT	console output
+Scrap.DebugInput	CLIENT	console output
+Scrap.Verbose	CLIENT	console output
+Scrap.Ver	QUERY	game version
+Scrap.ExtractPack	DEF	extracts a pack
+Scrap.OpenPack	DEF	opens a pack
+Scrap.ClosePack	DEF	closes the pack
+Scrap.PreloadLibrary	DEF	preloads a model library
+Scrap.Preload3DObject	DEF	preloads a model
+Scrap.PreloadAnm	DEF	preloads an animation
+Scrap.PythonCompileAll	CLIENT	nothing without Python
+Scrap.Get	QUERY	an engine variable
+Scrap.Def	QUERY	default of an engine variable
+Scrap.Des	QUERY	description of an engine variable
+Scrap.Set	SIM	sets an engine variable (the gvar table tells which are world settings, client or presentation)
+Scrap.ShowGVars	CLIENT	console list of the engine variables
+Scrap.SwitchMissionArrows	PRES_STATE	mission arrows on and off
+Scrap.GetTime	QUERY	world time
+Scrap.GetTimeSpeed	QUERY	world time speed
+Scrap.SetTime	SIM	world time
+Scrap.SetTimeSpeed	SIM	world time speed (single player tunes it from its one player: a world setting)
+Scrap.AddScheduledFunc	SIM	scheduled script call
+Scrap.DeleteScheduledFuncs	SIM	deletes scheduled script calls
+Scrap.SetCam	PRES_STATE	camera of a view (per player)
+Scrap.GetCam	QUERY	camera of a view
+Scrap.GetMinCamDist	QUERY	distance to the nearest camera (a viewer read)
+Scrap.GetEntity	QUERY	entity handle by name
+Scrap.GetFirst	QUERY	first entity of the list
+Scrap.CreateEntity	SIM	creates an entity
+Scrap.UsrEntity	QUERY	the entity of a local player (a player read)
+Scrap.EntityListGet	QUERY	a variable of an entity list
+Scrap.EntityListSet	SIM	a variable of an entity list
+Scrap.CreateEntityList	SIM	creates an entity list
+Scrap.LoadLevel	SIM	loads a level (travel)
+Scrap.GetLevelPath	QUERY	path of the level
+Scrap.GetNewLevelPath	QUERY	path of the level that loads
+Scrap.SetGrid	DEF	collision grid of the level
+Scrap.GetFloor	QUERY	floor height
+Scrap.CreateElements	DEF	the map elements of the level
+Scrap.CallElements	SIM	calls a script function for every map element (the level's setup of what stands there)
+Scrap.GetNetFlags	NET_OLD	the original's network flags
+Scrap.StartDummySearch	QUERY	dummy search of the level
+Scrap.NextDummySearch	QUERY	next dummy of the search
+Scrap.Rand	QUERY	random number (draws from the game's random numbers: server side)
+Scrap.Round	QUERY	rounding
+Scrap.SetDebrisSys	DEF	creates or deletes a debris system
+Scrap.DropDebris	PRES_EVENT	drops a debris element
+Scrap.SetDebrisValue	PRES_EVENT	values of the next debris element
+Scrap.ModelInfo	CLIENT	console info of a model
+Scrap.ListModels	CLIENT	console list of the models
+Scrap.BuildFont	CLIENT	builds a font
+Scrap.ScreenShot	CLIENT	screenshot
+Scrap.ProcessDVF	CLIENT	screen tile capture
+Scrap.VideoPlayer	PRES_EVENT	plays a video (a cutscene for the players)
+Scrap.MusicPlayer	PRES_STATE	music player commands
+Scrap.GetVideoCurrentMode	CLIENT	video mode
+Scrap.SetVideoCurrentMode	CLIENT	video mode
+Scrap.GetVideoModes	CLIENT	video modes
+Scrap.TestLine	QUERY	line test against the level and a list
+Scrap.TestSphere	QUERY	sphere test
+Scrap.SphereCall	QUERY	calls a function for the entities in a sphere (the function decides what changes)
+Scrap.SetCallFunc	SIM	sets the C callback for Execute
+Scrap.AddParamf	SIM	parameter of the callback
+Scrap.AddParami	SIM	parameter of the callback
+Scrap.AddParams	SIM	parameter of the callback
+Scrap.Execute	SIM	runs the callback
+Scrap.DelSaveVars	SIM	deletes save variables (story or player, the savevar table)
+Scrap.CreateSaveVar	SIM	creates a save variable
+Scrap.GetSaveVar	QUERY	a save variable
+Scrap.SetSaveVar	SIM	sets a save variable
+Scrap.IncSaveVar	SIM	increments a save variable
+Scrap.LoadGameVars	SIM	loads a saved game
+Scrap.CreateSaveProfile	CLIENT	not on PC
+Scrap.DeleteProfile	CLIENT	not on PC
+Scrap.SetSaveProfile	CLIENT	not on PC
+Scrap.GetSavedProfilesList	CLIENT	not on PC
+Scrap.GetFreeBlocks	CLIENT	no Xbox
+Scrap.LaunchDashboard	CLIENT	no Xbox
+Scrap.DeselectProfile	CLIENT	not on PC
+Scrap.SaveGameVars	UI	saves the game (the acting player's save menu)
+Scrap.SaveConfig	CLIENT	saves the configuration
+Scrap.GetSaveGamesList	CLIENT	list of the save files
+Scrap.SetLanguage	CLIENT	language
+Scrap.GetLanguage	QUERY	language
+Scrap.GetLangStr	QUERY	a text of the language
+Scrap.GetLangEntries	QUERY	texts of the language
+Scrap.GetAlarm	QUERY	alarm (a player read: the alarm is per player)
+Scrap.SetAlarm	SIM	alarm level (per player)
+Scrap.SetAlarmGrow	SIM	alarm grow (per player)
+Scrap.GetAlarmChars	QUERY	alarm characters
+Scrap.SetAlarmChar	SIM	alarm character
+Scrap.GetLockAlarm	QUERY	alarm lock
+Scrap.SetLockAlarm	SIM	alarm lock
+Scrap.GetMoney	QUERY	money (a player read: per player)
+Scrap.SetMoney	SIM	money (per player)
+Scrap.AddParkingZone	SIM	parking zone of the level
+Scrap.GetFarestParked	QUERY	farthest parked ship (default place: the camera)
+Scrap.GetNearestParked	QUERY	nearest parked ship (default place: the camera)
+Scrap.AddItem	SIM	creates an item
+Scrap.InitLoading	CLIENT	loading screen
+Scrap.EndLoading	CLIENT	loading screen
+Scrap.Exit	CLIENT	ends the game
+Scrap.FileExist	QUERY	a file is in the packs or on disk
+Scrap.RunApp	CLIENT	starts a program
+Scrap.Achievement	CLIENT	no store features
+Scrap.OpenStore	CLIENT	no store features
+Scrap.IsApp	CLIENT	no store features
+Scrap.GetSteamID	CLIENT	no store features
+Scrap.GetSteamTicket	CLIENT	no store features
+Scrap.IsSteam	CLIENT	no store features
+Scrap.GetGogID	CLIENT	no store features
+Scrap.ConsoleExec	CLIENT	a console line
+SDeathMatch.InitStatus	UI	status HUD of the mode (nothing)
+SDeathMatch.Init	SIM	start of the mode: targets and death callback
+SDeathMatch.OnDeathFunc	SIM	score of a death
+SFlagHunt.BrowseAreas	SIM	the flag zones of the level
+SFlagHunt.GetRndFlag	SIM	moves the flag to a random zone
+SFlagHunt.TakeFlag	SIM	a player takes the flag and scores
+SFlagHunt.CreateFlag	SIM	creates the flag
+SFlagHunt.InitStatus	UI	status HUD of the mode
+SFlagHunt.Init	SIM	start of the mode
+SFlagHunt.OnDeathFunc	SIM	score of a death
+SPostman.BrowseAreas	SIM	the zones of the level
+SPostman.GetRndFlag	SIM	moves the pack to a random zone
+SPostman.TakeArea	SIM	a player reaches the delivery zone
+SPostman.TakeFlag	SIM	a player takes the pack
+SPostman.CreateFlag	SIM	creates the pack
+SPostman.InitStatus	UI	status HUD of the mode
+SPostman.Init	SIM	start of the mode
+SPostman.OnDeathFunc	SIM	score of a death, the pack drops
+SPostman.BattonRepos	SIM	puts the pack back
+SRace.BrowseAreas	SIM	the checkpoints of the level
+SRace.GetRndFlag	SIM	next checkpoint
+SRace.TakeFlag	SIM	a racer passes a checkpoint
+SRace.CreateFlag	SIM	creates a checkpoint
+SRace.InitRacePos	SIM	start places of the racers
+SRace.GetReSpawnPos	QUERY	respawn place of a racer
+SRace.InitStatus	UI	status HUD of the mode
+SRace.Init	SIM	start of the mode
+SRace.ControlToRacers	SIM	gives the racers control
+SRace.OnDeathFunc	SIM	death of a racer

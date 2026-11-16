@@ -19,6 +19,13 @@
  * (Script_ReplaySet), the .def runner, Script_NameChain and the getattr and setattr of modules read and write module
  * variables only through here. The variables of __main__ are here too (ModVar_Keep).
  *
+ * Per player (stage 1.2 of the second multiplayer design, src/game/Script/ModVarOver.c): on the instance a variable
+ * whose netclass tag (tools/script/netclass/modvar.tsv) is PLAYER, or PARTY outside coop, has an overlay per player.
+ * ModVar_GetVal, ModVar_SetVal, ModVar_Del and ModVar_Has of the module's own ref look at the overlay of the player
+ * players.h names for it (the current player's context; Players_VarOwnerAt), and a variable that player has not
+ * written reads the module's value. Single player, the world's context and every other variable use the module. The
+ * walks (ModVar_Next, ModVar_Space, ModVar_Names) show the module's values.
+ *
  * The variables with a C place (the place text of the table: the port that reads and writes them) have no C copy: the
  * port reads the value here where the script reads it and writes it here where the script writes it, so the value
  * here is the only one (other holders change the shared lists and dicts in place, and a case can put a value of any
@@ -135,6 +142,23 @@ int ModVar_Names(const modVarRef_t *ref, const char ***names);
 const char *ModVar_ModuleName(const modVarRef_t *ref);
 /* whether the registry has a .mod file (of any level) of the module name: a pack module (Script_Module) */
 byte ModVar_HasModule(const char *module);
+
+/* ---- the per player overlay (ModVarOver.c) ---- */
+
+/* the overlay of player pl for module.name: 1 with *v (borrowed, valid until the overlay changes), 0 deleted for the
+ * player, -1 the player has not written it (*v NULL for 0 and -1); module and name are static texts of the registry */
+int ModVar_OverGet(int pl, const char *module, const char *name, const nativeVal_t **v);
+/* the overlay's value set (a copy of v) or deleted */
+void ModVar_OverSet(int pl, const char *module, const char *name, const nativeVal_t *v);
+void ModVar_OverDel(int pl, const char *module, const char *name);
+/* the overlays of a module made again (every player), of a player that joins or leaves */
+void ModVar_OverClearModule(const char *module);
+void ModVar_OverClearPlayer(int pl);
+/* the variables in the overlay of player pl */
+int ModVar_OverCount(int pl);
+/* a variable of netclass tag tag has an overlay per player (PLAYER; PARTY outside coop, in coop the party's value is the
+ * module's) */
+byte ModVar_OverTagged(int tag, byte coop);
 
 /* what the variables of every module hold now, counted by kind, as lines added to b:
  * the measure of stage 9b (the channel's "native vars"; SCRAP_NATIVE_COUNT=1 prints it at the end) */

@@ -43,7 +43,10 @@ const char *CGameModel_Name(const CGameModel *self);
 void CGameModel_Enable(CGameModel *self);
 void CGameModel_Disable(CGameModel *self);
 byte CGameModel_IsEnabled(const CGameModel *self);
-byte CGameModel_IsVisible(const CGameModel *self);
+/* drawn in the last frame; site names the caller for the network audit (include/scrap/netaudit.h: a read on a
+ * headless process counts) */
+byte CGameModel_IsVisibleAt(const CGameModel *self, const char *site);
+#define CGameModel_IsVisible(self) CGameModel_IsVisibleAt(self, __func__)
 int CGameModel_GetSector(CGameModel *self);
 float CGameModel_Radius(const CGameModel *self);
 vec3_t *CGameModel_GetPos(const CGameModel *self, vec3_t *out);

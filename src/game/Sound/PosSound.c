@@ -13,6 +13,8 @@
 #include "scrap/cstring.h"
 #include "scrap/hashtable.h"
 #include "scrap/logic.h"
+#include "scrap/netaudit.h"
+#include "scrap/players.h"
 #include "scrap/scrapfont.h"
 #include "scrap/scrapmain.h"
 #include "scrap/sound.h"
@@ -126,6 +128,7 @@ static void cSoundPS_Update(cSoundPS *self, float dt) {
 			float mx = self->maxInterval;
 			int r = crt_rand() & 0x7fff;
 			self->timer = (float)((double)r * 0x1.0002000400080p-15 * (double)(mx - mn) + (double)mn);
+			NetAudit_Site(NA_SOUNDSRC, "snd.ps.play");
 			cSound_Play(&self->sound);
 		}
 	}
@@ -154,6 +157,9 @@ int cSoundPS_Var(cSoundPS *ps, const char *name, int set, char **s, double *d, i
 		{ "Z", offsetof(cSoundPS, pos.z) },
 	};
 
+	if ((byte)set) {
+		NetAudit_Name(NA_SOUNDSRC, "snd.ps.set:", name);
+	}
 	if (s && !crt_stricmp(name, "Sound")) {
 		if ((byte)set) {
 			cSound_SetSound(&ps->sound, *s, 4);
@@ -196,6 +202,7 @@ cSoundPS *SndPS_Get(const char *name) {
 }
 
 cSoundPS *SndPS_Create(const char *name) {
+	NetAudit_Site(NA_SOUNDSRC, "snd.ps.create");
 	if (PtrTable_Find((&g_SndPSTable), name, HashTable_Slot((&g_SndPSTable), name))) {
 		return NULL;
 	}
@@ -301,7 +308,7 @@ static void Sound_UpdateMusic(float dt) {
 			want = 1;
 		} else {
 			want = g_isActionMusic;
-			if (g_pWorld->alarm.on) {
+			if (Players_CurAlarm()->on) {
 				want = 1;
 			}
 		}
@@ -478,6 +485,8 @@ byte Sound_PlayVoice(const char *name, const char *event, const char *arg, int f
 	char file[0x80], buf[0x80];
 	vec3_t t1, t2;
 
+	NetAudit_Site(NA_VOICE, "voice.talk");
+
 	if (g_RemainTalkTime > 0.0f || g_TalkDelay > 0.0f) {
 		return 0;
 	}
@@ -486,7 +495,7 @@ byte Sound_PlayVoice(const char *name, const char *event, const char *arg, int f
 	}
 	byte anm = !strcmp(event, "AnmStr");
 	byte abort = !strcmp(event, "Abort");
-	if (!abort && !anm && !g_pWorld->alarm.on) {
+	if (!abort && !anm && !Players_CurAlarm()->on) {
 		return 0;
 	}
 	SoundSys_GetVoiceString(g_pSound, TALK_VOICE, buf, sizeof(buf));
@@ -559,7 +568,7 @@ void Sound_Update(float dt) {
 			cSoundPS_Update(ps, dt);
 		}
 	}
-	if (!g_ForceNoActionMusic && !g_IsMapOutDoor && g_isActionIndoor && g_pWorld->alarm.on &&
+	if (!g_ForceNoActionMusic && !g_IsMapOutDoor && g_isActionIndoor && Players_CurAlarm()->on &&
 		g_RemainTalkTime <= 0.0f) {
 		g_S_VoiceoverVolume = 1.0f;
 	} else {

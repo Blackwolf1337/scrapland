@@ -10,6 +10,7 @@
 #include "scrap/coop.h"
 #include "scrap/global.h"
 #include "scrap/input.h"
+#include "scrap/inputtape.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapmain.h"
 #include "scrap/platform.h"
@@ -515,9 +516,14 @@ static void Input_OnDefined(void) {
 }
 
 void Input_UpdateDevices(float dt) {
+	/* not in the original: the input tape (include/scrap/inputtape.h) */
+	if (g_InputTape && InputTape_Devices()) {
+		return;
+	}
 	for (cInputDevNode *n = Devices_First(); n; n = Devices_Next()) {
 		InputDev_Update(n->dev, dt);
 	}
+	InputTape_AfterDevices();
 }
 
 void Input_ResetInactivity(void) {
