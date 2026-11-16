@@ -57,8 +57,10 @@ byte Mode_EntSet(const nativeVal_t *name, const char *var, const nativeVal_t *v)
 /* SInput.GetActionSet() is the action set name */
 byte Mode_ActionSetIs(const char *name);
 
-/* Scrap.UsrEntity(0): the entity of player 0, NULL for None */
-cEntity *Mode_Usr(void);
+/* Scrap.UsrEntity(0): the entity of player 0, NULL for None. The accessors of the scripts' player take the caller's
+ * name for the network audit (Players_ScriptAt of include/scrap/players.h) */
+cEntity *Mode_UsrAt(const char *site);
+#define Mode_Usr() Mode_UsrAt(__func__)
 /* Scrap.CreateEntity(name, x, y, z, cls): the entity (NULL for None); the TypeError of a name that is no text or a
  * coordinate that is no number */
 byte Mode_Create(const nativeVal_t *name, const nativeVal_t *x, const nativeVal_t *y, const nativeVal_t *z,
@@ -183,7 +185,8 @@ byte Mode_SetFX(cEntity *e, const char *type);
 int Mode_IsType(cEntity *e, const char *type);
 int Mode_Del(cEntity *e);
 /* Scrap.UsrEntity(0) through its seam (fc-mis2 swaps it): the handle (NV_ENT) or None */
-byte Mode_UsrHandle(nativeVal_t *out);
+byte Mode_UsrHandleAt(nativeVal_t *out, const char *site);
+#define Mode_UsrHandle(out) Mode_UsrHandleAt(out, __func__)
 /* the handle of entity e as a value (NV_ENT: a new handle, no Python object), None for NULL */
 byte Mode_EntHandle(cEntity *e, nativeVal_t *out);
 /* Scrap.GetEntity(name) as the handle value (NV_ENT) or None */
@@ -368,7 +371,8 @@ byte Mode_SaveInt(const char *name, nativeVal_t *out);
 int Mode_Cmp(const nativeVal_t *a, const char *op, const nativeVal_t *b);
 int Mode_CmpI(const nativeVal_t *a, const char *op, long i);
 /* Scrap.UsrEntity(0).ActCtrl == ctrl: 1, 0, -1 with the error */
-int Mode_UsrIs(const char *ctrl);
+int Mode_UsrIsAt(const char *ctrl, const char *site);
+#define Mode_UsrIs(ctrl) Mode_UsrIsAt(ctrl, __func__)
 /* Speech.OnSpch(msg, ans[, how]) (how NULL: two arguments) and Speech.StdAnsLst([texts]) of n texts (n < 0: up to
  * the NULL), PORT_CALL */
 byte Mode_Spch(const char *msg, const char *ans, const char *how);
@@ -717,7 +721,8 @@ void Mode_DefVars(nativeVal_t *out, int n, ...);
  * or None; the NULL result of a player above 3) through their seams */
 byte Mode_SetCinema(long id, long on, double time);
 byte Mode_CamSeam(long i, nativeVal_t *out);
-byte Mode_UsrSeam(long id, nativeVal_t *out);
+byte Mode_UsrSeamAt(long id, nativeVal_t *out, const char *site);
+#define Mode_UsrSeam(id, out) Mode_UsrSeamAt(id, out, __func__)
 /* module.func(args...) at the time (as a float) on the scheduler itself, not through Scrap.AddScheduledFunc (the menus
  * schedule this way: a recorder of the cases does not see it); name NULL for none; a missing function dropped. The
  * scheduler keeps the function as Mode_ScheduleV does */

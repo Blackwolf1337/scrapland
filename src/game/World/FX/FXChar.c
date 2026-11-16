@@ -10,6 +10,7 @@
 #include "scrap/fxcharactions.h"
 #include "scrap/global.h"
 #include "scrap/mathlib.h"
+#include "scrap/netaudit.h"
 #include "scrap/sound.h"
 #include "scrap/timer.h"
 #include "scrap/walkcharentity.h"
@@ -2234,6 +2235,7 @@ void cObjElementFXMaintenanceWork_Start(cObjElementFXMaintenanceWork *self, cDeb
 }
 
 void FX_MoneyTransfer(cEntity *from, cEntity *to, float time) {
+	NetAudit_Site(NA_SFX, "sfx.MoneyTransfer");
 	cObjElementFXMoneyTransfer *el = FX_DropNew(g_FXMoneyTransferFile, time);
 
 	if (el) {
@@ -2245,6 +2247,7 @@ void FX_MoneyTransfer(cEntity *from, cEntity *to, float time) {
 }
 
 void FX_CharacterConversion(cEntity *attacker, cEntity *attacked, float time) {
+	NetAudit_Site(NA_SFX, "sfx.CharacterConversion");
 	vec3_t t1, t2, t3, pos;
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXCharacterConversionFile);
 	cDebris *d = cDebrisSys_NewElement(sys);
@@ -2278,6 +2281,7 @@ void FX_CharacterConversion(cEntity *attacker, cEntity *attacked, float time) {
 }
 
 void FX_CharacterConversor(cEntity *character, cEntity *conversor, int phase, float a, float b) {
+	NetAudit_Site(NA_SFX, "sfx.CharacterConversor");
 	vec3_t tmp;
 
 	CHECK(conversor);
@@ -2318,6 +2322,7 @@ static const struct {
 };
 
 void FX_Character(cEntity *e, const char *name) {
+	NetAudit_Name(NA_SFX, "sfx.char:", name);
 	vec3_t tmp;
 
 	if (!strcmp(name, "CharacterDeath")) {

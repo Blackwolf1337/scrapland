@@ -13,6 +13,7 @@
 #include "scrap/input.h"
 #include "scrap/itementity.h"
 #include "scrap/material.h"
+#include "scrap/netaudit.h"
 #include "scrap/play.h"
 #include "scrap/players.h"
 #include "scrap/replicate.h"
@@ -879,9 +880,10 @@ cEntity *cWorld_GetFirstEntity(cWorld *world) {
 	return NULL;
 }
 
-float cWorld_GetMinCamDistSq(cWorld *world, const vec3_t *pos) {
+float cWorld_GetMinCamDistSqAt(cWorld *world, const vec3_t *pos, const char *site) {
 	float best = FLT_MAX_F;
 
+	NetAudit_Headless(NA_VISIBLE, "mincam.read.headless:", site);
 	for (int i = 0; i < 4; i++) {
 		if ((uintptr_t)world->camName[i]) {
 			const vec3_t *c = &world->camPos[i];
@@ -983,6 +985,7 @@ void cWorld_ShowDebrisInfo(cWorld *self, int x, int y) {
 
 /* view i shows the camera entity name ("" none); 2 if there is no such camera */
 int cWorld_SetCam(cWorld *world, int i, const char *name) {
+	NetAudit_Site(NA_CAMERA, i == 0 ? "cam.set" : "cam.set.view");
 	cEntity *cam = NULL;
 
 	CHECK(name != NULL);

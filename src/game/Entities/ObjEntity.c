@@ -13,6 +13,7 @@
 #include "scrap/embeddedfxmisc.h"
 #include "scrap/fxmisc.h"
 #include "scrap/net.h"
+#include "scrap/netaudit.h"
 #include "scrap/objentity.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/staticinit.h"
@@ -516,6 +517,7 @@ void cObjEntity_SetRotVel(cEntity *self, const vec3_t *v) {
 }
 
 void cObjEntity_SetEmbeddedFX(cEntity *self, const char *fxType) {
+	NetAudit_Name(NA_SFX, "sfx.embedded:", fxType);
 	cObjEntity *o = Obj(self);
 
 	if (!self->deadNode.target) {

@@ -4,6 +4,7 @@
  */
 #include <string.h>
 
+#include "scrap/netaudit.h"
 #include "scrap/scoreritems.h"
 #include "scrap/staticinit.h"
 
@@ -61,6 +62,7 @@ static void Chat_Scroll(const char *text) {
 }
 
 void Scorer_AddChatMsg(const char *text, uint32_t rgb) {
+	NetAudit_Site(NA_HUD, "hud.chat");
 	Chat_Scroll(text);
 	g_ChatMsgs[CHAT_MSGS - 1].color = rgb;
 }

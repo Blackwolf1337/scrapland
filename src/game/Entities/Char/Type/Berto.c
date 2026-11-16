@@ -4,6 +4,7 @@
  */
 #include "scrap/chartype.h"
 #include "scrap/fx.h"
+#include "scrap/netaudit.h"
 #include "scrap/staticinit.h"
 
 #define g_FXBertoFlashFile (GVar_FXBertoFlashFile.value.s)
@@ -61,6 +62,7 @@ static void ChType_BertoFlashHit(cAbstractFile *params) {
 }
 
 void FX_BertoFlash(cEntity *from, cEntity *e) {
+	NetAudit_Site(NA_SFX, "sfx.BertoFlash");
 	vec3_t tmp;
 	cObjElementFXBertoFlash *el = FX_DropNew(g_FXBertoFlashFile, 0.8f);
 	if (el) {

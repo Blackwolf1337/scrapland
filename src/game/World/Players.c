@@ -12,6 +12,7 @@
 #include "scrap/instance.h"
 #include "scrap/mathlib.h"
 #include "scrap/modvars.h"
+#include "scrap/netaudit.h"
 #include "scrap/places.h"
 #include "scrap/play.h"
 #include "scrap/players.h"
@@ -88,7 +89,14 @@ byte Players_Is(cEntity *e) {
 	return Players_Of(e) >= 0;
 }
 
-cEntity *Players_Any(void) {
+/* the network audit of a read of "the player" on an instance (include/scrap/netaudit.h) */
+static void Players_AuditRead(const char *bound, const char *world, const char *site) {
+	if (Players_Net()) {
+		NetAudit_Func(NA_PLAYER, g_Bound != PLAYERS_NONE ? bound : world, site);
+	}
+}
+
+static cEntity *Players_AnyOf(void) {
 	if (!Players_Net()) {
 		return cWorld_GetUsrEntity(g_pWorld, 0);
 	}
@@ -101,6 +109,11 @@ cEntity *Players_Any(void) {
 		}
 	}
 	return NULL;
+}
+
+cEntity *Players_AnyAt(const char *site) {
+	Players_AuditRead("player.any.bound:", "player.any.world:", site);
+	return Players_AnyOf();
 }
 
 static float Players_DistSq(cEntity *e, const vec3_t *pos) {
@@ -180,9 +193,13 @@ byte Players_Sees(const vec3_t *p) {
 	return 0;
 }
 
-byte Players_SeesModel(const CGameModel *m) {
+byte Players_SeesModelAt(const CGameModel *m, const char *site) {
 	vec3_t p;
-	return Players_Net() ? Players_Sees(CGameModel_GetPos(m, &p)) : CGameModel_IsVisible(m);
+	if (Players_Net()) {
+		NetAudit_Func(NA_VISIBLE, "visible.sees:", site);
+		return Players_Sees(CGameModel_GetPos(m, &p));
+	}
+	return CGameModel_IsVisibleAt(m, site);
 }
 
 float Players_MinDistSq(const vec3_t *pos) {
@@ -199,12 +216,13 @@ float Players_MinDistSq(const vec3_t *pos) {
 	return best;
 }
 
-cEntity *Players_Script(int i) {
+cEntity *Players_ScriptAt(int i, const char *site) {
 	if (!Players_Net()) {
 		return cWorld_GetUsrEntity(g_pWorld, i);
 	}
+	Players_AuditRead("player.read.bound:", "player.read.world:", site);
 	/* a coop instance's stand-in for the level's start without a member (include/scrap/coop.h) */
-	cEntity *e = i == 0 ? Players_Any() : NULL;
+	cEntity *e = i == 0 ? Players_AnyOf() : NULL;
 	return i == 0 && !e ? Coop_StandInEntity() : e;
 }
 

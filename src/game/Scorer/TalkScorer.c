@@ -11,6 +11,7 @@
 #include "scrap/game.h"
 #include "scrap/logic.h"
 #include "scrap/nativeobj.h"
+#include "scrap/netaudit.h"
 #include "scrap/scorerhud.h"
 #include "scrap/scrapmain.h"
 #include "scrap/staticinit.h"
@@ -306,11 +307,13 @@ static void cTalkScorer_DrawUse(cTalkScorer *self, int player, float *pos) {
 }
 
 void Scorer_CancelSpeech(float time) {
+	NetAudit_Site(NA_HUD, "speech.cancel");
 	g_RemainTalkTime = time;
 }
 
 static void Talk_AddCallbackParam(const nativeVal_t *item);
 void Scorer_SetSpeechCallback(const char *func, const nativeVal_t *arg) {
+	NetAudit_Site(NA_HUD, "speech.callback");
 	nativeVal_t key, item;
 	cPy_Function_SetFunc((&g_TalkCallback), func);
 	if (arg && arg->type == NV_LIST) {
@@ -343,6 +346,7 @@ static void Talk_AddCallbackParam(const nativeVal_t *item) {
 }
 
 void Scorer_SetSpeechText(const char *text, float time, int r, int g, int b) {
+	NetAudit_Site(NA_HUD, "speech.text");
 	/* not in the original: the coop story's conversations on the clients (include/scrap/coop.h) */
 	if (g_Instance) {
 		Coop_SpeechText(text, time, r, g, b);

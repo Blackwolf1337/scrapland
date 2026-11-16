@@ -52,8 +52,10 @@ struct cEntity *Players_Get(int i);
 int Players_Of(struct cEntity *e);
 /* e is a player's entity (outside the instance: e == cWorld_GetUsrEntity(g_pWorld, 0), so also NULL == NULL) */
 byte Players_Is(struct cEntity *e);
-/* some player's entity, NULL when there is none (the instance: the bound player's when it has one) */
-struct cEntity *Players_Any(void);
+/* some player's entity, NULL when there is none (the instance: the bound player's when it has one); site names the
+ * caller for the network audit (include/scrap/netaudit.h: a read on an instance counts, by a bound player or none) */
+struct cEntity *Players_AnyAt(const char *site);
+#define Players_Any() Players_AnyAt(__func__)
 /* the player an NPC at pos reacts to (outside the instance: player 0), NULL: the nearest player whose alarm is on
  * within PLAYERS_WANTED_REACH, else the nearest */
 struct cEntity *Players_Nearest(const vec3_t *pos);
@@ -71,13 +73,15 @@ struct CGameModel;
 /* the model is visible: outside the instance drawn in the last frame (CGameModel_IsVisible); the headless instance
  * draws nothing, so a model a player has in view (Players_Sees) counts, which the logic and the AI of the characters
  * read as single player reads its screen */
-byte Players_SeesModel(const struct CGameModel *m);
+byte Players_SeesModelAt(const struct CGameModel *m, const char *site);
+#define Players_SeesModel(m) Players_SeesModelAt(m, __func__)
 /* the square of the distance of the nearest player of the instance to pos, FLT_MAX without one (outside the instance
  * always FLT_MAX) */
 float Players_MinDistSq(const vec3_t *pos);
 /* the scripts' player i (Scrap.UsrEntity(i), Mode_Usr): cWorld_GetUsrEntity(g_pWorld, i); on the instance the bound
- * player's entity for 0 (Players_Any), NULL for others */
-struct cEntity *Players_Script(int i);
+ * player's entity for 0 (Players_Any), NULL for others; site as for Players_AnyAt */
+struct cEntity *Players_ScriptAt(int i, const char *site);
+#define Players_Script(i) Players_ScriptAt(i, __func__)
 /* the player of this machine (the HUD, the camera, the sounds): cWorld_GetUsrEntity(g_pWorld, 0) */
 struct cEntity *Players_Local(void);
 

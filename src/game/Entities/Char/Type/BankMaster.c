@@ -6,6 +6,7 @@
 
 #include "scrap/chartype.h"
 #include "scrap/fx.h"
+#include "scrap/netaudit.h"
 #include "scrap/staticinit.h"
 
 #define g_FXBankMasterAttackFile (GVar_FXBankMasterAttackFile.value.s)
@@ -131,6 +132,7 @@ static void ChType_BankMasterSuction(cAbstractFile *params) {
 }
 
 void FX_BankMasterSuction(cEntity *master, cEntity *victim) {
+	NetAudit_Site(NA_SFX, "sfx.BankMasterSuction");
 	cObjElementFXBankMasterSuction *el = FX_DropNew(g_FXBankMasterSuctionFile, 0.8f);
 	if (el) {
 		if (!el->started) {

@@ -19,6 +19,7 @@
 #include "scrap/modvars.h"
 #include "scrap/nativeobj.h"
 #include "scrap/net.h"
+#include "scrap/netaudit.h"
 #include "scrap/pyentity.h"
 #include "scrap/ai.h"
 #include "scrap/alarm.h"
@@ -177,8 +178,8 @@ byte Mode_ActionSetIs(const char *name) {
 	return !strcmp(TABLE_AT(g_ActionSets, Input_GetActionSet())->name, name);
 }
 
-cEntity *Mode_Usr(void) {
-	return Players_Script(0);
+cEntity *Mode_UsrAt(const char *site) {
+	return Players_ScriptAt(0, site);
 }
 
 byte Mode_Create(const nativeVal_t *name, const nativeVal_t *x, const nativeVal_t *y, const nativeVal_t *z,
@@ -727,6 +728,7 @@ void Mode_SetTimeSpeed(double speed) {
 	if (Coop_KeepTime()) {
 		return;
 	}
+	NetAudit_Site(NA_TIMESPEED, "timespeed.world:Mode_SetTimeSpeed");
 	Timer_SetSpeed(&g_pWorld->timer, (float)speed);
 }
 
@@ -994,12 +996,12 @@ int Mode_Del(cEntity *e) {
 	return Mode_Method(e, "Del") ? cEntity_Del(e) != 0 : -1;
 }
 
-byte Mode_UsrHandle(nativeVal_t *out) {
+byte Mode_UsrHandleAt(nativeVal_t *out, const char *site) {
 	MODE_SEAM("Scrap", "UsrEntity");
 	if (seam) {
 		return Native_HookCall(&hook, out, "i", 0L);
 	}
-	return Mode_EntHandle(Mode_Usr(), out);
+	return Mode_EntHandle(Mode_UsrAt(site), out);
 }
 
 byte Mode_EntHandle(cEntity *e, nativeVal_t *out) {
@@ -1823,11 +1825,11 @@ int Mode_CmpI(const nativeVal_t *a, const char *op, long i) {
 	return Mode_Cmp(a, op, &b);
 }
 
-int Mode_UsrIs(const char *ctrl) {
+int Mode_UsrIsAt(const char *ctrl, const char *site) {
 	nativeVal_t u, a;
 	Native_SetNone(&u);
 	Native_SetNone(&a);
-	int r = Mode_UsrHandle(&u) && Mode_VObj(&u, "ActCtrl", &a) ? LvN_EqS(&a, ctrl) : -1;
+	int r = Mode_UsrHandleAt(&u, site) && Mode_VObj(&u, "ActCtrl", &a) ? LvN_EqS(&a, ctrl) : -1;
 	Native_Free(&u);
 	Native_Free(&a);
 	return r;
@@ -3410,7 +3412,7 @@ byte Mode_CamSeam(long i, nativeVal_t *out) {
 	return 1;
 }
 
-byte Mode_UsrSeam(long id, nativeVal_t *out) {
+byte Mode_UsrSeamAt(long id, nativeVal_t *out, const char *site) {
 	Native_SetNone(out);
 	MODE_SEAM("Scrap", "UsrEntity");
 	if (seam) {
@@ -3420,7 +3422,7 @@ byte Mode_UsrSeam(long id, nativeVal_t *out) {
 	if ((uint32_t)(int)id > 3) {
 		return Native_NullResult();
 	}
-	return Mode_EntHandle(Players_Script((int)id), out);
+	return Mode_EntHandle(Players_ScriptAt((int)id, site), out);
 }
 
 byte Mode_SchedAt(double time, const char *module, const char *func, const nativeVal_t *args, int n, const char *name) {

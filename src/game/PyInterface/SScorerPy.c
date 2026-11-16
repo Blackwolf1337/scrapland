@@ -7,6 +7,7 @@
 
 #include "scrap/coop.h"
 #include "scrap/input.h"
+#include "scrap/netaudit.h"
 #include "scrap/scorer.h"
 #include "scrap/scriptapi.h"
 
@@ -345,6 +346,7 @@ API_FN(SScorer, Show) {
 		return 0;
 	}
 	cScorer *sc = Scorer_Get(player);
+	NetAudit_Site(NA_HUD, "scorer.show");
 	if (!sc) {
 		return 1;
 	}
@@ -359,6 +361,7 @@ API_FN(SScorer, Hide) {
 		return 0;
 	}
 	cScorer *sc = Scorer_Get(player);
+	NetAudit_Site(NA_HUD, "scorer.hide");
 	if (!sc) {
 		return 1;
 	}

@@ -11,6 +11,7 @@
 #include "scrap/fxvehicle.h"
 #include "scrap/missileentity.h"
 #include "scrap/net.h"
+#include "scrap/netaudit.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/withlifeentity.h"
@@ -798,6 +799,7 @@ const char *const g_MissileFXNames[MISSILE_FXS] = { "", "DumbMotor", "GearMissil
 
 /* the fire effects DumbMotor, GearMissile, Cloud and EMI (a debris element of the life time) */
 static void cMissileEntity_SetEmbeddedFX(cEntity *elem, const char *name) {
+	NetAudit_Name(NA_SFX, "sfx.embedded.missile:", name);
 	cMissileEntity *self = (cMissileEntity *)elem;
 	if (self->wl.obj.base.deadNode.target) {
 		return;

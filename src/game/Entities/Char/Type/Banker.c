@@ -6,6 +6,7 @@
 
 #include "scrap/chartype.h"
 #include "scrap/fx.h"
+#include "scrap/netaudit.h"
 #include "scrap/staticinit.h"
 #include "scrap/players.h"
 
@@ -99,6 +100,7 @@ static void ChType_BankerAttack(cAbstractFile *params) {
 }
 
 void FX_BankerSteal(cEntity *thief, cEntity *victim) {
+	NetAudit_Site(NA_SFX, "sfx.BankerSteal");
 	cObjElementFXBankerSteal *el = FX_DropNew(g_FXBankerStealFile, 1.35f);
 	if (el) {
 		if (!el->started) {

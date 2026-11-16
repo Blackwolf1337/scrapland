@@ -7,6 +7,7 @@
 #include "scrap/chartype.h"
 #include "scrap/fx.h"
 #include "scrap/fxelements.h"
+#include "scrap/netaudit.h"
 #include "scrap/vehicleattack.h"
 #include "scrap/staticinit.h"
 #include "scrap/players.h"
@@ -162,6 +163,7 @@ static void ChType_BishopAttack(cAbstractFile *params) {
 
 /* the green ray from the bishop to the target (NULL: to the point hit) with its sounds */
 void FX_BishopRay(cEntity *v, cEntity *target, const vec3_t *hit) {
+	NetAudit_Site(NA_SFX, "sfx.BishopRay");
 	vec3_t t1, q, w, mp, mr, rot2, up, aoff, from, to, to2, from2;
 
 	cObjElementFXBishopAttack *el = FX_DropNew(g_FXBishopAttackFile, 0.400000006f);
@@ -231,6 +233,7 @@ static void ChType_FXBishopSellLife(cAbstractFile *params) {
 }
 
 void FX_BishopSellLife(cEntity *attacker, cEntity *attacked) {
+	NetAudit_Site(NA_SFX, "sfx.BishopSellLife");
 	if (attacker) {
 		CHECK(Entity_IsType(attacker, TYEN_WITH_LIFE));
 	}

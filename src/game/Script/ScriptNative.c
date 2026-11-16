@@ -18,6 +18,7 @@
 #include "scrap/global.h"
 #include "scrap/modvars.h"
 #include "scrap/nativeobj.h"
+#include "scrap/netaudit.h"
 #include "scrap/pyentity.h"
 #include "scrap/scorer.h"
 #include "scrap/scrap.h"
@@ -2378,6 +2379,7 @@ static byte Native_EntNum(const nativeVal_t *v, byte asDouble, double *d, int *i
 }
 
 byte Native_EntStore(cEntity *e, const char *ref, const char *name, const nativeVal_t *v) {
+	NetAudit_Name(NA_ENTVAR, "entvar.set:", name);
 	/* getargs.c Arg_Parse of the value as "i", "d", the tuple "ddd" and "s" in the original */
 	byte parsed = 0;
 	double d, x[3];
@@ -2666,6 +2668,7 @@ byte Native_ScorerSet(int id, const char *item, const char *var, const nativeVal
 }
 
 int Native_ScorerStore(int id, const char *item, const char *var, const nativeVal_t *v, int *r) {
+	NetAudit_Name(NA_HUD, "scorer.set:", var);
 	/* SScorer.Set: "isss", else "issd" (the int the double cut) */
 	double d = 0.0;
 	int i = 0;

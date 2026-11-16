@@ -10,6 +10,7 @@
 #include "scrap/console.h"
 #include "scrap/global.h"
 #include "scrap/nativeobj.h"
+#include "scrap/netaudit.h"
 #include "scrap/scorer.h"
 #include "scrap/players.h"
 #include "scrap/scrap.h"
@@ -718,6 +719,7 @@ API_FN(Scrap, SetTimeSpeed) {
 	if (!Mode_Parse(a, n, "d", &speed)) {
 		return 0;
 	}
+	NetAudit_Site(NA_TIMESPEED, "timespeed.world:Scrap.SetTimeSpeed");
 	Timer_SetSpeed(&g_pWorld->timer, (float)speed);
 	return Api_Build(out, "");
 }

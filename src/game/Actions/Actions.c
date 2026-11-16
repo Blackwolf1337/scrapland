@@ -8,6 +8,7 @@
 #include "scrap/actions.h"
 #include "scrap/console.h"
 #include "scrap/cstring.h"
+#include "scrap/netaudit.h"
 #include "scrap/staticinit.h"
 
 #define g_DefInterpTime (GVar_DefInterpTime.value.f)	/* DefInterpTime of new actions */
@@ -96,7 +97,32 @@ static void cAction_AddEvent(cAction *self, float time) {
 	self->lastEvent = ev;
 }
 
+/* the network audit of an event: its kind, a C function's by its registered name (a small cache by address, the
+ * registry is a tree by name) */
+static void cActEvent_Audit(const cActEvent *self) {
+	static struct {
+		const void *func;
+		const char *name;
+	} cache[16];
+
+	if (Event_IsSound(self)) {
+		NetAudit_Site(NA_ANIMEVENT, "anim.ev.sound");
+		return;
+	}
+	if (!(self->func.flags & PYF_NATIVE)) {
+		NetAudit_Site(NA_ANIMEVENT, "anim.ev.script");
+		return;
+	}
+	int k = (int)((uintptr_t)self->func.func >> 4 & 15);
+	if (cache[k].func != self->func.func) {
+		cache[k].func = self->func.func;
+		cache[k].name = cPy_NativeFunc_Name((nativefunc_t)self->func.func);
+	}
+	NetAudit_Func(NA_ANIMEVENT, "anim.ev.native:", cache[k].name);
+}
+
 void cActEvent_Fire(cActEvent *self, const char *entity) {
+	cActEvent_Audit(self);
 	cPy_Function_AddParamS(&self->func, entity);
 	cPy_Function_AddParamS(&self->func, self->name);
 	cPy_Function_AddParamF(&self->func, self->time);
