@@ -4,6 +4,8 @@
 # ending in a transaction the server checks), SCENE (scene tables: both sides, started by the server). The first
 # tags were proposed by netclass.py --scan from the engine calls of each module's C file ("proposed: ..."), then
 # corrected by reading.
+# A row Module.func tags one function of a mixed module (NetClass_ModuleTag looks it up before the module): the
+# level start's functions and the class definitions that a -mp2 client calls (stage 3.3, include/scrap/initsteps.h).
 Sound	DEF	sound tables and loops of the level
 Parking	SIM	world simulation: entities, NPCs, traffic, police, missions or activities
 gamblinden/Map	SIM	the setup of the level: NPCs, missions, traffic
@@ -316,3 +318,25 @@ townhall/Mission_ApologizeMayor	SIM	a mission
 townhall/Mission_CatchTrurl	SIM	a mission
 townhall/Mission_SheriffMayor	SIM	a mission
 townhall/Mission_TalkToMayor	SIM	a mission
+Init.Init	DEF	the level start: the client runs its DEF steps (initstep.tsv)
+Init.PreloadMlibs	DEF	the preloads of the map libraries
+Init.AddMLib	DEF	a map library into MapLibs (a preload)
+Init.SetArrowSize	DEF	the models of the arrows
+Init.LoadCharLib	DEF	the script of a character class and its sounds (a preload)
+Init.SetMapLabelText	UI	the station label on the screen at the start
+Init.Close	UI	the progress bar of the next level
+OutMap.Init	DEF	the outdoor start: the client runs its DEF steps (initstep.tsv)
+OutMap.InitOutMap	DEF	a group of steps of the outdoor start (initstep.tsv)
+OutMap.BrowseAtmospherePos	DEF	the atmosphere limits from the dummies
+OutMap.BrowseSpawnPos	DEF	the spawn places from the dummies (map data)
+InMap.Init	DEF	the indoor start: the client runs its DEF steps (initstep.tsv)
+Doors.InitDoorInfo	DEF	the table of the door classes
+Doors.CreateDoorClass	DEF	the action class of a door
+Doors.StdInitializator	DEF	the class initializer of a door (nothing)
+Elevator.DoorInitializator	DEF	the moving actions and events of an elevator door class
+Teleport.DoorInitializator	DEF	the class of a teleporter door
+Parking.DoorInitializator	DEF	the event of the Open action of a link door class
+MisItems.Init	DEF	the preloads of the models of the coins and mission items
+MisItems.GetMoneyModel	DEF	the model of a coin (a name)
+MisItems.GetObjModel	DEF	the model of a mission item (a name)
+Sputnik.Init	DEF	the action class of the Sputnik character (chars/sputnik.def)

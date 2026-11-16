@@ -10,6 +10,7 @@
 
 #include "scrap/actions.h"
 #include "scrap/console.h"
+#include "scrap/crt.h"
 #include "scrap/input.h"
 #include "scrap/sound.h"
 #include "scrap/scrap.h"
@@ -17,6 +18,20 @@
 #include "Levels.h"
 
 const int lv_black[4] = { 0, 0, 0, 255 }, lv_clear[4] = { 0, 0, 0, 0 };
+
+static const lvClient_t lv_clients[] = {
+	{ "DownTown", DownTown_ClientStatus, NULL },
+	{ "Police", Police_ClientStatus, Police_ClientInit },
+};
+
+const lvClient_t *Lv_Client(const char *level) {
+	for (size_t i = 0; i < sizeof(lv_clients) / sizeof(lv_clients[0]); i++) {
+		if (!crt_stricmp(lv_clients[i].level, level)) {
+			return &lv_clients[i];
+		}
+	}
+	return NULL;
+}
 
 /* ---- whole functions the level tables share (native: docs/objlib-plan.md, stage 2) ---- */
 

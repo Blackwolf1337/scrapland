@@ -1,7 +1,8 @@
 /*
- * The steps of a level's start (stage 1.4 of the second multiplayer design, include/scrap/initsteps.h): the gate of
- * the PLAYER_ENTER steps by the netclass table initstep, the level's list of them on the instance and its run for
- * each player that joins. Not in the original.
+ * The steps of a level's start (stages 1.4 and 3.3 of the second multiplayer design, include/scrap/initsteps.h): the
+ * gate of the steps by the netclass table initstep (the PLAYER_ENTER steps on the instance, the client's steps of a
+ * -mp2 client), the level's list of the player steps on the instance and its run for each player that joins, the
+ * level's client part. Not in the original.
  */
 #include <stdio.h>
 #include <string.h>
@@ -12,8 +13,11 @@
 #include "scrap/instance.h"
 #include "scrap/netclass.h"
 #include "scrap/players.h"
+#include "scrap/replicate.h"
+#include "scrap/repent.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/scriptnative.h"
+#include "game/Script/levels/Levels.h"
 
 #define IS_STEPS 16
 
@@ -22,14 +26,37 @@ static struct {
 	int n;
 	byte entering;
 	char camName[32];
+	const lvClient_t *client;	/* the level's client part on a -mp2 client, NULL: every step runs */
 } is;
 
-void InitSteps_Begin(void) {
+void InitSteps_Begin(const char *path) {
+	const char *slash = path ? strrchr(path, '/') : NULL;
 	is.n = 0;
+	is.client = g_Mp2 && g_Watch && path ? Lv_Client(slash ? slash + 1 : path) : NULL;
+	if (g_Mp2 && g_Watch) {
+		Con_Printf("initsteps: %s: %s\n", path ? path : "?", is.client ? "the client's steps" :
+			"every step (no client part of the level yet)");
+	}
+}
+
+byte InitSteps_Client(void) {
+	return is.client != NULL;
+}
+
+byte InitSteps_LevelStatus(const nativeVal_t *path) {
+	return !is.client || !is.client->status || is.client->status(path);
+}
+
+byte InitSteps_LevelInit(const nativeVal_t *path) {
+	return !is.client || !is.client->init || is.client->init(path);
 }
 
 byte InitStep_Now(const char *step) {
-	if (!g_Instance || is.entering || NetClass_Find(NCT_INITSTEP, step) != NC_PLAYER_ENTER) {
+	netTag_t tag = NetClass_Find(NCT_INITSTEP, step);
+	if (is.client) {
+		return tag == NC_DEF || tag == NC_GROUP || tag == NC_RAIL;
+	}
+	if (!g_Instance || is.entering || tag != NC_PLAYER_ENTER) {
 		return 1;
 	}
 	for (int k = 0; k < is.n; k++) {

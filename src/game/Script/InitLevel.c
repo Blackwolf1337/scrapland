@@ -211,7 +211,8 @@ static byte In_BossShip(void) {
  * save game values */
 static byte In_Game(const nativeVal_t *path) {
 	int outdoor = In_Flag("Outdoor");
-	if (outdoor < 0 || (!outdoor && !IN_CALL(Bureaucracy, Init))) {
+	if (outdoor < 0 || (!outdoor && (InitStep_Now("InitLevel:Bureaucracy.Init") ? !IN_CALL(Bureaucracy, Init) :
+		InitStep_Now("InitLevel:Bureaucracy_InitClasses") && !Bureaucracy_InitClasses()))) {
 		return 0;
 	}
 	nativeVal_t upper = { 0 }, deals = { 0 };
@@ -241,9 +242,12 @@ static byte In_Game(const nativeVal_t *path) {
 	if (!IN_CALL(Fx, Init)) {
 		return 0;
 	}
+	/* a client's split start (include/scrap/initsteps.h): the classes of the doors, which the server makes */
 	edit = In_Flag("isShipEdit");
-	if (edit < 0 || (!edit && (!IN_CALL(Alarm, Init) || !IN_CALL(MisItems, Init))) ||
-		!IN_CALL(Doors, Init)) {
+	if (edit < 0 || (!edit && ((InitStep_Now("InitLevel:Alarm.Init") && !IN_CALL(Alarm, Init)) ||
+		(InitStep_Now("InitLevel:MisItems.Init") && !IN_CALL(MisItems, Init)))) ||
+		(InitStep_Now("InitLevel:Doors.Init") ? !IN_CALL(Doors, Init) :
+		InitStep_Now("InitLevel:Doors_InitClasses") && !Doors_InitClasses())) {
 		return 0;
 	}
 	edit = In_Flag("isShipEdit");
@@ -256,7 +260,8 @@ static byte In_Game(const nativeVal_t *path) {
 			return 0;
 		}
 		multi = In_Flag("MultiPlayer");
-		if (multi < 0 || (!multi && (!IN_CALL(SaveGame, InitVars) || !IN_CALL(MissionsFuncs, Init)))) {
+		if (multi < 0 || (!multi && ((InitStep_Now("InitLevel:SaveGame.InitVars") && !IN_CALL(SaveGame, InitVars)) ||
+			(InitStep_Now("InitLevel:MissionsFuncs.Init") && !IN_CALL(MissionsFuncs, Init))))) {
 			return 0;
 		}
 	}
@@ -314,8 +319,8 @@ static byte In_InitN(const nativeVal_t *path) {
 	if (!Mode_Put(IN, "Path", NULL, path) || !Mode_Import("sys")) {
 		return Mode_Done(&t, 0);
 	}
-	/* not in the original: the player steps of the start (include/scrap/initsteps.h) */
-	InitSteps_Begin();
+	/* not in the original: the steps of the start (include/scrap/initsteps.h) */
+	InitSteps_Begin(path->type == NV_STR ? Native_Text(path) : NULL);
 	/* the map scripts of the level and its libraries */
 	if (!Native_Arith('+', path, Mode_S(&t, "/Scripts"), dir) || !Mode_Append("sys", "path", dir) || !Mode_Pack(dir) ||
 		!PORT_CALL(Scrap, PreloadLibrary, NULL, "ss", "Map", "Map.pyc") ||
@@ -335,16 +340,21 @@ static byte In_InitN(const nativeVal_t *path) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	/* Map is the module of the current level: the function it holds through its entry */
-	if (xb < 0 || !Mode_Import("Map") || !Mode_Import("MapSnd") || !MODE_CBATTR("Map", "InitStatus", NULL, "v", path) ||
-		!PORT_OWN(Init, MLibInitStatus, NULL, "v", path) || !In_BossShip() || !Mode_G(IN, "SuperDealModule", deal) ||
-		(Native_True(deal) && !In_Method(deal, "InitStatus", path)) || !Places_LevelStatus()) {
+	/* Map is the module of the current level: the function it holds through its entry; a client's split start runs
+	 * the level's client part in its place */
+	if (xb < 0 || !Mode_Import("Map") || !Mode_Import("MapSnd") ||
+		!(InitStep_Now("InitLevel:Map.InitStatus") ? MODE_CBATTR("Map", "InitStatus", NULL, "v", path) :
+		InitSteps_LevelStatus(path)) ||
+		(InitStep_Now("InitLevel:Init.MLibInitStatus") && !PORT_OWN(Init, MLibInitStatus, NULL, "v", path)) ||
+		(InitStep_Now("InitLevel:In_BossShip") && !In_BossShip()) || !Mode_G(IN, "SuperDealModule", deal) ||
+		(Native_True(deal) && InitStep_Now("InitLevel:SuperDealModule.InitStatus") && !In_Method(deal, "InitStatus", path)) ||
+		(InitStep_Now("InitLevel:Places_LevelStatus") && !Places_LevelStatus())) {
 		return Mode_Done(&t, 0);
 	}
 	/* the size of the mission arrows, the AI */
 	int menu = In_Flag("inMainMenu"), edit = menu == 0 ? In_Flag("isShipEdit") : 0;
 	if (menu < 0 || edit < 0 || (!menu && !edit && !PORT_OWN(Init, SetArrowSize, NULL, "")) ||
-		!Mode_G(IN, "Outdoor", out) || !PORT_CALL(SAI, IniAI, NULL, "vv", path, out)) {
+		!Mode_G(IN, "Outdoor", out) || (InitStep_Now("InitLevel:SAI.IniAI") && !PORT_CALL(SAI, IniAI, NULL, "vv", path, out))) {
 		return Mode_Done(&t, 0);
 	}
 	/* the menus, the mission info, the chat, the sound, the decoration */
@@ -375,15 +385,19 @@ static byte In_InitN(const nativeVal_t *path) {
 		if (has < 0) {
 			return Mode_Done(&t, 0);
 		}
-		if (Native_IsStr(bertos, "1") && !Native_IsStr(upper, "GDB") && !has && (!Mode_Import("MissionsFuncs") ||
+		if (Native_IsStr(bertos, "1") && !Native_IsStr(upper, "GDB") && !has &&
+			InitStep_Now("InitLevel:MissionsFuncs.CreateBertos") && (!Mode_Import("MissionsFuncs") ||
 			!Mode_Import("Parking") || !PORT_CALL(MissionsFuncs, CreateBertos, NULL, "") ||
 			!Mode_ModSetGlobal("Parking", "SwitchVehicleMissionCallbackAux", "MissionsFuncs", "ReassignBertosPlayerTarget") ||
 			!Mode_ModSetGlobal("Parking", "SwitchCharMissionCallbackAux", "MissionsFuncs", "ReassignBertosPlayerTarget"))) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	if (!In_BossRobots() || !Mode_GVarSetS("OnCrazyDealFinished", "MissionsFuncs.OnCrazyDealFinishedMessage") ||
-		!Mode_GVarSetS("OnCrazyDealTarget", "MissionsFuncs.OnCrazyDealTarget")) {
+	if ((InitStep_Now("InitLevel:In_BossRobots") && !In_BossRobots()) ||
+		(InitStep_Now("InitLevel:GVar.OnCrazyDealFinished") &&
+		!Mode_GVarSetS("OnCrazyDealFinished", "MissionsFuncs.OnCrazyDealFinishedMessage")) ||
+		(InitStep_Now("InitLevel:GVar.OnCrazyDealTarget") &&
+		!Mode_GVarSetS("OnCrazyDealTarget", "MissionsFuncs.OnCrazyDealTarget"))) {
 		return Mode_Done(&t, 0);
 	}
 	/* not in the original: a coop client's camera for the level's start (include/scrap/coop.h) */
@@ -393,12 +407,20 @@ static byte In_InitN(const nativeVal_t *path) {
 	/* the map (Map and MapSnd are the modules of the current level: the functions they hold through their entries);
 	 * not in the original: a coop instance's stand-in player while no member is there (include/scrap/coop.h: the
 	 * missions' Init read the player, a race's start) */
-	Coop_StandIn(1);
-	byte inited = In_MapInit(path) && MODE_CBATTR("MapSnd", "Init", NULL, "v", path) &&
-		PORT_OWN(Init, MLibInit, NULL, "v", path) && Mode_Read(IN, "SuperDealModule", deal) &&
-		(!Native_True(deal) || In_Method(deal, "Init", path)) && Mode_LaterIn(0.5, IN, "SetMapLabelText", NULL, 0, NULL) &&
-		Places_LevelInit();
-	Coop_StandIn(0);
+	byte stand = InitStep_Now("InitLevel:Coop_StandIn");
+	if (stand) {
+		Coop_StandIn(1);
+	}
+	byte inited = (InitStep_Now("InitLevel:In_MapInit") ? In_MapInit(path) : InitSteps_LevelInit(path)) &&
+		MODE_CBATTR("MapSnd", "Init", NULL, "v", path) &&
+		(!InitStep_Now("InitLevel:Init.MLibInit") || PORT_OWN(Init, MLibInit, NULL, "v", path)) &&
+		Mode_Read(IN, "SuperDealModule", deal) &&
+		(!Native_True(deal) || !InitStep_Now("InitLevel:SuperDealModule.Init") || In_Method(deal, "Init", path)) &&
+		Mode_LaterIn(0.5, IN, "SetMapLabelText", NULL, 0, NULL) &&
+		(!InitStep_Now("InitLevel:Places_LevelInit") || Places_LevelInit());
+	if (stand) {
+		Coop_StandIn(0);
+	}
 	if (!inited) {
 		return Mode_Done(&t, 0);
 	}
@@ -422,7 +444,7 @@ static byte In_InitN(const nativeVal_t *path) {
 	if (offline < 0 || menu < 0 || edit < 0) {
 		return Mode_Done(&t, 0);
 	}
-	if (offline && !menu && !edit) {
+	if (offline && !menu && !edit && InitStep_Now("InitLevel:Scrap.CreateSaveVar")) {
 		if (!PORT_CALL(Scrap, CreateSaveVar, NULL, "ss", "GameSkill", "1")) {
 			return Mode_Done(&t, 0);
 		}

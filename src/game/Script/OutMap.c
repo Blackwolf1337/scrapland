@@ -387,9 +387,15 @@ static byte Om_InitOutMap(void) {
 	 * single player shows around the camera and the instance has as well: the accelerators, the phone cabs, the
 	 * parking boxes and areas and the links (their uses are the instance's), and the rail traffic, which flies around
 	 * the camera (Rep_LocalAmbient) */
-	if (g_Watch) {
+	if (g_Watch && !InitSteps_Client()) {
 		return Mode_Done(&t, OM_START(Accelerator, Init) && OM_START(PhoneCab, Init) && OM_START(Parking, Init) &&
 			OM_START(Traffic, InitAIProfiles) && OM_START(Traffic, InitCivilTraffic));
+	}
+	/* a -mp2 client's split start (include/scrap/initsteps.h): the steps of InitOutMap are the server's, but for the
+	 * client's own rail traffic (until stage 2.2 runs it on the server) */
+	if (InitSteps_Client()) {
+		return Mode_Done(&t, (!InitStep_Now("OutMap:Traffic.InitAIProfiles") || OM_START(Traffic, InitAIProfiles)) &&
+			(!InitStep_Now("OutMap:Traffic.InitCivilTraffic") || OM_START(Traffic, InitCivilTraffic)));
 	}
 	int c = OM_START(Accelerator, Init) && Native_GVarGet("SplitScreen", split) ? Mode_CmpI(split, "!=", 0) : -1;
 	if (c) {
@@ -472,7 +478,8 @@ static byte Om_Init(const nativeVal_t *path) {
 	if (!Mode_Import("Menu") || !Mode_Import("Init") || !Mode_Cat(&t, file, 2, path, Mode_S(&t, "/2D/Map2D.tga")) ||
 		!Mode_GVarSet("FileNameMap2D", file) || !Mode_GVarSetI("CharGrav", 3000) ||
 		!PORT_OWN(OutMap, BrowseAtmospherePos, NULL, "") ||
-		!PORT_OWN(OutMap, BrowseSpawnPos, NULL, "") || !Mode_GVarSetI("GridUseTopLimit", 1) ||
+		(InitStep_Now("OutMap:OutMap.BrowseSpawnPos") && !PORT_OWN(OutMap, BrowseSpawnPos, NULL, "")) ||
+		!Mode_GVarSetI("GridUseTopLimit", 1) ||
 		!Mode_SetGrid(50000, 50000, 50000) || !Mode_GVarSetI("Max_Rad_Obj", 10000)) {
 		return Mode_Done(&t, 0);
 	}
@@ -481,8 +488,8 @@ static byte Om_Init(const nativeVal_t *path) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	return Mode_Done(&t, PORT_OWN(OutMap, InitOutMap, NULL, "") && Mode_Import("Items") &&
-		PORT_CALL(Items, Init, NULL, "") &&
+	return Mode_Done(&t, PORT_OWN(OutMap, InitOutMap, NULL, "") &&
+		(!InitStep_Now("OutMap:Items.Init") || (Mode_Import("Items") && PORT_CALL(Items, Init, NULL, ""))) &&
 		Mode_PrintV(Mode_S(&t, "Map initialized as Outdor")));
 }
 

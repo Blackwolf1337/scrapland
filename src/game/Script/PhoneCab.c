@@ -772,8 +772,9 @@ static byte DTritus_PressClass(const nativeVal_t *name) {
 
 MODE_FN(DTritus, CreatePressDesktopClass, 1, DTritus_PressClass(&a[0]))
 
-/* CreatePressDesktop(DesktopName): the desktop at its dummy DM_<DesktopName>, when there is one */
-static byte DTritus_Press(const nativeVal_t *name) {
+/* CreatePressDesktop(DesktopName): the desktop at its dummy DM_<DesktopName>, when there is one (classOnly: its
+ * class, no desktop) */
+static byte DTritus_Press(const nativeVal_t *name, byte classOnly) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *pat = Mode_V(&t), *dummy = Mode_V(&t), *pos = Mode_V(&t), *y = Mode_V(&t), *ac = Mode_V(&t);
 	if (!Native_Arith('+', Mode_S(&t, "DM_"), name, pat) || !Phone_Dummy(pat, dummy)) {
@@ -782,16 +783,20 @@ static byte DTritus_Press(const nativeVal_t *name) {
 	if (!Native_True(dummy)) {
 		return Mode_Done(&t, 1);
 	}
+	if (classOnly) {
+		return Mode_Done(&t, DTritus_PressClass(name));
+	}
 	byte ok = DTritus_PressClass(name) && Native_Subscript(dummy, Mode_I(&t, 1), pos) && Phone_DummyAng(dummy, y) &&
 		Phone_Create(name, pos, y, 0, ac) && Mode_VSet(ac, "ActCtrl", name) && Mode_VSet(ac, "MapCollision", Mode_I(&t, 1)) &&
 		Mode_VSet(ac, "VRadius", Mode_I(&t, 60));
 	return Mode_Done(&t, ok);
 }
 
-MODE_FN(DTritus, CreatePressDesktop, 1, DTritus_Press(&a[0]))
+MODE_FN(DTritus, CreatePressDesktop, 1, DTritus_Press(&a[0], 0))
 
-/* Init(): Dtritus' desktop at DM_DTritusDesktop (when the dummy is on) and the three desktops of the journalists */
-static byte DTritus_InitDesks(void) {
+/* Init(): Dtritus' desktop at DM_DTritusDesktop (when the dummy is on) and the three desktops of the journalists
+ * (classOnly: their classes, no desktops) */
+static byte DTritus_InitDesks(byte classOnly) {
 	static const char *const desks[] = { "BertoDesktop", "BettyDesktop", "HumphreyDesktop" };
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *dummy = Mode_V(&t), *on = Mode_V(&t), *a = Mode_V(&t), *desk = Mode_V(&t), *d[3];
@@ -807,7 +812,7 @@ static byte DTritus_InitDesks(void) {
 		if (ok && Native_True(on)) {
 			ok = Native_Subscript(dummy, Mode_I(&t, 0), d[0]) && Native_Subscript(dummy, Mode_I(&t, 1), d[1]) &&
 				Phone_DummyAng(dummy, d[2]) && Phone_Class("DTritusDesktop", NULL);
-			if (ok) {
+			if (ok && !classOnly) {
 				Native_SetEmpty(a, NV_TUPLE);
 				for (int k = 0; k < 3; k++) {
 					Native_Copy(Native_Append(a), d[k]);
@@ -817,12 +822,16 @@ static byte DTritus_InitDesks(void) {
 		}
 	}
 	for (int i = 0; ok && i < 3; i++) {
-		ok = DTritus_Press(Mode_S(&t, desks[i]));
+		ok = DTritus_Press(Mode_S(&t, desks[i]), classOnly);
 	}
 	return Mode_Done(&t, ok);
 }
 
-MODE_FNANY(DTritus, Init, DTritus_InitDesks())
+MODE_FNANY(DTritus, Init, DTritus_InitDesks(0))
+
+byte DTritusDesktop_InitClasses(void) {
+	return DTritus_InitDesks(1);
+}
 
 /* InitNPCS(): the journalists whose default map (save variable Journalist.<name>_Defaut) is this one */
 static byte DTritus_NPCs(void) {
