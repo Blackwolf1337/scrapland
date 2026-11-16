@@ -21,7 +21,6 @@
 #include "scrap/actions.h"
 #include "scrap/console.h"
 #include "scrap/coop.h"
-#include "scrap/faction.h"
 #include "scrap/game.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
@@ -406,12 +405,6 @@ static byte Ch_Init(void) {
 	}
 	Native_Free(&list);
 	const char *ch = SaveVar_Get("Char");
-	/* not in the original: a coop instance or client whose first level makes the player another character (GDB: the
-	 * bishop) has not loaded that character's script and sound, which single player has from an indoor level before
-	 * (Init's LoadChars) */
-	if (ch && *ch && (Coop_On() || Coop_Client())) {
-		Faction_EnsureClass(ch);
-	}
 	return PORT_OWN(Chars, LoadRes, NULL, "s", ch ? ch : "") && Mode_PrintS("Character system initialized.");
 }
 
