@@ -70,6 +70,9 @@ typedef struct cPlayer {
 	int actionSet;					/* the action set the scripts selected while it was current, -1 */
 	float timeSpeed;				/* the world's clock speed the scripts set in its context (Players_SetTimeSpeed), 0
 									   for 1 */
+	struct cEntity *machine;		/* the machine it uses (Players_SetMachine): compared, read while
+									   World_FindEntity(machineName) is it */
+	char machineName[64];
 } cPlayer;
 
 /* the instance's table is in use (the headless instance) */
@@ -120,6 +123,11 @@ void Players_Leave(int prev);
 /* Players_Enter for the player of the entity (or the owner of the ship: Players_ShipOwner), else the world's */
 int Players_EnterEntityAt(struct cEntity *e, const char *site);
 #define Players_EnterEntity(e) Players_EnterEntityAt(e, __func__)
+/* player i uses the machine e (a conversor whose action runs the player's flow: its events run in i's context, see
+ * Players_EnterEntity), NULL: none (include/scrap/uichan.h) */
+void Players_SetMachine(int i, struct cEntity *e);
+/* the player that uses the machine e, -1 */
+int Players_OfMachine(const struct cEntity *e);
 /* Players_Enter for the player whose owner slot e has, also while e is not one of the players found (made inactive by
  * the scripts), else the owner of the ship e */
 int Players_EnterOwnerAt(struct cEntity *e, const char *site);

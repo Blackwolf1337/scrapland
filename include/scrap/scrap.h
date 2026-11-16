@@ -200,6 +200,17 @@ byte SaveVar_Set(const char *name, const char *value);
 void SaveVar_Delete(const char *name);
 void SaveVars_Each(void (*fn)(const char *name, const char *value, void *u), void *u);
 void SaveGame_CoopNewGame(void);
+/* not in the original: on a -mp2 instance a save variable of a player's progress (the PLAYER prefixes of
+ * tools/script/netclass/savevar.tsv) read or set in a player's context (include/scrap/players.h) is that player's:
+ * a value it has not set reads the player's state of the coordinator (Travel_GetVar), else the world's; a set goes
+ * into the player's state too. Single player and the other processes have only the world's variables.
+ * SaveVar_OverClear: player i joined or left, its variables go; SaveVar_OverOwner: the player whose variable name is
+ * in the current context, -1 for the world's */
+void SaveVar_OverClear(int i);
+int SaveVar_OverOwner(const char *name);
+/* each variable as the current context reads it (SaveVars_Each with a player's own values; its deleted ones left
+ * out) */
+void SaveVars_EachSeen(void (*fn)(const char *name, const char *value, void *u), void *u);
 void Screenshot_Take(const char *name);
 void Video_SetCurrentMode(int mode);
 byte Video_Play(const char *name, const char *cmd, float arg);

@@ -26,6 +26,7 @@
  * files take their $names as a dict (OBJLIB 6).
  */
 #include <limits.h>
+#include <string.h>
 
 #include "scrap/app.h"
 #include "scrap/console.h"
@@ -34,6 +35,7 @@
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
+#include "scrap/uichan.h"
 #include "scrap/world.h"
 #include "game/Script/levels/Levels.h"
 
@@ -288,8 +290,9 @@ static byte Cc_AddInterfaceContent(const nativeVal_t *id) {
 	nativeVal_t *chars = Mode_V(&t), *avl = Mode_V(&t), *sv = Mode_V(&t), *control = Mode_V(&t), *none = Mode_V(&t);
 	nativeVal_t *name = Mode_V(&t);
 	int pid = 0, total = -1, count = 0;
-	/* not in the original: on a coop instance the interface opens on the member's client */
-	if (Coop_ConvMenu()) {
+	/* not in the original: on a -mp2 instance the interface opens on the client of the machine's player
+	 * (include/scrap/uichan.h), on a coop instance on the member's client */
+	if (Ui_Conv() || Coop_ConvMenu()) {
 		return Mode_Done(&t, 1);
 	}
 	if (!Mode_Import("Menu") || !PORT_CALL(Menu, InitMenuSys, NULL, "i", 0L) ||
@@ -399,14 +402,22 @@ static byte Cc_EnterCharConversor(const nativeVal_t *uname, const nativeVal_t *c
 		Mode_Lang("NoActiveConversorsMessage", cad);
 		return Mode_Done(&t, Mode_SpeechMsg(cad));
 	}
+	/* not in the original: on a -mp2 instance a conversor another player uses is refused with the message of a
+	 * conversor that does not work, else it is this player's until its end (include/scrap/uichan.h) */
+	if (cname->type == NV_STR && Ui_MachineBusy(Native_Text(cname), "NoActiveConversorsMessage")) {
+		return Mode_Done(&t, 1);
+	}
 	if (!Cc_G("CheckConversor", check)) {
+		Ui_MachineFree();
 		return Mode_Done(&t, 0);
 	}
 	if (Native_True(check)) {
 		if (!Mode_CallArgs(check, r, cname, 1)) {
+			Ui_MachineFree();
 			return Mode_Done(&t, 0);
 		}
 		if (!Native_True(r)) {
+			Ui_MachineFree();
 			return Mode_Done(&t, 1);
 		}
 	}
@@ -485,17 +496,24 @@ static byte Cc_EndOfScene(const nativeVal_t *ename) {
 			}
 		}
 	}
+	/* not in the original: the machine of a -mp2 instance's player is free again (include/scrap/uichan.h) */
+	Ui_MachineFree();
 	return Mode_Done(&t, Mode_VObj(usr, "Pos", pos) && PORT_CALL(SLogic, SendSentinelToWatch, NULL, "v", pos));
+}
+
+/* the world's part of ExitCharConversor: the player appears again */
+static byte Cc_ExitWorld(void) {
+	return Cc_Fx(2) && Mode_GVarSetDef("AbortSelectDistance");
 }
 
 /* ExitCharConversor(id, control): the player appears again, the interface closes */
 static byte Cc_ExitCharConversor(const nativeVal_t *id) {
-	/* not in the original: Escape in a coop instance's interface on its member's client */
-	if (Coop_ClientConverted("")) {
+	/* not in the original: Escape in the interface of a -mp2 instance or a coop instance on the player's client goes
+	 * there (include/scrap/uichan.h, include/scrap/coop.h) */
+	if (Ui_ClientConv("") || Coop_ClientConverted("")) {
 		return 1;
 	}
-	return Mode_Import("Menu") && Cc_Fx(2) && Mode_GVarSetDef("AbortSelectDistance") &&
-		PORT_CALL(Menu, BackToGame, NULL, "v", id);
+	return Mode_Import("Menu") && Cc_ExitWorld() && PORT_CALL(Menu, BackToGame, NULL, "v", id);
 }
 
 /* SScorer.Set(id, "CharHead_" + control[5:], "HeadAnimIndex", anim) */
@@ -540,6 +558,19 @@ static byte Cc_HideCharDesc(const nativeVal_t *id, const nativeVal_t *control) {
 		Cc_HeadAnim(id, control, Mode_I(&t, 0)));
 }
 
+/* the conversion of ConvertExecute: Char the class ch, ConvertChar(_usrName, _charName, _optId, _fullOption) (the
+ * globals are read before the function now: the script looked the function up first; another error only when both
+ * are missing) */
+static byte Cc_ConvertWorld(const nativeVal_t *ch) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *u = Mode_V(&t), *c = Mode_V(&t), *o = Mode_V(&t), *full = Mode_V(&t);
+	if (!Mode_SetSaveVar("Char", ch)) {
+		return Mode_Done(&t, 0);
+	}
+	return Mode_Done(&t, Cc_G("_usrName", u) && Cc_G("_charName", c) && Cc_G("_optId", o) && Cc_G("_fullOption", full) &&
+		PORT_OWN(CharConversor, ConvertChar, NULL, "vvvv", u, c, o, full));
+}
+
 /* Convert(id, control): the pick of a character; the conversion runs after the frame is drawn (ConvertExecute) */
 static byte Cc_Convert(const nativeVal_t *control) {
 	return Mode_Put(CC, "KONTROL", NULL, control) && Mode_GVarSetS("AfterDrawCallback", "CharConversor.ConvertExecute");
@@ -549,25 +580,51 @@ static byte Cc_Convert(const nativeVal_t *control) {
  * native twin) */
 static byte Cc_ConvertExecute(void) {
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *k = Mode_V(&t), *ch = Mode_V(&t), *avl = Mode_V(&t), *u = Mode_V(&t), *c = Mode_V(&t), *o = Mode_V(&t);
-	nativeVal_t *full = Mode_V(&t), *k2 = Mode_V(&t);
+	nativeVal_t *k = Mode_V(&t), *ch = Mode_V(&t), *avl = Mode_V(&t), *k2 = Mode_V(&t);
 	int in = Mode_Import("string") && Cc_G("KONTROL", k) && PORT_CALL(string, replace, ch, "vss", k, "Char_", "") &&
 		Cc_G("AvailableChars", avl) ? Native_Contains(avl, ch) : -1;
 	if (in <= 0) {
 		return Mode_Done(&t, in == 0);
 	}
-	/* not in the original: the pick in a coop instance's interface goes to the instance */
-	if (ch->type == NV_STR && Coop_ClientConverted(Native_Text(ch))) {
+	/* not in the original: the pick in the interface of a -mp2 instance or a coop instance goes to the instance */
+	if (ch->type == NV_STR && (Ui_ClientConv(Native_Text(ch)) || Coop_ClientConverted(Native_Text(ch)))) {
 		return Mode_Done(&t, 1);
 	}
-	if (!Mode_SetSaveVar("Char", ch)) {
-		return Mode_Done(&t, 0);
-	}
-	/* ConvertChar(_usrName, _charName, _optId, _fullOption); ExitCharConversor(0, KONTROL): the globals are read before
-	 * the function now (the script looked the function up first; another error only when both are missing) */
-	return Mode_Done(&t, Cc_G("_usrName", u) && Cc_G("_charName", c) && Cc_G("_optId", o) && Cc_G("_fullOption", full) &&
-		PORT_OWN(CharConversor, ConvertChar, NULL, "vvvv", u, c, o, full) && Cc_G("KONTROL", k2) &&
+	/* ExitCharConversor(0, KONTROL) after the conversion */
+	return Mode_Done(&t, Cc_ConvertWorld(ch) && Cc_G("KONTROL", k2) &&
 		PORT_OWN(CharConversor, ExitCharConversor, NULL, "iv", 0L, k2));
+}
+
+byte CharConversor_Pick(const char *cls) {
+	const char *avl = SaveVar_Get("Conversor.AvailableChars");
+	char q1[0x48], q2[0x48];
+	Str_PrintfQuiet(q1, sizeof(q1), "'%s'", cls);
+	Str_PrintfQuiet(q2, sizeof(q2), "\"%s\"", cls);
+	if (cls[0] && (!avl || (!strstr(avl, q1) && !strstr(avl, q2)) || strlen(cls) > 0x40)) {
+		return 0;
+	}
+	if (!Mode_Import("CharConversor") || !Mode_Import("string")) {
+		Native_ErrPrint();
+		return 1;
+	}
+	byte ok;
+	if (cls[0]) {
+		nativeVal_t ch, k;
+		char kontrol[0x48];
+		Str_PrintfQuiet(kontrol, sizeof(kontrol), "Char_%s", cls);
+		Native_SetStr(&ch, cls);
+		Native_SetStr(&k, kontrol);
+		/* ConvertExecute's conversion, then the world's part of ExitCharConversor (the interface was the client's) */
+		ok = Mode_Put(CC, "KONTROL", NULL, &k) && Cc_ConvertWorld(&ch) && Cc_ExitWorld();
+		Native_Free(&k);
+		Native_Free(&ch);
+	} else {
+		ok = Cc_ExitWorld();
+	}
+	if (!ok) {
+		Native_ErrPrint();
+	}
+	return 1;
 }
 
 /* the message of a possession that is not allowed */

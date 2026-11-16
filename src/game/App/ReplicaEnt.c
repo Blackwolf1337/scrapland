@@ -22,6 +22,7 @@
 #include "scrap/play.h"
 #include "scrap/replicate.h"
 #include "scrap/repent.h"
+#include "scrap/uichan.h"
 #include "scrap/scrap.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
@@ -347,7 +348,9 @@ void ReplicaEnt_Frame(void) {
 	char lk[NETREP_LOOK_MAX + 1];
 
 	/* a level whose start runs the client's steps only (include/scrap/initsteps.h) makes nothing to delete */
-	if (!InitSteps_Client()) {
+	/* nor while an interface of the instance is shown: the ships of the hangar screen are its own
+	 * (include/scrap/uichan.h) */
+	if (!InitSteps_Client() && !Ui_ClientIn(0)) {
 		ReplicaEnt_Purge();
 	}
 	for (int slot = 0; slot < NETREP_MAX_ENTS; slot++) {

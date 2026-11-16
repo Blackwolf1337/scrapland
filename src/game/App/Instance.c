@@ -29,6 +29,7 @@
 #include "scrap/sputniks.h"
 #include "scrap/testdet.h"
 #include "scrap/travel.h"
+#include "scrap/uichan.h"
 #include "scrap/viewers.h"
 #include "scrap/world.h"
 
@@ -239,7 +240,8 @@ static void Instance_NetIn(uint64_t ms) {
 				Faction_Message(inst.host, ev.conn, ev.data, ev.size) ||
 				Coop_Message(inst.host, ev.conn, ev.data, ev.size) ||
 				Arena_Message(inst.host, ev.conn, ev.data, ev.size) ||
-				Sputniks_Message(inst.host, ev.conn, ev.data, ev.size))) {
+				Sputniks_Message(inst.host, ev.conn, ev.data, ev.size) ||
+				Ui_Message(inst.host, ev.conn, ev.data, ev.size))) {
 				break;
 			}
 			if (ev.channel == REP_CH_RELIABLE && ev.size > 0 && ev.data[0] == NETREP_MSG_HELLO &&

@@ -464,6 +464,11 @@ extern const portFn_t g_MissionsFuncsMethods[];
  * (src/game/Script/CharConversor.c), the races and combats of the challenges (src/game/Script/RaceMaker.c) */
 extern const portFn_t g_SceneMethods[];
 extern const portFn_t g_CharConversorMethods[];
+/* the pick of a -mp2 client's conversor interface (include/scrap/uichan.h) applied on the instance in the current
+ * player's context: a class of the player's Conversor.AvailableChars becomes its character as ConvertExecute makes
+ * it, then the world's part of ExitCharConversor; cls "" (Escape) that part only. 0 when cls is not available (nothing
+ * changed), 1 else (an error of the scripts printed) */
+byte CharConversor_Pick(const char *cls);
 extern const portFn_t g_RaceMakerMethods[];
 
 /* the general sounds: the sound files of a level, the ship and damage sounds, the point sounds of the maps and the door

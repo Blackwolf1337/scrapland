@@ -665,6 +665,11 @@ byte Travel_MetroUse(const char *usr, const char *door) {
 			NetRep_PutStr(&w, names[k]);
 		}
 	}
+	/* the station of the player's mission the map marks (its Mission.Map; an older client stops before it) */
+	int was = Players_Enter(i);
+	const char *mission = SaveVar_Get("Mission.Map");
+	NetRep_PutStr(&w, mission ? mission : "");
+	Players_Leave(was);
 	Str_Copy(tr.pl[i].metroDoor, door, sizeof(tr.pl[i].metroDoor));
 	Net2_Send(Instance_Host(), conn, TR_CHANNEL, buf, w.size);
 	Con_Printf("instance: player %d at the metro door %s, map sent\n", i, door);
@@ -682,6 +687,14 @@ static void Tr_Pick(int conn, const uint8_t *data, int size) {
 	NetRep_GetStr(&r, station, sizeof(station));
 	cEntity *e = i >= 0 ? Players_Get(i) : NULL;
 	if (r.bad || !e || !tr.pl[i].metroDoor[0] || !station[0]) {
+		return;
+	}
+	/* the map is the one of the door the player stands at (single player's map stops the game there) */
+	cEntity *door = World_FindEntity(tr.pl[i].metroDoor);
+	float dx = door ? door->pos.x - e->pos.x : 0.0f, dz = door ? door->pos.z - e->pos.z : 0.0f;
+	if (!door || dx * dx + dz * dz > TR_DOOR_NEAR * TR_DOOR_NEAR) {
+		Con_Printf("instance: player %d is not at the metro door %s, its pick refused\n", i, tr.pl[i].metroDoor);
+		tr.pl[i].metroDoor[0] = 0;
 		return;
 	}
 	int n = Metro_Stations(names, TR_STATIONS), ok = 0;

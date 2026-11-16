@@ -443,7 +443,7 @@ void Sputniks_Left(int i) {
 
 /* the hangar's ships are made (hidden) at ShipEdit.editShipPosDummy, which single player's Parking sets at the level's
  * start to the parking of the player's ship; a client's level start has none: the own entity's place */
-static void Spk_ClientDummy(void) {
+void Sputniks_ClientDummy(void) {
 	nativeVal_t d, c[3], pos, ang, name, zero;
 	cEntity *e = Players_Local();
 	Native_SetNone(&d);
@@ -484,7 +484,7 @@ byte Sputniks_ClientMessage(const uint8_t *data, int size) {
 	*Players_CurMoney() = money;
 	spk.clientOpen = 1;
 	if (Mode_Import("ShipEdit")) {
-		Spk_ClientDummy();
+		Sputniks_ClientDummy();
 	}
 	if (!Mode_Import("SputnikInterface") || !PORT_CALL(SputnikInterface, EnterSputnikInterface, NULL, "i", 0L)) {
 		Native_ErrPrint();
