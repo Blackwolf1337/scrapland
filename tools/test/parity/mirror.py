@@ -83,8 +83,28 @@ def jval_eq(a, b):
     return a == b
 
 
-def compare(srv, cli, radius):
+def turn_rates(pairs, times):
+    """per slot and generation of the server: the fastest turn between two of its samples (angle steps a second, of
+    the angles and of the view), the tolerance of a turning entity (the client draws it ~100 ms behind, and is asked
+    after the server)"""
+    rates = {}
+    for i in range(1, len(pairs)):
+        dt = max(0.1, times[i] - times[i - 1])
+        before = {(e['slot'], e['gen']): e for e in pairs[i - 1][0]['ents']}
+        for e in pairs[i][0]['ents']:
+            b = before.get((e['slot'], e['gen']))
+            if not b:
+                continue
+            r = max([ang_diff(e['ang'][k], b['ang'][k]) for k in range(3)] +
+                    [ang_diff(e['view'][k], b['view'][k]) for k in range(2)]) / dt
+            key = (e['slot'], e['gen'])
+            rates[key] = max(rates.get(key, 0.0), r)
+    return rates
+
+
+def compare(srv, cli, radius, rates=None):
     """the differences of one pair: a set of keys (kind, slot, what) and a dict of the details"""
+    rates = rates or {}
     view = [round(v * POS_SCALE) for v in cli['view']]
     own = cli.get('own', -1)
     sents = {(e['slot'], e['gen']): e for e in srv['ents']}
@@ -106,11 +126,12 @@ def compare(srv, cli, radius):
         d = dist(s['pos'], c['pos'])
         if d > tol:
             diffs[('field', s['slot'], 'pos')] = '%s: %.0f units apart (tolerance %.0f)' % (s['name'], d, tol)
+        atol = (3000 if s['kind'] in MOVING else 40) + rates.get(key, 0.0) * 0.6
         for k in range(3):
-            if ang_diff(s['ang'][k], c['ang'][k]) > (3000 if s['kind'] in MOVING else 40):
+            if ang_diff(s['ang'][k], c['ang'][k]) > atol:
                 diffs[('field', s['slot'], 'ang')] = '%s: %s / %s' % (s['name'], s['ang'], c['ang'])
         for k in range(2):
-            if s['kind'] == 2 and ang_diff(s['view'][k], c['view'][k]) > 3000:
+            if s['kind'] == 2 and ang_diff(s['view'][k], c['view'][k]) > atol:
                 diffs[('field', s['slot'], 'view')] = '%s: %s / %s' % (s['name'], s['view'], c['view'])
         for f in ('life', 'weapon'):
             if s[f] != c[f] and not (f == 'life' and s['kind'] == 3):
@@ -163,18 +184,20 @@ def main():
     ap.add_argument('--json')
     ap.add_argument('--show', type=int, default=30)
     a = ap.parse_args()
-    pairs = []
+    pairs, times = [], []
     try:
         for i in range(a.samples):
             if i:
                 time.sleep(a.gap)
+            times.append(time.time())
             srv = mirror(a.instance, a.level)
             cli = mirror(a.game)
             pairs.append((srv, cli))
     except (channel.NoAnswer, RuntimeError, ValueError) as e:
         print('mirror: %s' % e)
         return 2
-    found = [compare(s, c, a.radius) for s, c in pairs]
+    rates = turn_rates(pairs, times)
+    found = [compare(s, c, a.radius, rates) for s, c in pairs]
     keep = set(found[0])
     for f in found[1:]:
         keep &= set(f)

@@ -17,6 +17,7 @@ typedef struct JEntry {
 
 struct NetRepJournal {
 	int owners, entries, used;
+	int top;						/* entries below it were taken once (the rest is untouched memory) */
 	uint32_t lost;
 	int32_t freeHead;
 	int32_t *head, *tail;
@@ -42,10 +43,7 @@ NetRepJournal *NetRepJ_Create(int owners, int entries) {
 	for (int o = 0; o < owners; o++) {
 		j->head[o] = j->tail[o] = J_NONE;
 	}
-	for (int k = 0; k < entries; k++) {
-		j->e[k].next = k + 1 < entries ? k + 1 : J_NONE;
-	}
-	j->freeHead = entries ? 0 : J_NONE;
+	j->freeHead = J_NONE;
 	return j;
 }
 
@@ -126,12 +124,15 @@ int NetRepJ_Set(NetRepJournal *j, int owner, const NetRepJVal *v) {
 		}
 		J_Unlink(j, owner, k);
 	} else {
-		if (j->freeHead == J_NONE) {
+		if (j->freeHead != J_NONE) {
+			k = j->freeHead;
+			j->freeHead = j->e[k].next;
+		} else if (j->top < j->entries) {
+			k = j->top++;
+		} else {
 			j->lost++;
 			return -1;
 		}
-		k = j->freeHead;
-		j->freeHead = j->e[k].next;
 		j->used++;
 		j->count[owner]++;
 	}
