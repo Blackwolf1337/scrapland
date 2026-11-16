@@ -121,6 +121,17 @@ static void cActEvent_Audit(const cActEvent *self) {
 	NetAudit_Func(NA_ANIMEVENT, "anim.ev.native:", cache[k].name);
 }
 
+byte Event_IsPresent(const cActEvent *ev) {
+	if (Event_IsSound(ev)) {
+		return 1;
+	}
+	if (!(ev->func.flags & PYF_NATIVE)) {
+		return 0;
+	}
+	const char *name = cPy_NativeFunc_Name((nativefunc_t)ev->func.func);
+	return name && (!strncmp(name, "FX", 2) || !strcmp(name, "AnmSound2DEvent") || !strcmp(name, "AnmCommand"));
+}
+
 void cActEvent_Fire(cActEvent *self, const char *entity) {
 	cActEvent_Audit(self);
 	cPy_Function_AddParamS(&self->func, entity);

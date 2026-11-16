@@ -4,6 +4,13 @@
  * "current" class and action at a time. An entity with a class plays its actions through an action controller
  * (cActCtrl): four layers (the animation channels of the model), each with the action that runs and its next event,
  * and the default loop that layer 0 goes back to.
+ *
+ * The halves of the controller (include/scrap/objentity.h): cActCtrl_Tick is Advance (the layers run on, every event
+ * fires, the ends of the actions start the default loop, the root motion the walk of a character reads; DinaShip
+ * classes show the ship parts). A replica runs cActCtrl_Present (the ship parts) and gets its character layers from
+ * the network (cActCtrl_NetDrive), firing only the presentation events (Event_IsPresent).
+ * State Present reads: the layers (action, time, next event), the class, the walk speed; for DinaShip the smooth
+ * values of the ship (smoothThrust, smoothRotVel, shake, the view angle z).
  */
 #ifndef SCRAP_ACTIONS_H
 #define SCRAP_ACTIONS_H
@@ -227,9 +234,13 @@ void cActCtrl_Tick(cActCtrl *self, float dt);
 /* the Present half of the update, a replica's: the ship parts of DinaShip from the state of the ship; a character's
  * layers are written and played by the replicator (cActCtrl_NetDrive) */
 void cActCtrl_Present(cActCtrl *self, float dt);
-/* a watcher's proxy: the layers' actions (index + 1 in the class, 0 none) of the network at their rates (time a
- * second, 0 keeps it), the model advanced by dt; of the events only the sounds (Event_IsSound) */
-void cActCtrl_NetDrive(cActCtrl *self, const uint16_t *act, const float *rate, int layers, float dt);
+/* which events of a layer a replica fires: Event_IsPresent, or Event_IsSound (the watcher of the first design) */
+typedef byte (*actEventFilter_t)(const cActEvent *ev);
+/* a replica's layers (include/scrap/replicate.h): the actions (index + 1 in the class, 0 none) of the network at
+ * their rates (time a second, 0 keeps it), each started when it changes, the model advanced by dt; no ends of
+ * actions; of the events those that pass fire */
+void cActCtrl_NetDrive(cActCtrl *self, const uint16_t *act, const float *rate, int layers, float dt,
+	actEventFilter_t fire);
 /* layer i (> 0) stopped */
 void cActCtrl_StopChan(cActCtrl *self, int i);
 byte cActCtrl_IsActive(void *ctrl, const char *action);
@@ -241,6 +252,17 @@ void cActEvent_Fire(cActEvent *self, const char *entity);
 /* Actions/Events/SoundEvents.cpp (src/game/Actions/Events/SoundEvents.c) */
 /* ScrapC: 1 for an event that only plays a sound of its entity (AnmSoundEvent, AnmSoundLoopEvent) */
 byte Event_IsSound(const cActEvent *ev);
+/* Actions/Actions.c, ScrapC (stage 3.1 of the second multiplayer design): 1 for a presentation event, which a replica
+ * fires itself when its layer passes it: the sounds of the entity (AnmSoundEvent, AnmSoundLoopEvent,
+ * AnmSound2DEvent), the morph command of the model (AnmCommand) and the effects (every C function whose registered
+ * name starts with FX: the attack, hit and flash effects of the characters, the alarm, shield and countdown states
+ * of the embedded effects, the camera quake and fade a character's own camera gets with them). 0 for a simulation
+ * event, the server's: a script function, the actions it plays or stops (AnmSetAction, AnmSetDefaultLoop,
+ * AnmStopChan, AnmChangeRandomAnm: the layers are state the server sends), AnmSetDisplAng (the body angle), the
+ * logic of the characters, doors and police (Gear*, Bishop*, Police*, Sentinel*, ChangeDoorState, IncrementHits,
+ * ...), and the voices (StreamingVoice, StopStreamingVoice, WarningPolice: the server sends them to the players they
+ * are for, pres.h of the plan) */
+byte Event_IsPresent(const cActEvent *ev);
 int cAction_Var(cAction *act, const char *name, int set, char **s, double *d, int *i);
 
 extern cActClassList *g_pActClassList;

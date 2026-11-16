@@ -644,7 +644,9 @@ static void Watch_Place(int slot, WatchProxy *p, double rt, float dt) {
 			rates[l] = rates[l] > 4.0f ? 4.0f : rates[l];
 		}
 		if (w->actCtrl && w->actCtrl->cls) {
-			cActCtrl_NetDrive(w->actCtrl, act, rates, NETREP_LAYERS, dt);
+			/* only the sounds: the effect events look entities up by the instance's names, which the watcher's
+			 * replicas do not have */
+			cActCtrl_NetDrive(w->actCtrl, act, rates, NETREP_LAYERS, dt, Event_IsSound);
 		}
 		cWalkCharEntity_ProxySound(e, c->walking, dt);
 	}

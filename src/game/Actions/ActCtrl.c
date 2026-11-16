@@ -460,22 +460,20 @@ static void cActCtrl_UpdateShip(cActCtrl *self, float dt) {
 	}
 }
 
-/* the proxy of a watcher (include/scrap/replicate.h): the actions of the layers from the network (index + 1 in the
- * class, 0 none), each started when it changes and played at rate (its time per second, 0 keeps the speed) with the
- * model's own animation update; no events and no ends of actions */
-/* the sound events of the layer chan up to t (a proxy's: the other events are its instance's) */
-static void cActCtrl_NetSounds(cActCtrl *self, int chan, float t) {
+/* the events of the layer chan up to t that pass fire (a replica's: the others are the server's) */
+static void cActCtrl_NetEvents(cActCtrl *self, int chan, float t, actEventFilter_t fire) {
 	cActLayer *l = &self->layers[chan];
 
 	for (cActEvent *ev = l->event; ev && ev->time < t; ev = l->event) {
 		l->event = ev->next;
-		if (Event_IsSound(ev)) {
+		if (fire(ev)) {
 			cActEvent_Fire(ev, self->owner->name);
 		}
 	}
 }
 
-void cActCtrl_NetDrive(cActCtrl *self, const uint16_t *act, const float *rate, int layers, float dt) {
+void cActCtrl_NetDrive(cActCtrl *self, const uint16_t *act, const float *rate, int layers, float dt,
+	actEventFilter_t fire) {
 	CGameModel *m = Ctrl_Model(self);
 	float before[ACT_LAYERS] = { 0 };
 
@@ -515,10 +513,10 @@ void cActCtrl_NetDrive(cActCtrl *self, const uint16_t *act, const float *rate, i
 		CGameModel_ChanTime(m, k, &l->time);
 		/* a loop that went round: the rest of its sounds, then from the first one again */
 		if (l->time < before[k] && l->action->isLoop) {
-			cActCtrl_NetSounds(self, k, FLT_MAX);
+			cActCtrl_NetEvents(self, k, FLT_MAX, fire);
 			l->event = l->action->events;
 		}
-		cActCtrl_NetSounds(self, k, l->time);
+		cActCtrl_NetEvents(self, k, l->time, fire);
 	}
 }
 
