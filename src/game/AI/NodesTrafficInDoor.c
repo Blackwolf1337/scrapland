@@ -6,6 +6,7 @@
 #include "scrap/console.h"
 #include "scrap/game.h"
 #include "scrap/nodestraffic.h"
+#include "scrap/replicate.h"
 #include "scrap/scrapmain.h"
 #include "scrap/scrapmodel.h"
 #include "scrap/scrapworld.h"
@@ -92,6 +93,11 @@ static void CNodesTrafficInDoor_Free(CNodesTraffic *base) {
 /* the engine callback 2 of the indoor levels: UpdateVehicles of g_NodesTrafficInDoor; 1 */
 static void CNodesTrafficInDoor_UpdateVehicles(CNodesTrafficInDoor *self);
 static byte TrafficInDoor_Frame(void) {
+	/* not in the original: a client's indoor traffic comes from the server; its own manager points at ships the
+	 * client deleted or never made */
+	if (g_Watch) {
+		return 1;
+	}
 	CNodesTrafficInDoor_UpdateVehicles((CNodesTrafficInDoor *)g_NodesTrafficInDoor);
 	return 1;
 }
