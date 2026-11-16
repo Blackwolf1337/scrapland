@@ -96,9 +96,8 @@ static byte Dt_UsePhone(const nativeVal_t *a, const char *module, const char *po
 
 /* ---- Map ---- */
 
-/* InitStatus(LevelPath): outdoors by the engine; the elevator by the map the player comes from, the metro; the
- * traffic by who controls the robots */
-static byte DownTown_InitStatus(void) {
+/* the modules of InitStatus, the flag Outdoor by the engine (a failure of SAI.GetOD keeps 0) */
+static byte DownTown_Outdoor(void) {
 	static const char *const mods[] = { "Init", "Chars", "Elevator", "Traffic", "OutPolice", "string", "SAI", NULL };
 	modeVals_t t = { .n = 0 };
 	byte ok = 1;
@@ -108,23 +107,43 @@ static byte DownTown_InitStatus(void) {
 	if (!ok || !LvN_ModSetI("Init", "Outdoor", 0)) {
 		return 0;
 	}
-	nativeVal_t *od = TV(), *prev = TV(), *tail = TV(), *pm = TV();
+	nativeVal_t *od = TV();
 	if (!PORT_CALL(SAI, GetOD, NULL, "") || !PORT_CALL(SAI, GetOD, od, "") || !Mode_SetModVar("Init", "Outdoor", od)) {
 		/* except: pass */
 		Native_ErrClear();
 	}
+	return Mode_Done(&t, 1);
+}
+
+/* the traffic by who controls the robots */
+static byte DownTown_Traffic(void) {
+	if (LvN_SaveIs("RobotsControlledByBoss", "1")) {
+		return Mode_BossTraffic(1);
+	}
+	return Mode_GVarSetI("iTrafficNumber", 14) && Mode_GVarSetI("MaxChasingShips", -1) && Mode_ModEmpty("Traffic", "AcHeavyShips") &&
+		LvN_ModSetI("Traffic", "NumNormal", 80) && LvN_ModSetI("Traffic", "NumMedium", 20) && LvN_ModSetI("Traffic", "NumHeavy", 0);
+}
+
+/* InitStatus(LevelPath): outdoors by the engine; the elevator by the map the player comes from, the metro; the
+ * traffic by who controls the robots */
+static byte DownTown_InitStatus(void) {
+	modeVals_t t = { .n = 0 };
+	if (!DownTown_Outdoor()) {
+		return 0;
+	}
+	nativeVal_t *prev = TV(), *tail = TV(), *pm = TV();
 	Mode_SaveVar("PrevMap", prev);
-	ok = Native_Slice(prev, 7, INT_MAX, tail) && Native_Upper(tail, pm) &&
+	byte ok = Native_Slice(prev, 7, INT_MAX, tail) && Native_Upper(tail, pm) &&
 		PORT_CALL(Elevator, SetDef, NULL, "ss", "Elevator", LvN_EqS(pm, "PRESS") ? "DM_Door_Elevator_Press" : "DM_Door_Elevator_TownHall") &&
 		PORT_CALL(Elevator, SetDef, NULL, "ss", "Metro", "DM_Door_MetroExt_Downtown") &&
-		PORT_CALL(Elevator, SetDef, NULL, "ss", "MetroExt", "DM_Door_MetroExt_Downtown");
-	if (ok && LvN_SaveIs("RobotsControlledByBoss", "1")) {
-		ok = Mode_BossTraffic(1);
-	} else if (ok) {
-		ok = Mode_GVarSetI("iTrafficNumber", 14) && Mode_GVarSetI("MaxChasingShips", -1) && Mode_ModEmpty("Traffic", "AcHeavyShips") &&
-			LvN_ModSetI("Traffic", "NumNormal", 80) && LvN_ModSetI("Traffic", "NumMedium", 20) && LvN_ModSetI("Traffic", "NumHeavy", 0);
-	}
+		PORT_CALL(Elevator, SetDef, NULL, "ss", "MetroExt", "DM_Door_MetroExt_Downtown") && DownTown_Traffic();
 	return Mode_Done(&t, ok);
+}
+
+/* the client part (Levels.h): the flag Outdoor of InitStatus (the traffic is the server's, include/scrap/viewers.h) */
+byte DownTown_ClientStatus(const nativeVal_t *path) {
+	(void)path;
+	return DownTown_Outdoor();
 }
 
 /* Init(LevelPath): the elevators to the townhall and the press, the metro */

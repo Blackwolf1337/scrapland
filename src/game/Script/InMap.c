@@ -29,8 +29,9 @@ static byte InMap_Start(void) {
 	GVar_SetNum("SoundDistAttenuation", 12.5);
 	/* a watcher (include/scrap/replicate.h): the instance has the player, the NPCs and the police; the client makes
 	 * the machines single player shows and the instance has as well (the conversors, the desktops, the news panels;
-	 * their uses are the instance's) */
-	if (g_Watch) {
+	 * their uses are the instance's). A -mp2 client's split start runs only the client's steps
+	 * (include/scrap/initsteps.h) */
+	if (g_Watch && !InitSteps_Client()) {
 		GVar_SetNum("CameraCloudDistance", 0);
 		GVar_SetNum("AtmosphereLimit", 1000000000);
 		GVar_SetNum("TopLimit", 1000200000);
@@ -39,30 +40,37 @@ static byte InMap_Start(void) {
 	}
 	/* the player steps (include/scrap/initsteps.h: the instance runs them for each player that joins) */
 	if ((InitStep_Now("InMap:Chars.CreateStartupPlayer") && !PORT_CALL(Chars, CreateStartupPlayer, NULL, "")) ||
-		!PORT_CALL(CharsNPC, Init, NULL, "")) {
+		(InitStep_Now("InMap:CharsNPC.Init") && !PORT_CALL(CharsNPC, Init, NULL, ""))) {
 		return 0;
 	}
 	GVar_SetNum("CameraCloudDistance", 0);
-	if (!PORT_CALL(CharConversor, Init, NULL, "") || !PORT_CALL(CrazyWing, InitCrazyWing, NULL, "") ||
+	if ((InitStep_Now("InMap:CharConversor.Init") ? !PORT_CALL(CharConversor, Init, NULL, "") :
+		InitStep_Now("InMap:CharConversor.CreateConversorClass") &&
+		!PORT_CALL(CharConversor, CreateConversorClass, NULL, "")) ||
+		(InitStep_Now("InMap:CrazyWing.InitCrazyWing") && !PORT_CALL(CrazyWing, InitCrazyWing, NULL, "")) ||
 		(InitStep_Now("InMap:Elevator.PlayerCreatedElevator") && !PORT_CALL(Elevator, PlayerCreatedElevator, NULL, "")) ||
-		!PORT_CALL(InPolice, Init, NULL, "")) {
+		(InitStep_Now("InMap:InPolice.Init") && !PORT_CALL(InPolice, Init, NULL, ""))) {
 		return 0;
 	}
 	/* the mercenaries only stay friends in Gamblinden and the Junkyard (Init.UpperMap is a variable of
 	 * Init) */
-	nativeVal_t upper;
-	if (!Mode_ModGet("Init", "UpperMap", &upper)) {
-		return 0;
+	if (InitStep_Now("InMap:SaveVar.MercFriends.MercenaryA_Smartie")) {
+		nativeVal_t upper;
+		if (!Mode_ModGet("Init", "UpperMap", &upper)) {
+			return 0;
+		}
+		const char *u = upper.type == NV_STR ? Native_Text(&upper) : NULL;
+		if (!u || (strcmp(u, "GAMBLINDEN") && strcmp(u, "JUNKYARD"))) {
+			SaveVar_Set("MercFriends.MercenaryA_Smartie", "0");
+			SaveVar_Set("MercFriends.MercenaryC_Brutus", "0");
+			SaveVar_Set("MercFriends.MercenaryB_Dumber", "0");
+		}
+		Native_Free(&upper);
 	}
-	const char *u = upper.type == NV_STR ? Native_Text(&upper) : NULL;
-	if (!u || (strcmp(u, "GAMBLINDEN") && strcmp(u, "JUNKYARD"))) {
-		SaveVar_Set("MercFriends.MercenaryA_Smartie", "0");
-		SaveVar_Set("MercFriends.MercenaryC_Brutus", "0");
-		SaveVar_Set("MercFriends.MercenaryB_Dumber", "0");
-	}
-	Native_Free(&upper);
 	GVar_SetNum("CharGrav", 1960);
-	if (!PORT_CALL(DTritusDesktop, Init, NULL, "") || !PORT_CALL(NewsPanel, Init, NULL, "")) {
+	if ((InitStep_Now("InMap:DTritusDesktop.Init") ? !PORT_CALL(DTritusDesktop, Init, NULL, "") :
+		InitStep_Now("InMap:DTritusDesktop_InitClasses") && !DTritusDesktop_InitClasses()) ||
+		(InitStep_Now("InMap:NewsPanel.Init") && !PORT_CALL(NewsPanel, Init, NULL, ""))) {
 		return 0;
 	}
 	GVar_SetNum("AtmosphereLimit", 1000000000);

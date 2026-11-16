@@ -37,6 +37,7 @@ typedef enum {
 	NC_ANY = 21,
 	NC_PLAYER_SHARED = 22,
 	NC_PARTY_SHARED = 23,
+	NC_GROUP = 24,
 	NC_TAGS
 } netTag_t;
 
@@ -45,7 +46,7 @@ typedef enum {
 	NCT_API,			/* an engine API function: Module.Function */
 	NCT_ENTVAR,			/* an entity variable */
 	NCT_GVAR,			/* an engine variable scripts or data set */
-	NCT_MODULE,			/* a script module: Module, or level/Module for a module of a level */
+	NCT_MODULE,			/* a script module: Module, or level/Module for a module of a level; Module.func for a function of a mixed module */
 	NCT_MODVAR,			/* a script module variable: Module.name */
 	NCT_SAVEVAR,			/* a save variable prefix (the name up to its first dot) */
 	NCT_INITSTEP,			/* a step of the level start: File:call */
@@ -71,6 +72,9 @@ extern const netClassTable_t g_NetClassTables[NCT_TABLES];
 netTag_t NetClass_Find(netTable_t t, const char *name);
 /* the row of name in table t as NetClass_Find finds it, NULL */
 const netClassRow_t *NetClass_Row(netTable_t t, const char *name);
+/* the tag of a function of a script module in the module table: the row "Module.func", else "Module", else the
+ * same forms of a level's module "level/Module.func", "level/Module" (level: the lower case name, NULL) */
+netTag_t NetClass_ModuleTag(const char *module, const char *func, const char *level);
 /* the name of a tag ("SIM"; "untagged", "absent") and of a table ("api") */
 const char *NetClass_TagName(netTag_t tag);
 const char *NetClass_TableName(netTable_t t);

@@ -16,6 +16,7 @@
 #include "scrap/net.h"
 #include "scrap/faction.h"
 #include "scrap/players.h"
+#include "scrap/repent.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
 #include "scrap/weaps2.h"
@@ -490,7 +491,10 @@ void cWithLifeEntity_SetActCtrl(cEntity *self, const char *cls) {
 	if (w->actCtrl && !Entity_IsType(self, TYEN_CAR)) {
 		cPrimitive_SetSize(&w->prim, w->actCtrl->cls->vRadius);
 	}
-	if (created) {
+	/* not in the original: a -mp2 client (include/scrap/repent.h) runs no simulation script for a replica or for the
+	 * class the replication gives its own entity; the server ran the class's OnCreate and the entity's journal
+	 * carries what it set */
+	if (created && !(g_Mp2 && (Obj(self)->replica || ReplicaEnt_Busy()))) {
 		cPy_Function_AddParamS(&w->actCtrl->cls->onCreate, self->name);
 		cPy_Function_Execute(&w->actCtrl->cls->onCreate, 0);
 	}

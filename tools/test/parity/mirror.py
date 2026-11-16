@@ -12,7 +12,7 @@ difference of one moment, an action that just changed, a door on its way, is not
            with a tolerance: the client draws the moving ones ~100 ms behind)
   journal  the journal of the slot differs (names, order, values)
   readback a journal variable reads back another value from the replica than from the server's entity
-The own entity of the client (its prediction) is left out, so is the rail traffic (the client's own until stage 2.2).
+The own entity of the client (its prediction) is left out (the rail traffic is the server's since stage 2.2 and compared).
 The action times of a ship are not compared: its classes show the ship's parts with times each side derives from its
 smoothed motion (cActCtrl_UpdateShip).
 

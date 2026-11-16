@@ -378,7 +378,8 @@ static byte Ch_Init(void) {
 	if (!PORT_OWN(Chars, CreatePlayersList, NULL, "")) {
 		return 0;
 	}
-	if (!Mode_ModGetI("Init", "OutMapSkip", 0) && !PORT_CALL(CharsNPC, BrowseNPC, NULL, "")) {
+	if (!Mode_ModGetI("Init", "OutMapSkip", 0) && InitStep_Now("Chars:CharsNPC.BrowseNPC") &&
+		!PORT_CALL(CharsNPC, BrowseNPC, NULL, "")) {
 		return 0;
 	}
 	if ((Mode_ModGetI("Init", "Outdoor", 0) || Mode_ModGetI("Init", "isJunkYard", 0)) && Ch_AddResS("Sputnik", 0) < 0) {

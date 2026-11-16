@@ -58,8 +58,10 @@ static byte Bureaucracy_Class(const nativeVal_t *cls, const nativeVal_t *file) {
 	return ok;
 }
 
-/* one desk on the dummy name at pos with the angles ang; list the name of the entity list of the desks */
-static byte Bureaucracy_Desk(const char *name, const double *pos, const double *ang, const nativeVal_t *list) {
+/* one desk on the dummy name at pos with the angles ang; list the name of the entity list of the desks (classOnly:
+ * the desk's class, no desk) */
+static byte Bureaucracy_Desk(const char *name, const double *pos, const double *ang, const nativeVal_t *list,
+	byte classOnly) {
 	/* names[1] of string.splitfields(name, "_") */
 	const char *a = strchr(name, '_');
 	if (!a) {
@@ -77,9 +79,9 @@ static byte Bureaucracy_Desk(const char *name, const double *pos, const double *
 	/* through the module (a mission may put another function there) */
 	byte ok = PORT_CALL(Bureaucracy, CreateBureaucracyClass, NULL, "vv", &kind, &file);
 	Native_Free(&file);
-	if (!ok) {
+	if (!ok || classOnly) {
 		Native_Free(&kind);
-		return 0;
+		return ok;
 	}
 	/* Scrap.CreateEntity(name, x, y, z, "WithLife"): the script's handle finds the entity by its name */
 	cEntity *e = cWorld_CreateEntity(g_pWorld, name, (float)pos[0], (float)pos[1], (float)pos[2], "WithLife");
@@ -111,8 +113,9 @@ static byte Bureaucracy_Desk(const char *name, const double *pos, const double *
 	return ok && Native_EntSet(e, ref, "MapCollision", &v) && Native_EntSet(e, ref, "EntityList", list);
 }
 
-/* Init(fromViewer=0): the entity list of the desks and a desk on every dummy DM_DesktopFunctionary_* */
-static byte Bureaucracy_Init(int fromViewer) {
+/* Init(fromViewer=0): the entity list of the desks and a desk on every dummy DM_DesktopFunctionary_* (classOnly:
+ * only the classes of the desks) */
+static byte Bureaucracy_Init(int fromViewer, byte classOnly) {
 	nativeVal_t list;
 	const char *l;
 	if (fromViewer) {
@@ -123,7 +126,9 @@ static byte Bureaucracy_Init(int fromViewer) {
 	/* Scrap.CreateEntityList(list) */
 	byte ok = Native_ArgStr(&list, 1, &l);
 	if (ok) {
-		CHECK(cWorld_NewEntityList(g_pWorld, l));
+		if (!classOnly) {
+			CHECK(cWorld_NewEntityList(g_pWorld, l));
+		}
 		DummySearch_Start("DM_DesktopFunctionary_*", 1);
 	}
 	for (;;) {
@@ -137,7 +142,7 @@ static byte Bureaucracy_Init(int fromViewer) {
 		/* the dummy as Scrap.NextDummySearch gives it */
 		const double p[3] = { pos.x, pos.y, pos.z };
 		const double a[2] = { (double)ang[0] * DEG_PER_PI / M_PI_D, (double)ang[1] * DEG_PER_PI / M_PI_D };
-		ok = Bureaucracy_Desk(name, p, a, &list);
+		ok = Bureaucracy_Desk(name, p, a, &list, classOnly);
 	}
 	Native_Free(&list);
 	return ok;
@@ -160,7 +165,11 @@ static byte Bureaucracy_CreateBureaucracyClass_E(const nativeVal_t *a, int n, na
 /* Init(fromViewer = 0): the import of the function, then the truth of the argument (not given: 0) */
 MODE_KW(Bureaucracy, InitPy, "|O", "fromViewer") {
 	int fromViewer = Mode_Import("string") ? given[0] ? Mode_Truth(&v[0]) : 0 : -1;
-	return fromViewer >= 0 && Bureaucracy_Init(fromViewer);
+	return fromViewer >= 0 && Bureaucracy_Init(fromViewer, 0);
+}
+
+byte Bureaucracy_InitClasses(void) {
+	return Mode_Import("Bureaucracy") && Mode_Import("string") && Bureaucracy_Init(0, 1);
 }
 
 const portFn_t g_BureaucracyMethods[] = {

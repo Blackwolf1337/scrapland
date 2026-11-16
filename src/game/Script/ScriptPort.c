@@ -16,6 +16,8 @@
 #include "scrap/global.h"
 #include "scrap/modvars.h"
 #include "scrap/nativeobj.h"
+#include "scrap/replicate.h"
+#include "scrap/repent.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
 
@@ -479,6 +481,10 @@ byte Port_BoundCall(portSite_t *site, const nativeArg_t *x, const nativeVal_t *v
 byte Port_Entry(const portRef_t *ref, const nativeVal_t *a, int n, nativeVal_t *r) {
 	byte ok = 0;
 	Native_SetNone(r);
+	/* not in the original: the audit of a -mp2 client's calls (include/scrap/repent.h) */
+	if (g_Mp2 && g_Watch) {
+		ReplicaEnt_ModCall(ref->module, ref->name);
+	}
 	/* the frame address, as Script_CallObject takes it */
 	if (Script_Enter((uintptr_t)__builtin_frame_address(0))) {
 		ok = ref->entry(a, n, r);
@@ -486,6 +492,9 @@ byte Port_Entry(const portRef_t *ref, const nativeVal_t *a, int n, nativeVal_t *
 		if (!ok && !Native_Failed()) {
 			Native_Raise(NE_SYSTEM, "NULL result without error in call_object");
 		}
+	}
+	if (g_Mp2 && g_Watch) {
+		ReplicaEnt_ModLeave(ref->module);
 	}
 	return ok;
 }
