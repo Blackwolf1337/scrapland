@@ -20,8 +20,10 @@
  *
  * Quotas (stage 2.2): the traffic that single player keeps around its camera (rail traffic, sky traffic) is kept around
  * every viewer. Viewers nearer than VIEWERS_SHARE to a viewer before them in the set share its quota (a leader and its
- * followers); every leader gets single player's count. A ship belongs to a leader (cAIVehicle.viewer) and is placed
- * around it as single player places it around the camera.
+ * followers); every leader gets single player's count, up to 16 leaders (more share the counts of 16), and a ship
+ * far from every viewer runs its slots slower (src/game/Logic/Traffic.c, the fallback of the load probe of stage 2.0).
+ * A ship belongs to a leader (cAIVehicle.viewer) and is placed around it as single player places it around the
+ * camera; the repositionings per MinTimeReposAI are single player's for each leader.
  */
 #ifndef SCRAP_VIEWERS_H
 #define SCRAP_VIEWERS_H
@@ -35,7 +37,8 @@
 #define VIEWERS_LOCAL_ID -1			/* the camera of view 0 */
 #define VIEWERS_NET_FOV 0x1.921fb6p+0f	/* pi / 2, the field of view of a viewer without a camera */
 #define VIEWERS_NET_FAR 400000.0f	/* the far clip of a viewer without a camera (a camera's default) */
-#define VIEWERS_SHARE 37500.0f		/* a viewer this near to a leader shares its quota (MinDistReposNotVisAI) */
+#define VIEWERS_SHARE 75000.0f		/* a viewer this near to a leader shares its quota: inside the leader's traffic
+									   (MinDistReposAI; the load probe of stage 2.0) */
 #define VIEWERS_CONE 1.5f			/* the half field of view of the frustum test widened as the AI does */
 
 struct cEntity;

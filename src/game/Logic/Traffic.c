@@ -274,10 +274,13 @@ static Nto1Node *Traffic_UpdateFighter(cEnemiesTraffic *self, Nto1Node *n, cEnti
 #define TRAFFIC_GROW 4			/* rail ships made or dropped per kind, think and leader */
 #define TRAFFIC_GROW_MAX 64		/* at most per kind and think */
 
-/* the fallback of the load probe (stage 2.0); the test line "traffic cap <leaders> cheap <units> <slot>" changes them */
-static int g_TrafficCap = 0;			/* the leaders that get a whole quota; more share them (0: no limit) */
-static float g_CheapDist = 0.0f;		/* a ship of the traffic farther from every viewer is cheap (0: none) */
-static float g_CheapSlot = 0.15f;		/* the slot interval of a cheap ship */
+/* the fallback of the load probe (stage 2.0: 64 viewers on DownTown had a tick p99 of 36 ms with a whole quota per
+ * viewer): the leaders that get a whole quota (more share them), a ship of the traffic farther from every viewer than
+ * g_CheapDist runs its slots every g_CheapSlot s (single player's 0.05); the test line "traffic cap <leaders> cheap
+ * <units> <slot>" changes them (cap 0: no limit, units 0: no cheap ships) */
+static int g_TrafficCap = 16;
+static float g_CheapDist = 37500.0f;
+static float g_CheapSlot = 0.15f;
 
 static const char *const g_QuotaList[TRAFFIC_QUOTAS] = { "NormalTraffic", "MediumTraffic", "HeavyTraffic", "Traffic" };
 static struct {
