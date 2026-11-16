@@ -73,6 +73,10 @@ ctest --test-dir build-linux64
 | `coord_test` | the coordinator library (`src/coord`): the key and ticket formats, the player store, the story and party, the places table, the list server registry, the quoting of command lines |
 | `faction_test` | the faction table `data/factions/factions.def` (parser, errors, ranks, key order, PvP rules, loan, bounty, courier) |
 | `arena_test` | the rules, scores, scorer order and wire format of the seven PvP modes (`src/arena`) |
+| `netclass_test` | the lookup of the network classification tables (`src/game/Script/NetClass.c`, `NetClassTable.c`): sorted tables, every row found, the families of the entity variables |
+| `netclass_check` | `tools/script/netclass.py --check`: the generated tables are up to date, every engine API function has a tag, and the untagged rows of the other tables |
+
+`tools/script/netclass.py` makes the tables from `tools/script/netclass/*.tsv` (engine API functions, entity variables, engine variables, script modules, module variables, save variable prefixes, level init steps; the tags are explained at the top of each file). The build runs `netclass.py --check --quiet` before the game code: an engine API function (a row of an engine module's function table) without a tag fails the build. `--scan` adds the names the code and data have that a table lacks.
 
 `coord_test`, `faction_test` and `arena_test` also ran under Wine as win64 programs. `net2_test` passes with `-m32`, with ASan and UBSan and under valgrind, `netrep_test` with `-m32` and with ASan and UBSan.
 

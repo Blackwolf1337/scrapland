@@ -328,3 +328,10 @@ MEng#	STATE	an engine of the ship model
 StupidPathFinding	SERVER_ONLY	AI or script parameter of the server
 ControlBoost	SERVER_ONLY	AI or script parameter of the server
 ExtraInfo	SERVER_ONLY	AI or script parameter of the server
+sdd#_*	STATE	the sound items of an entity with the sound id sdd (cSndInterface, as snd#_)
+sdl#_*	STATE	the sound items of an entity with the sound id sdl (cSndInterface, as snd#_)
+EngAnmF#	STATE	the animation of motor n of a vehicle (VehicleMotors.c)
+EngAnmM#	STATE	the animation of motor n of a vehicle (VehicleMotors.c)
+EngFxClass#	STATE	the effect type of motor n of a vehicle (VehicleMotors.c)
+WeapA#	SIM	weapon value of slot n (seen in the stage 0.1 baseline)
+isWpn#	SIM	the weapon slots of weapon n (WeaponManager.c)
