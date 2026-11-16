@@ -199,6 +199,10 @@ byte Coop_Asked(void);
 /* before the level's scripts start (level: its path): the story into the save variables, the way point of a
  * chapter's travel to this level (ComeFrom, PrevMap, Spawn, Map) into the player's variables its start reads */
 void Coop_LevelStart(const char *level);
+/* a coop level that starts with its own character (GDB: the bishop, MissionMaker_Char): Char for the level's start of
+ * an instance (its members' characters are theirs) and of a member's client, which comes with its own (the leader's
+ * level joined as D-Tritus): Chars.Init loads its scripts before the map's InitStatus makes the player the bishop */
+void Coop_LevelChar(const char *level);
 /* the scripts delete the save variables with prefix: 1 when they stay (all of them: the single player's end) */
 byte Coop_KeepStory(const char *prefix);
 /* a save variable was made (old NULL), changed or deleted by the game (SaveVars.c); inc: by SaveVar_Inc (a counter) */

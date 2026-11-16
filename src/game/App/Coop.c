@@ -24,6 +24,7 @@
 #include "scrap/input.h"
 #include "scrap/instance.h"
 #include "scrap/itementity.h"
+#include "scrap/missionmaker.h"
 #include "scrap/netrep.h"
 #include "scrap/places.h"
 #include "scrap/platform.h"
@@ -376,6 +377,15 @@ void Coop_SaveVarChanged(const char *name, const char *old, byte inc) {
 	cp.dirty[i].counter |= inc;
 }
 
+void Coop_LevelChar(const char *level) {
+	const char *s = level ? strrchr(level, '/') : NULL;
+	const char *lc = level && (g_Instance || cp.world) ? MissionMaker_Char(s ? s + 1 : level) : NULL;
+	if (lc && strcmp(lc, "Dtritus")) {
+		SaveVar_Set("Char", lc);
+		Con_Printf("coop: the level's start with its own character %s\n", lc);
+	}
+}
+
 void Coop_LevelStart(const char *level) {
 	static char text[COORD_STORY_MAX];
 	static char key[CP_NAME], val[COORD_STORY_VALUE + 1];
@@ -416,6 +426,10 @@ void Coop_LevelStart(const char *level) {
 		}
 	}
 	cp.applying = 0;
+	/* the character the members carry is theirs (cp_local) */
+	if (!SaveVar_Get("Char")) {
+		Coop_LevelChar(level);
+	}
 	Con_Printf("coop: the party's story, %d variables, mission %s in %s\n", count, SaveVar_Get("Mission.Library") ?
 		SaveVar_Get("Mission.Library") : "-", SaveVar_Get("Mission.Map") ? SaveVar_Get("Mission.Map") : "-");
 }
