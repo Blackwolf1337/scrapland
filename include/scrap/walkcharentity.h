@@ -7,6 +7,24 @@
  * listens to. The inline virtual functions of WithLifeEntity.h and three of ObjEntity.h sit in the same part of the
  * exe. The constructor is declared in include/scrap/world.h, some of the functions in the headers of their callers
  * (chartype.h, ai.h, scoreritems.h).
+ *
+ * The halves of the update (include/scrap/objentity.h):
+ *   Per frame (cWalkCharEntity_Update): Advance the slot rate of an AI (UpdateSlotRate), the view lock of the class
+ *   (viewLock, walking) and the control of a player (cWalkCharControl_Update); Present the hit flash, the render view
+ *   lerp, the blend of the head to the view lock (viewLockF) and the head pitch (the sound angle); UpdateModel (the
+ *   model at the render state, the head turned to the view, the class camera, the embedded effect) is Present.
+ *   Per slot (cWalkCharEntity_Tick): Advance the selection and its callbacks (UpdateSelect, abortOpt), Idle (the body
+ *   turned to the view, the relax and turn actions, the look at the listener), Walk (turn, push, Fall or Fly, the
+ *   walk actions of WalkAnim with their root motion, the slides and collisions, the action buttons of ActionTick, the
+ *   energy); Present the start of the render view lerp (slotView) and the movement sound (WalkSound, FlySound: inside
+ *   Fall and Fly in single player's order, from the slot step on a replica).
+ *   The action choice (WalkAnim, the relax and turn actions of Idle, SetFalling) is Advance: Fall and Fly read the
+ *   current action (slideAsFly, useFlyDisp, useFlyFall), WalkAnim moves the character by the root motion, the relax
+ *   times draw from the game's random numbers. A replica gets its action layers from the server. The fall sound of
+ *   SetFalling is a presentation event the simulation starts (Advance).
+ * State Present reads: view, viewVel, slotView, renderView, viewLock, viewLockF, move (the walk sound), vel (the fly
+ * sound), hitFlash, life and prevLife (a hit starts the flash), yModelDisp, camNode, the action of layer 0
+ * (anmConeView), the class (canFly, flySpeed, the camera of the class), the movement sound item (snd 0).
  */
 #ifndef SCRAP_WALKCHARENTITY_H
 #define SCRAP_WALKCHARENTITY_H
