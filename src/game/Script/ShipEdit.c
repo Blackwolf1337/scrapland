@@ -26,6 +26,7 @@
 #include <string.h>
 
 #include "scrap/coop.h"
+#include "scrap/players.h"
 #include "scrap/scrap.h"
 #include "game/Script/levels/Levels.h"
 #include "ShipEdit.h"
@@ -1446,11 +1447,13 @@ static byte Se_CreateShipFromSaveVar(const nativeVal_t *cad, const nativeVal_t *
 		}
 	}
 	if (!ok || mp < 0) {
-		/* not in the original: a ship left half made (a model without values in the level) goes, its error printed
-		 * (its update would read its missing weapons) */
-		if (Native_True(out)) {
-			Native_ErrPrint();
+		/* not in the original: on an instance a ship left half made (a model without values in the level) goes, the
+		 * error kept (its update would read its missing weapons) */
+		if (Native_True(out) && Players_Net()) {
+			nativeErr_t err;
+			Native_ErrFetch(&err);
 			Mode_VDel(out);
+			Native_ErrRestore(&err);
 		}
 		Native_Free(out);
 		return Mode_Done(&t, 0);

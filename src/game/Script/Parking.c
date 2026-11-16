@@ -1150,11 +1150,13 @@ static byte Pk_CreateParkedShipN(const nativeVal_t *const *a, nativeVal_t *out) 
 	byte ok = Native_ToInt(x, pick) && Mode_VObjRead(out, "Name", name) && Mode_Sub(keys, pick, x) &&
 		PORT_CALL(Vehicles, SetStdProperties, NULL, "vvs", name, x, "P_None") &&
 		PORT_OWN(Parking, SetShipAsParked, NULL, "v", name) && PORT_OWN(Parking, CheckWeapons, NULL, "v", out);
-	/* not in the original: a ship left half made (a model without standard values in the level, GDB's on an
-	 * instance's call) goes, its error printed (its update would read its missing weapons) */
-	if (!ok && Native_True(out)) {
-		Native_ErrPrint();
+	/* not in the original: on an instance a ship left half made (a model without standard values in the level, GDB's
+	 * on a call) goes, the error kept (its update would read its missing weapons) */
+	if (!ok && Native_True(out) && Pk_NotOwn()) {
+		nativeErr_t err;
+		Native_ErrFetch(&err);
 		Mode_VDel(out);
+		Native_ErrRestore(&err);
 		Native_Free(out);
 		Native_SetNone(out);
 	}
