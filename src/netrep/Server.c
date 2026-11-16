@@ -136,17 +136,22 @@ static int Rep_Exists(const NetRepClient *c, int slot) {
 	return c->lastSent[slot] > c->removeAck[slot];
 }
 
+int NetRepSrv_SlotFree(const NetRepServer *s, int slot) {
+	if (slot < 0 || slot >= NETREP_MAX_ENTS || (s->slot[slot].liveSnap && s->slot[slot].liveSnap + 1 >= s->snap)) {
+		return 0;
+	}
+	for (int i = 0; i < s->numClients; i++) {
+		if (Rep_Exists(s->clients[i], slot)) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
 int NetRepSrv_FreeSlot(const NetRepServer *s) {
 	for (int k = 0; k < NETREP_MAX_ENTS; k++) {
 		int slot = (s->cursor + k) % NETREP_MAX_ENTS;
-		if (s->slot[slot].liveSnap && s->slot[slot].liveSnap + 1 >= s->snap) {
-			continue;
-		}
-		int held = 0;
-		for (int i = 0; i < s->numClients && !held; i++) {
-			held = Rep_Exists(s->clients[i], slot);
-		}
-		if (!held) {
+		if (NetRepSrv_SlotFree(s, slot)) {
 			((NetRepServer *)s)->cursor = (slot + 1) % NETREP_MAX_ENTS;
 			return slot;
 		}

@@ -2,6 +2,7 @@
  * Actions/ActCtrl.cpp of the game: the action controller of an entity (cActCtrl), see include/scrap/actions.h.
  */
 #include <float.h>
+#include <math.h>
 #include <string.h>
 
 #include "scrap/actions.h"
@@ -27,6 +28,10 @@ static int Action_Anim(const cAction *a) {
 }
 
 /* the end of the action of the layer, -1 without one */
+#define NETDRIVE_CATCHUP 0.5f
+#define NETDRIVE_MIN_RATE 0.05f
+#define NETDRIVE_MAX_RATE 4.0f
+
 static float Layer_End(const cActLayer *l) {
 	return l->action ? l->action->anmTotalTime : -1.0f;
 }
@@ -472,8 +477,8 @@ static void cActCtrl_NetEvents(cActCtrl *self, int chan, float t, actEventFilter
 	}
 }
 
-void cActCtrl_NetDrive(cActCtrl *self, const uint16_t *act, const float *rate, int layers, float dt,
-	actEventFilter_t fire) {
+void cActCtrl_NetDrive(cActCtrl *self, const uint16_t *act, const float *rate, const float *target, int layers,
+	float dt, actEventFilter_t fire) {
 	CGameModel *m = Ctrl_Model(self);
 	float before[ACT_LAYERS] = { 0 };
 
@@ -500,8 +505,20 @@ void cActCtrl_NetDrive(cActCtrl *self, const uint16_t *act, const float *rate, i
 			CGameModel_SetAnim(m, Action_Anim(a), k, 0);
 		}
 		before[k] = l->time;
-		if (l->on && rate[k] > 0.0f) {
-			CGameModel_SetAnimFactor(m, Action_Anim(l->action), rate[k]);
+		float r = rate[k];
+		if (target && l->on && target[k] >= 0.0f) {
+			/* towards the time of the network: the difference (the shorter way round a loop) closed in about
+			 * NETDRIVE_CATCHUP s */
+			float end = Layer_End(l), err = target[k] - l->time;
+			if (l->action->isLoop && end > 0.0f) {
+				err = fmodf(err, end);
+				err = err > end * 0.5f ? err - end : err < -end * 0.5f ? err + end : err;
+			}
+			r = (r > 0.0f ? r : 1.0f) + err / NETDRIVE_CATCHUP;
+			r = r < NETDRIVE_MIN_RATE ? NETDRIVE_MIN_RATE : r > NETDRIVE_MAX_RATE ? NETDRIVE_MAX_RATE : r;
+		}
+		if (l->on && r > 0.0f) {
+			CGameModel_SetAnimFactor(m, Action_Anim(l->action), r);
 		}
 	}
 	CGameModel_RootMotion(m, dt, NULL, NULL);

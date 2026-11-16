@@ -3,6 +3,8 @@
  */
 #include <string.h>
 
+#include "scrap/replicate.h"
+#include "scrap/repent.h"
 #include "scrap/ai.h"
 #include "scrap/app.h"
 #include "scrap/camcontrol.h"
@@ -609,6 +611,9 @@ cEntity *cWorld_CreateEntity(cWorld *world, const char *className, float x, floa
 	cEntity *e;
 
 	(void)world;
+	if (g_Mp2 && g_Watch) {
+		ReplicaEnt_Created(className, type);
+	}
 	if (!crt_stricmp(type, "Entity")) {
 		mem = operator_new(sizeof(cEntity));
 		return mem ? cEntity_ctor(mem, className, x, y, z) : NULL;

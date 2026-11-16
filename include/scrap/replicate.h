@@ -26,6 +26,7 @@
 #ifndef SCRAP_REPLICATE_H
 #define SCRAP_REPLICATE_H
 
+#include "scrap/actions.h"
 #include "scrap/mathlib.h"
 #include "scrap/net2.h"
 #include "scrap/netrep.h"
@@ -98,6 +99,13 @@ void Rep_Rebody(int i, const vec3_t *pos, float yaw);
 #define REP_PLAYER_PREFIX "NetPlayer"
 /* the replication slot of an entity of the last snapshot, -1 */
 int Rep_SlotOf(const struct cEntity *e);
+/* the pieces of the first replication the v2 (include/scrap/repent.h) uses: the look string and the state of an entity
+ * of a first replication kind, the index + 1 of an action in its class (0 none), the time of an entity's sample after
+ * the tick (the end of its slot) */
+void Rep_LookOf(struct cEntity *e, int kind, char *out, int size);
+void Rep_StateOf(struct cEntity *e, int kind, NetRepState *s);
+uint16_t Rep_ActIndex(const cActClass *cls, const cAction *a);
+float Rep_SampleDtOf(struct cEntity *e);
 /* a free place for a character around at (the place k of the rings around it on, 0 at itself): 1 with *out */
 byte Rep_FreeSpot(const vec3_t *at, int first, vec3_t *out);
 /* tests: the switch of player i (into the nearest parked ship or out of its ship), or a ship called beside it */
@@ -127,6 +135,13 @@ void Watch_Adopt(int slot, struct cEntity *e, int kind);
 byte Watch_IsPlayer(struct cEntity *e);
 /* the entity of a replication slot (the own entity or a proxy), NULL */
 struct cEntity *Watch_SlotEntity(int slot);
+/* the replication v2 (include/scrap/repent.h): the newest state, kind, look and tick of a slot (NULL without); a
+ * replica made for a slot becomes its proxy with st as its first sample; the proxy of a slot freed; the model file
+ * (or its .sm3) is there */
+const NetRepState *Watch_SlotState(int slot, int *kind, const char **look, uint32_t *tick);
+void Watch_Attach(int slot, struct cEntity *e, int kind, uint32_t tick, const NetRepState *st);
+void Watch_FreeSlot(int slot);
+byte Watch_ModelExists(const char *path);
 /* a message to the instance on the reliable channel while the level runs: 1 sent */
 byte Watch_SendReliable(const uint8_t *data, int size);
 /* the clock of the server (include/scrap/netrep.h, NetRepClock) runs; the time (s) of the tick an input of now is

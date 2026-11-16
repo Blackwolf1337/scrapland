@@ -30,6 +30,7 @@
 #include "scrap/play.h"
 #include "scrap/players.h"
 #include "scrap/replicate.h"
+#include "scrap/repent.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/arrowindicator.h"
@@ -229,6 +230,9 @@ static int Rep_Find(const cEntity *e) {
 	if (!rep.srv) {
 		return -1;
 	}
+	if (g_Mp2) {
+		return RepEnt_Slot(e);
+	}
 	for (uint32_t h = Rep_PtrHash(e);; h = (h + 1) & (REP_HASH - 1)) {
 		int s = rep.hash[h];
 		if (s < 0) {
@@ -426,7 +430,7 @@ static const char *Rep_VarS(cEntity *e, const char *name) {
 
 /* how the watcher builds the proxy: S|model|pilot|motor 0..3|class|weapon slots, C|class or
  * M|model|MISSILE_WEAP_|MISSILE_FX_|level */
-static void Rep_Look(cEntity *e, int kind, char *out, int size) {
+void Rep_LookOf(cEntity *e, int kind, char *out, int size) {
 	if (kind == NETREP_ITEM) {
 		Str_PrintfQuiet(out, size, "I|%s", Rep_ModelPath(e));
 		return;
@@ -449,7 +453,7 @@ static void Rep_Look(cEntity *e, int kind, char *out, int size) {
 }
 
 /* the index + 1 of the action in its class, 0 none */
-static uint16_t Rep_ActIndex(const cActClass *cls, const cAction *a) {
+uint16_t Rep_ActIndex(const cActClass *cls, const cAction *a) {
 	uint16_t i = 1;
 	for (const cAction *x = cls->first; x; x = x->next, i++) {
 		if (x == a) {
@@ -459,7 +463,7 @@ static uint16_t Rep_ActIndex(const cActClass *cls, const cAction *a) {
 	return 0;
 }
 
-static float Rep_SampleDt(cEntity *e) {
+float Rep_SampleDtOf(cEntity *e) {
 	cSlotController *sc = Obj(e)->slot;
 	/* a player's entity is stepped at the tick (NetPl_Step) */
 	if (Obj(e)->netStep) {
@@ -469,7 +473,7 @@ static float Rep_SampleDt(cEntity *e) {
 	return t < 0.0f ? 0.0f : t;
 }
 
-static void Rep_State(cEntity *e, int kind, NetRepState *s) {
+void Rep_StateOf(cEntity *e, int kind, NetRepState *s) {
 	cWithLifeEntity *w = WLife(e);
 	cObjEntity *o = Obj(e);
 
@@ -483,7 +487,7 @@ static void Rep_State(cEntity *e, int kind, NetRepState *s) {
 	s->ang[0] = NetRep_QAng(o->ang.x);
 	s->ang[1] = NetRep_QAng(o->ang.y);
 	s->ang[2] = NetRep_QAng(o->ang.z);
-	float dt = Rep_SampleDt(e) * 1000.0f;
+	float dt = Rep_SampleDtOf(e) * 1000.0f;
 	s->dt = (uint16_t)(dt > 65535.0f ? 65535.0f : dt + 0.5f);
 	s->flags = e->active ? NETREP_FL_ACTIVE : 0;
 	if (kind == NETREP_ITEM) {
@@ -532,6 +536,10 @@ static void Rep_Gather(uint64_t tick) {
 	static byte seen[NETREP_MAX_ENTS];
 	NetRepState st;
 
+	if (g_Mp2) {
+		RepEnt_Gather(rep.srv, (uint32_t)tick);
+		return;
+	}
 	NetRepSrv_Begin(rep.srv, (uint32_t)tick);
 	memset(seen, 0, sizeof(seen));
 	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
@@ -539,7 +547,7 @@ static void Rep_Gather(uint64_t tick) {
 		if (!kind) {
 			continue;
 		}
-		Rep_Look(e, kind, look, sizeof(look));
+		Rep_LookOf(e, kind, look, sizeof(look));
 		int known = NetRepSrv_NumLooks(rep.srv);
 		int id = NetRepSrv_Look(rep.srv, look);
 		if (id < 0) {
@@ -563,7 +571,7 @@ static void Rep_Gather(uint64_t tick) {
 			rep.ent[s].gen++;
 		}
 		seen[s] = 1;
-		Rep_State(e, kind, &st);
+		Rep_StateOf(e, kind, &st);
 		NetRepSrv_Set(rep.srv, s, kind, id, &st);
 	}
 	NetRepSrv_End(rep.srv);
@@ -593,7 +601,7 @@ static void Rep_Log(uint64_t tick) {
 	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
 		int s = Rep_Kind(e) ? Rep_Find(e) : -1;
 		if (s >= 0) {
-			double t = (double)tick / INSTANCE_TICK_HZ + Rep_SampleDt(e);
+			double t = (double)tick / INSTANCE_TICK_HZ + Rep_SampleDtOf(e);
 			fprintf(rep.log, "%.4f,%d,%.2f,%.2f,%.2f,%u\n", t, s, (double)e->pos.x, (double)e->pos.y, (double)e->pos.z,
 				rep.ent[s].gen);
 		}
@@ -1630,6 +1638,7 @@ void Rep_Disconnect(int conn) {
 		Rep_Leave(rep.conn[conn].player);
 	}
 	NetRepSrv_RemoveClient(rep.srv, rep.conn[conn].c);
+	RepEnt_Drop(conn);
 	rep.conn[conn].c = NULL;
 	rep.watchers--;
 }
@@ -1733,7 +1742,7 @@ byte Rep_Message(Net2Host *host, int conn, int channel, const uint8_t *data, int
 	if (data[0] == NETREP_MSG_ACK &&
 		NetRep_ReadAckInput(data, size, &newest, &bits, view, in, NETREP_INPUT_REDUNDANCY, &n, &shown)) {
 		NetRepSrv_Ack(rep.srv, rep.conn[conn].c, newest, bits);
-		if (!rep.conn[conn].statics) {
+		if (!rep.conn[conn].statics && !g_Mp2) {
 			rep.conn[conn].statics = 1;
 			Rep_SendRecords(host, conn);
 		}
@@ -1751,7 +1760,7 @@ void Rep_Tick(Net2Host *host, uint64_t tick) {
 	int sizes[NETREP_MAX_MSGS];
 
 	Rep_Log(tick);
-	if (rep.watchers && tick % REP_RECORD_TICKS == 0) {
+	if (rep.watchers && tick % REP_RECORD_TICKS == 0 && !g_Mp2) {
 		Rep_RecordChanges(host);
 	}
 	uint32_t due = (uint32_t)(tick * NETREP_SNAP_HZ / NETREP_TICK_HZ);
@@ -1765,6 +1774,9 @@ void Rep_Tick(Net2Host *host, uint64_t tick) {
 	Rep_TellSlots(host);
 	Rep_SendShots(host);
 	uint64_t t1 = Plat_RealNs();
+	if (g_Mp2) {
+		RepEnt_Flush(host, REP_CONNS);
+	}
 	for (int i = 0; i < REP_CONNS; i++) {
 		if (!rep.conn[i].c) {
 			continue;
@@ -1772,6 +1784,9 @@ void Rep_Tick(Net2Host *host, uint64_t tick) {
 		int n = NetRepSrv_Build(rep.srv, rep.conn[i].c, rep.msgs, sizes, NETREP_MAX_MSGS);
 		for (int m = 0; m < n; m++) {
 			Net2_Send(host, i, REP_CH_UNRELIABLE, rep.msgs[m], sizes[m]);
+		}
+		if (g_Mp2) {
+			RepEnt_Sent(host, i, rep.conn[i].c);
 		}
 	}
 	uint64_t t2 = Plat_RealNs();
@@ -1807,6 +1822,7 @@ void Rep_Status(double secs) {
 		(double)rep.gatherNs / rep.snaps / 1e6, (double)rep.gatherMax / 1e6, (double)rep.buildNs / rep.snaps / 1e6,
 		(double)rep.buildMax / 1e6);
 	rep.gatherNs = rep.buildNs = rep.gatherMax = rep.buildMax = 0;
+	RepEnt_Status();
 	rep.snaps = 0;
 	for (int i = 0; i < REP_CONNS; i++) {
 		if (!rep.conn[i].c) {

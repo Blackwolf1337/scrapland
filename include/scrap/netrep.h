@@ -244,6 +244,8 @@ void NetRepSrv_Destroy(NetRepServer *s);
 int NetRepSrv_Look(NetRepServer *s, const char *look);
 /* a slot that no entity and no client holds, -1 when there is none */
 int NetRepSrv_FreeSlot(const NetRepServer *s);
+/* the slot was not in the last snapshot and no client holds it */
+int NetRepSrv_SlotFree(const NetRepServer *s, int slot);
 /* a new snapshot of tick: then NetRepSrv_Set for each live entity, then NetRepSrv_End */
 uint32_t NetRepSrv_Begin(NetRepServer *s, uint32_t tick);
 void NetRepSrv_Set(NetRepServer *s, int slot, int kind, int look, const NetRepState *st);
