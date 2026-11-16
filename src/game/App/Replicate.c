@@ -20,6 +20,7 @@
 #include "scrap/crt.h"
 #include "scrap/faction.h"
 #include "scrap/global.h"
+#include "scrap/inputtape.h"
 #include "scrap/instance.h"
 #include "scrap/model.h"
 #include "scrap/node3d.h"
@@ -1138,6 +1139,12 @@ static int Rep_Join(int conn) {
 		if (!Travel_Admit(conn, i, &sp)) {
 			return -1;
 		}
+		/* the solo instance's player (conn -1) starts where and with the money single player's did on its input tape */
+		if (conn < 0) {
+			float pos[3];
+			sp.have = InputTape_SoloStart(pos, &sp.yaw, &sp.money);
+			sp.pos = (vec3_t){ pos[0], pos[1], pos[2] };
+		}
 		Players_Join(i, sp.money);
 		if (Arena_On()) {
 			/* the PvP modes: no ship before its join and its first spawn (Arena_SpawnDue) */
@@ -1163,6 +1170,12 @@ static int Rep_Join(int conn) {
 		return i;
 	}
 	return -1;
+}
+
+void Rep_SoloJoin(void) {
+	if (Rep_Join(-1) < 0) {
+		Con_Printf("instance: no solo player\n");
+	}
 }
 
 static void Rep_Leave(int i) {
@@ -1293,6 +1306,7 @@ void Rep_PreFrame(uint64_t tick) {
 	NetRepInput in;
 
 	rep.tick = tick;
+	InputTape_SoloTick();
 	for (int i = 0; i < PLAYERS_MAX; i++) {
 		RepPlayer *pl = &rep.pl[i];
 		if (!pl->used) {
@@ -1343,7 +1357,12 @@ void Rep_PreFrame(uint64_t tick) {
 		}
 		/* the money, the alarm and the scripts' player of this player while its input runs */
 		Players_Bind(i);
-		NetRepInBuf_Take(&pl->in, (uint32_t)tick, &in);
+		if (pl->conn < 0) {
+			/* the solo instance's player: the input of its tape (include/scrap/inputtape.h) */
+			InputTape_SoloInput(e, &in);
+		} else {
+			NetRepInBuf_Take(&pl->in, (uint32_t)tick, &in);
+		}
 		pl->shownNow = pl->shown[tick % NETREP_INBUF];
 		Coop_TestInput(i, &in, (double)tick / NETREP_TICK_HZ - pl->shownNow / 1000.0);
 		Faction_Input(i, e, &in);
