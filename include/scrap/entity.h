@@ -119,20 +119,41 @@ static inline void Entity_UpdateOff(void *self) {
 	VT(cEntityVtbl, self)->UpdateOff(self);
 }
 
+/* ScrapC: a set that took goes to this tap when there is one (the variable journal of the replication v2 on an
+ * instance, include/scrap/repent.h): type 'i' (int *), 'f' (double *), 'v' (double[3]), 's' (char **) */
+extern void (*g_EntVarTap)(struct cEntity *e, const char *name, int type, const void *value);
+
 static inline byte Entity_VarF(void *self, const char *name, double *d, int set) {
-	return VT(cEntityVtbl, self)->VarF(self, name, d, set);
+	byte ok = VT(cEntityVtbl, self)->VarF(self, name, d, set);
+	if (set && ok && g_EntVarTap) {
+		g_EntVarTap(self, name, 'f', d);
+	}
+	return ok;
 }
 
 static inline byte Entity_VarI(void *self, const char *name, int *i, int set) {
-	return VT(cEntityVtbl, self)->VarI(self, name, i, set);
+	byte ok = VT(cEntityVtbl, self)->VarI(self, name, i, set);
+	if (set && ok && g_EntVarTap) {
+		g_EntVarTap(self, name, 'i', i);
+	}
+	return ok;
 }
 
 static inline byte Entity_VarS(void *self, const char *name, char **s, int set) {
-	return VT(cEntityVtbl, self)->VarS(self, name, s, set);
+	byte ok = VT(cEntityVtbl, self)->VarS(self, name, s, set);
+	if (set && ok && g_EntVarTap) {
+		g_EntVarTap(self, name, 's', s);
+	}
+	return ok;
 }
 
 static inline byte Entity_VarV(void *self, const char *name, double *x, double *y, double *z, int set) {
-	return VT(cEntityVtbl, self)->VarV(self, name, x, y, z, set);
+	byte ok = VT(cEntityVtbl, self)->VarV(self, name, x, y, z, set);
+	if (set && ok && g_EntVarTap) {
+		double v[3] = { *x, *y, *z };
+		g_EntVarTap(self, name, 'v', v);
+	}
+	return ok;
 }
 
 /* Nto1Links.h with a shared count: the head (data NULL) owns the int, every linked node points to it */
@@ -152,7 +173,9 @@ struct cEntity {
 	uint32_t savedMask;		/* the mask while the collision is off (ActiveCMask 0) */
 	uint32_t mask;			/* the entity lists it is in, a bit each */
 	byte active;			/* "Active"; checked by the SAI functions before they touch the AI */
-	byte pad_4d[3];
+	byte pad_4d;
+	uint16_t netSlot;		/* ScrapC: the slot + 1 of the replication v2 on an instance, 0 none
+					   (include/scrap/repent.h) */
 	EntityDNode listNode;		/* in the ring of its cEntityListData ("EntityList"), target the list */
 	Nto1Node links;			/* head of the script handles (cPyEntity), target the entity */
 	void *lLogic;			/* local logic made by the list ("LLogic" variables) */
