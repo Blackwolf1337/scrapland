@@ -246,6 +246,7 @@ void cWalkCharControl_Update(cWalkCharControl *self, cEntity *wle, float dt) {
 		if (prev) {
 			cArrowIndicator_PrevOpt(&WLife(l)->arrow);
 		}
+		self->opts = (byte)(((self->opts + next) & 0x0f) | ((self->opts + (prev << 4)) & 0xf0));
 	}
 }
 

@@ -1402,6 +1402,21 @@ void Rep_Rebody(int i, const vec3_t *pos, float yaw) {
 	pl->told = -2;
 }
 
+/* the presses of the arrow's next and previous option in a character's input (the answers of a talk): its listener's
+ * arrow moves as single player's input moves it (WalkCharControl.c), one press for a counter one more than before */
+static void Rep_InputOptions(cEntity *e, const NetRepInput *in, uint16_t before) {
+	cEntity *l = NetPl_Kind(e) == NETREP_CHAR && WChar(e)->listenOn ? WChar_Listen(e) : NULL;
+	if (!l || !Entity_IsType(l, TYEN_WITH_LIFE)) {
+		return;
+	}
+	if ((((in->buttons >> NETREP_IN_OPTNEXT_SHIFT) - (before >> NETREP_IN_OPTNEXT_SHIFT)) & 3) == 1) {
+		cArrowIndicator_NextOpt(&WLife(l)->arrow);
+	}
+	if ((((in->buttons >> NETREP_IN_OPTPREV_SHIFT) - (before >> NETREP_IN_OPTPREV_SHIFT)) & 3) == 1) {
+		cArrowIndicator_PrevOpt(&WLife(l)->arrow);
+	}
+}
+
 void Rep_PreFrame(uint64_t tick) {
 	NetRepInput in;
 
@@ -1473,6 +1488,7 @@ void Rep_PreFrame(uint64_t tick) {
 		Coop_TestInput(i, &in, (double)tick / NETREP_TICK_HZ - pl->shownNow / 1000.0);
 		Faction_Input(i, e, &in);
 		Places_Input(i, e, &in);
+		Rep_InputOptions(e, &in, pl->buttons);
 		/* a character's use as in single player: the ship its arrow is on boards it, a door runs the game's use; the
 		 * switch (the mission info key on foot, in a ship) is the sandbox's: into the nearest parked or a called
 		 * ship, out of the ship */
