@@ -31,6 +31,37 @@ When two runs differ, set `REGRESS_DET_TRACE=<folder>` and compare the traces wi
 
 The server port lock is one file for the machine (`~/.cache/scrapland/regress-port.lock`), so runs from several checkouts do not take the same port. `REGRESS_VK_DEVICE` may be a comma list of GPUs. The old switches `SCRAP_NULL_CHECK`, `SCRAP_NULL_CHECK_ENGINE`, `SCRAP_NATIVE_REF` and `SCRAP_PORT_SLOW` are gone.
 
+## Input tape and solo instance
+
+The input tape records the input of a single player run and plays it back in the deterministic test mode, so a replay repeats the run byte for byte (the same deterministic trace). A solo instance (the headless instance without network, one player whose controls come from the tape) can then be compared with single player. It is for test tools only, the original has nothing like it.
+
+```
+ScrapC -imap:Levels/DownTown -inputtape:rec:<file>
+ScrapC -imap:Levels/DownTown -inputtape:play:<file>
+ScrapC -instance:DownTown -solo:<file>
+```
+
+A tape is a text file with two layers. The D lines (device layer) hold the values of all input actions right after the devices wrote them, and a replay writes them back in place of the devices. The C lines (control layer) hold the controls of the player's character or ship per slot tick of 1/60 s. A single player replay checks them, and the solo instance writes them into its player's controls. A start line holds the place, the yaw and the money of the player, and an E line ends the tape. Floats are the hex of their bits. The line format is in `include/scrap/inputtape.h`.
+
+While a tape is on, the trace leaves out the event and command file lines and gets a `pl` line per slot tick of the player's entity: kind, type, pos, ang, vel, view, life, the action of each of the four layers, money and alarm. Without a tape the trace is unchanged, so the regress traces stay the same.
+
+```
+tools/test/tape.py rec <level> <tape> [--secs 60]
+tools/test/tape.py play <level> <tape>
+tools/test/tape.py solo <level> <tape>
+tools/test/tape.py cmp <trace A> <trace B>
+```
+
+`rec` drives a recording through the test channel verb `tape` (`tape key <Set>.<Action> <value>`, `tape key clear`, `tape end`, and `tape` alone for the state). It runs with `SCRAP_TEST_CHANNEL=step`, so the game clock stands while the driver thinks. The driver walks, boards the player's ship, flies and parks. `play` and `solo` run a tape, and `cmp` compares the `pl` lines of two traces.
+
+```
+tools/test/solo.sh <level> <tape> [secs]
+```
+
+`solo.sh` runs the replay and the solo instance and prints the first differing slot of the player's state, or `equal`, and the first differing slot per field. The two runs differ today on purpose. The instance steps its players before the frame and its action controllers once per 1/30 s tick, single player does it inside the world update every 1/60 s frame, and the instance lacks single player's setup, such as the boarding of the player's own ship. Stage 3.6 of the multiplayer plan makes them equal.
+
+A replay whose controls differ from the tape prints `inputtape: the controls of slot ... differ from the tape` in the console.
+
 ## Regress cases and the channel
 
 The regress case fc-r8j-snd-DownTown passes `Scrap.Set` on. A recorder that swallowed it made the rail traffic of DownTown load a model that is in no pack (`TLight1.m3d`) and the game ended in about 1 of 6 runs. `native ports` also prints the lines `modules pack/none/absent/other/added/made/loaded` (how the module lookups went) and `def calls registry/byname/other/errors` (how the .def call lines went). `rd/msw-run.py` is gone, and mission starts are compared through the test channel.

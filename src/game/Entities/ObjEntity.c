@@ -12,6 +12,7 @@
 #include "scrap/embeddedfxchar.h"
 #include "scrap/embeddedfxmisc.h"
 #include "scrap/fxmisc.h"
+#include "scrap/inputtape.h"
 #include "scrap/net.h"
 #include "scrap/netaudit.h"
 #include "scrap/objentity.h"
@@ -684,7 +685,12 @@ void cObjEntity_Update(cEntity *self) {
 				cPy_Function_Execute(&o->onObjSlot, 0);
 			}
 			if (!o->proxy && !o->netStep) {
+				/* not in the original: the input tape (include/scrap/inputtape.h) */
+				byte taped = g_InputTape && InputTape_Slot(self);
 				Obj_Tick(self, iv);
+				if (taped) {
+					InputTape_SlotDone(self);
+				}
 			}
 			if (o->cam) {
 				CamCtl_Slot(o->cam, iv);

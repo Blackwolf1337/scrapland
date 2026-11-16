@@ -16,6 +16,7 @@
 #include "scrap/crt.h"
 #include "scrap/faction.h"
 #include "scrap/global.h"
+#include "scrap/inputtape.h"
 #include "scrap/instance.h"
 #include "scrap/net2.h"
 #include "scrap/places.h"
@@ -24,6 +25,7 @@
 #include "scrap/play.h"
 #include "scrap/replicate.h"
 #include "scrap/sputniks.h"
+#include "scrap/testdet.h"
 #include "scrap/travel.h"
 #include "scrap/world.h"
 
@@ -138,6 +140,13 @@ static void Instance_Open(uint64_t now) {
 	inst.lastQuitCheck = now;
 	if (!inst.id[0]) {
 		Str_Copy(inst.id, Instance_Level(), sizeof(inst.id));
+	}
+	if (g_InputTape == INPUTTAPE_SOLO) {
+		/* the solo instance: no network, one player on the input tape */
+		Rep_Open();
+		Rep_SoloJoin();
+		Con_Printf("instance %s: level %s, solo, %d ticks a second\n", inst.id, Instance_Level(), INSTANCE_TICK_HZ);
+		return;
 	}
 	Net2_DefaultConfig(&cfg, 1);
 	cfg.port = inst.port;
@@ -345,8 +354,18 @@ static void Instance_Commands(uint64_t now) {
 	}
 }
 
+/* the solo instance runs on the clock of the deterministic test mode (when it is on), the others on the real one */
+static byte Instance_DetClock(void) {
+	return g_InputTape == INPUTTAPE_SOLO && TestDet_On();
+}
+
+/* the clock of the ticks in ns */
+static uint64_t Instance_Ns(void) {
+	return Instance_DetClock() ? (uint64_t)TestDet_Counter() * 100u : Plat_RealNs();
+}
+
 void Instance_Pass(void) {
-	uint64_t now = Plat_RealNs();
+	uint64_t now = Instance_Ns();
 
 	if (!inst.opened) {
 		Instance_Open(now);
@@ -358,7 +377,10 @@ void Instance_Pass(void) {
 			Net2_Poll(inst.host, now / 1000000);
 		}
 		uint64_t wait = (due - now + 999999) / 1000000;
-		Plat_WaitEvent((int)(wait > INSTANCE_POLL_MS ? INSTANCE_POLL_MS : wait));
+		/* the clock of the deterministic test mode goes on by a step per pass */
+		if (!Instance_DetClock()) {
+			Plat_WaitEvent((int)(wait > INSTANCE_POLL_MS ? INSTANCE_POLL_MS : wait));
+		}
 		return;
 	}
 	if (now - due > INSTANCE_MAX_BEHIND * INST_PERIOD) {
@@ -380,7 +402,7 @@ void Instance_Pass(void) {
 	if (inst.host) {
 		Rep_Tick(inst.host, inst.ticks);
 	}
-	uint64_t end = Plat_RealNs();
+	uint64_t end = Instance_Ns();
 	if (inst.host) {
 		Net2_Flush(inst.host, end / 1000000);
 	}

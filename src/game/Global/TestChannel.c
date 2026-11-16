@@ -66,6 +66,7 @@
 #include "scrap/global.h"
 #include "scrap/game.h"
 #include "scrap/gvar.h"
+#include "scrap/inputtape.h"
 #include "scrap/instance.h"
 #include "scrap/modvars.h"
 #include "scrap/netaudit.h"
@@ -1549,6 +1550,13 @@ static void TC_Line(tcBuf *b, const char *line) {
 		TC_Audit(b, arg);
 		return;
 	}
+	/* tape [key <Set>.<Action> <value> | key clear | end]: the input tape (include/scrap/inputtape.h) */
+	if (TC_Verb(line, "tape", &arg)) {
+		char out[0x200];
+		InputTape_Command(arg, out, sizeof(out));
+		TC_Add(b, out, -1);
+		return;
+	}
 	if (!g_PythonReady) {
 		TC_Add(b, "error: the script modules are not ready\n", -1);
 		return;
@@ -1791,7 +1799,8 @@ static void TC_Poll(void) {
 	}
 	tcBuf b = { 0 };
 	tc_seq = seq;
-	if (g_TestDetTrace) {
+	/* with an input tape the tape holds the input (include/scrap/inputtape.h) */
+	if (g_TestDetTrace && !g_InputTape) {
 		TestDet_Trace("command file%s: %.60s", tc_hold ? " (clock held)" : "", nl + 1);
 	}
 	TC_Run(&b, nl + 1);
