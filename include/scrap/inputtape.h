@@ -24,7 +24,7 @@
  *   scrap-inputtape 1
  *   rate <steps a second of the deterministic clock> seed <SCRAP_TEST_DET_SEED or 1>
  *   D <frame> <set> <IsUsingMouse> {<set>.<action>.<player>=<bits>}       the non-zero values
- *   start <level> <class> <x> <y> <z> <yaw>                                 before the first C: the player's entity
+ *   start <level> <class> <x> <y> <z> <yaw> <money>                         before the first C: the player's entity
  *   C <slot> c <name> <buttons> <walk> <strafe> <jump> <hRot> <vRot>       a character (buttons: INPUTTAPE_B_)
  *   C <slot> s <name> <buttons> <acc> <str> <vStr> <hRot> <vRot> <weapon> <fireWait> <emptyTime> <attackTime>
  *     <padBounce>                                                          a ship
@@ -85,8 +85,9 @@ byte InputTape_Hold(void);
 /* the main loop, before the step of the clock: 1 when the tape's run is over (the game ends) */
 byte InputTape_Ended(void);
 
-/* the solo instance: the player's start (the start line of the tape), 0 without one */
-byte InputTape_SoloStart(float pos[3], float *yaw);
+/* the solo instance: the player's start (the start line of the tape: the place, the yaw and the money single player
+ * had), 0 without one */
+byte InputTape_SoloStart(float pos[3], float *yaw, int *money);
 /* once per instance tick before the players: the next PLAY_STEPS C lines become the tick's */
 void InputTape_SoloTick(void);
 /* the input of the tick for the instance's own rules (use, switch), quantized as a client sends it, from the tick's

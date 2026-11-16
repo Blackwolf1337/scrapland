@@ -290,8 +290,9 @@ byte InputTape_Slot(cEntity *e) {
 			const char *lp = g_pApp->levelPath ? g_pApp->levelPath : "";
 			const char *ln = strrchr(lp, '/');
 			tape.started = 1;
-			Str_PrintfQuiet(start, sizeof(start), "start %s %s %08x %08x %08x %08x", ln ? ln + 1 : lp,
-				Entity_GetClassName(e), Tape_Bits(e->pos.x), Tape_Bits(e->pos.y), Tape_Bits(e->pos.z), Tape_Bits(yaw));
+			Str_PrintfQuiet(start, sizeof(start), "start %s %s %08x %08x %08x %08x %d", ln ? ln + 1 : lp,
+				Entity_GetClassName(e), Tape_Bits(e->pos.x), Tape_Bits(e->pos.y), Tape_Bits(e->pos.z), Tape_Bits(yaw),
+				Players_Money(0));
 			fprintf(tape.out, "%s\n", start);
 		}
 		fprintf(tape.out, "%s\n", line);
@@ -354,7 +355,7 @@ byte InputTape_Ended(void) {
 
 /* ---- the solo instance ---- */
 
-byte InputTape_SoloStart(float pos[3], float *yaw) {
+byte InputTape_SoloStart(float pos[3], float *yaw, int *money) {
 	char *p = tape.start ? strchr(tape.start + 6, ' ') : NULL;
 	p = p ? strchr(p + 1, ' ') : NULL;
 	if (g_InputTape != INPUTTAPE_SOLO || !p) {
@@ -364,6 +365,11 @@ byte InputTape_SoloStart(float pos[3], float *yaw) {
 		pos[i] = Tape_Float(p, &p);
 	}
 	*yaw = Tape_Float(p, &p);
+	char *end;
+	long m = strtol(p, &end, 10);
+	if (end > p) {
+		*money = (int)m;
+	}
 	return 1;
 }
 

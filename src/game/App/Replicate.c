@@ -1139,10 +1139,10 @@ static int Rep_Join(int conn) {
 		if (!Travel_Admit(conn, i, &sp)) {
 			return -1;
 		}
-		/* the solo instance's player (conn -1) starts where single player's did on its input tape */
+		/* the solo instance's player (conn -1) starts where and with the money single player's did on its input tape */
 		if (conn < 0) {
 			float pos[3];
-			sp.have = InputTape_SoloStart(pos, &sp.yaw);
+			sp.have = InputTape_SoloStart(pos, &sp.yaw, &sp.money);
 			sp.pos = (vec3_t){ pos[0], pos[1], pos[2] };
 		}
 		Players_Join(i, sp.money);
