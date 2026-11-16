@@ -51,3 +51,11 @@ Sound_PlayVoice	NEAREST	a voice for the player near the speaker
 Npc_Respawn	NEAREST	an NPC respawns around the player near it
 Mode_AlarmOn	NEAREST	the scripts ask for the alarm of the player near the entity that runs
 Cw_SetCrazy	NEAREST	the crazy wing for the player near it
+cAIDesktop_UpdateAction0	NEAREST	a desktop NPC reacts to the alarm of the player near it
+WCE_AlarmOn	NEAREST	a character relaxes unless the alarm of the player near it is on
+cGenCharLocalLogic_SetState	NEAREST	an NPC's logic reacts to the alarm of the player near it
+cGenCharGroup_RaiseLevel	NEAREST	an NPC raises the alarm level of the player near it
+AICtrl_RaiseLevel	NEAREST	a sentinel or gear raises the alarm level of the player near it
+AICtrl_SendSentinelToNPC	NEAREST	a sentinel goes to an NPC while the alarm of the player near it is off
+ChType_PoliceEndActionMoney	NEAREST	a police character's action event on the alarm of the player near it
+Veh_Taunt	NEAREST	a ship's taunt for the player near it
