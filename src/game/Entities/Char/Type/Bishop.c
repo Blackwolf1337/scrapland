@@ -240,7 +240,11 @@ static void ChType_FXBishopSellLife(cAbstractFile *params) {
 	cAbstractFile_ReadString(params, a, 0x80);
 	cAbstractFile_ReadString(params, b, 0x80);
 	cEntity *attacker = World_FindEntity(a);
-	cEntity *attacked = World_FindEntity(b);
+	cEntity *attacked = Pres_EventEnt(b);
+	/* a -mp2 client plays the event on a replica: one it does not have is counted, not the end (pres.h) */
+	if ((!attacked || !Entity_IsType(attacked, TYEN_WITH_LIFE)) && Pres_ClientMissing("FXBishopSellLife", b)) {
+		return;
+	}
 	FX_BishopSellLife(attacker, attacked);
 }
 

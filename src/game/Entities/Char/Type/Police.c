@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "scrap/chartype.h"
+#include "scrap/pres.h"
 #include "scrap/actions.h"
 #include "scrap/modmove.h"
 #include "scrap/staticinit.h"
@@ -41,9 +42,13 @@ static void ChType_FXPoliceSteal(cAbstractFile *params) {
 	cAbstractFile_ReadString(params, a, 0x80);
 	cAbstractFile_ReadString(params, b, 0x80);
 	cEntity *attacker = World_FindEntity(a);
+	cEntity *attacked = Pres_EventEnt(b);
+	/* a -mp2 client plays the event on a replica: one it does not have is counted, not the end (pres.h) */
+	if ((!attacked || !Entity_IsType(attacked, TYEN_WALKCHAR)) && Pres_ClientMissing("FXPoliceSteal", b)) {
+		return;
+	}
 	CHECK(attacker);
 	CHECK(Entity_IsType(attacker, TYEN_WALKCHAR));
-	cEntity *attacked = World_FindEntity(b);
 	CHECK(attacked);
 	CHECK(Entity_IsType(attacked, TYEN_WALKCHAR));
 	FX_PoliceSteal(attacker, attacked);

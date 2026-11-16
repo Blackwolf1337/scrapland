@@ -597,6 +597,10 @@ void Pres_ClientSound(const char *name) {
 	r->msg = msg;
 }
 
+cEntity *Pres_EventEnt(const char *name) {
+	return g_Mp2 && !g_Instance && g_Watch ? ReplicaEnt_Find(name) : World_FindEntity(name);
+}
+
 byte Pres_ClientMissing(const char *what, const char *name) {
 	char key[128];
 	if (!g_Mp2 || g_Instance || !g_Watch) {

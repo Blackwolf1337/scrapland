@@ -3,6 +3,7 @@
  * ship (include/scrap/chartype.h). The rest of the file comes with part 2 of the character types.
  */
 #include "scrap/chartype.h"
+#include "scrap/pres.h"
 #include "scrap/fxchar.h"
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
@@ -20,9 +21,13 @@ static void ChType_FXMaintenanceWork(cAbstractFile *params) {
 	cAbstractFile_ReadString(params, shipName, 0x80);
 	VFile_Read(params, &time, 4);
 	cEntity *v = World_FindEntity(name);
+	cEntity *ship = Pres_EventEnt(shipName);
+	/* a -mp2 client plays the event on a replica: a ship it does not have is counted, not the end (pres.h) */
+	if ((!ship || !Entity_IsType(ship, TYEN_VEHICLE)) && Pres_ClientMissing("FXMaintenanceWork", shipName)) {
+		return;
+	}
 	CHECK(v);
 	CHECK(Entity_IsType(v, TYEN_WALKCHAR));
-	cEntity *ship = World_FindEntity(shipName);
 	CHECK(ship);
 	CHECK(Entity_IsType(ship, TYEN_VEHICLE));
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXMaintenanceWorkFile);

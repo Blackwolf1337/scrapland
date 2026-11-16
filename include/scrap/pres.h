@@ -193,6 +193,9 @@ void Pres_Message(const uint8_t *data, int size);
 /* a presentation event on a -mp2 client misses the entity name (what: the function; NULL: counted already): 1 counted
  * there ("pres.missing:<what>:<name>"; the caller returns), 0 elsewhere (the caller's CHECK stays) */
 byte Pres_ClientMissing(const char *what, const char *name);
+/* the entity of a name a presentation event names (another than its own): on a -mp2 client the replica of the
+ * instance's name or the own entity for the own slot's (ReplicaEnt_Find), elsewhere World_FindEntity */
+struct cEntity *Pres_EventEnt(const char *name);
 /* a one-shot sound plays on the client (the sound system's sinks): the double audit */
 void Pres_ClientSound(const char *name);
 
