@@ -143,6 +143,15 @@ def sp_story(sp, story, own, level):
     sp.ask('do SaveGame.QLoad(%s)' % lit('Levels/' + level), timeout=30)
 
 
+def same_level(sp, inst):
+    """single player has at least half of the instance's DM_ entities (the level's named places) by name"""
+    want = {e['name'] for e in inst if e['name'].startswith('DM_')}
+    if not want:
+        return True
+    have = {e['name'] for e in parity.parse_ents(sp.try_ask('entinfo', timeout=30)) if e['name'].startswith('DM_')}
+    return len(want & have) * 2 >= len(want)
+
+
 def run_point(a, name, data, level, key):
     res = {'point': name, 'level': level, 'radius': a.radius}
     story = load_store(os.path.join(data, 'party.story'))
@@ -198,6 +207,19 @@ def run_point(a, name, data, level, key):
             return parity.parse_ents(world.ask('entinfo %.0f %.0f %.0f %.0f' % (at[0], at[1], at[2], a.radius * 1.2),
                                                level, timeout=30))
         inst = inst_now()
+        # single player in the instance's level (its level path can name the point's level while the story's load took
+        # it to the level of an older mission: a stage 0.4 run had the Police station's doors for Press): its named
+        # places against the instance's, the story loaded again when they differ
+        for _ in range(2):
+            if same_level(sp, inst):
+                break
+            sp_story(sp, story, own, level)
+            time.sleep(8)
+            parity.wait_for(lambda: sp.try_ask('Scrap.GetLevelPath()', timeout=5), 240, 2)
+            sp.ask('do e = Scrap.UsrEntity(0); e.Pos = (%.1f, %.1f, %.1f); e.Ang = (%.3f, %.3f, %.3f)' % (at + ang))
+            time.sleep(a.settle)
+            inst = inst_now()
+        res['sp_same_level'] = same_level(sp, inst)
         res['instance'] = {'kinds': parity.count(inst, at, a.radius)}
         res['sp'] = parity.collect(sp, at, a.radius)
         # the instance's entities of the member's moment (parity.collect labels the proxies by them, M11)
