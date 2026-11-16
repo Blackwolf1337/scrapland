@@ -227,8 +227,10 @@ void Players_SetOwner(int slot, cEntity *e) {
 	} else if (Players_Net() && slot >= PLAYERS_NET_SLOT && slot < PLAYERS_NET_SLOT + PLAYERS_MAX) {
 		cPlayer *p = &g_Pl[slot - PLAYERS_NET_SLOT];
 		p->ent = e;
-		p->viewPos = e->pos;
-		p->viewYaw = Entity_IsType(e, TYEN_WALKCHAR) ? WChar(e)->view.y : Obj(e)->ang.y;
+		if (e) {
+			p->viewPos = e->pos;
+			p->viewYaw = Entity_IsType(e, TYEN_WALKCHAR) ? WChar(e)->view.y : Obj(e)->ang.y;
+		}
 	}
 }
 
