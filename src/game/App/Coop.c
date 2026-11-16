@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "scrap/ai.h"
+#include "scrap/aicharcontrol.h"
 #include "scrap/alarm.h"
 #include "scrap/aivehicle.h"
 #include "scrap/camcontrol.h"
@@ -26,6 +27,7 @@
 #include "scrap/itementity.h"
 #include "scrap/missionmaker.h"
 #include "scrap/netrep.h"
+#include "scrap/nodesworld2d.h"
 #include "scrap/places.h"
 #include "scrap/platform.h"
 #include "scrap/play.h"
@@ -94,7 +96,7 @@
 #define CP_AUTO_NEAR 250.0f			/* test: units from a target it uses */
 #define CP_AUTO_LAND 3000.0f		/* test: its ship is put this near a target on foot before it gets out */
 #define CP_AIR 1500.0f				/* test: an item this high above the floor is flown onto */
-#define CP_WALK_FAR 600.0f			/* test: a walker steps to a target further than this */
+#define CP_WALK_FAR 300.0f			/* test: a walker steps to a target further than this */
 #define CP_WALK_STEP 300.0f			/* test: units of a step */
 #define CP_WALK_GAP 2.0				/* test: s between two steps */
 #define CP_WALK_WAIT 900.0f			/* test: the next step waits for a character this near (one that follows it) */
@@ -207,6 +209,7 @@ static struct {
 		int upToMax;
 		double talkUntil;			/* a conversation of its own plays until then (instance time) */
 		vec3_t autoItemAt;			/* where the item it went onto last was */
+		char walkWho[CP_NAME];		/* test: the one follower its walk waits for ("" any) */
 	} pl[PLAYERS_MAX];
 	struct {						/* the items of the HUD's scorer made, by name (their class for the clients) */
 		char name[CP_NAME], type[16];
@@ -2975,6 +2978,55 @@ static byte Cp_RedNear(const cEntity *e) {
 	return 0;
 }
 
+/* test: walking character v follows e: its logic's target (LLogicTarget: BeatPickus' thugs) or the target of its AI's
+ * chase without action (SAI.SetStateChar 3: GoWithHuman's human; not one that attacks it) */
+static byte Cp_Follows(cEntity *v, const cEntity *e) {
+	char *tgt = NULL;
+	cAIChar *ai = Entity_GetAI(v);
+	return (Entity_VarS(v, "LLogicTarget", &tgt, 0) && tgt && !strcmp(tgt, e->name)) ||
+		(ai && ai->state == AIC_CHASE_WITHOUT_ACTION && ai->base.target.target == e);
+}
+
+/* test: the point of the walking graph's path from walker e to *to (the characters' A*, CAStar2D_FindPath) that its
+ * next step goes to, into *to (kept when the level has no such graph or no path: the straight way) */
+static void Cp_WalkWay(const cEntity *e, vec3_t *to) {
+	static cNWVecList path;
+	cActCtrl *ac = WLife(e)->actCtrl;
+	byte noPath, reach;
+	int res;
+	vec3_t dest = *to, pos = e->pos;
+	if (!g_NodesWorld2D || !g_AStar2D || !NodesWorld_IsCreated(NW2D_SUP(g_NodesWorld2D)) || !ac || !ac->cls ||
+		!CAStar2D_FindPath(g_AStar2D, &path, &dest, &pos, ac->cls->sRadius, CP_WALK_STEP, WChar(e)->floorDist,
+		ac->cls->sRadius, 0, &noPath, &reach, &res)) {
+		return;
+	}
+	/* the path from its first point (head's prev) on: the first one a step away */
+	for (cNWVecNode *n = path.head ? path.head->prev : NULL; n; n = n == path.head ? NULL : n->prev) {
+		float x = n->v.x - pos.x, z = n->v.z - pos.z;
+		if (x * x + z * z > CP_WALK_STEP * CP_WALK_STEP * 0.25f) {
+			*to = n->v;
+			return;
+		}
+	}
+}
+
+/* test: the next step of walker e towards (ux, uz) (a unit direction) into *p: round a wall its followers walk round,
+ * the first direction turned by up to 120 degrees with no wall at a character's height on the way; 0 when walled in */
+static byte Cp_WalkFree(const cEntity *e, float ux, float uz, vec3_t *p) {
+	static const int turns[] = { 0, 1, -1, 2, -2, 3, -3, 4, -4 };
+	for (int k = 0; k < (int)(sizeof(turns) / sizeof(turns[0])); k++) {
+		float a = (float)turns[k] * 0.5236f, c = cosf(a), s = sinf(a);
+		vec3_t from = { e->pos.x, e->pos.y + 150.0f, e->pos.z };
+		vec3_t to = { from.x + (ux * c - uz * s) * CP_WALK_STEP, from.y, from.z + (ux * s + uz * c) * CP_WALK_STEP };
+		vec3_t down = { to.x, to.y - 2000.0f, to.z }, floor;
+		if (!Engine_TestLine(&from, &to, NULL, NULL) && Engine_TestLine(&to, &down, &floor, NULL)) {
+			*p = (vec3_t){ to.x, floor.y + 100.0f, to.z };
+			return 1;
+		}
+	}
+	return 0;
+}
+
 /* test: player i on foot (e) further than CP_WALK_FAR from t: a step towards it every CP_WALK_GAP s on the floor
  * there once a follower is near it again, back to the nearest one that stopped, as a player walks with characters
  * that follow him (BeatPickus' thugs); 1 while it walks */
@@ -2986,14 +3038,13 @@ static byte Cp_WalkStep(int i, cEntity *e, cEntity *t, double now) {
 	if (now - cp.pl[i].autoSince < CP_WALK_GAP) {
 		return 1;
 	}
-	/* its followers: the characters whose logic has it as the target (LLogicTarget) */
+	/* its followers: the characters whose logic or AI has it as the target */
 	cEntity *back = NULL;
 	float best = 0.0f;
 	for (cEntity *v = cWorld_GetFirstEntity(g_pWorld); v; v = cEntity_Next(v)) {
-		char *tgt = NULL;
 		float vx = v->pos.x - e->pos.x, vy = v->pos.y - e->pos.y, vz = v->pos.z - e->pos.z, vd = vx * vx + vy * vy + vz * vz;
 		if (v != e && v->active && Entity_IsType(v, TYEN_WALKCHAR) && Players_Of(v) < 0 && !Obj(v)->proxy &&
-			Entity_VarS(v, "LLogicTarget", &tgt, 0) && tgt && !strcmp(tgt, e->name) && (!back || vd < best)) {
+			(!cp.pl[i].walkWho[0] || !strcmp(v->name, cp.pl[i].walkWho)) && Cp_Follows(v, e) && (!back || vd < best)) {
 			back = v;
 			best = vd;
 		}
@@ -3019,14 +3070,17 @@ static byte Cp_WalkStep(int i, cEntity *e, cEntity *t, double now) {
 		Travel_TestGoto(i, back->name, 0.0f, 200.0f);
 		return 1;
 	}
-	vec3_t p = { e->pos.x + dx / d * CP_WALK_STEP, e->pos.y + 150.0f, e->pos.z + dz / d * CP_WALK_STEP };
-	vec3_t down = { p.x, p.y - 2000.0f, p.z }, floor;
-	if (Engine_TestLine(&p, &down, &floor, NULL)) {
-		p.y = floor.y + 100.0f;
+	vec3_t p, way = t->pos;
+	Cp_WalkWay(e, &way);
+	float wx = way.x - e->pos.x, wz = way.z - e->pos.z, wd = sqrtf(wx * wx + wz * wz);
+	if (wd < 1.0f) {
+		wx = dx, wz = dz, wd = d;
 	}
-	e->pos = p;
-	Obj(e)->ang.y = WChar(e)->view.y = atan2f(-dx, -dz);
-	Rep_Placed(i);
+	if (Cp_WalkFree(e, wx / wd, wz / wd, &p)) {
+		Obj(e)->ang.y = WChar(e)->view.y = atan2f(-(p.x - e->pos.x), -(p.z - e->pos.z));
+		e->pos = p;
+		Rep_Placed(i);
+	}
 	return 1;
 }
 
@@ -3332,6 +3386,13 @@ byte Coop_Command(const char *line) {
 		cAIVehicle *ai = e && Entity_IsType(e, TYEN_CAR) ? Entity_GetAI(e) : NULL;
 		char st[256] = "", in[256] = "";
 		vec3_t d, p;
+		cAIChar *ac = e && Entity_IsType(e, TYEN_WALKCHAR) ? Entity_GetAI(e) : NULL;
+		if (ac) {
+			/* a walking character's AI: its state and target */
+			Con_Printf("coop: %s char AI state %d intern %d, target %s, at %.0f %.0f %.0f\n", name, ac->state, ac->internState,
+				Nto1Node_TargetName(&ac->base.target), (double)e->pos.x, (double)e->pos.y, (double)e->pos.z);
+			return 1;
+		}
 		if (!ai) {
 			Con_Printf("coop: %s has no vehicle AI\n", name);
 			return 1;
@@ -3402,9 +3463,11 @@ byte Coop_Command(const char *line) {
 		return 1;
 	}
 	int pct = 0;
-	if (sscanf(line, "walk %d %d", &i, &pct) == 2 && i >= 0 && i < PLAYERS_MAX) {
+	name[0] = 0;
+	if (sscanf(line, "walk %d %d %63s", &i, &pct, name) >= 2 && i >= 0 && i < PLAYERS_MAX) {
 		cp.pl[i].walk = pct != 0;
 		cp.pl[i].follower[0] = 0;
+		Str_Copy(cp.pl[i].walkWho, name, sizeof(cp.pl[i].walkWho));
 		Con_Printf("coop: player %d %s to its targets\n", i, pct ? "walks" : "goes");
 		return 1;
 	}
