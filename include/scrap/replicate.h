@@ -34,8 +34,6 @@
 
 #define REP_CH_RELIABLE 0
 #define REP_CH_UNRELIABLE 2
-/* client -> instance, reliable, no fields: the client's own rail ship (Rep_LocalAmbient) died by its player's hand */
-#define REP_MSG_RAILKILL 'R'
 /* instance -> client, reliable: the level's things the instance made at its start (items, machines, doors, places;
  * not replicated otherwise) once the client's level runs, so it can make the ones its own start did not; then their
  * changes. REP_MSG_STATICS: u8 count, per record name, class, model, action class (strings), position (QPos, signed
@@ -50,11 +48,6 @@
 #define REP_WELCOME_ARENA 0x01
 
 /* ---- both ---- */
-
-/* an entity every game makes for itself around its own camera, which the instance does not replicate and a watcher
- * keeps (the rail traffic: the lists NormalTraffic, MediumTraffic and HeavyTraffic place their ships around the
- * camera, so the headless instance has them all off; the indoor levels' FakeTraffic ships the same way) */
-byte Rep_LocalAmbient(struct cEntity *e);
 
 /* ---- instance (Replicate.c) ---- */
 
@@ -154,7 +147,5 @@ double Watch_InputTime(double now, double rtt, double lead);
 double Watch_ShownTime(void);
 /* the welcome said the world has no single player setup (REP_WELCOME_ARENA); 0 before the welcome */
 byte Watch_ArenaWorld(void);
-/* the own player killed a rail ship of this game (Traffic.RailTrafficDeath): told to the instance (REP_MSG_RAILKILL) */
-void Watch_RailKill(void);
 
 #endif

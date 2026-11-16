@@ -27,6 +27,7 @@
 #include "scrap/console.h"
 #include "scrap/game.h"
 #include "scrap/input.h"
+#include "scrap/players.h"
 #include "scrap/scheduler.h"
 #include "scrap/scorer.h"
 #include "scrap/scrap.h"
@@ -205,7 +206,8 @@ static void Main_InitMenuSys(double timeSpeed) {
 	Mode_ModPut("Menu", "LastTimeSpeed", &v);
 	/* not in the original: Coop_KeepTime (include/scrap/coop.h) */
 	if (!Main_NetGame() && !Coop_KeepTime()) {
-		Timer_SetSpeed(&g_pWorld->timer, (float)timeSpeed);
+		/* the instance keeps its clock for the other players (include/scrap/players.h) */
+		Players_SetTimeSpeed((float)timeSpeed);
 	}
 }
 
@@ -263,7 +265,7 @@ static void Main_BackToGame(int id) {
 	byte havePitch = Mode_ModGet("Menu", "currentSoundPitch", &pitch);
 	Native_ErrClear();
 	if (haveSpeed && (speed.type == NV_FLOAT || speed.type == NV_INT)) {
-		Timer_SetSpeed(&g_pWorld->timer, (float)(speed.type == NV_FLOAT ? speed.f : (double)speed.i));
+		Players_SetTimeSpeed((float)(speed.type == NV_FLOAT ? speed.f : (double)speed.i));
 	}
 	MODE_PRINTED(Menu, DrawScorer, "is", (long)id, mode);
 	double p = havePitch && pitch.type == NV_FLOAT ? pitch.f : havePitch && pitch.type == NV_INT ? (double)pitch.i : 0;

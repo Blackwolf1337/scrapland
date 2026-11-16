@@ -20,6 +20,7 @@
 #include "scrap/scrapmain.h"
 #include "scrap/scrapmodel.h"
 #include "scrap/scrapworld.h"
+#include "scrap/viewers.h"
 #include "scrap/world.h"
 #include "scrap/staticinit.h"
 
@@ -839,6 +840,18 @@ void NW_CamPos(float *x, float *y, float *z) {
 	CamCtl_GetCamPos(e, x, y, z);
 }
 
+/* pos of sector seen from the camera at cam drawn in camSector: through the portals of the sectors */
+static byte NW_SeenFrom(int sector, const vec3_t *pos, const vec3_t *cam, int camSector) {
+	int posSector = Sector_At(cam);
+	if (camSector >= 0 && posSector >= 0 && sector != camSector && sector != posSector) {
+		int s = Collision_Sector(sector, pos, cam, 1);
+		if (s != camSector) {
+			return s == posSector;
+		}
+	}
+	return 1;
+}
+
 byte CNodesWorld_PointSeen(CNodesWorld *self, const vec3_t *pos) {
 	vec3_t cam;
 
@@ -847,16 +860,19 @@ byte CNodesWorld_PointSeen(CNodesWorld *self, const vec3_t *pos) {
 	if (sector < 0) {
 		return 1;
 	}
-	NW_CamPos(&cam.x, &cam.y, &cam.z);
-	int camSector = Video_GetStatus();
-	int posSector = Sector_At(&cam);
-	if (camSector >= 0 && posSector >= 0 && sector != camSector && sector != posSector) {
-		int s = Collision_Sector(sector, pos, &cam, 1);
-		if (s != camSector) {
-			return s == posSector;
+	/* the instance: any of its viewers (include/scrap/viewers.h) */
+	if (Viewers_Server()) {
+		for (int i = 0; i < Viewers_Count(); i++) {
+			const cViewer *v = Viewers_At(i);
+			if (NW_SeenFrom(sector, pos, &v->pos, Sector_At(&v->pos))) {
+				return 1;
+			}
 		}
+		return 0;
 	}
-	return 1;
+	const cViewer *v = Viewers_At(0);
+	Viewers_CamPos(v, &cam);
+	return NW_SeenFrom(sector, pos, &cam, Viewers_CamSector(v, &cam));
 }
 
 byte CNodesWorld_GetRacePoint(CNodesWorld *self, vec3_t *out, const vec3_t *initial, float minDist,

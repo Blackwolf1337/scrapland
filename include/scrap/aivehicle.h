@@ -87,7 +87,8 @@ struct cAIVehicle {
 	float accel;			/* the acceleration of the move to a point */
 	float chaseMin;
 	float chaseMax;
-	byte unused_318;
+	byte viewer;			/* not in the original: the id + 1 of the viewer whose quota the vehicle fills, 0 none
+					   (the instance's traffic, include/scrap/viewers.h) */
 	byte pad_319[3];
 	int trackType;			/* 0..4, 5 none */
 	vec3_t trackPos;

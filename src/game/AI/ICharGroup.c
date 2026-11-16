@@ -16,6 +16,7 @@
 #include "scrap/fxmisc.h"
 #include "scrap/nodesworld.h"
 #include "scrap/scrap.h"
+#include "scrap/viewers.h"
 
 #define CAICHARGROUP_VFTABLE (&cAICharGroup_vftable)
 static const cAIEntityGroupVtbl cAICharGroup_vftable;
@@ -263,22 +264,17 @@ static inline float AICG_DistSq(const vec3_t *cam, const vec3_t *p) {
 
 byte cAICharGroup_GetReposPos(cAICharGroup *self, const vec3_t *pos, const char *name, vec3_t *out,
 	cEntity *target) {
-	cWorld *w = g_pWorld;
-	vec3_t cam = w->camPos[w->curCam];
 	float best = FLT_MAX;
-	AICharViewer view;
+	/* the viewer nearest to pos (single player: the camera of view 0) */
+	const cViewer *view = Viewers_Near(pos);
 
-	AIChar_Viewer(pos, &view);
-	if (view.net) {
-		if (!view.has) {
-			return 0;
-		}
-		cam = view.pos;
+	if (!view) {
+		return 0;
 	}
+	vec3_t cam = view->pos;
 	int bestZone = 0, bestPoint = 0;
 	byte found = 0;
 
-	(void)pos;
 	for (int i = 0; i < self->numZones; i++) {
 		cAICGZone *z = &self->zones[i];
 		if (strcmp(name, z->name)) {
@@ -318,16 +314,14 @@ byte cAICharGroup_FindRepos(cAICharGroup *self, vec3_t *out, cEntity *e, float m
 	int zi;
 
 	const char *name = ((cActCtrl *)WithLife_GetActCtrl(e))->cls->name;
-	AICharViewer view;
 	vec3_t at;
-
-	AIChar_Viewer(Entity_GetPos(e, &at), &view);
-	vec3_t cam = view.pos;
-	/* no place without the main camera entity (deleted by a script), or on the instance without a player */
-	if (!view.has) {
+	const cViewer *view = Viewers_Near(Entity_GetPos(e, &at));
+	/* no place without the main camera entity (deleted by a script), or on the instance without a viewer */
+	if (!view || !view->posed) {
 		return 0;
 	}
-	look = view.look;
+	vec3_t cam = view->pos;
+	look = view->dir;
 	for (zi = 0; zi < self->numZones; zi++) {
 		if (!strcmp(name, self->zones[zi].name)) {
 			break;
@@ -382,7 +376,7 @@ byte cAICharGroup_FindRepos(cAICharGroup *self, vec3_t *out, cEntity *e, float m
 		v.y = p->pos.y - cam.y;
 		v.z = p->pos.z - cam.z;
 		byte inFront = !(Vec3_Angle(&v, &look) > AICG_PI2);
-		if (flag && (inFront || minDist * minDist > d) && AIChar_ViewerSees(&view, &p->pos)) {
+		if (flag && (inFront || minDist * minDist > d) && AIChar_ViewerSees(view, &p->pos)) {
 			continue;
 		}
 		goodZone = zi;

@@ -249,22 +249,6 @@ int Rep_SlotOf(const cEntity *e) {
 	return e ? Rep_Find(e) : -1;
 }
 
-byte Rep_LocalAmbient(cEntity *e) {
-	static const char *const rail[] = { "NormalTraffic", "MediumTraffic", "HeavyTraffic" };
-	char **list = e->listNode.node.target;
-	const char *name = list ? *list : NULL;
-	/* the indoor levels' traffic behind their windows (InTraffic.FakeTraffic: no list, by its name) */
-	if (e->name && !strncmp(e->name, "FakeTraffic", 11)) {
-		return 1;
-	}
-	for (size_t i = 0; name && i < sizeof(rail) / sizeof(rail[0]); i++) {
-		if (!strcmp(name, rail[i])) {
-			return 1;
-		}
-	}
-	return 0;
-}
-
 /* the items the level's start made (every game makes them too): their names, hashed and sorted */
 static uint32_t Rep_NameHash(const char *s) {
 	uint32_t h = 2166136261u;
@@ -402,7 +386,7 @@ static void Rep_RecordChanges(Net2Host *host) {
 }
 
 static int Rep_Kind(cEntity *e) {
-	if (e->deadNode.target || Rep_LocalAmbient(e)) {
+	if (e->deadNode.target) {
 		return 0;
 	}
 	if (Entity_IsType(e, "item")) {
@@ -448,9 +432,13 @@ void Rep_LookOf(cEntity *e, int kind, char *out, int size) {
 		Str_PrintfQuiet(out, size, "C|%s", cls);
 		return;
 	}
-	Str_PrintfQuiet(out, size, "S|%s|%s|%s|%s|%s|%s|%s|%s", Rep_ModelPath(e),
+	/* the rail traffic (its AI states, the traffic's embedded effect of EmbeddedFXVehicle.c): T, the client's copy has no
+	 * AI and shows the effect by cVehicleTraffic.active */
+	cAIVehicle *ai = Entity_GetAI(e);
+	int st = ai ? cAIVehicle_GetState(ai) : -1;
+	Str_PrintfQuiet(out, size, "S|%s|%s|%s|%s|%s|%s|%s|%s|%s", Rep_ModelPath(e),
 		Rep_VarS(e, "MPil0"), Rep_VarS(e, "MEng0"), Rep_VarS(e, "MEng1"), Rep_VarS(e, "MEng2"), Rep_VarS(e, "MEng3"),
-		cls, cWeaponManager_GetWeapList(&Veh(e)->weapons));
+		cls, cWeaponManager_GetWeapList(&Veh(e)->weapons), st == AIV_TRAFFIC || st == AIV_TRAFFIC_INDOOR ? "T" : "");
 }
 
 /* the index + 1 of the action in its class, 0 none */
@@ -1455,7 +1443,6 @@ void Rep_PreFrame(uint64_t tick) {
 		}
 		pl->buttons = in.buttons;
 		NetPl_Step(e, &in, 0, 0);
-		NetPl_Bump(e, &in, NETPL_BUMP_REACH);
 		Players_Cur()->input = NULL;
 	}
 	Players_Leave(prev);
@@ -1759,21 +1746,6 @@ static void Rep_Inputs(RepPlayer *pl, const NetRepInput *in, int n, uint32_t sho
 	}
 }
 
-/* a client's rail ship (Rep_LocalAmbient) died by its player's hand: the alarm and the statistics as the rail
- * traffic's death gives them in single player (Traffic.RailTrafficDeath) */
-static void Rep_RailKill(int i) {
-	if (i < 0 || !rep.pl[i].used) {
-		return;
-	}
-	int was = Players_Enter(i);
-	nativeVal_t one;
-	Native_SetInt(&one, 1);
-	if (!Mode_SetAlarm(&one) || !Mode_IncSaveVar("Stats.Traffic")) {
-		Native_ErrClear();
-	}
-	Players_Leave(was);
-}
-
 byte Rep_Message(Net2Host *host, int conn, int channel, const uint8_t *data, int size) {
 	uint32_t rate, bits, shown;
 	uint16_t newest;
@@ -1794,10 +1766,6 @@ byte Rep_Message(Net2Host *host, int conn, int channel, const uint8_t *data, int
 	}
 	if (!rep.conn[conn].c) {
 		return 0;
-	}
-	if (channel == REP_CH_RELIABLE && data[0] == REP_MSG_RAILKILL && size == 1) {
-		Rep_RailKill(rep.conn[conn].player);
-		return 1;
 	}
 	if (data[0] == NETREP_MSG_ACK &&
 		NetRep_ReadAckInput(data, size, &newest, &bits, view, in, NETREP_INPUT_REDUNDANCY, &n, &shown)) {

@@ -2,9 +2,8 @@
 # Om_InitOutMap of OutMap.c, InMap_Init and InMap_Start of InMap.c, found by netclass.py --scan in their order):
 # File:call, tag, why. Tags: WORLD (once for the world, on the server), PLAYER_ENTER (for each player that enters:
 # the startup player, the arrival, the camera, the HUD), DEF (definitions both sides make), GROUP (a group of steps
-# whose own steps have rows: it runs where any of them runs), RAIL (the rail traffic: the server's, and until stage
-# 2.2 also the -mp2 client's own, Rep_LocalAmbient). A -mp2 client with a split start runs DEF, GROUP and RAIL steps
-# only (include/scrap/initsteps.h); a row of a function that is no module call names the C function. netclass.py
+# whose own steps have rows: it runs where any of them runs). The rail traffic is the server's (stage 2.2,
+# include/scrap/viewers.h). A -mp2 client with a split start runs DEF and GROUP steps only (include/scrap/initsteps.h); a row of a function that is no module call names the C function. netclass.py
 # counts the rows without a tag.
 InitLevel:Scrap.PreloadLibrary	DEF	the map libraries
 InitLevel:Init.PreloadMlibs	DEF	the map libraries
@@ -16,7 +15,7 @@ InitLevel:In_BossShip	WORLD	the boss's ship
 InitLevel:SuperDealModule.InitStatus	WORLD	the state of the super deal
 InitLevel:Places_LevelStatus	WORLD	the places of a free world
 InitLevel:Init.SetArrowSize	DEF	the size of the mission arrows
-InitLevel:SAI.IniAI	RAIL	the AI graphs, traffic and groups (server); the client's own rail traffic flies on them
+InitLevel:SAI.IniAI	WORLD	the AI graphs, traffic and groups (server)
 InitLevel:GVar.EscapeEvent	DEF	the menu key of the client
 InitLevel:Menu.Initialize	DEF	the HUD and menu skeleton
 InitLevel:GVar.MainMissionEvent	DEF	the mission info key of the client
@@ -31,7 +30,7 @@ InitLevel:GVar.OnCrazyDealTarget	WORLD	callback of the crazy deals
 InitLevel:Coop_ClientLevelStart	PLAYER_ENTER	a coop client's camera at the start
 InitLevel:Coop_StandIn	WORLD	the coop instance's stand-in player
 InitLevel:In_MapInit	WORLD	the setup of the map: NPCs, missions
-InitLevel:InitSteps_LevelInit	DEF	a -mp2 client: the definitions and the own rail traffic of Map.Init (Levels.h)
+InitLevel:InitSteps_LevelInit	DEF	a -mp2 client: the definitions of Map.Init (Levels.h)
 InitLevel:MapSnd.Init	DEF	the sound loops of the level
 InitLevel:Init.SetMapLabelText	DEF	the station label on the screen, 0.5 s after the start
 InitLevel:Init.MLibInit	WORLD	the setup of the map libraries
@@ -72,8 +71,8 @@ OutMap:Ffa.InitClient	PLAYER_ENTER	the original's network client
 OutMap:Accelerator.Init	WORLD	the accelerators
 OutMap:PhoneCab.Init	WORLD	the phone cabs
 OutMap:Parking.Init	WORLD	the parking
-OutMap:Traffic.InitAIProfiles	RAIL	the profiles of the rail traffic (a -mp2 client's own rail traffic)
-OutMap:Traffic.InitCivilTraffic	RAIL	the rail traffic (a -mp2 client's own)
+OutMap:Traffic.InitAIProfiles	WORLD	the profiles of the traffic and the rail traffic (server)
+OutMap:Traffic.InitCivilTraffic	WORLD	the rail traffic (server, around every player: include/scrap/viewers.h)
 OutMap:Split.Init	WORLD	the split screen game
 OutMap:Ffa.InitServer	WORLD	the original's network server
 OutMap:Chars.CreateStartupPlayer	PLAYER_ENTER	the startup player

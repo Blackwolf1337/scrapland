@@ -6,6 +6,8 @@ ScrapC has its own multiplayer (issue #1). It is not compatible with the origina
 
 A world is one coordinator plus one headless instance per level. The coordinator keeps the players, their saved progress, the list of instances and the travel between them. An instance is a headless `ScrapC -instance:<Level>` that runs one level for all players in it. The server decides everything, the clients send their input and predict their own character or ship. Elevators, metro rides and the doors that change level send the player to the instance of the target level (a loading screen, as in single player). An instance with nobody in it ends after a grace time, except the ones the coordinator keeps up.
 
+An instance simulates around a set of viewers, one per joined player, made each frame from the player's camera entity or else from the player's entity. Where single player reads the camera or the render flag of a model, the simulation (traffic, AI placement and pause, police, sentinels) reads the viewer set, and "seen" is a frustum test against the viewers. The rail and sky traffic that single player keeps around its camera is kept around every leader viewer. Viewers within 75000 units of an earlier leader share its quota, up to 16 leaders get a whole quota and more share the counts of 16, and traffic ships farther than 37500 units from every viewer run their slots every 0.15 s instead of 0.05 s. A load probe with 64 test viewers decided these values. A script that sets the clock speed in a player's context makes only that player's entity run faster by 1 / speed, because all players share one clock.
+
 A game that hosts runs the coordinator inside the game and starts the instances as child processes on the same machine. The host plays as a client of its own world.
 
 ## Playing
@@ -255,7 +257,7 @@ Free roam and Sandbox.
 - The news panels of the levels are not filled, the headlines are a HUD line. Contracts list only the players of the same level. The Press elevator took no rider in one test world and was not looked into.
 - The desk arrow shows no text on the clients (the use works, the text is missing). The Sputnik has no use arrow text either.
 - The hook of a ship's laser is not replicated, so other players do not see the beam.
-- Rail traffic is local on each client. A bump with it is accepted by the server within limits.
+- Rail traffic runs on the server around every player and is replicated like other traffic. The client makes none of its own, and the bump handling is gone.
 - Parked ships play their idle motor with a model chosen on each client, so the sound can differ between players.
 - The places have only the life listed above (no missions), the teleporters of GamblinDen, AB and ABIndoor are replaced by gates, and the generated AI graphs of the small arenas hold at most 4096 points.
 - The old PvP modes: the in-game menu has no Spectate and Team entries (use the keys). A spectator has a free camera at the first spawn, not one that follows players. The arena items (life, missiles) are the server's, and the client's own copies do not vanish when someone takes one. The Advanced options of the old Create page (password, forced ship, data rate) do nothing on the new network. Bots work only in levels with AI nodes.

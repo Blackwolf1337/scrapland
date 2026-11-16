@@ -12,6 +12,7 @@
 #include "scrap/chartype.h"
 #include "scrap/objentity.h"
 #include "scrap/scrapmodel.h"
+#include "scrap/viewers.h"
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
 #include "scrap/players.h"
@@ -292,8 +293,8 @@ void cFunctionaryLocalLogic_Work(cLocalLogic *elem, float dt) {
 			return;
 		}
 		float d = dt;
-		if (!Players_SeesModel(Obj_GetModel(p))) {
-			float cd = cWorld_GetMinCamDistSq(g_pWorld, Entity_GetPos(p, &tmp));
+		if (!Viewers_SeesModel(Obj_GetModel(p))) {
+			float cd = Viewers_MinDistSq(Entity_GetPos(p, &tmp));
 			if (g_CharProcessReduction * g_CharProcessReduction > cd) {
 				d = dt * 5.0f;
 			}

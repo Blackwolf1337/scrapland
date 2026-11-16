@@ -9,6 +9,7 @@
 #include "scrap/logic.h"
 #include "scrap/players.h"
 #include "scrap/scrapmodel.h"
+#include "scrap/viewers.h"
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
 
@@ -42,7 +43,7 @@ static cEntity *cPoliceBossLocalLogic_FindTarget(cLocalLogic *elem) {
 	}
 	cEntity *p = self->base.parent;
 	self->searchTime = g_PoliceBossMinSpecialActionTime * 0.5f;
-	if (!Players_SeesModel(Obj_GetModel(p))) {
+	if (!Viewers_SeesModel(Obj_GetModel(p))) {
 		return NULL;
 	}
 	cEntity *e = cEntityList_Nearest(g_pWorld->logic.genChars.police, Entity_GetPos(p, &tmp), p, NULL);

@@ -236,14 +236,15 @@ static void Watch_MissileHit(WatchProxy *p, const NetRepState *st, byte end) {
 	cMissileEntity_Hit(m, lost, 0.0f);
 }
 
-/* S|model|pilot|motor 0..3|class|weapon slots, C|class or M|model|weapon|effect|level (Replicate.c) */
+/* S|model|pilot|motor 0..3|class|weapon slots|T for the rail traffic, C|class or M|model|weapon|effect|level
+ * (Replicate.c) */
 cEntity *Watch_Build(const char *name, int kind, const char *look, const NetRepState *st, byte proxy) {
 	char buf[NETREP_LOOK_MAX + 1];
-	char *part[9];
+	char *part[10];
 	int n = 0;
 
 	Str_Copy(buf, look, sizeof(buf));
-	for (char *p = buf; n < 9;) {
+	for (char *p = buf; n < 10;) {
 		part[n++] = p;
 		p = strchr(p, '|');
 		if (!p) {
@@ -296,6 +297,10 @@ cEntity *Watch_Build(const char *name, int kind, const char *look, const NetRepS
 		return NULL;
 	}
 	Obj(e)->replica = proxy;
+	/* the rail traffic's embedded effect, chosen when the model comes (the client's copy has no AI state) */
+	if (n > 9 && part[9][0] == 'T') {
+		Veh(e)->traffic.active = 1;
+	}
 	if (part[1][0]) {
 		Entity_SetModel(e, part[1], 1.0f, 1.0f, 1.0f, 0);
 	}
@@ -714,16 +719,11 @@ byte Watch_ArenaWorld(void) {
 	return (watch.welcome & REP_WELCOME_ARENA) != 0;
 }
 
-void Watch_RailKill(void) {
-	uint8_t m = REP_MSG_RAILKILL;
-	Watch_SendReliable(&m, 1);
-}
-
-/* characters and ships the level scripts made: the instance has the real ones (not the client's own rail traffic) */
+/* characters and ships the level scripts made: the instance has the real ones (the rail traffic too) */
 static void Watch_Purge(void) {
 	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
 		if (e->deadNode.target || (!Entity_IsType(e, TYEN_CAR) && !Entity_IsType(e, TYEN_WALKCHAR)) ||
-			e == Play_Entity() || Rep_LocalAmbient(e)) {
+			e == Play_Entity()) {
 			continue;
 		}
 		if (!Obj(e)->replica && !Coop_ClientKeeps(e)) {
