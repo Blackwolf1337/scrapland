@@ -194,10 +194,11 @@ void ChType_MessengerTakeDataPack(cAbstractFile *params) {
 		SoundSys_PlayAt(g_pSound, s, Entity_GetPos(m, &t4), vol);
 	}
 	if (cPy_Function_IsValid(g_MessengerTakenCallback)) {
-		/* not in the original: the scripts' player is the one that takes it (an instance binds one at a time) */
-		Players_BindEntity(m);
+		/* not in the original: the scripts' player is the one that takes it (the instance: its context) */
+		int was = Players_EnterEntity(m);
 		cPy_Function_AddParamS(g_MessengerTakenCallback, name);
 		cPy_Function_Execute(g_MessengerTakenCallback, 0);
+		Players_Leave(was);
 	}
 }
 

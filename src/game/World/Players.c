@@ -4,6 +4,7 @@
  */
 #include <float.h>
 #include <math.h>
+#include <stdio.h>
 
 #include "scrap/alarm.h"
 #include "scrap/coop.h"
@@ -13,6 +14,7 @@
 #include "scrap/mathlib.h"
 #include "scrap/modvars.h"
 #include "scrap/netaudit.h"
+#include "scrap/netclass.h"
 #include "scrap/places.h"
 #include "scrap/play.h"
 #include "scrap/players.h"
@@ -29,7 +31,8 @@
 
 static cPlayer g_Pl[PLAYERS_MAX + 1];	/* + the world's own (PLAYERS_NONE) */
 static cPlayer *g_Cur = &g_Pl[PLAYERS_NONE];
-static int g_Turn;
+static cEntity *g_Runner;		/* the entity the world's context runs for (Players_Run), NULL */
+static int g_Turn;				/* frames: the rule ANY takes the next player each frame */
 
 #define g_Bound ((int)(g_Cur - g_Pl))
 #define g_NetPlayer(i) (g_Pl[i].ent)
@@ -68,21 +71,21 @@ byte Players_Is(cEntity *e) {
 	return Players_Of(e) >= 0;
 }
 
-/* the network audit of a read of "the player" on an instance (include/scrap/netaudit.h) */
-static void Players_AuditRead(const char *bound, const char *world, const char *site) {
+/* the network audit of a read of "the player" in a player's context on an instance */
+static void Players_AuditRead(const char *bound, const char *site) {
 	if (Players_Net()) {
-		NetAudit_Func(NA_PLAYER, g_Bound != PLAYERS_NONE ? bound : world, site);
+		NetAudit_Func(NA_PLAYER, bound, site);
 	}
 }
 
-static cEntity *Players_AnyOf(void) {
-	if (!Players_Net()) {
-		return cWorld_GetUsrEntity(g_pWorld, 0);
+static int Players_ResolveAt(const char *site, byte copy);
+
+/* the entity of a used player of the instance with one, else the first one, NULL */
+static cEntity *Players_EntOf(int i) {
+	if (i >= 0 && i < PLAYERS_MAX && g_Pl[i].used && g_NetPlayer(i)) {
+		return g_NetPlayer(i);
 	}
-	if (g_Bound != PLAYERS_NONE && g_NetPlayer(g_Bound)) {
-		return g_NetPlayer(g_Bound);
-	}
-	for (int i = 0; i < PLAYERS_MAX; i++) {
+	for (i = 0; i < PLAYERS_MAX; i++) {
 		if (g_NetPlayer(i)) {
 			return g_NetPlayer(i);
 		}
@@ -90,9 +93,22 @@ static cEntity *Players_AnyOf(void) {
 	return NULL;
 }
 
+/* "the player": outside the instance player 0; the current player's entity; in the world's context the player of the
+ * site's rule (Players_ResolveAt; the rule WORLD: none) */
+static cEntity *Players_AnyOf(const char *site, const char *bound) {
+	if (!Players_Net()) {
+		return cWorld_GetUsrEntity(g_pWorld, 0);
+	}
+	if (g_Cur != &g_Pl[PLAYERS_NONE] && g_Cur->ent) {
+		Players_AuditRead(bound, site);
+		return g_Cur->ent;
+	}
+	int i = Players_ResolveAt(site, 0);
+	return i == PLAYERS_NONE ? NULL : Players_EntOf(i);
+}
+
 cEntity *Players_AnyAt(const char *site) {
-	Players_AuditRead("player.any.bound:", "player.any.world:", site);
-	return Players_AnyOf();
+	return Players_AnyOf(site, "player.any.bound:");
 }
 
 static float Players_DistSq(cEntity *e, const vec3_t *pos) {
@@ -199,9 +215,8 @@ cEntity *Players_ScriptAt(int i, const char *site) {
 	if (!Players_Net()) {
 		return cWorld_GetUsrEntity(g_pWorld, i);
 	}
-	Players_AuditRead("player.read.bound:", "player.read.world:", site);
 	/* a coop instance's stand-in for the level's start without a member (include/scrap/coop.h) */
-	cEntity *e = i == 0 ? Players_AnyOf() : NULL;
+	cEntity *e = i == 0 ? Players_AnyOf(site, "player.read.bound:") : NULL;
 	return i == 0 && !e ? Coop_StandInEntity() : e;
 }
 
@@ -246,7 +261,7 @@ void Players_Join(int i, int money) {
 		return;
 	}
 	if (g_Bound == i) {
-		Players_Bind(PLAYERS_NONE);
+		Players_Enter(PLAYERS_NONE);
 	}
 	cPlayer *s = &g_Pl[i];
 	/* the alarm of the level (its guaranteed characters, its lock) without the world's level and status */
@@ -275,20 +290,131 @@ void Players_Part(int i) {
 		return;
 	}
 	if (g_Bound == i) {
-		Players_Bind(PLAYERS_NONE);
+		Players_Enter(PLAYERS_NONE);
 	}
 	g_Pl[i].used = 0;
 	ModVar_OverClearPlayer(i);
 }
 
-void Players_Bind(int i) {
-	if (!Players_Net()) {
-		return;
+int Players_Enter(int i) {
+	int prev = g_Bound;
+	if (Players_Net()) {
+		g_Cur = &g_Pl[Players_Used(i) ? i : PLAYERS_NONE];
 	}
-	if (!Players_Used(i)) {
+	return prev;
+}
+
+void Players_Leave(int prev) {
+	Players_Enter(prev);
+}
+
+int Players_EnterEntity(cEntity *e) {
+	int i = Players_Of(e);
+	return Players_Enter(i >= 0 ? i : Players_ShipOwner(e));
+}
+
+int Players_EnterOwner(cEntity *e) {
+	int i = e ? Players_Slot(e) - PLAYERS_NET_SLOT : -1;
+	return Players_Enter(i >= 0 && i < PLAYERS_MAX ? i : Players_ShipOwner(e));
+}
+
+int Players_EnterJoined(int i, uint16_t joined) {
+	return Players_Enter(Players_Used(i) && g_Pl[i].joined == joined ? i : PLAYERS_NONE);
+}
+
+cEntity *Players_Run(cEntity *e) {
+	cEntity *prev = g_Runner;
+	g_Runner = e;
+	return prev;
+}
+
+int Players_Current(void) {
+	return g_Bound;
+}
+
+int Players_ActingAt(const char *site) {
+	if (!Players_Net() || g_Cur != &g_Pl[PLAYERS_NONE]) {
+		return g_Bound;
+	}
+	return Players_ResolveAt(site, 0);
+}
+
+/* ---- the resolver of "the player" in the world's context ---- */
+
+/* the rules of the C sites, found once by the address of the site's name (__func__) */
+#define PLAYERS_RULES 1024
+static struct {
+	const char *site;
+	int8_t tag;
+} g_Rules[PLAYERS_RULES];
+
+static netTag_t Players_RuleOf(const char *site, byte copy) {
+	if (copy) {
+		return NetClass_Find(NCT_PLAYERREAD, site);
+	}
+	unsigned h = (unsigned)(((uintptr_t)site >> 3) * 2654435761u) % PLAYERS_RULES;
+	for (int k = 0; k < PLAYERS_RULES; k++, h = (h + 1) % PLAYERS_RULES) {
+		if (g_Rules[h].site == site) {
+			return (netTag_t)g_Rules[h].tag;
+		}
+		if (!g_Rules[h].site) {
+			g_Rules[h].site = site;
+			g_Rules[h].tag = (int8_t)NetClass_Find(NCT_PLAYERREAD, site);
+			return (netTag_t)g_Rules[h].tag;
+		}
+	}
+	return NetClass_Find(NCT_PLAYERREAD, site);
+}
+
+/* some used player with an entity, the next one each frame (code that polls "the player" every frame sees all of them
+ * in turn), PLAYERS_NONE */
+static int Players_First(void) {
+	for (int k = 0; k < PLAYERS_MAX; k++) {
+		int i = (g_Turn + k) % PLAYERS_MAX;
+		if (g_Pl[i].used && g_NetPlayer(i)) {
+			return i;
+		}
+	}
+	return PLAYERS_NONE;
+}
+
+/* the player nearest to the entity the world's context runs for (Players_Nearest: a wanted one first), without one as
+ * the rule ANY */
+static int Players_NearRunner(void) {
+	int i = g_Runner ? Players_Of(Players_Nearest(&g_Runner->pos)) : -1;
+	return i >= 0 ? i : Players_First();
+}
+
+/* the player a read of "the player" at site (a C function, or Module.variable with copy) gets in the world's context
+ * of the instance, by the site's row of tools/script/netclass/playerread.tsv: NEAREST (to the entity that runs), ANY
+ * (some player, the next one each frame), PARTY (the coop party's acting member: its mission's, else the nearest; outside coop NEAREST),
+ * WORLD (no player: the world's own money, alarm and module variables). A site without a row gets PARTY in coop and
+ * NEAREST elsewhere and is counted as player.world.norule (the gate of stage 1.3: none on the city levels). */
+static int Players_ResolveAt(const char *site, byte copy) {
+	netTag_t tag = Players_RuleOf(site, copy);
+	const char *key;
+	int i;
+
+	if (tag == NC_WORLD) {
+		key = "player.world.world:";
 		i = PLAYERS_NONE;
+	} else if (tag == NC_ANY) {
+		key = "player.world.any:";
+		i = Players_First();
+	} else {
+		key = tag == NC_NEAREST ? "player.world.nearest:" : tag == NC_PARTY ? "player.world.party:" :
+			"player.world.norule:";
+		i = (tag == NC_PARTY || tag != NC_NEAREST) && Coop_On() ? Coop_MissionPlayer() : -1;
+		if (i < 0 || !g_Pl[i].used) {
+			i = Players_NearRunner();
+		}
 	}
-	g_Cur = &g_Pl[i];
+	if (copy) {
+		NetAudit_Name(NA_PLAYER, key, site);
+	} else {
+		NetAudit_Func(NA_PLAYER, key, site);
+	}
+	return i;
 }
 
 cPlayer *Players_Cur(void) {
@@ -303,19 +429,35 @@ cPlayer *Players_Ctx(int i) {
 }
 
 int Players_VarOwnerAt(const char *module, const char *name) {
-	(void)module;
-	(void)name;
-	return Players_Net() && g_Cur != &g_Pl[PLAYERS_NONE] ? g_Bound : -1;
+	if (!Players_Net()) {
+		return -1;
+	}
+	if (g_Cur != &g_Pl[PLAYERS_NONE]) {
+		return g_Bound;
+	}
+	char key[128];
+	snprintf(key, sizeof(key), "%s.%s", module, name);
+	int i = Players_ResolveAt(key, 1);
+	return i == PLAYERS_NONE ? -1 : i;
+}
+
+/* the context money and alarm of a read at site: the current one, in the world's context of the instance the player
+ * of the site's rule */
+static cPlayer *Players_CtxAt(const char *site) {
+	if (g_Cur != &g_Pl[PLAYERS_NONE] || !Players_Net()) {
+		return g_Cur;
+	}
+	return &g_Pl[Players_ResolveAt(site, 0)];
 }
 
 int *Players_CurMoneyAt(const char *site) {
-	(void)site;
-	return g_Cur == &g_Pl[PLAYERS_NONE] ? &g_pWorld->money : &g_Cur->money;
+	cPlayer *p = Players_CtxAt(site);
+	return p == &g_Pl[PLAYERS_NONE] ? &g_pWorld->money : &p->money;
 }
 
 cAlarm *Players_CurAlarmAt(const char *site) {
-	(void)site;
-	return g_Cur == &g_Pl[PLAYERS_NONE] ? &g_pWorld->alarm : &g_Cur->alarm;
+	cPlayer *p = Players_CtxAt(site);
+	return p == &g_Pl[PLAYERS_NONE] ? &g_pWorld->alarm : &p->alarm;
 }
 
 int Players_OfAlarm(const cAlarm *a) {
@@ -343,18 +485,17 @@ void Players_SetShip(int i, cEntity *ship) {
 	if (!Players_Used(i)) {
 		return;
 	}
-	int was = g_Bound;
 	cPlayer *s = &g_Pl[i];
 	s->ship = ship;
 	Str_Copy(s->shipName, ship ? ship->name : "", sizeof(s->shipName));
-	Players_Bind(i);
+	int was = Players_Enter(i);
 	if (ship) {
 		Mode_PutHandle(PLAYERS_VAR_MODULE, "PlayerShip", ship);
 	} else {
 		Mode_ModNone(PLAYERS_VAR_MODULE, "PlayerShip");
 	}
 	Native_ErrClear();
-	Players_Bind(was);
+	Players_Leave(was);
 }
 
 cEntity *Players_Ship(int i) {
@@ -377,50 +518,6 @@ int Players_ShipOwner(cEntity *e) {
 
 uint16_t Players_Joined(int i) {
 	return Players_Net() && i >= 0 && i < PLAYERS_MAX ? g_Pl[i].joined : 0;
-}
-
-void Players_BindJoined(int i, uint16_t joined) {
-	if (Players_Used(i) && g_Pl[i].joined == joined) {
-		Players_Bind(i);
-	}
-}
-
-void Players_BindEntity(cEntity *e) {
-	if (Players_Net()) {
-		int i = Players_Of(e);
-		Players_Bind(i >= 0 ? i : Players_ShipOwner(e));
-	}
-}
-
-void Players_BindOwner(cEntity *e) {
-	if (Players_Net() && e) {
-		int i = Players_Slot(e) - PLAYERS_NET_SLOT;
-		Players_Bind(i >= 0 && i < PLAYERS_MAX ? i : Players_ShipOwner(e));
-	}
-}
-
-void Players_BindNearest(const vec3_t *pos) {
-	if (Players_Net()) {
-		Players_Bind(Players_Of(Players_Nearest(pos)));
-	}
-}
-
-void Players_BindTurn(void) {
-	if (!Players_Net()) {
-		return;
-	}
-	for (int k = 0; k < PLAYERS_MAX; k++) {
-		int i = (g_Turn + k) % PLAYERS_MAX;
-		if (g_Pl[i].used && g_NetPlayer(i)) {
-			Players_Bind(i);
-			return;
-		}
-	}
-	Players_Bind(PLAYERS_NONE);
-}
-
-int Players_Bound(void) {
-	return g_Bound;
 }
 
 int Players_Money(int i) {
@@ -465,9 +562,10 @@ void Players_LevelReset(int source) {
 	}
 }
 
-void Players_LevelRaise(int source, int level) {
-	if (Players_Net() && g_Cur->level[source] < level) {
-		g_Cur->level[source] = (int8_t)level;
+void Players_LevelRaiseAt(int source, int level, const char *site) {
+	cPlayer *p = Players_Net() ? Players_CtxAt(site) : NULL;
+	if (p && p->level[source] < level) {
+		p->level[source] = (int8_t)level;
 	}
 }
 
@@ -482,11 +580,11 @@ void Players_UpdateAlarms(float dt) {
 	}
 	for (int i = 0; i < PLAYERS_MAX; i++) {
 		if (g_Pl[i].used && g_NetPlayer(i)) {
-			Players_Bind(i);
+			int prev = Players_Enter(i);
 			Alarm_Update(&g_Pl[i].alarm, dt);
+			Players_Leave(prev);
 		}
 	}
-	Players_BindTurn();
 }
 
 void Players_SetGrow(int level) {
@@ -505,8 +603,8 @@ void Players_SetGrow(int level) {
 		for (int k = 0; k < PLAYERS_LEVELS; k++) {
 			l = g_Pl[i].level[k] > l ? g_Pl[i].level[k] : l;
 		}
-		Players_Bind(i);
+		int prev = Players_Enter(i);
 		Alarm_SetGrow(&g_Pl[i].alarm, l);
+		Players_Leave(prev);
 	}
-	Players_BindTurn();
 }

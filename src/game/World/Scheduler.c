@@ -61,7 +61,7 @@ static cScheduledFunc *cScheduledFunc_New(float time, const char *name) {
 	Native_SetNone(&f->args);
 	f->active = 1;
 	f->site = NULL;
-	f->player = (byte)Players_Bound();
+	f->player = (byte)Players_Current();
 	f->joined = Players_Joined(f->player);
 	f->time = time;
 	Str_Copy(f->name, name, sizeof(f->name));
@@ -71,10 +71,9 @@ static cScheduledFunc *cScheduledFunc_New(float time, const char *name) {
 /* the call with the function marked as running */
 static void cScheduledFunc_Run(cScheduledFunc *self) {
 	byte ok;
-	int bound = Players_Bound();
 	self->active = 0;
 	g_SchedulerCalls[self->site != NULL]++;
-	Players_BindJoined(self->player, self->joined);
+	int prev = Players_EnterJoined(self->player, self->joined);
 	if (self->args.type != NV_TUPLE) {
 		ok = Native_Raise(NE_TYPE, "argument list must be a tuple");
 	} else {
@@ -83,7 +82,7 @@ static void cScheduledFunc_Run(cScheduledFunc *self) {
 	if (!ok) {
 		Native_ErrPrint();
 	}
-	Players_Bind(bound);
+	Players_Leave(prev);
 	self->active = 1;
 }
 
@@ -149,11 +148,15 @@ void Scheduler_Clear(cScheduledFuncStack *self) {
 
 void Scheduler_Delete(cScheduledFuncStack *self, const char *name) {
 	cSchedList *list = &self->list;
+	/* the instance: a player's context deletes its own calls and the world's, not the other players' (their chains of
+	 * the same name go on); the world's context all of them */
+	int player = Players_Current();
 
 	list->iter = list->head;
 	while (list->iter) {
 		cScheduledFunc *f = list->iter->func;
-		if (!strcmp(name, f->name) && f->active) {
+		if (!strcmp(name, f->name) && f->active &&
+			(player == PLAYERS_NONE || f->player == PLAYERS_NONE || f->player == player)) {
 			cScheduledFunc_Free(f);
 			SchedList_RemoveIter(list);
 		} else {

@@ -550,15 +550,15 @@ void Travel_Joined(int player) {
 		return;
 	}
 	if (CoordKv_Get(p->state, p->len, "alarm", v, sizeof(v))) {
-		Players_Bind(player);
+		int was = Players_Enter(player);
 		Alarm_Set(Players_CurAlarm(), (float)crt_atof(v));
-		Players_BindTurn();
+		Players_Leave(was);
 	}
 	cEntity *door = e && p->door[0] ? Tr_Door(p->door, &e->pos) : NULL;
 	if (door) {
-		Players_Bind(player);
+		int was = Players_Enter(player);
 		byte ok = Elevator_Arrive(e->name, door->name);
-		Players_BindTurn();
+		Players_Leave(was);
 		if (!ok) {
 			Native_ErrPrint();
 		}
@@ -693,11 +693,11 @@ static void Tr_Pick(int conn, const uint8_t *data, int size) {
 	}
 	Str_PrintfQuiet(opt, sizeof(opt), "MoveLevel %s", station);
 	Con_Printf("instance: player %d takes the metro to %s\n", i, station);
-	Players_Bind(i);
+	int was = Players_Enter(i);
 	if (!PORT_CALL(Elevator, UseElevator, NULL, "ssss", e->name, tr.pl[i].metroDoor, opt, "")) {
 		Native_ErrPrint();
 	}
-	Players_BindTurn();
+	Players_Leave(was);
 	tr.pl[i].metroDoor[0] = 0;
 }
 
@@ -803,9 +803,9 @@ void Travel_TestUse(int player, const char *entity, const char *option) {
 		return;
 	}
 	Con_Printf("instance: player %d uses %s (%s)\n", player, entity, a->nOpt ? cArrowIndicator_GetOpt(a, a->iOpt) : "");
-	Players_Bind(player);
+	int was = Players_Enter(player);
 	cArrowIndicator_Execute(a, e);
-	Players_BindTurn();
+	Players_Leave(was);
 }
 
 void Travel_TestGoto(int player, const char *entity, float dx, float dz) {

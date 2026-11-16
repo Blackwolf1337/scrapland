@@ -3044,6 +3044,26 @@ static const netClassRow_t nc_initstep[] = {
 	{ "OutMap:Traffic.InitAIProfiles", NC_WORLD },
 	{ "OutMap:Traffic.InitCivilTraffic", NC_WORLD },
 };
+static const netClassRow_t nc_playerread[] = {
+	{ "Doors_Slot", NC_NEAREST },
+	{ "Doors_Usr0AutoDoorSlot", NC_NEAREST },
+	{ "MT_TriggerTakenN", NC_NEAREST },
+	{ "Mi_BoxKind", NC_NEAREST },
+	{ "Mi_GiveMoney", NC_NEAREST },
+	{ "Om_GetFreeSpawnPos", NC_NEAREST },
+	{ "Om_SpawnPosBy", NC_NEAREST },
+	{ "Parking.PlayerShip", NC_NEAREST },
+	{ "Parking_Think", NC_ANY },
+	{ "Pk_ParkedDeatN", NC_NEAREST },
+	{ "Speech.LaunchedTauntEntityName", NC_NEAREST },
+	{ "Taunts_Think", NC_ANY },
+	{ "Taunts_Warnings", NC_ANY },
+	{ "Veh_OnClientDeathN", NC_NEAREST },
+	{ "cEnemiesTraffic_Think", NC_ANY },
+	{ "cExtPolice_Think", NC_ANY },
+	{ "cMessengers_Think", NC_ANY },
+	{ "cShipGroupData_Think", NC_ANY },
+};
 
 const netClassTable_t g_NetClassTables[NCT_TABLES] = {
 	{ "api", nc_api, sizeof(nc_api) / sizeof(nc_api[0]) },
@@ -3053,4 +3073,5 @@ const netClassTable_t g_NetClassTables[NCT_TABLES] = {
 	{ "modvar", nc_modvar, sizeof(nc_modvar) / sizeof(nc_modvar[0]) },
 	{ "savevar", nc_savevar, sizeof(nc_savevar) / sizeof(nc_savevar[0]) },
 	{ "initstep", nc_initstep, sizeof(nc_initstep) / sizeof(nc_initstep[0]) },
+	{ "playerread", nc_playerread, sizeof(nc_playerread) / sizeof(nc_playerread[0]) },
 };

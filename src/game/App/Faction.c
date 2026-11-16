@@ -413,7 +413,7 @@ byte Faction_Uniform(const char *cls) {
 		return 0;
 	}
 	const FactionTable *t = Faction_Table();
-	FrPlayer *p = Fr_Player(Players_Bound());
+	FrPlayer *p = Fr_Player(Players_Acting());
 	if (!t || !p || p->faction < 0) {
 		return 0;
 	}
@@ -651,10 +651,9 @@ int Fr_Money(int i) {
 }
 
 void Fr_AddMoney(int i, int delta) {
-	int prev = Players_Bound();
-	Players_Bind(i);
+	int prev = Players_Enter(i);
 	*Players_CurMoney() += delta;
-	Players_Bind(prev);
+	Players_Leave(prev);
 }
 
 /* the direction e looks to (a character's view, a ship's angles) */
@@ -991,10 +990,9 @@ static int Fr_Arrest(int i, cEntity *e) {
 	int has = Fr_Money(j);
 	fine = fine > has ? (has > 0 ? has : 0) : fine;
 	Fr_AddMoney(j, -fine);
-	int prev = Players_Bound();
-	Players_Bind(j);
+	int prev = Players_Enter(j);
 	Alarm_Set(Players_CurAlarm(), 0.0f);
-	Players_Bind(prev);
+	Players_Leave(prev);
 	Fr_AddMoney(i, t->reward * level);
 	FactionWanted_Init(&q->wanted);
 	q->level = 0;
@@ -1013,8 +1011,7 @@ static int Fr_Backup(int i, cEntity *e) {
 		/* outdoors: police ships of the wave type at a free spawn place near the officer (VehiclesNPC.MakeAI as
 		 * OutPolice.MakePoli does, but not far from it) into the police cars; each goes for the nearest wanted
 		 * player */
-		int prev = Players_Bound();
-		Players_Bind(i);
+		int prev = Players_Enter(i);
 		int made = 0, j = Fr_Nearest(i, e, FR_BACKUP_OUTDOOR, 0.0f, Fr_IsWanted);
 		for (int k = 0; k < t->backupCount; k++) {
 			nativeVal_t ship = { 0 }, list;
@@ -1031,7 +1028,7 @@ static int Fr_Backup(int i, cEntity *e) {
 			Native_Free(&ship);
 			Native_Free(&list);
 		}
-		Players_Bind(prev);
+		Players_Leave(prev);
 		Con_Printf("factions: player %d called %d police ships%s%d\n", i, made, j >= 0 ? " on player " : ", no suspect ",
 			j);
 	} else {
@@ -1117,8 +1114,7 @@ static void Fr_Request(int i, int a) {
 		Fr_Notice(i, FT_NOT_READY, 0, NULL, NULL);
 		return;
 	}
-	int prev = Players_Bound();
-	Players_Bind(i);
+	int prev = Players_Enter(i);
 	int ok = 0;
 	switch (a) {
 	case FA_JOIN:
@@ -1143,7 +1139,7 @@ static void Fr_Request(int i, int a) {
 		ok = FrD_Request(i, e, a) > 0;
 		break;
 	}
-	Players_Bind(prev);
+	Players_Leave(prev);
 	if (ok) {
 		/* the cooldown of the faction it is in now (join and leave change it) */
 		cd = Faction_Cooldown(t, p->faction, a);
@@ -1269,10 +1265,9 @@ static void Fr_Crimes(void) {
 		FactionWanted_Decay(t, &p->wanted, 1.0f / NETREP_TICK_HZ, al->on);
 		int level = FactionWanted_Level(t, &p->wanted);
 		if (level > p->level) {
-			int prev = Players_Bound();
-			Players_Bind(i);
+			int prev = Players_Enter(i);
 			Alarm_Set(Players_CurAlarm(), 1.0f);
-			Players_Bind(prev);
+			Players_Leave(prev);
 			Fr_Notice(i, FT_WANTED, level, NULL, NULL);
 		}
 		p->level = level;

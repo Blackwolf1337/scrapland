@@ -1,0 +1,28 @@
+# The reads of "the player" in the world's context of an instance (stage 1.3 of the second multiplayer design: the
+# resolver Players_ResolveAt of src/game/World/Players.c): the C function that reads it (Players_Any, Players_Script
+# and the scripts' accessors Mode_Usr*, the money and the alarm of the context, Players_ActingAt, Players_LevelRaise)
+# or Module.variable for a module variable tagged PLAYER (or PARTY outside coop), tag, why. Tags: NEAREST (the player
+# nearest to the entity that runs: an entity's update, a logic's think of an entity; a wanted one first; as ANY when
+# nothing runs), ANY (some player, the next one each frame: code that polls every frame sees all in turn), PARTY
+# (coop: the party's acting member, its mission's; outside coop as NEAREST), WORLD (no player: the world's own money,
+# alarm and module variables, no entity). A site without a row is counted by the audit as player.world.norule and
+# resolved as PARTY in coop and NEAREST elsewhere. The rows come from the audit of the instance runs (the city levels
+# with 8 bots, the coop chapters).
+Doors_Slot	NEAREST	a door opens for the player near it
+Doors_Usr0AutoDoorSlot	NEAREST	an automatic door opens for the player near it
+cMessengers_Think	ANY	the messengers' group polls the player every frame (each player in turn)
+Parking_Think	ANY	one parking zone per frame for the player's ship or foot (each player in turn)
+cEnemiesTraffic_Think	ANY	the enemies' traffic polls the player every frame (each player in turn)
+cExtPolice_Think	ANY	the police wave follows some player (each car goes for the nearest: Players_Nearest)
+Taunts_Warnings	ANY	the police warnings poll the alarm every frame (each player in turn)
+Taunts_Think	ANY	the police taunts poll the alarm every frame (each player in turn)
+MT_TriggerTakenN	NEAREST	a ship group's trigger taken by a ship that is no player's: is it the player's (the one near it)
+cShipGroupData_Think	ANY	the mosquitos and mad hunters poll the intruder every half second (each player in turn)
+Parking.PlayerShip	NEAREST	the own ship of the player near the entity that runs (a parked ship's death, a parking's callback)
+Speech.LaunchedTauntEntityName	NEAREST	the taunt of the NPC near the player
+Veh_OnClientDeathN	NEAREST	a ship died by no player's hand: the player near it
+Om_GetFreeSpawnPos	NEAREST	an NPC's respawn place around the player near it
+Om_SpawnPosBy	NEAREST	an NPC's respawn place around the player near it
+Mi_GiveMoney	NEAREST	a mission item's money for the player near it
+Mi_BoxKind	NEAREST	a mission box for the player near it
+Pk_ParkedDeatN	NEAREST	a parked ship died: the player near it

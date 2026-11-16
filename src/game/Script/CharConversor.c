@@ -168,14 +168,14 @@ static byte Cc_ConvertCharIn(const nativeVal_t *uname, const nativeVal_t *cname)
 }
 
 /* not in the original: on a coop instance the conversion is that of the member whose character it is (its new
- * character and money are that member's, include/scrap/players.h), whoever is bound when the scripts call it */
+ * character and money are that member's, include/scrap/players.h), whatever context the scripts call it in */
 static byte Cc_ConvertChar(const nativeVal_t *uname, const nativeVal_t *cname) {
-	int bound = Players_Bound();
+	int was = Players_Current();
 	if (uname->type == NV_STR) {
-		Players_BindOwner(World_FindEntity(Native_Text(uname)));
+		Players_EnterOwner(World_FindEntity(Native_Text(uname)));
 	}
 	byte ok = Cc_ConvertCharIn(uname, cname);
-	Players_Bind(bound);
+	Players_Leave(was);
 	return ok;
 }
 

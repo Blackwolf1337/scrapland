@@ -176,9 +176,10 @@ static void cExtPolice_Think(cExtPolice *self) {
 			}
 		} else if (alarm) {
 			if (cAIVehicle_ControlFlag(ai) && AIMove_GetTargetEnt(ai) == near) {
-				Players_BindEntity(near);
+				int was = Players_EnterEntity(near);
 				Alarm_Set(Players_CurAlarm(), 1.0f);
 				Players_LevelRaise(PLAYERS_LV_POLICE, 1);
+				Players_Leave(was);
 				self->raised = 1;
 			}
 		}

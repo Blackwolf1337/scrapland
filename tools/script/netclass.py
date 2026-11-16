@@ -35,7 +35,8 @@ GAME = os.path.join(ROOT, 'src/game')
 
 # every tag, in the order of the enum (NC_UNTAGGED is 0)
 TAGS = ['SIM', 'DEF', 'PRES_STATE', 'PRES_EVENT', 'UI', 'QUERY', 'CLIENT', 'NET_OLD', 'STATE', 'EVENT',
-	'SERVER_ONLY', 'CLIENT_ONLY', 'WORLD_SETTING', 'SCENE', 'WORLD', 'PLAYER', 'PARTY', 'STORY', 'PLAYER_ENTER']
+	'SERVER_ONLY', 'CLIENT_ONLY', 'WORLD_SETTING', 'SCENE', 'WORLD', 'PLAYER', 'PARTY', 'STORY', 'PLAYER_ENTER',
+	'NEAREST', 'ANY']
 # the tables: name, the tags its rows may have, what a row is
 TABLES = collections.OrderedDict([
 	('api', (['SIM', 'DEF', 'PRES_STATE', 'PRES_EVENT', 'UI', 'QUERY', 'CLIENT', 'NET_OLD'],
@@ -47,6 +48,8 @@ TABLES = collections.OrderedDict([
 	('modvar', (['WORLD', 'PLAYER', 'PARTY', 'CLIENT'], 'a script module variable: Module.name')),
 	('savevar', (['STORY', 'PLAYER'], 'a save variable prefix (the name up to its first dot)')),
 	('initstep', (['WORLD', 'PLAYER_ENTER', 'DEF'], 'a step of the level start: File:call')),
+	('playerread', (['NEAREST', 'ANY', 'PARTY', 'WORLD'],
+		'a read of "the player" in the world context: C function or Module.variable')),
 ])
 
 Row = collections.namedtuple('Row', 'name tag why')

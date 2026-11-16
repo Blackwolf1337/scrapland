@@ -392,11 +392,12 @@ void cWithLifeEntity_Tick(cEntity *self, float dt) {
 /* the OnDamage or OnDeath function of the entity, then of its entity list: name, attacker (and damage) */
 static void WL_RunFunc(cEntity *self, cPy_Function *own, size_t listOff, const int *damage) {
 	cWithLifeEntity *w = WLife(self);
+	int was = PLAYERS_NONE;
 
 	/* the instance: the scripts' player is the attacker when it is a player, else the entity when it is one */
 	if (g_Instance) {
 		cEntity *by = w->attack.hitBy.target ? World_FindEntity(Nto1Node_TargetName(&w->attack.hitBy)) : NULL;
-		Players_BindEntity(Players_Is(by) ? by : self);
+		was = Players_EnterEntity(Players_Is(by) ? by : self);
 		Faction_Crime(self, by, damage == NULL);
 	}
 	cPy_Function_AddParamS(own, self->name);
@@ -415,6 +416,7 @@ static void WL_RunFunc(cEntity *self, cPy_Function *own, size_t listOff, const i
 		}
 		cPy_Function_Execute(f, 0);
 	}
+	Players_Leave(was);
 }
 
 void cWithLifeEntity_OnDamage(cEntity *self, int damage) {

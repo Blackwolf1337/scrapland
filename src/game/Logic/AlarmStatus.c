@@ -88,8 +88,16 @@ static void Alarm_Reset(cAlarm *self) {
 	cString_Assign(g_PoliceTauntRace, g_PoliceTauntRace + 1);
 }
 
-/* on: the callback and the attack; while on the type is kept and the gears and a sentinel go for the player */
+static void Alarm_SetOnIn(cAlarm *self, byte on);
+/* on: the callback and the attack; while on the type is kept and the gears and a sentinel go for the player (the
+ * instance: in the context of the player whose alarm it is) */
 void Alarm_SetOn(cAlarm *self, byte on) {
+	int was = Players_Enter(Players_OfAlarm(self));
+	Alarm_SetOnIn(self, on);
+	Players_Leave(was);
+}
+
+static void Alarm_SetOnIn(cAlarm *self, byte on) {
 	vec3_t tmp;
 
 	if (!Alarm_Open(self)) {

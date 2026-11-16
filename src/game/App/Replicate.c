@@ -895,7 +895,7 @@ static cEntity *Rep_CallShip(int i, cEntity *ch, byte side) {
 	cEntity *ship = NULL;
 	vec3_t at, p;
 
-	/* the money is the bound player's (Rep_PreFrame binds it); the coop story calls no ship indoors */
+	/* the money is the current player's (Rep_PreFrame enters its context); the coop story calls no ship indoors */
 	if ((pl->rebuild > 0 && *Players_CurMoney() < pl->rebuild) || Coop_NoShipCall()) {
 		return NULL;
 	}
@@ -1045,7 +1045,7 @@ static void Rep_DropOwn(int i) {
 	if (!e) {
 		return;
 	}
-	Players_Bind(i);
+	int was = Players_Enter(i);
 	Obj(e)->netStep = 0;
 	if (NetPl_Kind(e) == NETREP_SHIP) {
 		Rep_SetSlot(e, -1);
@@ -1065,7 +1065,7 @@ static void Rep_DropOwn(int i) {
 			Str_Copy(pl->corpseName, e->name, sizeof(pl->corpseName));
 		}
 	}
-	Players_BindTurn();
+	Players_Leave(was);
 }
 
 /* the game's cost of a death (MissionsFuncs.SinglePlayerDeath and Vehicles.OnDeath of single player): the alarm
@@ -1076,7 +1076,7 @@ static void Rep_Death(int i, cEntity *e) {
 
 	pl->deaths++;
 	pl->dead = 1;
-	Players_Bind(i);
+	int was = Players_Enter(i);
 	Alarm_Set(Players_CurAlarm(), 0.0f);
 	Faction_Died(i);
 	Arena_Died(i, e);
@@ -1100,7 +1100,7 @@ static void Rep_Death(int i, cEntity *e) {
 		}
 	}
 	Coop_Died(i, e);
-	Players_BindTurn();
+	Players_Leave(was);
 }
 
 byte Rep_PlayerDead(int i) {
@@ -1163,9 +1163,9 @@ static int Rep_Join(int conn) {
 		/* the sandbox and freeroam: a player who arrives on foot in an outdoor level finds its own ship beside it, as
 		 * single player's waits in the level's parking with Sputnik (include/scrap/sputniks.h) */
 		if (Places_On() && Sputniks_Outdoor() && NetPl_Kind(Rep_Own(pl)) == NETREP_CHAR) {
-			Players_Bind(i);
+			int was = Players_Enter(i);
 			Rep_CallShip(i, Rep_Own(pl), 1);
-			Players_BindTurn();
+			Players_Leave(was);
 		}
 		return i;
 	}
@@ -1208,13 +1208,13 @@ void Rep_TestSwitch(int i, byte call) {
 		Con_Printf("instance: no player %d\n", i);
 		return;
 	}
-	Players_Bind(i);
+	int was = Players_Enter(i);
 	if (!call) {
 		Rep_SwitchTo(i, e, NULL);
 	} else if (NetPl_Kind(e) == NETREP_CHAR) {
 		Rep_CallShip(i, e, 0);
 	}
-	Players_BindTurn();
+	Players_Leave(was);
 }
 
 cEntity *Rep_ReplaceShip(int i, cEntity *old) {
@@ -1307,11 +1307,15 @@ void Rep_PreFrame(uint64_t tick) {
 
 	rep.tick = tick;
 	InputTape_SoloTick();
+	int prev = Players_Current();
 	for (int i = 0; i < PLAYERS_MAX; i++) {
 		RepPlayer *pl = &rep.pl[i];
 		if (!pl->used) {
 			continue;
 		}
+		/* its death, its new character, its input and its use in its context: the money, the alarm, the module
+		 * variables and the scripts' player are its own */
+		Players_Enter(i);
 		cEntity *e = Players_Get(i);
 		if (e && e == pl->own && WLife(e)->life <= 0 && !pl->lost) {
 			/* dead: the game's death runs on (the effects, the wreck) without the player */
@@ -1355,8 +1359,6 @@ void Rep_PreFrame(uint64_t tick) {
 			pl->told = -2;
 			continue;
 		}
-		/* the money, the alarm and the scripts' player of this player while its input runs */
-		Players_Bind(i);
 		if (pl->conn < 0) {
 			/* the solo instance's player: the input of its tape (include/scrap/inputtape.h) */
 			InputTape_SoloInput(e, &in);
@@ -1394,7 +1396,7 @@ void Rep_PreFrame(uint64_t tick) {
 		NetPl_Bump(e, &in, NETPL_BUMP_REACH);
 		Players_Cur()->input = NULL;
 	}
-	Players_BindTurn();
+	Players_Leave(prev);
 	Sputniks_Frame();
 }
 
@@ -1700,13 +1702,13 @@ static void Rep_RailKill(int i) {
 	if (i < 0 || !rep.pl[i].used) {
 		return;
 	}
-	Players_Bind(i);
+	int was = Players_Enter(i);
 	nativeVal_t one;
 	Native_SetInt(&one, 1);
 	if (!Mode_SetAlarm(&one) || !Mode_IncSaveVar("Stats.Traffic")) {
 		Native_ErrClear();
 	}
-	Players_BindTurn();
+	Players_Leave(was);
 }
 
 byte Rep_Message(Net2Host *host, int conn, int channel, const uint8_t *data, int size) {

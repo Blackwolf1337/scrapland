@@ -287,9 +287,9 @@ void Instance_Line(char *line) {
 	float level;
 	char ent[64], opt[64];
 	if (sscanf(line, "money %d %d", &player, &money) == 2) {
-		Players_Bind(player);
+		int was = Players_Enter(player);
 		*Players_CurMoney() = money;
-		Players_BindTurn();
+		Players_Leave(was);
 		Con_Printf("instance %s: money of player %d %d\n", inst.id, player, Players_Money(player));
 		return;
 	}
@@ -308,11 +308,11 @@ void Instance_Line(char *line) {
 		return;
 	}
 	if (sscanf(line, "alarm %d %f", &player, &level) == 2) {
-		Players_Bind(player);
+		int was = Players_Enter(player);
 		Alarm_Set(Players_CurAlarm(), level);
 		Con_Printf("instance %s: alarm of player %d %.2f%s\n", inst.id, player, (double)Players_CurAlarm()->value,
 			Players_CurAlarm()->on ? " on" : "");
-		Players_BindTurn();
+		Players_Leave(was);
 		return;
 	}
 	if (Rep_Command(line) || Faction_Command(line) || Coop_Command(line) || Arena_Command(line) ||

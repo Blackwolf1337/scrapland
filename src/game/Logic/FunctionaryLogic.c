@@ -169,7 +169,7 @@ byte cFunctionaryLocalLogic_AcceptsArrow(cLocalLogic *elem) {
 		cFunctionaryLocalLogic_NormalSpeed(self, Func_Parent(self));
 		return 1;
 	}
-	/* not in the original: an instance has no user 0, the member whose input runs is bound (include/scrap/players.h) */
+	/* not in the original: an instance has no user 0, the current member (or the one the resolver gives) (include/scrap/players.h) */
 	cEntity *usr = Players_Net() ? Players_Any() : ChType_Usr0();
 	if (!usr) {
 		return 1;

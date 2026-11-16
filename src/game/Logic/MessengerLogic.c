@@ -122,9 +122,9 @@ static byte Messenger_Deliver(cEntity *m, cEntity *desk, cEntity *pack) {
 	}
 	cActCtrl_Play(ChType_ActCtrl(m), "Relax", 1, 1.0f);
 	cActCtrl_SetDefLoop(ChType_ActCtrl(m), "Relax", 1);
+	/* not in the original: the scripts' player is the one that drops it (the instance: its context) */
+	int was = Players_EnterEntity(m);
 	if (cPy_Function_IsValid(g_MessengerDropCallback)) {
-		/* not in the original: the scripts' player is the one that drops it (an instance binds one at a time) */
-		Players_BindEntity(m);
 		cPy_Function_AddParamS(g_MessengerDropCallback, m->name);
 		cPy_Function_AddParamI(g_MessengerDropCallback, g_MessengerTubeState);
 		cPy_Function_Execute(g_MessengerDropCallback, 0);
@@ -138,6 +138,7 @@ static byte Messenger_Deliver(cEntity *m, cEntity *desk, cEntity *pack) {
 			cEmbeddedFXDataPack_SetOn((cEmbeddedFXDataPack *)Obj(pack)->fx, 0);
 		}
 	}
+	Players_Leave(was);
 	Entity_SetPos(pack, CGameModel_GetPos(Obj_GetModel(pack), &tmp));
 	cObjEntity *po = (cObjEntity *)pack;
 	cModMove_Link(&po->mod, str_Empty, str_Empty);

@@ -33,6 +33,8 @@ typedef enum {
 	NC_PARTY = 17,
 	NC_STORY = 18,
 	NC_PLAYER_ENTER = 19,
+	NC_NEAREST = 20,
+	NC_ANY = 21,
 	NC_TAGS
 } netTag_t;
 
@@ -45,6 +47,7 @@ typedef enum {
 	NCT_MODVAR,			/* a script module variable: Module.name */
 	NCT_SAVEVAR,			/* a save variable prefix (the name up to its first dot) */
 	NCT_INITSTEP,			/* a step of the level start: File:call */
+	NCT_PLAYERREAD,			/* a read of "the player" in the world context: C function or Module.variable */
 	NCT_TABLES
 } netTable_t;
 
