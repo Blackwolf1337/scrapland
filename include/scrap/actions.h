@@ -242,6 +242,27 @@ typedef byte (*actEventFilter_t)(const cActEvent *ev);
  * now (s, < 0 none), the rate (< 0: not known, 1) goes faster or slower until the layer is there, 0 stops it */
 void cActCtrl_NetDrive(cActCtrl *self, const uint16_t *act, const float *rate, const float *target, int layers,
 	float dt, actEventFilter_t fire);
+/* ScrapC (stage 3.5, -mp2): the state of a controller a rollback of the client's own entity goes back to: the
+ * layers, the default loop, the root motion and the model's channels (the time of an action is its channel's). The
+ * head turn and the blends between two animations are presentation and are not kept. */
+typedef struct cActCtrlState {
+	cAction *defLoop;
+	cActLayer layers[ACT_LAYERS];
+	vec3_t rootSum, rootMove;
+	float rootTime, walkSpeed;
+	CAnimGroup *anim[ACT_LAYERS];	/* of the model's channels */
+	CAnimCtrl ctrl[ACT_LAYERS];
+} cActCtrlState;
+void cActCtrl_Save(cActCtrl *self, cActCtrlState *s);
+void cActCtrl_Restore(cActCtrl *self, const cActCtrlState *s);
+/* the action of index i + 1 of the class (0: none) */
+cAction *cActCtrl_ActionAt(const cActCtrl *self, uint16_t i);
+/* the layers to the server's: the actions act (index + 1, 0 off) at the times t, the default loop defLoop (index + 1,
+ * 0 keeps it). A layer whose action differs or whose time is off by more than tol starts its action again at that
+ * time; no event fires (the ones before the time count as fired) */
+void cActCtrl_NetSet(cActCtrl *self, const uint16_t *act, const float *t, int layers, uint16_t defLoop, float tol);
+/* the client's own entity (-mp2): which events of its layers fire (play.h: Play_OwnEvent) */
+extern byte (*g_ActOwnFilter)(cEntity *owner, const cActEvent *ev);
 /* layer i (> 0) stopped */
 void cActCtrl_StopChan(cActCtrl *self, int i);
 byte cActCtrl_IsActive(void *ctrl, const char *action);

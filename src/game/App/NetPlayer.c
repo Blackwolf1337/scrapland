@@ -11,6 +11,8 @@
 #include "scrap/input.h"
 #include "scrap/inputtape.h"
 #include "scrap/play.h"
+#include "scrap/replicate.h"
+#include "scrap/repent.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
 #include "scrap/weapons.h"
@@ -56,8 +58,12 @@ static inline float NetPl_Rot(int16_t v) {
 	return (float)v / NETREP_ROT_SCALE;
 }
 
+/* the buttons a -mp2 client runs on its own entity (stage 3.5): all but the flows of the scripts, which start on the
+ * server (a character's use and possession) and the countermeasures (their missiles are the server's entities) */
+#define NETPL_MP2_LOCAL (NETREP_IN_ACT | NETREP_IN_BOOST | NETREP_IN_FULL | NETREP_IN_LOCK)
+
 void NetPl_Apply(cEntity *e, const NetRepInput *in, byte local, byte replay) {
-	uint16_t b = local ? 0 : in->buttons;
+	uint16_t b = !local ? in->buttons : g_Mp2 ? in->buttons & NETPL_MP2_LOCAL : 0;
 
 	switch (NetPl_Kind(e)) {
 	case NETREP_CHAR: {
@@ -133,8 +139,9 @@ void NetPl_StepPart(cEntity *e, const NetRepInput *in, byte local, byte replay, 
 		NetPl_Apply(e, &slot, local, replay);
 		return;
 	}
-	/* single player's frame at 60 a second: the actions of the frame, then its slot */
-	if (!replay) {
+	/* single player's frame at 60 a second: the actions of the frame, then its slot (a -mp2 client's replay runs them
+	 * too: the layers are part of its rollback state, their presentation events stay off) */
+	if (!replay || g_Mp2) {
 		NetPl_Actions(e, iv);
 	}
 	NetPl_Slot(e, in, local, replay, part, iv);
@@ -217,6 +224,9 @@ void NetPl_InputSlot(const NetPlAccum *a, NetRepInput *out) {
 	}
 }
 
+static void NetPl_SaveFull(cEntity *e, NetPlMotion *m);
+static void NetPl_RestoreFull(cEntity *e, const NetPlMotion *m);
+
 void NetPl_Save(cEntity *e, NetPlMotion *m) {
 	cObjEntity *o = Obj(e);
 
@@ -253,6 +263,9 @@ void NetPl_Save(cEntity *e, NetPlMotion *m) {
 		_Static_assert(sizeof(m->collision) == sizeof(v->collision), "cVehicleEntity.collision");
 		memcpy(m->collision, v->collision, sizeof(m->collision));
 	}
+	if (g_Mp2) {
+		NetPl_SaveFull(e, m);
+	}
 }
 
 void NetPl_Restore(cEntity *e, const NetPlMotion *m) {
@@ -288,6 +301,338 @@ void NetPl_Restore(cEntity *e, const NetPlMotion *m) {
 		v->pushTime = m->pushTime;
 		v->push = m->push;
 		memcpy(v->collision, m->collision, sizeof(v->collision));
+	}
+	if (m->full) {
+		NetPl_RestoreFull(e, m);
+	}
+}
+
+/* ---- the rollback state of a -mp2 client (stage 3.5) ---- */
+
+static void NetPl_SaveFull(cEntity *e, NetPlMotion *m) {
+	cObjEntity *o = Obj(e);
+	cObjMove *mv = &o->move;
+
+	m->full = 1;
+	m->moveStartPos = mv->startPos;
+	m->moveStartAng = mv->startAng;
+	m->moveLastPos = mv->lastPos;
+	m->moveLastAng = mv->lastAng;
+	m->movePos = mv->movePos;
+	m->moveAng = mv->moveAng;
+	m->moveTime = mv->time;
+	m->moveLen = mv->moveTime;
+	m->moveFade = mv->fade;
+	m->moveOn = mv->active;
+	m->moveView = mv->viewAng;
+	m->acts = WLife(e)->actCtrl != NULL;
+	if (m->acts) {
+		cActCtrl_Save(WLife(e)->actCtrl, &m->act);
+	}
+	if (NetPl_Kind(e) == NETREP_CHAR) {
+		cWalkCharEntity *w = WChar(e);
+		m->energyUsed = w->energyUsed;
+		m->relaxTime = w->relaxTime;
+		m->hitFlash = w->hitFlash;
+		m->viewLockF = w->viewLockF;
+		m->viewLock = w->viewLock;
+		m->floorDist = w->floorDist;
+		m->centerTime = w->control.centerTime;
+		m->prevAct = w->control.prevAct;
+		m->prevAct2 = w->control.prevAct2;
+		m->prevAct3 = w->control.prevAct3;
+		m->lockStart = w->control.lockStart;
+		m->lock = w->control.lock;
+	} else if (NetPl_Kind(e) == NETREP_SHIP) {
+		cVehicleEntity *v = Veh(e);
+		m->cloud = v->cloud;
+		m->cloudOn = v->cloudOn;
+		m->emi = v->emi;
+		m->noFire = v->noFire;
+		m->histTime = v->histTime;
+		m->histSpeed = v->histSpeed;
+		m->histVel = v->histVel;
+		m->histAcc = v->histAcc;
+		m->histAccLen = v->histAccLen;
+		m->hitTime = v->hitTime;
+	}
+}
+
+static void NetPl_RestoreFull(cEntity *e, const NetPlMotion *m) {
+	cObjEntity *o = Obj(e);
+	cObjMove *mv = &o->move;
+
+	mv->startPos = m->moveStartPos;
+	mv->startAng = m->moveStartAng;
+	mv->lastPos = m->moveLastPos;
+	mv->lastAng = m->moveLastAng;
+	mv->movePos = m->movePos;
+	mv->moveAng = m->moveAng;
+	mv->time = m->moveTime;
+	mv->moveTime = m->moveLen;
+	mv->fade = m->moveFade;
+	mv->active = m->moveOn;
+	mv->viewAng = m->moveView;
+	if (m->acts && WLife(e)->actCtrl) {
+		cActCtrl_Restore(WLife(e)->actCtrl, &m->act);
+	}
+	if (NetPl_Kind(e) == NETREP_CHAR) {
+		cWalkCharEntity *w = WChar(e);
+		w->energyUsed = m->energyUsed;
+		w->relaxTime = m->relaxTime;
+		w->hitFlash = m->hitFlash;
+		w->viewLockF = m->viewLockF;
+		w->viewLock = m->viewLock;
+		w->floorDist = m->floorDist;
+		w->control.centerTime = m->centerTime;
+		w->control.prevAct = m->prevAct;
+		w->control.prevAct2 = m->prevAct2;
+		w->control.prevAct3 = m->prevAct3;
+		w->control.lockStart = m->lockStart;
+		w->control.lock = m->lock;
+	} else if (NetPl_Kind(e) == NETREP_SHIP) {
+		cVehicleEntity *v = Veh(e);
+		v->cloud = m->cloud;
+		v->cloudOn = m->cloudOn;
+		v->emi = m->emi;
+		v->noFire = m->noFire;
+		v->histTime = m->histTime;
+		v->histSpeed = m->histSpeed;
+		v->histVel = m->histVel;
+		v->histAcc = m->histAcc;
+		v->histAccLen = m->histAccLen;
+		v->hitTime = m->hitTime;
+	}
+}
+
+static inline void NetPl_PutV(float *f, const vec3_t *v) {
+	f[0] = v->x;
+	f[1] = v->y;
+	f[2] = v->z;
+}
+
+static inline void NetPl_GetV(vec3_t *v, const float *f) {
+	*v = (vec3_t){ f[0], f[1], f[2] };
+}
+
+void NetPl_OwnOf(cEntity *e, uint32_t tick, uint8_t moved, NetRepOwn *o) {
+	cObjEntity *ob = Obj(e);
+	float *f = o->f;
+	int n;
+
+	memset(o, 0, sizeof(*o));
+	o->tick = tick;
+	o->kind = (uint8_t)NetPl_Kind(e);
+	o->moved = moved;
+	NetPl_PutV(f + NETPL_O_POS, &e->pos);
+	NetPl_PutV(f + NETPL_O_VEL, &ob->vel);
+	NetPl_PutV(f + NETPL_O_ANG, &ob->ang);
+	NetPl_PutV(f + NETPL_O_ROTVEL, &ob->rotVel);
+	if (o->kind == NETREP_CHAR) {
+		cWalkCharEntity *w = WChar(e);
+		NetPl_PutV(f + NETPL_O_VIEW, &w->view);
+		NetPl_PutV(f + NETPL_O_VIEWVEL, &w->viewVel);
+		NetPl_PutV(f + NETPL_O_FALLVEL, &w->fallVel);
+		f[NETPL_O_SLIDE] = w->slideTime;
+		f[NETPL_O_DISPL] = w->displAng;
+		f[NETPL_O_LASTMOVE] = w->lastMove;
+		f[NETPL_O_LASTDISPL] = w->lastDisplAng;
+		f[NETPL_O_WALKTIME] = w->walkTime;
+		f[NETPL_O_MOVE] = w->move;
+		f[NETPL_O_MOVED2] = w->moved2;
+		f[NETPL_O_ENERGY] = w->energyUsed;
+		o->flags |= (w->falling ? NETPL_OF_FALLING : 0) | (w->walking ? NETPL_OF_WALKING : 0) |
+			(w->disableControl || w->control.disabled ? NETPL_OF_NOCTRL : 0) | (g_EnergyBarActive ? NETPL_OF_ENERGYBAR : 0);
+		cActCtrl *c = w->wl.actCtrl;
+		if (c) {
+			f[NETPL_O_WALKSPEED] = c->walkSpeed;
+			o->layers = NETREP_OWN_LAYERS;
+			for (int k = 0; k < ACT_LAYERS && k < NETREP_OWN_LAYERS; k++) {
+				const cActLayer *l = &c->layers[k];
+				o->act[k] = l->on && l->action ? Rep_ActIndex(c->cls, l->action) : 0;
+				f[NETPL_O_ACTTIME + k] = o->act[k] ? l->time : 0.0f;
+			}
+			o->defLoop = c->defLoop ? Rep_ActIndex(c->cls, c->defLoop) : 0;
+		}
+		n = NETPL_O_CHAR;
+	} else if (o->kind == NETREP_SHIP) {
+		cVehicleEntity *v = Veh(e);
+		f[NETPL_O_SPEED] = v->speed;
+		f[NETPL_O_THRUST] = v->thrust;
+		f[NETPL_O_TURNX] = v->turnSpeedX;
+		f[NETPL_O_TURNY] = v->turnSpeedY;
+		f[NETPL_O_ROLL] = v->roll;
+		f[NETPL_O_BOOST] = v->boost;
+		f[NETPL_O_PUSHTIME] = v->pushTime;
+		NetPl_PutV(f + NETPL_O_PUSH, &v->push);
+		f[NETPL_O_CLOUD] = v->cloud;
+		f[NETPL_O_EMI] = v->emi;
+		o->flags |= v->cloudOn ? NETPL_OF_CLOUD : 0;
+		n = NETPL_O_SHIP;
+	} else {
+		n = NETPL_O_COMMON;
+	}
+	const cObjMove *mv = &ob->move;
+	if (mv->active) {
+		o->flags |= NETPL_OF_MOVE;
+		f[n + NETPL_O_MOVETIME] = mv->time;
+		f[n + NETPL_O_MOVELEN] = mv->moveTime;
+		NetPl_PutV(f + n + NETPL_O_MOVEPOS, &mv->movePos);
+		NetPl_PutV(f + n + NETPL_O_MOVEANG, &mv->moveAng);
+		NetPl_PutV(f + n + NETPL_O_MOVESTART, &mv->startPos);
+		NetPl_PutV(f + n + NETPL_O_MOVESTARTANG, &mv->startAng);
+		n += NETPL_O_MOVEN;
+	}
+	o->nf = (uint8_t)n;
+}
+
+/* the tolerances of the compare: the same code on both sides gives the same numbers, what differs comes from the
+ * world (a hit, a push, another entity in the way, an input the server ran without) */
+#define NETPL_TOL_POS PLAY_CORRECT_MIN
+#define NETPL_TOL_VEL 20.0f			/* units a second */
+#define NETPL_TOL_ANG 0.01f			/* radians */
+#define NETPL_TOL_TIME 0.05f		/* s of the timed states and the actions */
+#define NETPL_TOL_ENERGY 0.02f
+
+static float NetPl_Dist(const float *a, const float *b) {
+	float dx = a[0] - b[0], dy = a[1] - b[1], dz = a[2] - b[2];
+	return sqrtf(dx * dx + dy * dy + dz * dz);
+}
+
+static float NetPl_AngDist(const float *a, const float *b) {
+	float m = 0.0f;
+	for (int k = 0; k < 3; k++) {
+		float d = fabsf(remainderf(a[k] - b[k], M_2PI_F));
+		m = d > m ? d : m;
+	}
+	return m;
+}
+
+static byte NetPl_Off(float a, float b, float tol) {
+	return fabsf(a - b) > tol;
+}
+
+int NetPl_OwnDiff(const NetRepOwn *a, const NetRepOwn *b) {
+	const float *x = a->f, *y = b->f;
+	int d = 0;
+
+	if (a->kind != b->kind) {
+		return NETPL_D_POS | NETPL_D_STATE;
+	}
+	if (NetPl_Dist(x + NETPL_O_POS, y + NETPL_O_POS) > NETPL_TOL_POS) {
+		d |= NETPL_D_POS;
+	}
+	if (NetPl_Dist(x + NETPL_O_VEL, y + NETPL_O_VEL) > NETPL_TOL_VEL) {
+		d |= NETPL_D_VEL;
+	}
+	if (NetPl_AngDist(x + NETPL_O_ANG, y + NETPL_O_ANG) > NETPL_TOL_ANG) {
+		d |= NETPL_D_ANG;
+	}
+	if ((a->flags ^ b->flags) & (NETPL_OF_FALLING | NETPL_OF_WALKING | NETPL_OF_CLOUD | NETPL_OF_NOCTRL |
+		NETPL_OF_ENERGYBAR)) {
+		d |= NETPL_D_STATE;
+	}
+	if ((a->flags ^ b->flags) & NETPL_OF_MOVE) {
+		d |= NETPL_D_MOVE;
+	}
+	int n = NETPL_O_COMMON;
+	if (a->kind == NETREP_CHAR) {
+		if (NetPl_AngDist(x + NETPL_O_VIEW, y + NETPL_O_VIEW) > NETPL_TOL_ANG) {
+			d |= NETPL_D_ANG;
+		}
+		if (NetPl_Dist(x + NETPL_O_FALLVEL, y + NETPL_O_FALLVEL) > NETPL_TOL_VEL ||
+			NetPl_Off(x[NETPL_O_ENERGY], y[NETPL_O_ENERGY], NETPL_TOL_ENERGY)) {
+			d |= NETPL_D_STATE;
+		}
+		for (int k = 0; k < a->layers && k < b->layers; k++) {
+			if (a->act[k] != b->act[k] ||
+				NetPl_Off(x[NETPL_O_ACTTIME + k], y[NETPL_O_ACTTIME + k], NETPL_TOL_TIME * 2.0f)) {
+				d |= NETPL_D_ACT;
+			}
+		}
+		n = NETPL_O_CHAR;
+	} else if (a->kind == NETREP_SHIP) {
+		if ((x[NETPL_O_BOOST] > 0.0f) != (y[NETPL_O_BOOST] > 0.0f) ||
+			NetPl_Off(x[NETPL_O_BOOST], y[NETPL_O_BOOST], NETPL_TOL_TIME) ||
+			(x[NETPL_O_EMI] > 0.0f) != (y[NETPL_O_EMI] > 0.0f) ||
+			NetPl_Off(x[NETPL_O_CLOUD], y[NETPL_O_CLOUD], NETPL_TOL_TIME) ||
+			NetPl_Off(x[NETPL_O_PUSHTIME], y[NETPL_O_PUSHTIME], NETPL_TOL_TIME)) {
+			d |= NETPL_D_STATE;
+		}
+		n = NETPL_O_SHIP;
+	}
+	if ((a->flags & b->flags & NETPL_OF_MOVE) && a->nf >= n + NETPL_O_MOVEN && b->nf >= n + NETPL_O_MOVEN &&
+		(NetPl_Off(x[n + NETPL_O_MOVETIME], y[n + NETPL_O_MOVETIME], NETPL_TOL_TIME) ||
+		NetPl_Dist(x + n + NETPL_O_MOVEPOS, y + n + NETPL_O_MOVEPOS) > NETPL_TOL_POS)) {
+		d |= NETPL_D_MOVE;
+	}
+	return d;
+}
+
+void NetPl_OwnApply(cEntity *e, const NetRepOwn *o) {
+	cObjEntity *ob = Obj(e);
+	const float *f = o->f;
+	int n;
+
+	if (o->kind != NetPl_Kind(e)) {
+		return;
+	}
+	NetPl_GetV(&e->pos, f + NETPL_O_POS);
+	NetPl_GetV(&ob->vel, f + NETPL_O_VEL);
+	NetPl_GetV(&ob->ang, f + NETPL_O_ANG);
+	NetPl_GetV(&ob->rotVel, f + NETPL_O_ROTVEL);
+	if (o->kind == NETREP_CHAR) {
+		cWalkCharEntity *w = WChar(e);
+		NetPl_GetV(&w->view, f + NETPL_O_VIEW);
+		NetPl_GetV(&w->viewVel, f + NETPL_O_VIEWVEL);
+		NetPl_GetV(&w->fallVel, f + NETPL_O_FALLVEL);
+		w->slideTime = f[NETPL_O_SLIDE];
+		w->displAng = f[NETPL_O_DISPL];
+		w->lastMove = f[NETPL_O_LASTMOVE];
+		w->lastDisplAng = f[NETPL_O_LASTDISPL];
+		w->walkTime = f[NETPL_O_WALKTIME];
+		w->move = f[NETPL_O_MOVE];
+		w->moved2 = f[NETPL_O_MOVED2];
+		w->energyUsed = f[NETPL_O_ENERGY];
+		w->falling = (o->flags & NETPL_OF_FALLING) != 0;
+		w->walking = (o->flags & NETPL_OF_WALKING) != 0;
+		/* the scripts' hold of the character: its own flag (the control's goes with the next input) */
+		w->disableControl = (o->flags & NETPL_OF_NOCTRL) != 0;
+		g_EnergyBarActive = (o->flags & NETPL_OF_ENERGYBAR) != 0;
+		cActCtrl *c = w->wl.actCtrl;
+		if (c && o->layers) {
+			c->walkSpeed = f[NETPL_O_WALKSPEED];
+			cActCtrl_NetSet(c, o->act, f + NETPL_O_ACTTIME, o->layers, o->defLoop, NETPL_TOL_TIME * 2.0f);
+		}
+		n = NETPL_O_CHAR;
+	} else if (o->kind == NETREP_SHIP) {
+		cVehicleEntity *v = Veh(e);
+		v->speed = f[NETPL_O_SPEED];
+		v->thrust = f[NETPL_O_THRUST];
+		v->turnSpeedX = f[NETPL_O_TURNX];
+		v->turnSpeedY = f[NETPL_O_TURNY];
+		v->roll = f[NETPL_O_ROLL];
+		v->boost = f[NETPL_O_BOOST];
+		v->pushTime = f[NETPL_O_PUSHTIME];
+		NetPl_GetV(&v->push, f + NETPL_O_PUSH);
+		v->cloud = f[NETPL_O_CLOUD];
+		v->emi = f[NETPL_O_EMI];
+		v->cloudOn = (o->flags & NETPL_OF_CLOUD) != 0;
+		n = NETPL_O_SHIP;
+	} else {
+		n = NETPL_O_COMMON;
+	}
+	cObjMove *mv = &ob->move;
+	if ((o->flags & NETPL_OF_MOVE) && o->nf >= n + NETPL_O_MOVEN) {
+		mv->active = 1;
+		mv->time = f[n + NETPL_O_MOVETIME];
+		mv->moveTime = f[n + NETPL_O_MOVELEN];
+		NetPl_GetV(&mv->movePos, f + n + NETPL_O_MOVEPOS);
+		NetPl_GetV(&mv->moveAng, f + n + NETPL_O_MOVEANG);
+		NetPl_GetV(&mv->startPos, f + n + NETPL_O_MOVESTART);
+		NetPl_GetV(&mv->startAng, f + n + NETPL_O_MOVESTARTANG);
+	} else {
+		mv->active = 0;
 	}
 }
 

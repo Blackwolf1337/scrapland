@@ -23,6 +23,10 @@ put 15000 units up, W held 6 s (5 s with --no-boost), three times. The results g
   corrections  prediction corrections while walking or flying, and per minute over the whole run (corr_per_min)
   boost      the action button: in each flight the boost (right mouse button) 3 s after W, its latency to the first
              frame off the path (the threshold four times the shake of the path before the press)
+  fire       in each flight the fire button (left mouse button) 1.2 s after W, its latency to the first frame after
+             the own ship's weapon fired (the feel log counts the fire callbacks of the own ship)
+With --mp2 a client boards its own ship as single player does (the use of its ship's arrow, through the instance's
+test line "use <player> <ship>"): the switch key of the sandbox is off on that path.
 --delay, --jitter and --loss set SCRAP_NET2_DELAY (ms each way), SCRAP_NET2_JITTER (ms) and SCRAP_NET2_LOSS (percent)
 on the client and the server of a multiplayer side (tools/test/mp2.sh feel runs the matrix of them); --cell names the
 JSON files <side>-<cell>.json.
@@ -73,25 +77,28 @@ def press(g, key, hold):
     return t0
 
 
-def press_with(g, key, hold, button, at, bhold):
-    """the key held for hold seconds, the mouse button pressed at seconds after it for bhold seconds (an action while
-    moving); the monotonic times of both presses (ns)"""
+def press_with(g, key, hold, buttons):
+    """the key held for hold seconds, each mouse button of buttons (button, at, bhold) pressed at seconds after it for
+    bhold seconds (actions while moving, in the order of at, not overlapping); the monotonic times of the key press and
+    of each button press (ns)"""
+    times = []
     with scrap_mcp.XInput(XGame(g)) as x:
         code = x.keycode(key)
         t0 = time.monotonic_ns()
         x.xtst.XTestFakeKeyEvent(x.dpy, code, 1, 0)
         x.x11.XSync(x.dpy, 0)
-        time.sleep(at)
-        t1 = time.monotonic_ns()
-        x.xtst.XTestFakeButtonEvent(x.dpy, button, 1, 0)
-        x.x11.XSync(x.dpy, 0)
-        time.sleep(bhold)
-        x.xtst.XTestFakeButtonEvent(x.dpy, button, 0, 0)
-        x.x11.XSync(x.dpy, 0)
-        time.sleep(max(0.0, hold - at - bhold))
+        for button, at, bhold in buttons:
+            time.sleep(max(0.0, t0 / 1e9 + at - time.monotonic_ns() / 1e9))
+            times.append(time.monotonic_ns())
+            x.xtst.XTestFakeButtonEvent(x.dpy, button, 1, 0)
+            x.x11.XSync(x.dpy, 0)
+            time.sleep(bhold)
+            x.xtst.XTestFakeButtonEvent(x.dpy, button, 0, 0)
+            x.x11.XSync(x.dpy, 0)
+        time.sleep(max(0.0, t0 / 1e9 + hold - time.monotonic_ns() / 1e9))
         x.xtst.XTestFakeKeyEvent(x.dpy, code, 0, 0)
         x.x11.XSync(x.dpy, 0)
-    return t0, t1
+    return t0, times
 
 
 def key(g, name, hold=0.08):
@@ -118,7 +125,7 @@ def read_log(path):
                 try:
                     rows.append(dict(t=int(p[0]), dt=float(p[1]), kind=p[2], pos=tuple(map(float, p[3:6])),
                                      cam=tuple(map(float, p[6:9])), yaw=float(p[9]), inp=float(p[10]),
-                                     corr=int(p[11])))
+                                     corr=int(p[11]), fires=int(p[12]) if len(p) > 12 else 0))
                 except ValueError:
                     pass
     except OSError:
@@ -156,6 +163,19 @@ def latency(rows, t0, auto=False, within=None):
         if seen is not None and moved is not None:
             break
     return seen, moved
+
+
+def fire_latency(rows, t0, within=1.0):
+    """ms from the press at t0 to the first drawn frame after the own ship's weapon fired (the fires column grew),
+    None when it did not fire within the window"""
+    before = [r for r in rows if r['t'] <= t0]
+    if not before:
+        return None
+    n0 = before[-1]['fires']
+    for r in rows:
+        if t0 < r['t'] <= t0 + within * 1e9 and r['fires'] > n0:
+            return (r['t'] - t0) / 1e6
+    return None
 
 
 def jitter(rows, key):
@@ -301,6 +321,8 @@ def run_side(a, side):
         # the ship
         if side == 'sp':
             g.ask('Parking.UseShip("Player0", "PlayerShip", "", "")')
+        elif a.mp2:
+            board_mp2(a, g, inst_dir, side)
         else:
             # the sandbox's switch (the mission info key, F1): the nearest parked ship or a called one
             press(g, 'F1', 0.12)
@@ -308,6 +330,7 @@ def run_side(a, side):
         res['boarded'] = bool(ok)
         flights = []
         boosts = []
+        fires = []
         bumps = []
         if ok:
             time.sleep(3.0)
@@ -318,12 +341,16 @@ def run_side(a, side):
                 lift(a, g, inst_dir, side)
                 time.sleep(2.5)
                 if a.boost:
-                    # W held 6 s, the boost (the right mouse button: Racer.Boost) at 3 s for 0.4 s
-                    t0, t1 = press_with(g, 'w', 6.0, 3, 3.0, 0.4)
+                    # W held 6 s, the fire button (left) at 1.2 s for 0.3 s, the boost (the right mouse button:
+                    # Racer.Boost) at 3 s for 0.4 s
+                    t0, (tf, tb) = press_with(g, 'w', 6.0, [(1, 1.2, 0.3), (3, 3.0, 0.4)])
                     flights.append(t0)
-                    boosts.append(t1)
+                    fires.append(tf)
+                    boosts.append(tb)
                 else:
-                    flights.append(press(g, 'w', 5.0))
+                    t0, (tf,) = press_with(g, 'w', 5.0, [(1, 1.2, 0.3)])
+                    flights.append(t0)
+                    fires.append(tf)
                 time.sleep(0.5)
             # the own ship into the path of a rail traffic ship of this game (a client's own, the server lacks it)
             for _ in range(a.bumps):
@@ -337,6 +364,11 @@ def run_side(a, side):
         res['flight_start'] = a.flight_start.get(side)
         res['fly'] = analyse(rows, flights, 3.0 if a.boost else 5.0)
         res['boost'] = analyse(rows, boosts, 0.4, auto=True, within=2.5)
+        fl = [fire_latency(rows, t) for t in fires]
+        got = [x for x in fl if x is not None]
+        res['fire'] = {'latencies': [round(x, 1) for x in got], 'samples': len(got), 'misses': len(fl) - len(got),
+                       'latency_mean': round(statistics.mean(got), 1) if got else None,
+                       'latency_p95': round(sorted(got)[min(len(got) - 1, int(len(got) * 0.95))], 1) if got else None}
         moving = [r for r in rows if r['kind'] != '-']
         if len(moving) > 1:
             mins = (moving[-1]['t'] - moving[0]['t']) / 60e9
@@ -349,6 +381,40 @@ def run_side(a, side):
         if hostg:
             hostg.stop()
     return res
+
+
+def player_char(a, inst_dir, near):
+    """the instance's character of a player nearest to near (NetPlayer<i>_...): (name, player)"""
+    ents = parity.parse_ents(inst_dir.try_ask('entinfo %.0f %.0f %.0f 6000' % near, inst=a.level, timeout=10))
+    mine = sorted((e for e in ents if e['cls'] == 'WalkChar' and re.match(r'^NetPlayer\d+_', e['name'])),
+                  key=lambda e: dist(e['pos'], near))
+    return (mine[0]['name'], int(re.match(r'^NetPlayer(\d+)_', mine[0]['name']).group(1))) if mine else (None, None)
+
+
+def player_car(ents, near):
+    """the ship a player drives nearest to near: owner slot 4 on (the instance's players), or on the -mp2 path (the
+    scripts read a player's slot as 0 there) the nearest ship within 1500 units"""
+    cars = sorted((e for e in ents if e['cls'] == 'Car' and e.get('owner', -1) >= 4), key=lambda e: dist(e['pos'], near))
+    if not cars:
+        cars = [e for e in sorted((e for e in ents if e['cls'] == 'Car'), key=lambda e: dist(e['pos'], near))[:1]
+                if dist(e['pos'], near) < 1500.0]
+    return cars[0] if cars else None
+
+
+def board_mp2(a, g, inst_dir, side):
+    """-mp2: the player uses the arrow of its own ship (PlayerShip, the nearest of that name to its character) as
+    single player's use button does"""
+    rows = read_log(os.path.join(a.scratch, 'feel-%s%s.csv' % (side, '-' + a.cell if a.cell else '')))
+    if not rows:
+        return
+    p = rows[-1]['pos']
+    _, player = player_char(a, inst_dir, p)
+    ents = parity.parse_ents(inst_dir.try_ask('entinfo %.0f %.0f %.0f 60000' % p, inst=a.level, timeout=10))
+    ships = sorted((e for e in ents if e['cls'] == 'Car' and e['name'].startswith('PlayerShip')),
+                   key=lambda e: dist(e['pos'], p))
+    if player is None or not ships:
+        return
+    inst_dir.ask('iline use %d %s' % (player, ships[0]['name']), inst=a.level)
 
 
 def lift(a, g, inst_dir, side):
@@ -364,12 +430,10 @@ def lift(a, g, inst_dir, side):
         do = g.ask
     else:
         ents = parity.parse_ents(inst_dir.try_ask('entinfo %.0f %.0f %.0f 6000' % p, inst=a.level, timeout=10))
-        # the ship a player drives (owner slot 4 on: the players of the instance)
-        cars = sorted((e for e in ents if e['cls'] == 'Car' and e.get('owner', -1) >= 4),
-                      key=lambda e: dist(e['pos'], p))
-        if not cars:
+        car = player_car(ents, p)
+        if not car:
             return
-        target = 'Scrap.GetEntity("%s")' % cars[0]['name']
+        target = 'Scrap.GetEntity("%s")' % car['name']
 
         def do(line):
             return inst_dir.ask(line, inst=a.level)
@@ -412,12 +476,11 @@ def bump(a, g, inst_dir, side):
             g.ask('do e = Scrap.UsrEntity(0); e.Pos = (%.1f, %.1f, %.1f); e.Vel = (0, 0, 0)' % to)
         else:
             iel = parity.parse_ents(inst_dir.try_ask('entinfo %.0f %.0f %.0f 6000' % p, inst=a.level, timeout=10))
-            cars = sorted((e for e in iel if e['cls'] == 'Car' and e.get('owner', -1) >= 4),
-                          key=lambda e: dist(e['pos'], p))
-            if not cars:
+            car = player_car(iel, p)
+            if not car:
                 return None
             inst_dir.ask('do e = Scrap.GetEntity("%s"); e.Pos = (%.1f, %.1f, %.1f); e.Vel = (0, 0, 0)' %
-                         ((cars[0]['name'],) + to), inst=a.level)
+                         ((car['name'],) + to), inst=a.level)
         time.sleep(BUMP_AHEAD + 3.0)
         return {'t0': t0, 'ship': r['name'], 'to': to}
     return None

@@ -48,6 +48,7 @@
 #ifndef SCRAP_PLAY_H
 #define SCRAP_PLAY_H
 
+#include "scrap/actions.h"
 #include "scrap/mathlib.h"
 #include "scrap/netrep.h"
 #include "scrap/shared.h"
@@ -80,7 +81,54 @@ typedef struct NetPlMotion {
 	float thrust, turnSpeedX, turnSpeedY, roll, boost, pushTime;
 	vec3_t push;
 	byte collision[0x20];			/* cVehicleEntity.collision: the state of the world collision */
+	/* the rest of the rollback state (stage 3.5, -mp2) */
+	byte full;						/* the fields below were saved */
+	float cloud, emi, noFire, histTime, histSpeed, histAccLen, hitTime;	/* ships */
+	vec3_t histVel, histAcc;
+	byte cloudOn;
+	float energyUsed, relaxTime, hitFlash, viewLockF, centerTime, floorDist;	/* characters */
+	byte viewLock, prevAct, prevAct2, prevAct3, lockStart, lock;
+	vec3_t moveStartPos, moveStartAng, moveLastPos, moveLastAng, movePos, moveAng;	/* the scripted move */
+	float moveTime, moveLen;
+	int moveFade;
+	byte moveOn, moveView;
+	byte acts;						/* the action controller below was saved */
+	cActCtrlState act;
 } NetPlMotion;
+
+/* The rollback state the server sends (NetRepOwn of include/scrap/netrep.h, stage 3.5): the floats by index, the
+ * first NETPL_O_COMMON of every kind, then the kind's own */
+enum {
+	NETPL_O_POS = 0, NETPL_O_VEL = 3, NETPL_O_ANG = 6, NETPL_O_ROTVEL = 9,
+	NETPL_O_COMMON = 12,
+	/* characters */
+	NETPL_O_VIEW = 12, NETPL_O_VIEWVEL = 15, NETPL_O_FALLVEL = 18, NETPL_O_SLIDE = 21, NETPL_O_DISPL, NETPL_O_LASTMOVE,
+	NETPL_O_LASTDISPL, NETPL_O_WALKTIME, NETPL_O_MOVE, NETPL_O_MOVED2, NETPL_O_ENERGY, NETPL_O_WALKSPEED,
+	NETPL_O_ACTTIME,				/* 4: the times of the layers */
+	NETPL_O_CHAR = NETPL_O_ACTTIME + 4,
+	/* ships */
+	NETPL_O_SPEED = 12, NETPL_O_THRUST, NETPL_O_TURNX, NETPL_O_TURNY, NETPL_O_ROLL, NETPL_O_BOOST, NETPL_O_PUSHTIME,
+	NETPL_O_PUSH, NETPL_O_CLOUD = NETPL_O_PUSH + 3, NETPL_O_EMI,
+	NETPL_O_SHIP,
+	/* the scripted move (both, after the kind's) */
+	NETPL_O_MOVETIME = 0, NETPL_O_MOVELEN, NETPL_O_MOVEPOS, NETPL_O_MOVEANG = NETPL_O_MOVEPOS + 3,
+	NETPL_O_MOVESTART = NETPL_O_MOVEANG + 3, NETPL_O_MOVESTARTANG = NETPL_O_MOVESTART + 3,
+	NETPL_O_MOVEN = NETPL_O_MOVESTARTANG + 3
+};
+/* NetRepOwn.flags */
+#define NETPL_OF_FALLING 0x01
+#define NETPL_OF_WALKING 0x02
+#define NETPL_OF_CLOUD 0x04			/* ship: cloudOn */
+#define NETPL_OF_MOVE 0x08			/* the scripted move runs (its values follow the kind's) */
+#define NETPL_OF_NOCTRL 0x10		/* character: the scripts took its control (DisableControl, the control off) */
+#define NETPL_OF_ENERGYBAR 0x20		/* the world's EnergyBarActive (the character's energy and action presses read it) */
+/* what differs between two rollback states (NetPl_OwnDiff) */
+#define NETPL_D_POS 0x01
+#define NETPL_D_VEL 0x02
+#define NETPL_D_ANG 0x04
+#define NETPL_D_ACT 0x08			/* the actions of the layers, their times */
+#define NETPL_D_STATE 0x10			/* the timed states: boost, cloud, EMI, energy, falling, walking, push */
+#define NETPL_D_MOVE 0x20			/* the scripted move */
 
 /* the input into the controls of the entity (local: the client's own, its action buttons stay off but the fire of
  * a NetPl_LocalWeapon outside a replay) */
@@ -110,6 +158,12 @@ void NetPl_Input(NetPlAccum *a, NetRepInput *out);
 void NetPl_InputSlot(const NetPlAccum *a, NetRepInput *out);
 void NetPl_Save(struct cEntity *e, NetPlMotion *m);
 void NetPl_Restore(struct cEntity *e, const NetPlMotion *m);
+/* the rollback state of e as the server sends it (moved: the count of the moves outside its step) */
+void NetPl_OwnOf(struct cEntity *e, uint32_t tick, uint8_t moved, NetRepOwn *o);
+/* NETPL_D_* of what differs between the client's state a and the server's b beyond the tolerances */
+int NetPl_OwnDiff(const NetRepOwn *a, const NetRepOwn *b);
+/* the server's state into e (after NetPl_Restore of the client's own state of that tick) */
+void NetPl_OwnApply(struct cEntity *e, const NetRepOwn *o);
 /* the client fires weapon w of its own ship itself for the effects at once (the instant-hit weapons; the hits it
  * makes stay local, the server's count): Vulcan, Laser, Tesla, ATPC, Devastator */
 byte NetPl_LocalWeapon(int w);
@@ -150,6 +204,9 @@ byte Rep_SpFlows(void);
  * its player; dt its frame time): the step Rep_PreFrame gave it for this frame, NetPl_Step of the tick's input; the
  * solo instance on a tape of single player's frames: the actions of the frame and the frame's slots */
 void Rep_OwnFrame(struct cEntity *e, float dt);
+/* -mp2: the scripts set the place or the angles of e (RepEnt's variable tap): when it is a player's entity, its
+ * client takes the next rollback state as a jump (a velocity they set is a world effect its prediction corrects) */
+void Rep_OwnMoved(struct cEntity *e);
 /* the lag compensation around the aim and hit check of an instant-hit weapon of the vehicle v (only for a
  * player's): the other replicated entities where v's client saw them, and back */
 void Rep_RewindBegin(struct cEntity *v);
@@ -167,6 +224,9 @@ void Rep_Shot(struct cEntity *shooter, int weapon, int count, const vec3_t *from
 extern byte g_Play;
 /* a correction runs the own entity's ticks again */
 extern byte g_PlayReplaying;
+/* -mp2: a presentation sink reached in such a replay: counted ("pred.muted:<what>:<site>"), 1 when it is to be skipped
+ * (the presentation of the own entity played at the prediction already) */
+byte Play_Mute(const char *what, const char *site);
 
 /* -headless: the frames of a headless player at PLAY_HEADLESS_HZ; 0 after a wait for an event up to the next one */
 byte Play_HeadlessDue(void);
@@ -177,6 +237,9 @@ int Play_OwnSlot(void);
 void Play_SetOwn(int player, int slot, int kind, uint32_t tick, const float *phys, int nphys);
 void Play_OwnCreate(int kind, const char *look, uint32_t tick, const NetRepState *st);
 void Play_OwnUpdate(uint32_t tick, const NetRepState *st);
+/* -mp2: the server's rollback state of the own entity (NETREP_MSG_OWN): compared with the prediction of its tick, a
+ * difference beyond the tolerances goes back to it and runs the inputs after it again */
+void Play_OwnState(const uint8_t *data, int size);
 void Play_OwnRemove(void);
 /* the status message: the money, the alarm and the ammo of the own player into the world and the own ship (the
  * HUD of single player shows them) */

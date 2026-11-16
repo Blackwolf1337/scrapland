@@ -6,6 +6,7 @@
  */
 #include "scrap/console.h"
 #include "scrap/crt.h"
+#include "scrap/feellog.h"
 #include "scrap/pres.h"
 #include "scrap/scrapmodel.h"
 #include "scrap/weapons.h"
@@ -657,6 +658,7 @@ void cWeaponManager_Update(cWeaponManager *self, float dt) {
 		name = self->owner->name;
 		cPy_Function_AddParamS(&TABLE_AT(WEAPS, self->curWeap)->onFire, name);
 		cPy_Function_Execute(&TABLE_AT(WEAPS, self->curWeap)->onFire, 0);
+		FeelLog_Fire(self->owner);
 	}
 	float cs = self->cmStamp + dt;
 	self->cmStamp = cs;
