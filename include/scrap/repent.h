@@ -89,8 +89,7 @@ extern byte g_Mp2;
 
 /* -mp2: 1 when param is it */
 byte RepEnt_ParseParam(const char *param, const char *ext);
-/* the kind of an entity's slot, 0 for an entity that is not replicated (a camera, a deleted one, the client's own
- * rail traffic) */
+/* the kind of an entity's slot, 0 for an entity that is not replicated (a camera, a deleted one) */
 int RepEnt_Kind(struct cEntity *e);
 /* the declared state of e of that kind (the snapshot's), its generation in x[REPX_GEN] left 0 */
 void RepEnt_State(struct cEntity *e, int kind, NetRepState *s);
