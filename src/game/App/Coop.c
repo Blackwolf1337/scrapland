@@ -96,7 +96,13 @@
 #define CP_POSSESS_SECS 90.0		/* test: a possession is given up after this */
 #define CP_AUTO_GAP 8.0				/* test: the automatic player goes to its target again after this */
 #define CP_AUTO_NEAR 250.0f			/* test: units from a target it uses */
-#define CP_AUTO_LAND 3000.0f		/* test: its ship is put this near a target on foot before it gets out */
+#define CP_AUTO_OUT 900.0f			/* test: its ship flies this near a target on foot before it gets out */
+#define CP_FLY_GAP 0.5				/* test: s between two looks at a flight's way */
+#define CP_FLY_NEAR 400.0f			/* test: a point of its flight's path this near is passed */
+#define CP_FLY_ON 500.0f			/* test: a flight comes this much nearer within CP_FLY_STUCK */
+#define CP_FLY_STUCK 8.0			/* test: s, else it is placed CP_FIGHT_NEAR from its goal (as before) */
+#define CP_AUTO_SHIP 8000.0f		/* test: outdoors a target on foot further than this is flown to */
+#define CP_SHIP_ASK 12.0			/* test: s it asks for a ship (the switch) before it walks */
 #define CP_MSG_SHOT 1500.0f			/* test: a messenger fires its lightning at a messenger this near (it reaches 2000) */
 #define CP_WALK_FAR 600.0f			/* test: a walker steps to a target further than this */
 #define CP_WALK_STEP 300.0f			/* test: a walk comes a quarter of this further within CP_WALK_STUCK */
@@ -182,6 +188,12 @@ static struct {
 		float race;					/* test: its ship flies to the race's checkpoint (0 off) */
 		vec3_t raceAt;				/* where that checkpoint was */
 		double raceSince;			/* since when (instance time) */
+		vec3_t flyTo;				/* test: the point of the level's AI graph its ship flies to next */
+		double flyAt;				/* when it looked at its way last */
+		float flyBest;				/* the nearest it came to its goal since flyMoved */
+		double flyMoved;			/* when it came CP_FLY_ON nearer last (a stuck flight is placed on) */
+		char flyGoal[CP_NAME];		/* the entity it flies to ("" none) */
+		double shipAsk;				/* since when it asks for a ship for a far goal outdoors (0 not) */
 		byte fight;					/* test: it fights the targets of fightList */
 		byte follow;				/* test: the fight only stays with its target (no shot: an escort, a ship to follow) */
 		int spare;					/* test: no shot at a ship whose life is at or under this percent of its most (0 off) */
@@ -3020,12 +3032,17 @@ static byte Cp_RedNear(const cEntity *e) {
 	return 0;
 }
 
+/* test: the level has the walkers' AI graph (the indoor levels) */
+static byte Cp_WalkGraph(void) {
+	return g_AStar2D && g_NodesWorld2D && NodesWorld_IsCreated(NW2D_SUP(g_NodesWorld2D));
+}
+
 /* test: the point player e walks to next on its way to `to`: the walking NPCs' A* on the level's AI graph (CAStar2D,
  * the graph of the indoor levels), the furthest point of the path its body reaches on a straight line; 0 without a
  * graph or a path */
 static byte Cp_PathPoint(cEntity *e, const vec3_t *to, vec3_t *next) {
 	static cNWVecList path;
-	if (!g_AStar2D || !g_NodesWorld2D || !NodesWorld_IsCreated(NW2D_SUP(g_NodesWorld2D))) {
+	if (!Cp_WalkGraph()) {
 		return 0;
 	}
 	vec3_t from = e->pos, dest = *to;
@@ -3051,6 +3068,105 @@ static byte Cp_PathPoint(cEntity *e, const vec3_t *to, vec3_t *next) {
 	}
 	NWVecList_Free(&path);
 	return got;
+}
+
+/* test: the point ship e flies to next on its way to `to`: `to` on a free line, else the AI ships' A* on the level's
+ * graph of visibility (CAStar, the outdoor levels), the furthest point of the path it reaches on a straight line; 0
+ * without a graph or a path */
+static byte Cp_FlyPoint(cEntity *e, const vec3_t *to, vec3_t *next) {
+	static cNWVecList path;
+	if (!g_AStar || !g_NodesWorld || !NodesWorld_IsCreated(g_NodesWorld)) {
+		return 0;
+	}
+	vec3_t from = e->pos, dest = *to;
+	float r = Obj_GetRadius(e);
+	byte startOk = 0, goalOk = 0, got = 0;
+	int state = 0;
+	/* a free line: straight there */
+	if (CNodesWorld_TestPath(g_NodesWorld, &from, &dest, r, r, NULL, 0)) {
+		*next = dest;
+		return 1;
+	}
+	if (CAStar_FindPath(g_AStar, &path, &dest, &from, r, 0.0f, 0, &startOk, &goalOk, &state) && path.head) {
+		/* from its end where the ship is */
+		cNWVecNode *n = path.head, *last = path.head->prev;
+		float hx = n->v.x - from.x, hz = n->v.z - from.z, lx = last->v.x - from.x, lz = last->v.z - from.z;
+		byte fwd = hx * hx + hz * hz <= lx * lx + lz * lz;
+		n = fwd ? n : last;
+		for (int k = 0; k < path.count && n; k++, n = fwd ? n->next : n->prev) {
+			float dx = n->v.x - from.x, dy = n->v.y - from.y, dz = n->v.z - from.z;
+			if (got && !CNodesWorld_TestPath(g_NodesWorld, &from, &n->v, r, r, NULL, 0)) {
+				break;
+			}
+			if (got || dx * dx + dy * dy + dz * dz > CP_FLY_NEAR * CP_FLY_NEAR) {
+				*next = n->v;
+				got = 1;
+			}
+		}
+	}
+	NWVecList_Free(&path);
+	return got;
+}
+
+/* test: player i's ship (e) flies to g through its input along the level's graph of visibility, as a pilot steers
+ * round the buildings; when it comes no nearer for CP_FLY_STUCK s it is placed CP_FIGHT_NEAR from g (the placement of
+ * before, kept where the graph gives no way); 1 while it flies, 0 within `near` of g or stuck that near */
+static byte Cp_FlyTo(int i, NetRepInput *in, cEntity *e, cEntity *g, float near, double now) {
+	float dx = g->pos.x - e->pos.x, dy = g->pos.y - e->pos.y, dz = g->pos.z - e->pos.z;
+	float d = sqrtf(dx * dx + dy * dy + dz * dz);
+	if (d <= near) {
+		cp.pl[i].flyGoal[0] = 0;
+		return 0;
+	}
+	/* a new goal, or a flight a fight broke off: its watch starts again */
+	if (strcmp(cp.pl[i].flyGoal, g->name) || now - cp.pl[i].flyAt > CP_FLY_GAP * 4.0) {
+		Str_Copy(cp.pl[i].flyGoal, g->name, sizeof(cp.pl[i].flyGoal));
+		cp.pl[i].flyBest = d;
+		cp.pl[i].flyMoved = now;
+		cp.pl[i].flyAt = 0.0;
+		Con_Printf("coop: player %d (auto) flies to %s (%.0f away)\n", i, g->name, (double)d);
+	}
+	if (d < cp.pl[i].flyBest - CP_FLY_ON) {
+		cp.pl[i].flyBest = d;
+		cp.pl[i].flyMoved = now;
+	} else if (now - cp.pl[i].flyMoved >= CP_FLY_STUCK) {
+		/* as near as the placement puts it: the way ends here (the goal on a platform it cannot fly onto) */
+		if (d <= CP_FIGHT_NEAR * 1.5f) {
+			return 0;
+		}
+		float k = CP_FIGHT_NEAR / d;
+		if (k < 1.0f) {
+			e->pos = (vec3_t){ g->pos.x - dx * k, g->pos.y + 300.0f, g->pos.z - dz * k };
+			Obj(e)->vel = (vec3_t){ 0.0f, 0.0f, 0.0f };
+			Obj(e)->ang.y = atan2f(-dx, -dz);
+			Rep_Placed(i);
+			Con_Printf("coop: player %d (auto) is stuck on its flight to %s: placed %.0f from it\n", i, g->name,
+				(double)CP_FIGHT_NEAR);
+		}
+		cp.pl[i].flyBest = d < CP_FIGHT_NEAR ? d : CP_FIGHT_NEAR;
+		cp.pl[i].flyMoved = now;
+		cp.pl[i].flyAt = 0.0;
+		return 1;
+	}
+	if (now - cp.pl[i].flyAt >= CP_FLY_GAP) {
+		cp.pl[i].flyAt = now;
+		vec3_t up = { g->pos.x, g->pos.y + 300.0f, g->pos.z };
+		if (!Cp_FlyPoint(e, &up, &cp.pl[i].flyTo)) {
+			cp.pl[i].flyTo = up;
+		}
+	}
+	/* a pilot's quick turn to its point, full speed while it faces it, slow in the turn */
+	vec3_t *p = &cp.pl[i].flyTo;
+	float rot[2], dyaw = NetPl_Aim(e, p, rot, 1);
+	float hz = sqrtf((p->x - e->pos.x) * (p->x - e->pos.x) + (p->z - e->pos.z) * (p->z - e->pos.z));
+	float py = p->y - e->pos.y, pitch = atan2f(py, hz) - Obj(e)->ang.x;
+	rot[0] = dyaw > CP_FIGHT_TURN ? 1.0f : dyaw < -CP_FIGHT_TURN ? -1.0f : dyaw / CP_FIGHT_TURN;
+	rot[1] = pitch > CP_FIGHT_TURN ? 1.0f : pitch < -CP_FIGHT_TURN ? -1.0f : pitch / CP_FIGHT_TURN;
+	in->rot[0] = NetRep_QRot(rot[0]);
+	in->rot[1] = NetRep_QRot(rot[1]);
+	in->move[0] = NetRep_QMove(fabsf(dyaw) < 0.5f ? 1.0f : fabsf(dyaw) < 1.2f ? 0.3f : 0.0f);
+	in->move[2] = NetRep_QMove(py > 500.0f ? 0.8f : py < -500.0f ? -0.8f : py / 625.0f);
+	return 1;
 }
 
 /* test: character v follows player e: within the scripts' leash, its logic has e as the target (LLogicTarget) */
@@ -3368,19 +3484,23 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 		return;
 	}
 	if (kind == NETREP_SHIP) {
-		/* its ship to the target first (a pilot that knows the streets), then out of it */
-		float dx = t->pos.x - e->pos.x, dz = t->pos.z - e->pos.z, d = sqrtf(dx * dx + dz * dz);
-		if (d > CP_AUTO_LAND * 2.0f && now - cp.pl[i].autoSince >= 1.0) {
-			float k = CP_AUTO_LAND * 0.5f / d;
-			e->pos = (vec3_t){ t->pos.x - dx * k, t->pos.y + 300.0f, t->pos.z - dz * k };
-			Obj(e)->vel = (vec3_t){ 0.0f, 0.0f, 0.0f };
-			Rep_Placed(i);
-			cp.pl[i].autoSince = now;
-			Con_Printf("coop: player %d (auto) flies to %s\n", i, t->name);
-		} else if (d <= CP_AUTO_LAND * 2.0f) {
-			/* out of the ship near the place it goes to (a roof pushes a ship off: no time to wait for a calm one) */
+		/* its ship flies to the target first, then out of it near the place it goes to (a roof pushes a ship off: no
+		 * time to wait for a calm one) */
+		if (!Cp_FlyTo(i, in, e, t, CP_AUTO_OUT, now)) {
 			in->buttons |= fmod(now, 0.5) < 1.0 / INSTANCE_TICK_HZ ? NETREP_IN_SWITCH : 0;
 		}
+		return;
+	}
+	/* outdoors a target far away: into a ship first (the switch: a parked one near, else its called ship), as a player
+	 * flies there; it walks when it gets none */
+	float fx = t->pos.x - e->pos.x, fz = t->pos.z - e->pos.z;
+	if (Cp_WalkGraph() || Entity_IsType(t, TYEN_CAR) || fx * fx + fz * fz <= CP_AUTO_SHIP * CP_AUTO_SHIP) {
+		cp.pl[i].shipAsk = 0.0;
+	} else if (cp.pl[i].shipAsk <= 0.0) {
+		cp.pl[i].shipAsk = now;
+		Con_Printf("coop: player %d (auto) asks for a ship to %s\n", i, t->name);
+	} else if (now - cp.pl[i].shipAsk < CP_SHIP_ASK) {
+		in->buttons |= fmod(now, 2.0) < 1.0 / INSTANCE_TICK_HZ ? NETREP_IN_SWITCH : 0;
 		return;
 	}
 	/* a parked ship of the mission (the one to steal): next to it and into it with the switch */
@@ -3428,8 +3548,9 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 			Travel_TestUse(i, t->name, "");
 		}
 	}
-	/* not while its photo's press runs (the walk to the next target would turn it away) */
-	if (cp.pl[i].walk && cp.pl[i].pressTicks <= 0 && Cp_WalkStep(i, in, e, t, now)) {
+	/* not while its photo's press runs (the walk to the next target would turn it away); outdoors (no graph of the
+	 * walkers) it walks straight to a target far away */
+	if ((cp.pl[i].walk || !Cp_WalkGraph()) && cp.pl[i].pressTicks <= 0 && Cp_WalkStep(i, in, e, t, now)) {
 		return;
 	}
 	if (!strcmp(cp.pl[i].autoAt, t->name) && now - cp.pl[i].autoSince < CP_AUTO_GAP) {
