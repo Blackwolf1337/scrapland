@@ -258,8 +258,9 @@ static void cItemEntity_NetWrite(cEntity *base, float dist2, void *msg, int full
 	}
 }
 
-static void cItemEntity_Tick(cEntity *elem, float dt) {
-	cItemEntity *self = (cItemEntity *)elem;
+/* Advance: the position of the original's network game, the owner, the push and the way back, the respawn time
+ * and the touch test (OnTake) */
+static void Item_Advance(cItemEntity *self, float dt) {
 	vec3_t to, hit;
 
 	if (Net_IsNetEntity(Item_Ent(self))) {
@@ -334,6 +335,15 @@ static void cItemEntity_Tick(cEntity *elem, float dt) {
 				cItemEntity_SetRespawn(self, t);
 			}
 		}
+	}
+}
+
+/* the slot step (the halves in include/scrap/itementity.h) */
+static void cItemEntity_Tick(cEntity *elem, float dt) {
+	cItemEntity *self = (cItemEntity *)elem;
+
+	if (Obj_Advances(elem)) {
+		Item_Advance(self, dt);
 	}
 	Grid_Add(&g_pWorld->grid, Item_Ent(self));
 	cObjEntity_Tick(Item_Ent(self), dt);
