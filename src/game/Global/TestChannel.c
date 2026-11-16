@@ -59,6 +59,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "scrap/repent.h"
 #include "scrap/app.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
@@ -1548,6 +1549,11 @@ static void TC_Line(tcBuf *b, const char *line) {
 	}
 	if (TC_Verb(line, "audit", &arg)) {
 		TC_Audit(b, arg);
+		return;
+	}
+	/* mirror [json]: the replicated entities of the replication v2 (include/scrap/repent.h) */
+	if (TC_Verb(line, "mirror", &arg)) {
+		RepEnt_Mirror(b, arg);
 		return;
 	}
 	/* tape [key <Set>.<Action> <value> | key clear | end]: the input tape (include/scrap/inputtape.h) */

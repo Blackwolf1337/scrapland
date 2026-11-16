@@ -18,6 +18,7 @@
 #include "scrap/instance.h"
 #include "scrap/play.h"
 #include "scrap/travel.h"
+#include "scrap/repent.h"
 #include "scrap/replicate.h"
 #include "scrap/model.h"
 #include "scrap/net.h"
@@ -783,7 +784,8 @@ byte CApp_ParseParam(CApp *self, const char *param, const char *ext) {
 		return 1;
 	}
 	if (Instance_ParseParam(param, ext) || Watch_ParseParam(param, ext) || Play_ParseParam(param, ext) ||
-		Travel_ParseParam(param, ext) || Join_ParseParam(param, ext) || InputTape_ParseParam(param, ext)) {
+		Travel_ParseParam(param, ext) || Join_ParseParam(param, ext) || InputTape_ParseParam(param, ext) ||
+		RepEnt_ParseParam(param, ext)) {
 		return 1;
 	}
 	if (!crt_stricmp("dedicated", param)) {

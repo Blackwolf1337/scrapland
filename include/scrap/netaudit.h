@@ -31,6 +31,8 @@ typedef enum {
 	NA_ENTVAR,			/* the entity variables the scripts set (Native_EntStore) */
 	NA_PLAYER,			/* reads of "the player" on an instance, split by a bound player or none */
 	NA_VISIBLE,			/* reads of the render flag and the camera distance on a headless process */
+	NA_CREATE,			/* the replication v2 (include/scrap/repent.h): entities a client made itself and deleted,
+						   variables without a tag */
 	NA_CATS
 } netAuditCat_t;
 

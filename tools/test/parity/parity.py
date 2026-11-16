@@ -16,7 +16,7 @@ the instance's entity it stands for), the icons of the radar (radar), the HUD it
 examples).
 
   parity.py [--levels DownTown,Outskirts,...] [--port 29940] [--build build-linux64] [--out DIR] [--scratch DIR]
-            [--radius 100000] [--settle 25] [--no-join]
+            [--radius 100000] [--settle 25] [--no-join] [--mp2]
 
 Needs a build with the M10 test channel verbs (entinfo, radar, fx, sounds, the instance files). Network only on
 loopback (the ports --port .. --port + 40)."""
@@ -220,8 +220,15 @@ def dist(a, b):
 def label_proxies(ents, inst):
     """a proxy takes the entity list and name of the instance's entity it stands for: same model, nearest (the proxy
     is drawn ~100 ms behind)"""
+    byname = {s['name']: s for s in inst}
     for e in ents:
         if not e['proxy']:
+            continue
+        # a replica of the replication v2 has the instance's name
+        same = byname.get(e['name'])
+        if same and same['cls'] == e['cls']:
+            e['local'] = e['name']
+            e['list'], e['srv'] = same['list'], same['name']
             continue
         best, bd = None, 6000.0
         for s in inst:
@@ -362,9 +369,10 @@ def run_level(a, level):
     """one level: the three games, the place, the collection; the result dict"""
     port = a.port
     res = {'level': level, 'radius': a.radius}
-    host = Game(a, 'ph', ['-host:' + level, '-port:%d' % port, '-mode:freeroam', '-name:Host'])
+    v2 = ['-mp2'] if a.mp2 else []
+    host = Game(a, 'ph', ['-host:' + level, '-port:%d' % port, '-mode:freeroam', '-name:Host'] + v2)
     sp = Game(a, 'ps', ['-imap:Levels/' + level])
-    join = Game(a, 'pj', ['-join:127.0.0.1', '-port:%d' % port, '-name:Join']) if a.join else None
+    join = Game(a, 'pj', ['-join:127.0.0.1', '-port:%d' % port, '-name:Join'] + v2) if a.join else None
     games = [g for g in (host, sp, join) if g]
     try:
         host.start()
@@ -610,6 +618,8 @@ def main():
     ap.add_argument('--timeout', type=int, default=900)
     ap.add_argument('--device', default=None, help='Vulkan device (default the RTX with >= 3000 MiB free, else the AMD)')
     ap.add_argument('--no-join', dest='join', action='store_false')
+    ap.add_argument('--mp2', action='store_true', help='the replication v2 (-mp2 for the host, its instance and the '
+                    'joined client, include/scrap/repent.h)')
     ap.add_argument('--report-only', action='store_true', help='the report of the JSON files in --out')
     a = ap.parse_args()
     a.build = os.path.abspath(a.build)
