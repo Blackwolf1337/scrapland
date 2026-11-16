@@ -1446,6 +1446,12 @@ static byte Se_CreateShipFromSaveVar(const nativeVal_t *cad, const nativeVal_t *
 		}
 	}
 	if (!ok || mp < 0) {
+		/* not in the original: a ship left half made (a model without values in the level) goes, its error printed
+		 * (its update would read its missing weapons) */
+		if (Native_True(out)) {
+			Native_ErrPrint();
+			Mode_VDel(out);
+		}
 		Native_Free(out);
 		return Mode_Done(&t, 0);
 	}

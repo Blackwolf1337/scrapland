@@ -269,8 +269,9 @@ int Coop_UsrRead(int slot);
 /* the member whose character the scripts hold (Coop_UsrSlot), -1 */
 int Coop_HeldPlayer(struct cEntity *e);
 /* a member's called ship in the coop story: the party's hangar ship the story flies (Hangar.iHangarShip, as single
- * player's own ship Parking.CreatePlayerShip) parked at p, NULL when the hangar has none or flies its aux slot (the
- * junkyard's lifeboat): a standard ship then, as the single player takes a parked one */
+ * player's own ship Parking.CreatePlayerShip) parked at p; for its aux slot (the junkyard's lifeboat) a standard parked
+ * ship, as the single player takes a parked one, else (a level without those: GDB) the aux slot's ship; NULL when the
+ * hangar has none */
 struct cEntity *Coop_HangarShip(const vec3_t *p, float yaw);
 /* the level has no room for a called ship (indoors): coop calls none there */
 byte Coop_NoShipCall(void);

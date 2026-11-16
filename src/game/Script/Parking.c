@@ -1147,9 +1147,18 @@ static byte Pk_CreateParkedShipN(const nativeVal_t *const *a, nativeVal_t *out) 
 		return Mode_Done(&t, 0);
 	}
 	Native_SetFloat(x, Scrap_RandRange(0, n - 0.1));
-	return Mode_Done(&t, Native_ToInt(x, pick) && Mode_VObjRead(out, "Name", name) && Mode_Sub(keys, pick, x) &&
+	byte ok = Native_ToInt(x, pick) && Mode_VObjRead(out, "Name", name) && Mode_Sub(keys, pick, x) &&
 		PORT_CALL(Vehicles, SetStdProperties, NULL, "vvs", name, x, "P_None") &&
-		PORT_OWN(Parking, SetShipAsParked, NULL, "v", name) && PORT_OWN(Parking, CheckWeapons, NULL, "v", out));
+		PORT_OWN(Parking, SetShipAsParked, NULL, "v", name) && PORT_OWN(Parking, CheckWeapons, NULL, "v", out);
+	/* not in the original: a ship left half made (a model without standard values in the level, GDB's on an
+	 * instance's call) goes, its error printed (its update would read its missing weapons) */
+	if (!ok && Native_True(out)) {
+		Native_ErrPrint();
+		Mode_VDel(out);
+		Native_Free(out);
+		Native_SetNone(out);
+	}
+	return Mode_Done(&t, ok);
 }
 
 /* CheckWeapons(v): the parked ship carries only the weapons the player may have */

@@ -1434,17 +1434,32 @@ cEntity *Coop_HangarShip(const vec3_t *p, float yaw) {
 	const char *n = SaveVar_Get("Hangar.iHangarShip");
 	int k = n ? crt_atoi(n) : -1;
 	/* the hangar's aux slot (9) is the junkyard's lifeboat of the story's start: a standard ship then, as the single
-	 * player takes a parked one */
-	Str_PrintfQuiet(var, sizeof(var), "Hangar.HangarShip%d", k + 1);
-	const char *text = k >= 0 && k < 9 ? SaveVar_Get(var) : NULL;
-	if (!text || !text[0] || text[0] == '<') {
-		return NULL;
-	}
-	/* Parking.CreatePlayerShip's ship of the hangar the story flies, a parked one for the member */
+	 * player takes a parked one; the lifeboat where the level has none of those (GDB: the bishops' ships only) */
 	Native_SetFloat(&c[0], p->x);
 	Native_SetFloat(&c[1], p->y);
 	Native_SetFloat(&c[2], p->z);
 	Mode_Tuple3(&pos, &c[0], &c[1], &c[2]);
+	if (k == 9) {
+		nativeVal_t ang;
+		Native_SetFloat(&ang, yaw);
+		Native_SetNone(&out);
+		cEntity *std = PORT_CALL(Parking, CreateParkedShip, &out, "vv", &pos, &ang) && out.type == NV_ENT ? Native_Ent(&out) : NULL;
+		Native_ErrClear();
+		Native_Free(&out);
+		if (std) {
+			Native_Free(&pos);
+			return std;
+		}
+		Str_Copy(var, "Hangar.HangarShipAux", sizeof(var));
+	} else {
+		Str_PrintfQuiet(var, sizeof(var), "Hangar.HangarShip%d", k + 1);
+	}
+	const char *text = k >= 0 && k <= 9 ? SaveVar_Get(var) : NULL;
+	if (!text || !text[0] || text[0] == '<') {
+		Native_Free(&pos);
+		return NULL;
+	}
+	/* Parking.CreatePlayerShip's ship of the hangar the story flies, a parked one for the member */
 	Native_SetStr(&cad, text);
 	Native_SetNone(&out);
 	cEntity *ship = NULL;
