@@ -164,7 +164,7 @@ static cEntity *Fd_InFront(int i, cEntity *e, float reach) {
 	float bestD = reach * reach;
 	float yaw = NetPl_Kind(e) == NETREP_CHAR ? WChar(e)->view.y : Obj(e)->ang.y;
 	for (cEntity *o = cWorld_GetFirstEntity(g_pWorld); o; o = cEntity_Next(o)) {
-		if (o == e || o->deadNode.target || !o->active || Obj(o)->proxy ||
+		if (o == e || o->deadNode.target || !o->active || Obj(o)->replica ||
 			!(Entity_IsType(o, TYEN_WALKCHAR) || Entity_IsType(o, TYEN_CAR)) || WLife(o)->life <= 0 || WLife(o)->god) {
 			continue;
 		}
@@ -678,7 +678,7 @@ static void Fd_SlowTick(void) {
 			continue;
 		}
 		for (cEntity *o = cWorld_GetFirstEntity(g_pWorld); o && n < FD_SLOWED; o = cEntity_Next(o)) {
-			if (o == c || o->deadNode.target || Obj(o)->proxy ||
+			if (o == c || o->deadNode.target || Obj(o)->replica ||
 				!(Entity_IsType(o, TYEN_WALKCHAR) || Entity_IsType(o, TYEN_CAR)) ||
 				Fr_DistSq(o, &c->pos) > t->slowRadius * t->slowRadius) {
 				continue;
@@ -726,7 +726,7 @@ static int Fd_Blabla(int i, cEntity *e) {
 	int n = 0;
 	double until = Fr_Now() + t->blablaTime;
 	for (cEntity *o = cWorld_GetFirstEntity(g_pWorld); o; o = cEntity_Next(o)) {
-		if (o == e || o->deadNode.target || Obj(o)->proxy || !Entity_IsType(o, TYEN_WALKCHAR) ||
+		if (o == e || o->deadNode.target || Obj(o)->replica || !Entity_IsType(o, TYEN_WALKCHAR) ||
 			WLife(o)->life <= 0 || Fr_DistSq(o, &e->pos) > t->blablaRadius * t->blablaRadius) {
 			continue;
 		}

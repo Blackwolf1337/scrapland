@@ -184,7 +184,7 @@ static cEntity *Watch_Missile(const char *name, char *const *part, int n, const 
 		if (!e) {
 			return NULL;
 		}
-		Obj(e)->proxy = 1;
+		Obj(e)->replica = 1;
 		cMissileEntity_SetParent(Missile(e), parent ? parent->name : "");
 		if (weap == MISSILE_WEAP_SWARM) {
 			Swarm_NetSetUp(name);
@@ -201,7 +201,7 @@ static cEntity *Watch_Missile(const char *name, char *const *part, int n, const 
 		if (!e) {
 			return NULL;
 		}
-		Obj(e)->proxy = 1;
+		Obj(e)->replica = 1;
 		Obj_SetAng(e, &dir);
 		if (part[1][0]) {
 			Entity_SetModel(e, part[1], 1.0f, 1.0f, 1.0f, 0);
@@ -257,7 +257,7 @@ cEntity *Watch_Build(const char *name, int kind, const char *look, const NetRepS
 	if (kind == NETREP_CHAR && n >= 2 && part[1][0]) {
 		cEntity *e = cWorld_CreateEntity(g_pWorld, name, x, y, z, TYEN_WALKCHAR);
 		if (e) {
-			Obj(e)->proxy = proxy;
+			Obj(e)->replica = proxy;
 			/* a class the level does not load (a player's of the freeroam factions) */
 			Faction_EnsureClass(part[1]);
 			WithLife_SetActCtrl(e, part[1]);
@@ -275,7 +275,7 @@ cEntity *Watch_Build(const char *name, int kind, const char *look, const NetRepS
 		}
 		cEntity *e = cWorld_CreateEntity(g_pWorld, name, x, y, z, "item");
 		if (e) {
-			Obj(e)->proxy = proxy;
+			Obj(e)->replica = proxy;
 			if (part[1][0]) {
 				Entity_SetModel(e, part[1], 1.0f, 1.0f, 1.0f, 0);
 			}
@@ -294,7 +294,7 @@ cEntity *Watch_Build(const char *name, int kind, const char *look, const NetRepS
 	if (!e) {
 		return NULL;
 	}
-	Obj(e)->proxy = proxy;
+	Obj(e)->replica = proxy;
 	if (part[1][0]) {
 		Entity_SetModel(e, part[1], 1.0f, 1.0f, 1.0f, 0);
 	}
@@ -415,7 +415,7 @@ void Watch_Adopt(int slot, cEntity *e, int kind) {
 	WatchProxy *p = &watch.px[slot];
 	p->e = e;
 	p->kind = kind;
-	Obj(e)->proxy = 1;
+	Obj(e)->replica = 1;
 	Obj(e)->netStep = 0;
 	Entity_VarI(e, "UsrControl", &off, 1);
 	watch.proxies++;
@@ -669,7 +669,7 @@ static void Watch_Purge(void) {
 			e == Play_Entity() || Rep_LocalAmbient(e)) {
 			continue;
 		}
-		if (!Obj(e)->proxy && !Coop_ClientKeeps(e)) {
+		if (!Obj(e)->replica && !Coop_ClientKeeps(e)) {
 			cEntity_Del(e);
 		}
 	}
@@ -810,7 +810,7 @@ static void Watch_Records(const uint8_t *data, int size) {
 		if (!e) {
 			continue;
 		}
-		Obj(e)->proxy = 1;
+		Obj(e)->replica = 1;
 		if (act[0] && Entity_IsType(e, TYEN_WITH_LIFE)) {
 			WithLife_SetActCtrl(e, act);
 		}

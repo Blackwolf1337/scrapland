@@ -12,8 +12,9 @@
  * -imap:Levels/<level> to load the
  * server's level at once (else the menu loads first and the level of the welcome after it). The level runs without
  * the single player setup (no player, traffic, police, startup characters; InitOutMap of OutMap.c); characters and
- * ships the level scripts still make are deleted, the replicated ones are proxies (cObjEntity.proxy) that the
- * snapshots place, behind the server's time by the interpolation delay (NetRepDelay), interpolated. A free camera
+ * ships the level scripts still make are deleted, the replicated ones are replicas (cObjEntity.replica: only the
+ * Present half of their update runs) that the snapshots place, behind the server's time by the interpolation delay
+ * (NetRepDelay), interpolated. A free camera
  * ("WatchCam", an FCam with FreeCam on) flies with the input, starts above the view point of the welcome and takes
  * its camPos and camAng variables (the test channel: e = Scrap.GetEntity("WatchCam"); e.camPos = (x, y, z)). Its
  * position is the view point.

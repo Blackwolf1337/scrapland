@@ -5,6 +5,23 @@
  * ("TimeSpeed"), a slot controller that fires every 0.05 s, the sounds (cSndInterface) and the two movers of
  * include/scrap/modmove.h. Between two slots the model is drawn at a position and angles interpolated from the state
  * of the last slot (renderPos, renderAng). In a network game the cNetController holds the state the server sent.
+ *
+ * The update of every class has two halves (stage 3.1 of the second multiplayer design, like the game module and the
+ * cgame of Quake 3). Advance is the simulation: movement, collisions, AI, logic, script callbacks, the timers that
+ * change state, ModMove. Present is what the player sees and hears of the state: render lerp, model, animation display,
+ * effects, sounds, camera. Both run in single player's order (the update calls the pieces of both halves where they
+ * always were); a replica (cObjEntity.replica, a copy of the server's entity) runs only the Present pieces, from the
+ * state the network writes. A presentation event that the simulation starts (a crash sound, a hit effect, the fall
+ * sound) stays where the simulation starts it, in Advance: the server sends those (pres.h of the plan).
+ * Here, per frame (cObjEntity_Update):
+ *   Advance: ModMove (cModMove_Update), the slot callback OnObjSlot, the reset of the net controller.
+ *   Present: the sounds (cSndInterface_Tick), the render lerp, UpdateModel, the follow camera, the embedded effect.
+ *   Both: the timer and the slot clock; the class slot step (Obj_Tick) runs its pieces by the mode.
+ * Per slot (cObjEntity_Tick):
+ *   Advance: the scripted move (cObjMove_Tick), the AI (AI_Update).
+ *   Present: the radar blink time (radarTime after a change of RadarShow).
+ * State Present reads: pos, ang, slotPos, slotAng, vel and rotVel (the extrapolation of a missile), the model and its
+ * effect, radarShow, the embedded effect, the sounds (cSndInterface), the timer.
  */
 #ifndef SCRAP_OBJENTITY_H
 #define SCRAP_OBJENTITY_H
@@ -87,7 +104,8 @@ typedef struct cObjEntity {
 	vec3_t vel;
 	vec3_t rotVel;
 	byte netRes;			/* "NetRes": the index of the network resource */
-	byte proxy;			/* a watcher's copy of a replicated entity: no slot ticks (include/scrap/replicate.h) */
+	byte replica;			/* a copy of an entity of the server (include/scrap/replicate.h): only the Present
+					   half of its update runs, from the state the network writes (Obj_Advances) */
 	byte netStep;			/* a player's entity of the network: its actions and slot ticks run by tick
 					   (NetPl_Step, include/scrap/play.h), not by the frame */
 	byte proxyIdle;			/* ScrapC: a ship proxy whose ship the instance moved into its place (parked): its
@@ -233,6 +251,11 @@ static inline void Obj_UpdateModel(void *self) {
 
 static inline cObjEntity *Obj(const void *e) {
 	return (cObjEntity *)e;
+}
+
+/* 1 when the Advance half of the update runs: not on a replica */
+static inline byte Obj_Advances(const void *e) {
+	return !Obj(e)->replica;
 }
 
 /* 1 while a missile updates: cObjEntity_Update then moves the render state on by the velocity of one slot */

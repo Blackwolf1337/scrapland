@@ -831,7 +831,7 @@ static void Rep_Disown(int i, int k) {
 
 /* a parked ship no one sits in that player i may take: no other player owns it */
 static byte Rep_IsParked(cEntity *e, int i) {
-	if (!Entity_IsType(e, TYEN_CAR) || e->deadNode.target || Obj(e)->proxy || strncmp(e->name, "Parked", 6) ||
+	if (!Entity_IsType(e, TYEN_CAR) || e->deadNode.target || Obj(e)->replica || strncmp(e->name, "Parked", 6) ||
 		cVehicleEntity_GetOwnerSlot(e) != -1 || WLife(e)->life <= 0) {
 		return 0;
 	}
