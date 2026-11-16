@@ -210,11 +210,8 @@ void FX_ItemBlink(cEntity *e) {
 
 static void cObjElementFXItemFade_Start(cObjElementFXItemFade *self, cEntity *e);
 static void cObjElementFXItemTake_Start(cObjElementFXItemTake *self, cEntity *e);
-void FX_ItemFade(cEntity *e, int mode, float scale, cEntity *target) {
+static void FX_ItemFadeRun(cEntity *e, int mode, float scale, cEntity *target) {
 	NetAudit_Site(NA_SFX, "sfx.ItemFade");
-	if (g_Mp2) {
-		Pres_FxEnt(PRES_FX_ITEMFADE, e->name, target ? target->name : "", scale, mode);
-	}
 	cObjElementFXItemFade *fade = FX_DropNew(g_FXItemFadeFile, 0.5f);
 
 	if (fade) {
@@ -260,6 +257,16 @@ void FX_ItemFade(cEntity *e, int mode, float scale, cEntity *target) {
 	if (sc) {
 		ScorerFade_Start(&sc->fade, 0x40c0c0ff, 0x2020ff, 0.22f);
 	}
+}
+
+/* the effect sent to the players of a -mp2 instance (include/scrap/pres.h), the sinks inside it not again */
+void FX_ItemFade(cEntity *e, int mode, float scale, cEntity *target) {
+	if (g_Mp2) {
+		Pres_FxEnt(PRES_FX_ITEMFADE, e->name, target ? target->name : "", scale, mode);
+	}
+	g_PresIn++;
+	FX_ItemFadeRun(e, mode, scale, target);
+	g_PresIn--;
 }
 
 void FX_Sputnik(cEntity *e, const char *name) {

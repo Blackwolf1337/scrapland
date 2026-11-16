@@ -11,6 +11,8 @@
 #include "scrap/global.h"
 #include "scrap/nativeobj.h"
 #include "scrap/netaudit.h"
+#include "scrap/pres.h"
+#include "scrap/repent.h"
 #include "scrap/scorer.h"
 #include "scrap/players.h"
 #include "scrap/scrap.h"
@@ -720,6 +722,9 @@ API_FN(Scrap, SetTimeSpeed) {
 		return 0;
 	}
 	NetAudit_Site(NA_TIMESPEED, "timespeed.world:Scrap.SetTimeSpeed");
+	if (g_Mp2) {
+		Pres_NoRoute(NA_TIMESPEED, "pres.unforwarded:timespeed:", "Scrap.SetTimeSpeed");
+	}
 	Timer_SetSpeed(&g_pWorld->timer, (float)speed);
 	return Api_Build(out, "");
 }

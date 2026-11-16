@@ -10,6 +10,8 @@
 #include "scrap/fxscene.h"
 #include "scrap/missileentity.h"
 #include "scrap/netaudit.h"
+#include "scrap/pres.h"
+#include "scrap/repent.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/scrapfont.h"
 #include "scrap/scrapmodel.h"
@@ -208,6 +210,9 @@ void cDebris_Step(cDebris *d, float dt) {
 
 void cDebrisSys_Drop(cDebrisSys *sys, cDebris *d) {
 	NetAudit_Site(NA_DEBRIS, "debris.drop");
+	if (g_Mp2) {
+		Pres_NoRoute(NA_DEBRIS, "pres.unforwarded:debris:", __func__);
+	}
 	float t;
 
 	if (!d->fx && !(sys->radiusSq > cWorld_GetMinCamDistSq(g_pWorld, &d->drop[0]))) {

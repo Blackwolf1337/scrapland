@@ -46,7 +46,7 @@ static const char *const pres_opNames[PRES_O_COUNT] = { "?", "soundat", "sound3d
 typedef struct PresRecent {
 	uint32_t hash;
 	uint64_t ns;
-	byte msg;						/* played from a record */
+	byte msg;						/* 0 the client's own, 1 a sound record, 2 inside another record (an effect, a talk) */
 } PresRecent;
 
 static struct {
@@ -70,6 +70,7 @@ static struct {
 	/* client */
 	PresRecent recent[PRES_RECENT];
 	int fxKind;						/* of the PRES_O_FXENT record played */
+	int recOp;						/* the record being played */
 	char lastText[64];				/* the text of the last message, label or speech record (the test verb) */
 	int nextRecent;
 	uint32_t played[PRES_O_COUNT];
@@ -289,6 +290,12 @@ void Pres_SoundPos(const struct cSoundDesc *d, const vec3_t *pos) {
 
 static void Pres_Unforwarded(const char *prefix, const char *site) {
 	NetAudit_Func(NA_SOUND, prefix, site ? site : "?");
+}
+
+void Pres_NoRoute(int cat, const char *prefix, const char *site) {
+	if (Pres_Out()) {
+		NetAudit_Func((netAuditCat_t)cat, prefix, site);
+	}
 }
 
 void Pres_SoundAt(const char *name, const vec3_t *pos, int volume) {
@@ -562,7 +569,8 @@ void Pres_ClientSound(const char *name) {
 	if (!g_Mp2 || g_Instance || !g_Watch || !name || g_PresDerived) {
 		return;
 	}
-	byte msg = g_PresIn > 0;
+	byte msg = !g_PresIn ? 0 : pres.recOp == PRES_O_SOUNDAT || pres.recOp == PRES_O_SOUND3D ||
+		pres.recOp == PRES_O_SOUND2D ? 1 : 2;
 	if (!msg) {
 		NetAudit_Func(NA_SOUND, "pres.local:", g_SndSite ? g_SndSite : "?");
 	}
@@ -919,6 +927,7 @@ void Pres_Message(const uint8_t *data, int size) {
 			break;
 		}
 		pres.played[op]++;
+		pres.recOp = op;
 		if (op == PRES_O_MSGTEXT || op == PRES_O_LABELTEXT || op == PRES_O_SPEECH) {
 			NetRepReader t = r;
 			NetRep_GetStr(&t, pres.lastText, sizeof(pres.lastText));

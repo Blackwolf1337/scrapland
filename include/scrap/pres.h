@@ -145,6 +145,9 @@ struct cScorer *Pres_HudMade(int i);
 void Pres_HudReset(int i);
 /* the player whose HUD model sc is, -1 for another scorer */
 int Pres_HudOwner(const struct cScorer *sc);
+/* a presentation sink without a route ran on the instance (the camera of view 0, the debris, the world's time
+ * speed): counted as prefix site ("pres.unforwarded:<sink>:") unless inside a routed or derived call */
+void Pres_NoRoute(int cat, const char *prefix, const char *site);
 /* cSoundDesc_SetPos computed d at pos (the 3D sounds sent with their position) */
 void Pres_SoundPos(const struct cSoundDesc *d, const vec3_t *pos);
 

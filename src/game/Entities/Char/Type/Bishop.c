@@ -234,11 +234,8 @@ static void ChType_FXBishopSellLife(cAbstractFile *params) {
 	FX_BishopSellLife(attacker, attacked);
 }
 
-void FX_BishopSellLife(cEntity *attacker, cEntity *attacked) {
+static void FX_BishopSellLifeRun(cEntity *attacker, cEntity *attacked) {
 	NetAudit_Site(NA_SFX, "sfx.BishopSellLife");
-	if (g_Mp2 && attacked) {
-		Pres_FxEnt(PRES_FX_SELLLIFE, attacker ? attacker->name : "", attacked->name, 0.0f, 0);
-	}
 	if (attacker) {
 		CHECK(Entity_IsType(attacker, TYEN_WITH_LIFE));
 	}
@@ -252,6 +249,16 @@ void FX_BishopSellLife(cEntity *attacker, cEntity *attacked) {
 		cObjElementFXBishopSellLife_SetAttacker(el, attacker);
 		cObjElementFXBishopSellLife_SetAttacked(el, attacked);
 	}
+}
+
+/* the effect sent to the players of a -mp2 instance (include/scrap/pres.h), the sinks inside it not again */
+void FX_BishopSellLife(cEntity *attacker, cEntity *attacked) {
+	if (g_Mp2 && attacked) {
+		Pres_FxEnt(PRES_FX_SELLLIFE, attacker ? attacker->name : "", attacked->name, 0.0f, 0);
+	}
+	g_PresIn++;
+	FX_BishopSellLifeRun(attacker, attacked);
+	g_PresIn--;
 }
 
 static cGVar GVar_BishopHitSound;

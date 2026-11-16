@@ -20,6 +20,8 @@
 #include "scrap/nativeobj.h"
 #include "scrap/net.h"
 #include "scrap/netaudit.h"
+#include "scrap/pres.h"
+#include "scrap/repent.h"
 #include "scrap/pyentity.h"
 #include "scrap/ai.h"
 #include "scrap/alarm.h"
@@ -729,6 +731,9 @@ void Mode_SetTimeSpeed(double speed) {
 		return;
 	}
 	NetAudit_Site(NA_TIMESPEED, "timespeed.world:Mode_SetTimeSpeed");
+	if (g_Mp2) {
+		Pres_NoRoute(NA_TIMESPEED, "pres.unforwarded:timespeed:", __func__);
+	}
 	Timer_SetSpeed(&g_pWorld->timer, (float)speed);
 }
 

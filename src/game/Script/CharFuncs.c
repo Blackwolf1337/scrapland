@@ -21,6 +21,8 @@
 #include "scrap/input.h"
 #include "scrap/nativeobj.h"
 #include "scrap/netaudit.h"
+#include "scrap/pres.h"
+#include "scrap/repent.h"
 #include "scrap/pyfunction.h"
 #include "scrap/players.h"
 #include "scrap/play.h"
@@ -208,6 +210,9 @@ static void Functionary_Enter(const char *name) {
 	Native_ErrClear();
 	Native_Free(&v);
 	NetAudit_Site(NA_TIMESPEED, "timespeed.world:Functionary_Enter");
+	if (g_Mp2) {
+		Pres_NoRoute(NA_TIMESPEED, "pres.unforwarded:timespeed:", __func__);
+	}
 	Timer_SetSpeed(&g_pWorld->timer, (float)Mode_ModGetN("Functionary", "worldSpeed", 1.0));
 	Char_SlowEffect(1, 1.0);
 	Char_SetCls("Functionary", "FOVInterpTime", 0.5);
@@ -221,6 +226,9 @@ static void Functionary_Exit(const char *name) {
 	Char_SetCls("Functionary", "FOVInterpTime", 0.5 * speed);
 	Char_SetInt(name, "TimeSpeed", 1);
 	NetAudit_Site(NA_TIMESPEED, "timespeed.world:Functionary_Exit");
+	if (g_Mp2) {
+		Pres_NoRoute(NA_TIMESPEED, "pres.unforwarded:timespeed:", __func__);
+	}
 	Timer_SetSpeed(&g_pWorld->timer, 1.0f);
 	Char_SlowEffect(0, speed);
 	GVar_SetNum("S_PitchScale", 1.0);

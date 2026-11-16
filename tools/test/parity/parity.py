@@ -422,6 +422,13 @@ def run_level(a, level):
                              ((inst_me, at[0] + 400.0, at[1], at[2]) + ang), inst=level)
             res['join_own'] = bool(jme)
         time.sleep(a.settle)
+        if a.mp2:
+            # the presentation interface's audit over the collection (include/scrap/pres.h): calls of the instance
+            # without a route, one-shot sounds a client played twice, records whose entity a client lacked
+            host.try_ask('audit reset', inst=level, timeout=10)
+            for g in (host, join):
+                if g:
+                    g.try_ask('audit reset', timeout=10)
         inst = parse_ents(host.ask('entinfo %.0f %.0f %.0f %.0f' % (at[0], at[1], at[2], a.radius * 1.2),
                                    inst=level, timeout=30))
         res['instance'] = {'kinds': count(inst, at, a.radius)}
@@ -432,6 +439,13 @@ def run_level(a, level):
         res['host'] = collect(host, at, a.radius, inst_now)
         if join:
             res['join'] = collect(join, at, a.radius, inst_now)
+        if a.mp2:
+            res['pres'] = {}
+            for side, g, i in (('instance', host, level), ('host', host, None), ('join', join, None)):
+                if g:
+                    text = g.try_ask('audit', inst=i, timeout=10) or ''
+                    res['pres'][side] = {f[2]: int(f[0]) for f in (line.split('\t') for line in text.splitlines())
+                                         if len(f) >= 3 and f[2].startswith('pres.') and f[0].isdigit()}
         shots = []
         for g in [g for g in (sp, host, join) if g]:
             p = os.path.join(a.out, '%s-%s.png' % (level, g.name))
@@ -580,6 +594,12 @@ def report(results, out):
             lines += ['', 'Sound gaps (steady sounds single player plays near the player, a client not; SP, host, join):',
                       '']
             lines += ['- %s: %s' % (k, ', '.join(str(x) for x in v)) for k, v in sg]
+        if 'pres' in res:
+            bad = ['%s %s %d' % (side, k, n) for side, keys in sorted(res['pres'].items()) for k, n in sorted(keys.items())
+                   if k.startswith(('pres.unforwarded', 'pres.double', 'pres.missing'))]
+            sent = sum(n for k, n in res['pres'].get('instance', {}).items() if k.startswith('pres.sent:'))
+            lines += ['', 'Presentation interface over the collection: %d records sent by the instance; %s' %
+                      (sent, ', '.join(bad) if bad else 'nothing unforwarded, played twice or missing')]
         for key, title in (('radar', 'Radar icons'), ('hud', 'HUD items'), ('sounds', 'Sounds playing'),
                            ('fx', 'Particle systems drawn')):
             if key == 'hud':
