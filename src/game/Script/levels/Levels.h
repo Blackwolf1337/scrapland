@@ -56,6 +56,23 @@ extern const portFn_t g_GDBIntoTheGDBMethods[];
 extern const portFn_t g_GDBReinsertOwnMatrixMethods[];
 extern const portFn_t g_GDBReinsertOwnMatrix2Methods[];
 
+/* ---- the client part of a level (include/scrap/initsteps.h, stage 3.3) ---- */
+
+/* what a -mp2 client runs in place of the level's Map.InitStatus and Map.Init (SIM modules, the server's): the
+ * definitions they make (the flags of Init the level start reads, the classes of the level's entities) and the
+ * client's own rail traffic (until stage 2.2); the single player order calls the same functions from Map */
+typedef struct {
+	const char *level;					/* "DownTown" */
+	byte (*status)(const nativeVal_t *path);		/* in place of Map.InitStatus, NULL for nothing */
+	byte (*init)(const nativeVal_t *path);		/* in place of Map.Init, NULL for nothing */
+} lvClient_t;
+
+/* the client part of level (its name as in "Levels/<level>", any case), NULL for a level without one yet */
+const lvClient_t *Lv_Client(const char *level);
+byte DownTown_ClientStatus(const nativeVal_t *path);
+byte Police_ClientStatus(const nativeVal_t *path);
+byte Police_ClientInit(const nativeVal_t *path);
+
 /* ---- whole functions and data the level scripts share (src/game/Script/levels/LevelCommon.c) */
 
 /* the colours black (0,0,0,255) and clear (0,0,0,0) of SScorer.Fade (Mode_Fade) */

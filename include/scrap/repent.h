@@ -20,8 +20,10 @@
  * The client (src/game/App/ReplicaEnt.c) creates a replica (cObjEntity.replica: only the Present half runs) with the
  * server's name and class once it has both the create record and the create message of the same generation
  * (REPX_GEN), applies the journal through the same Var functions, places it from the snapshots (Watch.c) and the
- * class block. It deletes what its own level start and scripts make (counted in the audit: "client.script.create:"
- * at the creation, "client.purge:" at the deletion; stage 3.3 removes the cause). The own player's entity keeps the
+ * class block. Its level start runs only the DEF steps (include/scrap/initsteps.h, stage 3.3) and no simulation
+ * script runs on it: the audit counts what it still makes itself ("client.script.create:", its own rail traffic as
+ * "client.rail.create:") and every call of a SIM module ("client.sim.call:"). On a level without a client part yet
+ * it runs the whole start and deletes what that made ("client.purge:"). The own player's entity keeps the
  * prediction path (Play.c) and gets the journal too.
  *
  * Wire (reliable, channel 0, server to client): REPENT_MSG, a kind u8, then
@@ -135,6 +137,14 @@ void ReplicaEnt_Present(struct cEntity *e, int kind, const NetRepState *a, const
 void ReplicaEnt_Journal(int slot, struct cEntity *e);
 /* cWorld_CreateEntity on a -mp2 client: counted unless the replication made it */
 void ReplicaEnt_Created(const char *name, const char *type);
+/* Port_Entry on a -mp2 client: a call of module.func counted when the module table tags it SIM
+ * ("client.sim.call:Module.func"; the client runs no simulation script), as "client.rail.call:" when it is a call of
+ * the client's own rail traffic (its modules Traffic, VehiclesNPC and InTraffic, and what they call, until stage 2.2);
+ * ReplicaEnt_ModLeave when the call returns */
+void ReplicaEnt_ModCall(const char *module, const char *func);
+void ReplicaEnt_ModLeave(const char *module);
+/* the replication makes an entity or sets a journal value into one now (a replica or the own entity) */
+byte ReplicaEnt_Busy(void);
 /* the connection is gone (a travel): everything of it */
 void ReplicaEnt_Reset(void);
 /* the slot of a replica, -1 */

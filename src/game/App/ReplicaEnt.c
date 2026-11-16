@@ -13,9 +13,11 @@
 #include "scrap/faction.h"
 #include "scrap/game.h"
 #include "scrap/global.h"
+#include "scrap/initsteps.h"
 #include "scrap/itementity.h"
 #include "scrap/model.h"
 #include "scrap/netaudit.h"
+#include "scrap/netclass.h"
 #include "scrap/netrep.h"
 #include "scrap/play.h"
 #include "scrap/replicate.h"
@@ -45,7 +47,9 @@ static struct {
 	RcSlot s[NETREP_MAX_ENTS];
 	NetRepJournal *j;
 	byte creating;					/* the replication makes an entity now: not counted */
-	uint32_t made, waits, fails, purged, messages, events;
+	int applying;					/* a journal value goes into an entity now */
+	uint32_t made, waits, fails, purged, messages, events, simCalls;
+	int railDepth;					/* calls of the rail traffic's modules running */
 } rc;
 
 static NetRepJournal *ReplicaEnt_J(void) {
@@ -78,7 +82,47 @@ void ReplicaEnt_Created(const char *name, const char *type) {
 		!crt_stricmp(type, TYEN_CAMPATH)) {
 		return;
 	}
-	ReplicaEnt_Count("client.script.create:", type, name);
+	ReplicaEnt_Count(rc.railDepth ? "client.rail.create:" : "client.script.create:", type, name);
+}
+
+/* the modules of the client's own rail traffic (Rep_LocalAmbient), until stage 2.2 runs it on the server */
+static byte ReplicaEnt_RailModule(const char *module) {
+	return !strcmp(module, "Traffic") || !strcmp(module, "VehiclesNPC") || !strcmp(module, "InTraffic");
+}
+
+void ReplicaEnt_ModCall(const char *module, const char *func) {
+	char level[32], key[96];
+	const char *path = g_pApp && g_pApp->levelPath ? g_pApp->levelPath : "";
+	const char *slash = strrchr(path, '/');
+	byte rail = ReplicaEnt_RailModule(module);
+	int n = 0;
+
+	for (const char *p = slash ? slash + 1 : path; *p && n < (int)sizeof(level) - 1; p++) {
+		level[n++] = (char)(*p >= 'A' && *p <= 'Z' ? *p - 'A' + 'a' : *p);
+	}
+	level[n] = 0;
+	if (NetClass_ModuleTag(module, func, level) == NC_SIM) {
+		Str_PrintfQuiet(key, sizeof(key), "%s.%s", module, func);
+		if (rail || rc.railDepth) {
+			NetAudit_Name(NA_CREATE, "client.rail.call:", key);
+		} else {
+			NetAudit_Name(NA_CREATE, "client.sim.call:", key);
+			rc.simCalls++;
+		}
+	}
+	if (rail) {
+		rc.railDepth++;
+	}
+}
+
+void ReplicaEnt_ModLeave(const char *module) {
+	if (rc.railDepth && ReplicaEnt_RailModule(module)) {
+		rc.railDepth--;
+	}
+}
+
+byte ReplicaEnt_Busy(void) {
+	return rc.creating || rc.applying;
 }
 
 int ReplicaEnt_SlotOf(const cEntity *e) {
@@ -89,6 +133,7 @@ int ReplicaEnt_SlotOf(const cEntity *e) {
  * variable name) */
 static void ReplicaEnt_Apply(cEntity *e, const NetRepJVal *v) {
 	char name[NETREP_JNAME];
+	rc.applying++;
 	Str_Copy(name, v->name, sizeof(name));
 	char *hash = strchr(name, '#');
 	if (hash) {
@@ -118,6 +163,7 @@ static void ReplicaEnt_Apply(cEntity *e, const NetRepJVal *v) {
 		break;
 	}
 	}
+	rc.applying--;
 }
 
 void ReplicaEnt_Journal(int slot, cEntity *e) {
@@ -293,7 +339,10 @@ void ReplicaEnt_Frame(void) {
 	uint32_t tick;
 	char lk[NETREP_LOOK_MAX + 1];
 
-	ReplicaEnt_Purge();
+	/* a level whose start runs the client's steps only (include/scrap/initsteps.h) makes nothing to delete */
+	if (!InitSteps_Client()) {
+		ReplicaEnt_Purge();
+	}
 	for (int slot = 0; slot < NETREP_MAX_ENTS; slot++) {
 		RcSlot *s = &rc.s[slot];
 		if (!s->want || s->made || !s->gen) {
@@ -476,8 +525,8 @@ void ReplicaEnt_Mirror(tcBuf *b) {
 		view[2] = own->pos.z;
 	}
 	TC_Addf(b, "{\"side\":\"client\",\"view\":[%.0f,%.0f,%.0f],\"own\":%d,\"made\":%u,\"waits\":%u,\"fails\":%u,"
-		"\"purged\":%u,\"ents\":[", (double)view[0], (double)view[1], (double)view[2], Play_OwnSlot(), rc.made, rc.waits,
-		rc.fails, rc.purged);
+		"\"purged\":%u,\"simcalls\":%u,\"ents\":[", (double)view[0], (double)view[1], (double)view[2], Play_OwnSlot(),
+		rc.made, rc.waits, rc.fails, rc.purged, rc.simCalls);
 	int n = 0;
 	for (int s = 0; s < NETREP_MAX_ENTS; s++) {
 		cEntity *e = rc.s[s].made && s != Play_OwnSlot() ? Watch_SlotEntity(s) : NULL;

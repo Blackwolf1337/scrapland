@@ -173,11 +173,9 @@ static byte Po_Generic(const nativeVal_t *a) {
 
 /* ---- Map ---- */
 
-/* CreateFicusDeadClass(): the class of Ficus' body; dead and still, or in his loop in Mission_FicusDead */
-static byte PoMap_CreateFicusDeadClass(const nativeVal_t *a, nativeVal_t *out) {
-	(void)a;
-	(void)out;
-	byte fd = LvN_SaveIs("Mission.Library", "Mission_FicusDead");
+/* the class of Ficus' body: dead and still, or in his loop in Mission_FicusDead (fd); story: the save variable of his
+ * death too (the server's, between the two actions as the script set it) */
+static byte PoMap_FicusClass(byte fd, byte story) {
 	if (!Mode_Import("Init") || !Mode_SAct("CreateClass", "FicusDead") || !Mode_SActSet(1, "ModelFilePath", "Models/Chars/Police/Police.m3d", 0) ||
 		!Mode_SAct("CreateAction", "FicusDead") || !Mode_SActSet(0, "AnmFilePath", "Models/Chars/Police/Anm/FicusDead.M3D", 0) || !Mode_SActSet(0, "isLoop", NULL, 0)) {
 		return 0;
@@ -185,9 +183,18 @@ static byte PoMap_CreateFicusDeadClass(const nativeVal_t *a, nativeVal_t *out) {
 	if (!fd) {
 		return Mode_SActSet(1, "DefAction", "FicusDead", 0);
 	}
-	SaveVar_Set("Police.FicusDeath", "1");
+	if (story) {
+		SaveVar_Set("Police.FicusDeath", "1");
+	}
 	return Mode_SAct("CreateAction", "FicusLoop") && Mode_SActSet(0, "AnmFilePath", "Models/Chars/Police/Anm/FicusLoop.M3D", 0) && Mode_SActSet(0, "isLoop", NULL, 1) &&
 		Mode_SActSet(1, "DefAction", "FicusLoop", 0);
+}
+
+/* CreateFicusDeadClass(): the class of Ficus' body; dead and still, or in his loop in Mission_FicusDead */
+static byte PoMap_CreateFicusDeadClass(const nativeVal_t *a, nativeVal_t *out) {
+	(void)a;
+	(void)out;
+	return PoMap_FicusClass(LvN_SaveIs("Mission.Library", "Mission_FicusDead"), 1);
 }
 
 /* CreateFicus(): Ficus' body at its dummy (the module variable ficus) */
@@ -208,9 +215,24 @@ static byte PoMap_CreateFicus(const nativeVal_t *a, nativeVal_t *out) {
 	return ok;
 }
 
+/* the modules of InitStatus; an indoor map next to Outskirts (the flags of Init) */
+static byte PoMap_Flags(void) {
+	static const char *const mods[] = { "Init", "CharsNPC", "Elevator", "InTraffic" };
+	nativeVal_t v, r;
+	for (int i = 0; i < 4; i++) {
+		if (!Mode_Import(mods[i])) {
+			return 0;
+		}
+	}
+	Native_SetInt(&v, 0);
+	LvN_Str(&r, "Outskirts");
+	byte ok = Mode_SetModVar("Init", "Outdoor", &v) && Mode_SetModVar("Init", "OutArea", &r);
+	Native_Free(&r);
+	return ok;
+}
+
 /* InitStatus(LevelPath): an indoor map next to Outskirts; the police boss, the elevators, the NPCs that come back */
 static byte PoMap_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
-	static const char *const mods[] = { "Init", "CharsNPC", "Elevator", "InTraffic" };
 	static const char *const defs[][2] = { { "Metro", "DM_Door_Metro_Press" }, { "MetroExt", "DM_Door_Metro_Press" },
 		{ "Elevator", "DM_Door_Elevator_Outskirts" } };
 	static const struct {
@@ -221,16 +243,7 @@ static byte PoMap_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t v, r;
 	(void)a;
 	(void)out;
-	for (int i = 0; i < 4; i++) {
-		if (!Mode_Import(mods[i])) {
-			return 0;
-		}
-	}
-	Native_SetInt(&v, 0);
-	LvN_Str(&r, "Outskirts");
-	byte ok = Mode_SetModVar("Init", "Outdoor", &v) && Mode_SetModVar("Init", "OutArea", &r);
-	Native_Free(&r);
-	if (!ok) {
+	if (!PoMap_Flags()) {
 		return 0;
 	}
 	if (LvN_SaveIs("PoliceBossAtPolice", "1")) {
@@ -260,12 +273,23 @@ static byte PoMap_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	return m == 0 && Mode_Import("Messenger") && Mode_SetModVar("Messenger", "MakeMDP", &v);
 }
 
+/* the fake traffic behind the windows (InTraffic imported; the client's own rail traffic until stage 2.2) */
+static byte PoMap_FakeTraffic(void) {
+	static const char *const light[] = { "TLight1B", "TLight2B", "TLight3B", NULL };
+	nativeVal_t v;
+	Mode_Texts(&v, light, -1);
+	byte ok = Mode_SetModVar("InTraffic", "N_TrafficList", &v);
+	Native_Free(&v);
+	Native_SetInt(&v, 25);
+	return ok && Mode_SetModVar("InTraffic", "N_NumTraffic", &v) && PORT_CALL(InTraffic, LoadFakeTraffic, NULL, "") &&
+		PORT_CALL(InTraffic, FakeTraffic, NULL, "");
+}
+
 /* Init(LevelPath): Ficus' body, the teleporters, the gatekeepers of the security doors, the fake traffic, the costume
  * of the viscoson, the fade after the escape from the jail */
 static byte PoMap_Init(const nativeVal_t *a, nativeVal_t *out) {
 	static const char *const mods[] = { "Elevator", "Teleport", "Metro", "InTraffic" };
-	static const char *const light[] = { "TLight1B", "TLight2B", "TLight3B", NULL };
-	nativeVal_t e, v;
+	nativeVal_t e;
 	(void)a;
 	(void)out;
 	if (!PORT_LOWN(Map, CreateFicusDeadClass, NULL, "") || !PORT_LOWN(Map, CreateFicus, NULL, "")) {
@@ -291,12 +315,7 @@ static byte PoMap_Init(const nativeVal_t *a, nativeVal_t *out) {
 	if (!ok) {
 		return 0;
 	}
-	Mode_Texts(&v, light, -1);
-	ok = Mode_SetModVar("InTraffic", "N_TrafficList", &v);
-	Native_Free(&v);
-	Native_SetInt(&v, 25);
-	if (!ok || !Mode_SetModVar("InTraffic", "N_NumTraffic", &v) || !PORT_CALL(InTraffic, LoadFakeTraffic, NULL, "") ||
-		!PORT_CALL(InTraffic, FakeTraffic, NULL, "")) {
+	if (!PoMap_FakeTraffic()) {
 		return 0;
 	}
 	if (LvN_SaveIs("CostumeAtPolice", "1")) {
@@ -319,6 +338,18 @@ static byte PoMap_Init(const nativeVal_t *a, nativeVal_t *out) {
 		return 1;
 	}
 	return Po_Fade(lv_black, lv_black, 1.0) && Po_FadeLater(0.1, lv_black, lv_clear, 1.0);
+}
+
+/* the client part (Levels.h): the flags of InitStatus; Ficus' class and the fake traffic of Init */
+byte Police_ClientStatus(const nativeVal_t *path) {
+	(void)path;
+	return PoMap_Flags();
+}
+
+byte Police_ClientInit(const nativeVal_t *path) {
+	(void)path;
+	return PoMap_FicusClass(LvN_SaveIs("Mission.Library", "Mission_FicusDead"), 0) && Mode_Import("InTraffic") &&
+		PoMap_FakeTraffic();
 }
 
 LV_FN(PoMap, CreateFicusDeadClassA, 0, PoMap_CreateFicusDeadClass)

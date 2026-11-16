@@ -36,7 +36,7 @@ GAME = os.path.join(ROOT, 'src/game')
 # every tag, in the order of the enum (NC_UNTAGGED is 0)
 TAGS = ['SIM', 'DEF', 'PRES_STATE', 'PRES_EVENT', 'UI', 'QUERY', 'CLIENT', 'NET_OLD', 'STATE', 'EVENT',
 	'SERVER_ONLY', 'CLIENT_ONLY', 'WORLD_SETTING', 'SCENE', 'WORLD', 'PLAYER', 'PARTY', 'STORY', 'PLAYER_ENTER',
-	'NEAREST', 'ANY', 'PLAYER_SHARED', 'PARTY_SHARED']
+	'NEAREST', 'ANY', 'PLAYER_SHARED', 'PARTY_SHARED', 'GROUP', 'RAIL']
 # the tables: name, the tags its rows may have, what a row is
 TABLES = collections.OrderedDict([
 	('api', (['SIM', 'DEF', 'PRES_STATE', 'PRES_EVENT', 'UI', 'QUERY', 'CLIENT', 'NET_OLD'],
@@ -44,11 +44,12 @@ TABLES = collections.OrderedDict([
 	('entvar', (['SIM', 'STATE', 'EVENT', 'SERVER_ONLY', 'CLIENT_ONLY'], 'an entity variable')),
 	('gvar', (['SIM', 'STATE', 'EVENT', 'SERVER_ONLY', 'CLIENT_ONLY', 'WORLD_SETTING'],
 		'an engine variable scripts or data set')),
-	('module', (['DEF', 'SIM', 'UI', 'SCENE'], 'a script module: Module, or level/Module for a module of a level')),
+	('module', (['DEF', 'SIM', 'UI', 'SCENE'],
+		'a script module: Module, or level/Module for a module of a level; Module.func for a function of a mixed module')),
 	('modvar', (['WORLD', 'PLAYER', 'PARTY', 'PLAYER_SHARED', 'PARTY_SHARED', 'CLIENT'],
 		'a script module variable: Module.name')),
 	('savevar', (['STORY', 'PLAYER'], 'a save variable prefix (the name up to its first dot)')),
-	('initstep', (['WORLD', 'PLAYER_ENTER', 'DEF'], 'a step of the level start: File:call')),
+	('initstep', (['WORLD', 'PLAYER_ENTER', 'DEF', 'GROUP', 'RAIL'], 'a step of the level start: File:call')),
 	('playerread', (['NEAREST', 'ANY', 'PARTY', 'WORLD'],
 		'a read of "the player" in the world context: C function or Module.variable')),
 ])
@@ -369,6 +370,9 @@ def header():
 		'netTag_t NetClass_Find(netTable_t t, const char *name);',
 		'/* the row of name in table t as NetClass_Find finds it, NULL */',
 		'const netClassRow_t *NetClass_Row(netTable_t t, const char *name);',
+		'/* the tag of a function of a script module in the module table: the row "Module.func", else "Module", else the',
+		' * same forms of a level\'s module "level/Module.func", "level/Module" (level: the lower case name, NULL) */',
+		'netTag_t NetClass_ModuleTag(const char *module, const char *func, const char *level);',
 		'/* the name of a tag ("SIM"; "untagged", "absent") and of a table ("api") */',
 		'const char *NetClass_TagName(netTag_t tag);',
 		'const char *NetClass_TableName(netTable_t t);',
