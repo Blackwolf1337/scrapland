@@ -5,3 +5,5 @@ T=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 R=$(cd "$T/../../.." && pwd)
 S=${COOP_SCRATCH:?set COOP_SCRATCH to the scratch folder of the coop tools}
 mkdir -p "$S"
+# no core files of the games (killed rendered games leave NVIDIA cores of ~100 MB each)
+ulimit -c 0

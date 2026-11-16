@@ -40,6 +40,14 @@ REPO = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
 sys.path.insert(0, os.path.join(REPO, 'tools', 'test'))
 import channel  # noqa: E402
 
+try:
+    import resource
+    # no core files of the games (the rendered games killed at the end of a run leave NVIDIA cores of ~100 MB each);
+    # the games inherit the limit
+    resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+except (ImportError, ValueError, OSError):
+    pass
+
 CITY = ['DownTown', 'Outskirts', 'Commercial', 'Scrapyard', 'GDB', 'Police', 'Bank', 'Press', 'Temple', 'TownHall',
         'GamblinDen']
 RAIL = ('NormalTraffic', 'MediumTraffic', 'HeavyTraffic')

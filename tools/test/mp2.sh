@@ -9,4 +9,6 @@
 #   tools/test/mp2.sh all <chapter> --points-dir DIR           all of the above and a summary
 #   tools/test/mp2.sh diff <old out> <new out>                 two runs against the run-to-run noise
 # common: --out DIR (default build-linux64/mp2), --build DIR, --port BASE (40 ports from BASE), --scratch DIR, --device
+# no core files of the games (killed rendered games leave NVIDIA cores of ~100 MB each)
+ulimit -c 0
 exec python3 "$(dirname "$(readlink -f "$0")")/parity/mp2.py" "$@"
