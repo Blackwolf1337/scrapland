@@ -383,13 +383,11 @@ static byte Om_InitOutMap(void) {
 	if (Arena_On() || (g_Watch && Watch_ArenaWorld())) {
 		return Mode_Done(&t, 1);
 	}
-	/* a watcher (include/scrap/replicate.h): the instance has the players, traffic and police; the client makes what
-	 * single player shows around the camera and the instance has as well: the accelerators, the phone cabs, the
-	 * parking boxes and areas and the links (their uses are the instance's), and the rail traffic, which flies around
-	 * the camera (Rep_LocalAmbient) */
+	/* a watcher (include/scrap/replicate.h): the instance has the players, the traffic with the rail traffic around
+	 * every player (include/scrap/viewers.h) and the police; the client makes what the instance has as well: the
+	 * accelerators, the phone cabs, the parking boxes and areas and the links (their uses are the instance's) */
 	if (g_Watch) {
-		return Mode_Done(&t, OM_START(Accelerator, Init) && OM_START(PhoneCab, Init) && OM_START(Parking, Init) &&
-			OM_START(Traffic, InitAIProfiles) && OM_START(Traffic, InitCivilTraffic));
+		return Mode_Done(&t, OM_START(Accelerator, Init) && OM_START(PhoneCab, Init) && OM_START(Parking, Init));
 	}
 	int c = OM_START(Accelerator, Init) && Native_GVarGet("SplitScreen", split) ? Mode_CmpI(split, "!=", 0) : -1;
 	if (c) {

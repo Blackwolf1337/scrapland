@@ -334,9 +334,9 @@ int NetRep_ReadAck(const uint8_t *data, int size, uint16_t *newest, uint32_t *bi
 /* ---- input and prediction (stage M3b) ---- */
 
 #define NETREP_INPUT_REDUNDANCY 4	/* inputs per ack message: the newest and the ones of the ticks before */
-/* the bytes of an ack with the most inputs, each with a bump (NetRep_WriteAckInput): the ack 19, the count, tick and
- * shown time 9, per input 16 and six variable-length ints of up to 5 bytes */
-#define NETREP_ACKINPUT_MAX (28 + NETREP_INPUT_REDUNDANCY * (16 + 6 * 5))
+/* the bytes of an ack with the most inputs (NetRep_WriteAckInput): the ack 19, the count, tick and shown time 9, per
+ * input 16 */
+#define NETREP_ACKINPUT_MAX (28 + NETREP_INPUT_REDUNDANCY * 16)
 #define NETREP_INBUF 64				/* ticks of input the server keeps per player */
 #define NETREP_INPUT_AHEAD 32		/* input more ticks ahead of the server than this is dropped */
 #define NETREP_PRED 64				/* ticks of predicted states the client keeps */
@@ -351,8 +351,6 @@ int NetRep_ReadAck(const uint8_t *data, int size, uint16_t *newest, uint32_t *bi
 #define NETREP_IN_BOOST 0x0010		/* ship: boost */
 #define NETREP_IN_SWITCH 0x0020		/* get into the nearest parked ship, out of the ship (on its press) */
 #define NETREP_IN_FULL 0x0040		/* ship: the full thrust (its second accelerate key) */
-#define NETREP_IN_BUMP 0x0080		/* ship: it bumped the client's own rail traffic (Rep_LocalAmbient) in the tick, which
-									   the server does not have: bump is its state after the tick (NetPl_Bump) */
 
 /* the input of one tick: the controls of a character (walk, strafe, jump; the view turn) or a ship (acceleration,
  * strafe, vertical strafe; the turn) */
@@ -365,7 +363,6 @@ typedef struct NetRepInput {
 	uint16_t buttons;
 	uint8_t weapon;
 	uint16_t slot;					/* the own entity's slot it was made for */
-	int32_t bump[6];				/* NETREP_IN_BUMP: the position (NetRep_QPos) and velocity (NetRep_QVel) */
 } NetRepInput;
 
 int8_t NetRep_QMove(float v);		/* -1..1 */

@@ -13,6 +13,7 @@
 #include "scrap/scrapcollision.h"
 #include "scrap/scrapmodel.h"
 #include "scrap/vehicleentity.h"
+#include "scrap/viewers.h"
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
 #include "scrap/players.h"
@@ -143,7 +144,7 @@ static void cExtPolice_Think(cExtPolice *self) {
 	vec3_t tmp;
 	Nto1Node *n = Logic_ListFirst(self->list);
 	/* the instance: the police goes for the players whose alarm is on (include/scrap/players.h) */
-	byte alarm = Players_Net() ? Players_NearestWanted(&g_pWorld->camPos[0]) != NULL : Players_CurAlarm()->on;
+	byte alarm = Players_Net() ? Players_SomeWanted() : Players_CurAlarm()->on;
 
 	Players_LevelReset(PLAYERS_LV_POLICE);
 	if (alarm && !self->alarm && (byte)Talk_IsShown()) {
@@ -168,9 +169,9 @@ static void cExtPolice_Think(cExtPolice *self) {
 		cEntity *near = alarm && Players_Net() ? Players_NearestWanted(Entity_GetPos(e, &tmp)) :
 			Players_Nearest(Entity_GetPos(e, &tmp));
 		if (g_ExtPoliceChasing && !alarm) {
-			float d = cWorld_GetMinCamDistSq(g_pWorld, Entity_GetPos(e, &tmp));
+			float d = Viewers_MinDistSq(Entity_GetPos(e, &tmp));
 			if (d > g_MaxDistReposAI * g_MaxDistReposAI * 9.0f * 0.0625f &&
-				!Players_SeesModel(Obj_GetModel(e))) {
+				!Viewers_SeesModel(Obj_GetModel(e))) {
 				cEntity_Del(e);
 				continue;
 			}

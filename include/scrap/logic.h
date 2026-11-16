@@ -993,6 +993,21 @@ void cEnemiesTraffic_dtor(cEnemiesTraffic *self);
 void cEnemiesTraffic_Init(cEnemiesTraffic *self);
 void cEnemiesTraffic_Update(cEnemiesTraffic *self, float dt);
 
+/* the quotas of the instance's viewers (include/scrap/viewers.h): the kinds of traffic single player keeps around its
+ * camera, by their lists */
+enum { TRAFFIC_Q_NORMAL, TRAFFIC_Q_MEDIUM, TRAFFIC_Q_HEAVY, TRAFFIC_Q_SKY, TRAFFIC_QUOTAS };
+/* the kind of traffic e is (its list), -1 */
+int Traffic_QuotaKind(struct cEntity *e);
+/* the leader (an index of Viewers_At) whose quota e fills from now: the leader with the fewest of its kind under
+ * quota, else the leader of the viewer nearest to it; prev the id of the leader it filled before (-1); -1 for none */
+int Traffic_QuotaLeader(struct cEntity *e, int prev);
+/* the rail traffic of the scripts (src/game/Script/Traffic.c): the count of a kind the level sets (Traffic.NumNormal,
+ * NumMedium, NumHeavy) and a new ship of a kind as its death makes one */
+int Traffic_RailQuota(int kind);
+byte Traffic_RailNew(int kind);
+/* the instance's test line "traffic": the entities and the ships of each kind; 1 if it was one */
+byte Traffic_Command(const char *line);
+
 /* RustyLogic.cpp: states 7 the walk to a junk point, 8 the work at it, 9 pissed at the platform */
 typedef struct cRustyLocalLogic {
 	cGenCharLocalLogic base;

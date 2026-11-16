@@ -26,6 +26,7 @@
 #include "scrap/sound.h"
 #include "scrap/sputniks.h"
 #include "scrap/vehicleentity.h"
+#include "scrap/viewers.h"
 #include "scrap/walkcharentity.h"
 #include "scrap/withlifeentity.h"
 #include "scrap/world.h"
@@ -86,8 +87,7 @@ static int World_IsIgnoredInline(cWorld *self, cEntity *e) {
 			return 1;
 		}
 	}
-	/* not in the original: a replay of the client's own entity (include/scrap/play.h) */
-	return g_PlayReplaying && Rep_LocalAmbient(e);
+	return 0;
 }
 
 /* the box of a sphere query: the margin of the grid on the radius */
@@ -880,10 +880,9 @@ cEntity *cWorld_GetFirstEntity(cWorld *world) {
 	return NULL;
 }
 
-float cWorld_GetMinCamDistSqAt(cWorld *world, const vec3_t *pos, const char *site) {
+float cWorld_ViewsMinDistSq(cWorld *world, const vec3_t *pos) {
 	float best = FLT_MAX_F;
 
-	NetAudit_Headless(NA_VISIBLE, "mincam.read.headless:", site);
 	for (int i = 0; i < 4; i++) {
 		if ((uintptr_t)world->camName[i]) {
 			const vec3_t *c = &world->camPos[i];
@@ -893,8 +892,13 @@ float cWorld_GetMinCamDistSqAt(cWorld *world, const vec3_t *pos, const char *sit
 			best = Float_MinSS(dy * dy + dx * dx + dz * dz, best);
 		}
 	}
+	return best;
+}
+
+float cWorld_GetMinCamDistSqAt(cWorld *world, const vec3_t *pos, const char *site) {
+	NetAudit_Headless(NA_VISIBLE, "mincam.read.headless:", site);
 	/* the instance has no cameras: its players are the viewers */
-	return Players_Net() ? Float_MinSS(Players_MinDistSq(pos), best) : best;
+	return Viewers_Server() ? Viewers_MinDistSq(pos) : cWorld_ViewsMinDistSq(world, pos);
 }
 
 /* the data of the "Obj" entity name of g_pWorld (self is not used) */
@@ -1139,6 +1143,8 @@ void cWorld_Update(cWorld *self, float dt) {
 			}
 			Players_SetOwner((int)slot, e);
 		}
+		/* not in the original: the instance's viewers after the owner scan (include/scrap/viewers.h) */
+		Viewers_Frame(cTimer_GetDelta(timer));
 		Sound_Update(cTimer_GetDelta(timer));
 		cWorld_UpdateListeners(self, cTimer_GetDelta(timer));
 		Players_UpdateAlarms(cTimer_GetDelta(timer));

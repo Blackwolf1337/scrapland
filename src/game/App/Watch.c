@@ -659,16 +659,11 @@ byte Watch_ArenaWorld(void) {
 	return (watch.welcome & REP_WELCOME_ARENA) != 0;
 }
 
-void Watch_RailKill(void) {
-	uint8_t m = REP_MSG_RAILKILL;
-	Watch_SendReliable(&m, 1);
-}
-
-/* characters and ships the level scripts made: the instance has the real ones (not the client's own rail traffic) */
+/* characters and ships the level scripts made: the instance has the real ones (the rail traffic too) */
 static void Watch_Purge(void) {
 	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
 		if (e->deadNode.target || (!Entity_IsType(e, TYEN_CAR) && !Entity_IsType(e, TYEN_WALKCHAR)) ||
-			e == Play_Entity() || Rep_LocalAmbient(e)) {
+			e == Play_Entity()) {
 			continue;
 		}
 		if (!Obj(e)->replica && !Coop_ClientKeeps(e)) {

@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include "scrap/chartype.h"
+#include "scrap/viewers.h"
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
 #include "scrap/players.h"
@@ -532,7 +533,7 @@ byte cGenCharLocalLogic_CanAttack(cLocalLogic *base, cEntity *e) {
 	if (!self->canAttack) {
 		return 0;
 	}
-	float d = cWorld_GetMinCamDistSq(g_pWorld, Entity_GetPos(e, &t));
+	float d = Viewers_MinDistSq(Entity_GetPos(e, &t));
 	if (!(g_GenCharAttackLimit * g_GenCharAttackLimit > d) || Obj(e)->radarShow || !Entity_GetAI(e)) {
 		return 0;
 	}

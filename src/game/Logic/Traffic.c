@@ -8,10 +8,12 @@
  * OnNeedMoreChasingTraffic ask the script for ships (the farthest one goes when there are too many). While the boss
  * controls the robots the whole traffic attacks the player.
  */
+#include <stdio.h>
 #include <string.h>
 
 #include "scrap/gvar.h"
 #include "scrap/chartype.h"
+#include "scrap/console.h"
 #include "scrap/filepak.h"
 #include "scrap/aivehicle.h"
 #include "scrap/hashtable.h"
@@ -24,6 +26,7 @@
 #include "scrap/scrapcollision.h"
 #include "scrap/scrapmodel.h"
 #include "scrap/vehicleentity.h"
+#include "scrap/viewers.h"
 #include "scrap/weapons.h"
 #include "scrap/world.h"
 #include "scrap/staticinit.h"
@@ -107,7 +110,7 @@ static byte Traffic_FightChance(cEntity *a, cEntity *b) {
 	return g_ProbTrafficFighting > (float)(Weap_Rand01() * (double)100.99f + 0.0);
 }
 
-/* the ship of the traffic farthest from the cameras goes, unless it is in view and nearer than
+/* the ship of the traffic farthest from the cameras (the viewers) goes, unless it is in view and nearer than
  * TrafficRemovalDist */
 static void cEnemiesTraffic_RemoveFarthest(cEnemiesTraffic *self) {
 	vec3_t tmp;
@@ -117,7 +120,7 @@ static void cEnemiesTraffic_RemoveFarthest(cEnemiesTraffic *self) {
 	for (Nto1Node *n = Logic_ListFirst(self->traffic); n;) {
 		cEntity *e = n->data;
 		n = Logic_ListNext(n);
-		float d = cWorld_GetMinCamDistSq(g_pWorld, Entity_GetPos(e, &tmp));
+		float d = Viewers_MinDistSq(Entity_GetPos(e, &tmp));
 		if (d > best) {
 			far = e;
 			best = d;
@@ -126,7 +129,7 @@ static void cEnemiesTraffic_RemoveFarthest(cEnemiesTraffic *self) {
 	if (!far) {
 		return;
 	}
-	if (Players_SeesModel(Obj_GetModel(far))) {
+	if (Viewers_SeesModel(Obj_GetModel(far))) {
 		float r = g_TrafficRemovalDist;
 		if (!(best >= r * r)) {
 			return;
@@ -240,7 +243,7 @@ static Nto1Node *Traffic_UpdateFighter(cEnemiesTraffic *self, Nto1Node *n, cEnti
 	}
 	float r = g_TrafficFightingMaxDist;
 	float r2 = r * r;
-	if (!tm || Players_SeesModel(tm) || Players_SeesModel(Obj_GetModel(e)) ||
+	if (!tm || Viewers_SeesModel(tm) || Viewers_SeesModel(Obj_GetModel(e)) ||
 		!(Traffic_Dist2(Entity_GetPos(e, &tmp), up->x, up->y, up->z) > r2) ||
 		!(Traffic_Dist2(CGameModel_GetPos(tm, &tmp), up->x, up->y, up->z) > r2)) {
 		return Logic_ListNext(n);
@@ -266,6 +269,190 @@ static Nto1Node *Traffic_UpdateFighter(cEnemiesTraffic *self, Nto1Node *n, cEnti
 	return next;
 }
 
+/* ---- the quotas of the instance's viewers (include/scrap/viewers.h) ---- */
+
+#define TRAFFIC_GROW 4			/* rail ships made or dropped per kind, think and leader */
+#define TRAFFIC_GROW_MAX 64		/* at most per kind and think */
+
+/* the fallback of the load probe (stage 2.0); the test line "traffic cap <leaders> cheap <units> <slot>" changes them */
+static int g_TrafficCap = 0;			/* the leaders that get a whole quota; more share them (0: no limit) */
+static float g_CheapDist = 0.0f;		/* a ship of the traffic farther from every viewer is cheap (0: none) */
+static float g_CheapSlot = 0.15f;		/* the slot interval of a cheap ship */
+
+static const char *const g_QuotaList[TRAFFIC_QUOTAS] = { "NormalTraffic", "MediumTraffic", "HeavyTraffic", "Traffic" };
+static struct {
+	int quota[TRAFFIC_QUOTAS];					/* single player's count of each kind */
+	uint16_t count[TRAFFIC_QUOTAS][VIEWERS_MAX];	/* the ships of each kind a viewer (by its id) has */
+} g_Quota;
+
+int Traffic_QuotaKind(cEntity *e) {
+	const char *list = cEntity_GetListName(e);
+
+	for (int k = 0; list && k < TRAFFIC_QUOTAS; k++) {
+		if (!strcmp(list, g_QuotaList[k])) {
+			return k;
+		}
+	}
+	return -1;
+}
+
+static int Traffic_QuotaCount(int leader, void *kind) {
+	return g_Quota.count[*(int *)kind][Viewers_At(leader)->id];
+}
+
+int Traffic_QuotaLeader(cEntity *e, int prev) {
+	vec3_t tmp;
+	int k = Traffic_QuotaKind(e);
+
+	if (k < 0) {
+		return -1;
+	}
+	int i = Viewers_NeediestLeader(g_Quota.quota[k], Traffic_QuotaCount, &k);
+	if (i < 0) {
+		const cViewer *v = Viewers_Near(Entity_GetPos(e, &tmp));
+		if (!v) {
+			return -1;
+		}
+		i = v->leader;
+	}
+	if (prev >= 0 && prev < VIEWERS_MAX && g_Quota.count[k][prev]) {
+		g_Quota.count[k][prev]--;
+	}
+	g_Quota.count[k][Viewers_At(i)->id]++;
+	return i;
+}
+
+/* the quota of each leader: single player's count q, shared when there are more leaders than g_TrafficCap */
+static int Traffic_LeaderQuota(int q, int leaders) {
+	return g_TrafficCap > 0 && leaders > g_TrafficCap ? (q * g_TrafficCap + leaders - 1) / leaders : q;
+}
+
+/* the kind's ships counted by their leaders (a ship whose viewer is no leader now has none); a ship far from every
+ * viewer runs its slots slower (g_CheapDist) */
+static int Traffic_QuotaRecount(int k) {
+	cEntityListData *list = (cEntityListData *)cWorld_GetList(g_pWorld, g_QuotaList[k]);
+	int n = 0;
+
+	memset(g_Quota.count[k], 0, sizeof(g_Quota.count[k]));
+	for (Nto1Node *node = Logic_ListFirst(list); node; node = Logic_ListNext(node)) {
+		cEntity *e = node->data;
+		cAIVehicle *ai = Entity_IsType(e, TYEN_CAR) ? Entity_GetAI(e) : NULL;
+		n++;
+		if (ai && Veh(e)->slot == -1) {
+			vec3_t tmp;
+			Obj(e)->slot->minDiff = g_CheapDist > 0.0f && Viewers_MinDistSq(Entity_GetPos(e, &tmp)) >
+				g_CheapDist * g_CheapDist ? g_CheapSlot : 0.05f;
+		}
+		if (!ai || !ai->viewer) {
+			continue;
+		}
+		if (Viewers_LeaderIndex(ai->viewer - 1) < 0) {
+			ai->viewer = 0;
+			continue;
+		}
+		g_Quota.count[k][ai->viewer - 1]++;
+	}
+	return n;
+}
+
+/* a rail ship over the quotas that no viewer sees, the farthest from the viewers: no leader, or a leader with more
+ * than its quota */
+static cEntity *Traffic_QuotaSpare(int k) {
+	cEntityListData *list = (cEntityListData *)cWorld_GetList(g_pWorld, g_QuotaList[k]);
+	cEntity *best = NULL;
+	float bestD = -1.0f;
+	vec3_t tmp;
+
+	for (Nto1Node *node = Logic_ListFirst(list); node; node = Logic_ListNext(node)) {
+		cEntity *e = node->data;
+		cAIVehicle *ai = Entity_IsType(e, TYEN_CAR) ? Entity_GetAI(e) : NULL;
+		if (ai && ai->viewer && g_Quota.count[k][ai->viewer - 1] <= g_Quota.quota[k]) {
+			continue;
+		}
+		if (Viewers_SeesModel(Obj_GetModel(e))) {
+			continue;
+		}
+		float d = Viewers_MinDistSq(Entity_GetPos(e, &tmp));
+		if (d > bestD) {
+			bestD = d;
+			best = e;
+		}
+	}
+	return best;
+}
+
+/* the instance: the rail traffic of each kind grows to single player's count for each leader (one leader's while there
+ * is none) and the ships over it go; the quota of the sky traffic (Traffic_SkyQuota) */
+static void Traffic_Quotas(void) {
+	int leaders = Viewers_Leaders() > 0 ? Viewers_Leaders() : 1;
+	int step = TRAFFIC_GROW * leaders < TRAFFIC_GROW_MAX ? TRAFFIC_GROW * leaders : TRAFFIC_GROW_MAX;
+
+	for (int k = 0; k < TRAFFIC_QUOTAS; k++) {
+		int n = Traffic_QuotaRecount(k);
+		if (k == TRAFFIC_Q_SKY) {
+			g_Quota.quota[k] = Traffic_LeaderQuota(g_iTrafficNumber, leaders);
+			continue;
+		}
+		/* the level's rail traffic (Traffic.InitCivilTraffic made its lists) */
+		if (!cWorld_GetList(g_pWorld, g_QuotaList[k])) {
+			continue;
+		}
+		g_Quota.quota[k] = Traffic_LeaderQuota(Traffic_RailQuota(k), leaders);
+		int want = g_Quota.quota[k] * leaders;
+		for (int i = 0; i < step && n < want && Traffic_RailNew(k); i++) {
+			n++;
+		}
+		for (int i = 0; i < step && n > want; i++) {
+			cEntity *e = Traffic_QuotaSpare(k);
+			if (!e) {
+				break;
+			}
+			cEntity_Del(e);
+			n--;
+		}
+	}
+}
+
+byte Traffic_Command(const char *line) {
+	int cap;
+	float dist, slot;
+	if (sscanf(line, "traffic cap %d cheap %f %f", &cap, &dist, &slot) == 3) {
+		g_TrafficCap = cap;
+		g_CheapDist = dist;
+		g_CheapSlot = slot;
+		Con_Printf("traffic: cap %d cheap %.0f %.2f\n", g_TrafficCap, (double)g_CheapDist, (double)g_CheapSlot);
+		return 1;
+	}
+	if (strcmp(line, "traffic")) {
+		return 0;
+	}
+	int ents = 0, active = 0;
+	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
+		ents++;
+		active += e->active != 0;
+	}
+	Con_Printf("traffic: entities %d active %d, leaders %d\n", ents, active, Viewers_Leaders());
+	for (int k = 0; k < TRAFFIC_QUOTAS; k++) {
+		cEntityListData *list = (cEntityListData *)cWorld_GetList(g_pWorld, g_QuotaList[k]);
+		int n = 0, on = 0;
+		for (Nto1Node *node = Logic_ListFirst(list); node; node = Logic_ListNext(node)) {
+			n++;
+			on += ((cEntity *)node->data)->active != 0;
+		}
+		Con_Printf("traffic: %s %d active %d quota %d\n", g_QuotaList[k], n, on, g_Quota.quota[k]);
+	}
+	return 1;
+}
+
+/* the count of the sky traffic: single player's iTrafficNumber, on the instance that for each leader */
+static int Traffic_SkyQuota(void) {
+	if (!Viewers_Server()) {
+		return g_iTrafficNumber;
+	}
+	int leaders = Viewers_Leaders() > 0 ? Viewers_Leaders() : 1;
+	return Traffic_LeaderQuota(g_iTrafficNumber, leaders) * leaders;
+}
+
 static void cEnemiesTraffic_Think(cEnemiesTraffic *self) {
 	vec3_t tmp, cp;
 
@@ -274,6 +461,9 @@ static void cEnemiesTraffic_Think(cEnemiesTraffic *self) {
 		if (s) {
 			self->bossRobots = !strcmp(s, "1");
 		}
+	}
+	if (Viewers_Server()) {
+		Traffic_Quotas();
 	}
 	cEntity *usr = Players_Any();
 	cEntity *f1 = NULL;
@@ -308,12 +498,12 @@ static void cEnemiesTraffic_Think(cEnemiesTraffic *self) {
 				if (!cAIVehicle_GetState(ai)) {
 					Traffic_Patrol(ai);
 				}
-				if (!Players_SeesModel(Obj_GetModel(e))) {
+				if (!Viewers_SeesModel(Obj_GetModel(e))) {
 					continue;
 				}
-				cp = g_pWorld->camPos[g_pWorld->curCam];
-				/* the instance's view (Players_SeesModel) had its line of sight from a player */
-				if (!Players_Net() && Engine_TestLine(Entity_GetPos(e, &tmp), &cp, NULL, NULL)) {
+				/* a free line from the viewer nearest to it (single player: the camera) */
+				cp = Viewers_Near(Entity_GetPos(e, &tmp))->pos;
+				if (Engine_TestLine(Entity_GetPos(e, &tmp), &cp, NULL, NULL)) {
 					if (++tries == 4) {
 						break;
 					}
@@ -411,10 +601,11 @@ static void cEnemiesTraffic_Think(cEnemiesTraffic *self) {
 		}
 	}
 	int total = Logic_Count(self->traffic->numElems) + Logic_Count(self->fighting->numElems) + nEnemies2;
-	if (total < g_iTrafficNumber) {
-		cPy_Function_AddParamI(g_OnNeedMoreTraffic, g_iTrafficNumber - total);
+	int quota = Traffic_SkyQuota();
+	if (total < quota) {
+		cPy_Function_AddParamI(g_OnNeedMoreTraffic, quota - total);
 		cPy_Function_Execute(g_OnNeedMoreTraffic, 0);
-	} else if (total > g_iTrafficNumber) {
+	} else if (total > quota) {
 		cEnemiesTraffic_RemoveFarthest(self);
 	}
 	self->usr = usr;

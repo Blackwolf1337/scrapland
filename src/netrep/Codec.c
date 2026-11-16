@@ -567,9 +567,6 @@ int NetRep_WriteAckInput(uint8_t *buf, int cap, uint16_t newest, uint32_t bits, 
 		NetRep_PutU16(&w, in[i].buttons);
 		NetRep_PutU8(&w, in[i].weapon);
 		NetRep_PutU16(&w, in[i].slot);
-		for (int k = 0; (in[i].buttons & NETREP_IN_BUMP) && k < 6; k++) {
-			NetRep_PutSVar(&w, in[i].bump[k]);
-		}
 	}
 	return w.bad ? 0 : size + w.size;
 }
@@ -614,9 +611,6 @@ int NetRep_ReadAckInput(const uint8_t *data, int size, uint16_t *newest, uint32_
 		x.buttons = (uint16_t)NetRep_GetU16(&r);
 		x.weapon = (uint8_t)NetRep_GetU8(&r);
 		x.slot = (uint16_t)NetRep_GetU16(&r);
-		for (int k = 0; k < 6; k++) {
-			x.bump[k] = x.buttons & NETREP_IN_BUMP ? NetRep_GetSVar(&r) : 0;
-		}
 		if (r.bad) {
 			return 0;
 		}

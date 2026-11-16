@@ -15,10 +15,10 @@
  * original, so the single player game and the old network modes do what they did.
  *
  * The player context (stage 1.1 of the second multiplayer design): the game state of one player (cPlayer below:
- * its entity, own ship, money, alarm, the alarm levels of the logic, its viewer pose, input, camera of view 0 and
- * action set). Code that acts for "the player" reads and changes the money and the alarm of the current context
- * (Players_CurMoney, Players_CurAlarm) and the module variables tagged PLAYER through its overlay
- * (include/scrap/modvars.h). The current context is a pointer, switched (Players_Enter, Players_Leave), never copied.
+ * its entity, own ship, money, alarm, the alarm levels of the logic, input, camera of view 0 and action set; its
+ * viewer is made from its camera, include/scrap/viewers.h). Code that acts for "the player" reads and changes the
+ * money and the alarm of the current context (Players_CurMoney, Players_CurAlarm) and the module variables tagged
+ * PLAYER through its overlay (include/scrap/modvars.h). The current context is a pointer, switched (Players_Enter, Players_Leave), never copied.
  * Single player and the old network modes have one context, the world's own: its money and alarm are the fields of
  * the world (g_pWorld->money, g_pWorld->alarm), so single player does what it did. The instance has one context per
  * player with its own money and alarm, and the world's own (PLAYERS_NONE) for the rest.
@@ -44,10 +44,7 @@
 #define PLAYERS_MAX 64
 #define PLAYERS_NET_SLOT 4			/* the owner slot of the instance's player 0 */
 #define PLAYERS_NONE PLAYERS_MAX	/* no player: the world's own context */
-#define PLAYERS_SEE_DIST 12000.0f		/* units a player sees in front of it (Players_Sees) */
-#define PLAYERS_SEE_NEAR 1500.0f		/* units around a player it sees whatever its heading (its camera is behind it) */
-#define PLAYERS_SEE_COS 0.5f			/* cosine of the half angle of a player's view */
-#define PLAYERS_EYE 120.0f				/* a player's eyes above its place */
+#define PLAYERS_EYE 120.0f				/* a player's eyes above its place (its viewer without a camera) */
 #define PLAYERS_WANTED_REACH 3000.0f	/* units: an NPC reacts to a wanted player this near before a nearer innocent
 									   one (the distance a character attacks what it sees, GenCharLogic) */
 
@@ -68,12 +65,11 @@ typedef struct cPlayer {
 	int money;						/* not used by the world's own context: g_pWorld->money */
 	cAlarm alarm;					/* not used by the world's own context: g_pWorld->alarm */
 	int8_t level[PLAYERS_LEVELS];	/* the alarm level of each source (Players_LevelRaise), -1 */
-	vec3_t viewPos;					/* where it looks from and the yaw it looks to: its entity's view (the client's
-									   camera pose comes with stage 2.1) */
-	float viewYaw;
 	const struct NetRepInput *input;	/* its input of the tick while that runs, NULL */
 	char camName[64];				/* the camera of view 0 the scripts set while it was current (cWorld_SetCam) */
 	int actionSet;					/* the action set the scripts selected while it was current, -1 */
+	float timeSpeed;				/* the world's clock speed the scripts set in its context (Players_SetTimeSpeed), 0
+									   for 1 */
 } cPlayer;
 
 /* the instance's table is in use (the headless instance) */
@@ -96,17 +92,6 @@ struct cEntity *Players_Closest(const vec3_t *pos);
 /* the direction a player's entity looks into on the ground (a character's view, a ship's heading; the yaw 0 of an
  * entity looks to -z), length 1 */
 void Players_Forward(struct cEntity *e, vec3_t *dir);
-/* the instance: a player has p in view (nearer than PLAYERS_SEE_NEAR, or in front of it within PLAYERS_SEE_DIST),
- * with a line of sight from its eyes; outside the instance 0 */
-byte Players_Sees(const vec3_t *p);
-/* a line of sight from the eyes of a player standing at at to p */
-byte Players_LineOfSight(const vec3_t *at, const vec3_t *p);
-struct CGameModel;
-/* the model is visible: outside the instance drawn in the last frame (CGameModel_IsVisible); the headless instance
- * draws nothing, so a model a player has in view (Players_Sees) counts, which the logic and the AI of the characters
- * read as single player reads its screen */
-byte Players_SeesModelAt(const struct CGameModel *m, const char *site);
-#define Players_SeesModel(m) Players_SeesModelAt(m, __func__)
 /* the square of the distance of the nearest player of the instance to pos, FLT_MAX without one (outside the instance
  * always FLT_MAX) */
 float Players_MinDistSq(const vec3_t *pos);
@@ -188,6 +173,8 @@ const struct cAlarm *Players_Alarm(int i);
 byte Players_MayHurt(struct cEntity *attacker, struct cEntity *victim);
 /* the nearest player whose alarm is on, NULL */
 struct cEntity *Players_NearestWanted(const vec3_t *pos);
+/* some player's alarm is on (the instance) */
+byte Players_SomeWanted(void);
 /* the alarm level of a source for the current player (the world's context: the player of the site's rule;
  * Players_LevelReset at the start of the source's think: -1 for all players) */
 void Players_LevelReset(int source);
@@ -197,5 +184,9 @@ void Players_LevelRaiseAt(int source, int level, const char *site);
  * the logic (outside the instance Alarm_SetGrow of the world's with level; the instance takes each player's own) */
 void Players_UpdateAlarms(float dt);
 void Players_SetGrow(int level);
+/* the scripts set the speed of the world's clock (Scrap.SetTimeSpeed, the functionary's slow motion): single player the
+ * world's timer; the instance shares one clock, so in a player's context its entity runs faster by 1 / speed instead
+ * (per entity time speed, stage 2.2), in the world's context nothing changes (a speed of 0.01 or less neither) */
+void Players_SetTimeSpeed(float speed);
 
 #endif

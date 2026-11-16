@@ -9,6 +9,7 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/scrapworld.h"
 #include "scrap/vehicleentity.h"
+#include "scrap/viewers.h"
 #include "scrap/staticinit.h"
 
 #define CNODESTRAFFICINDOOR_VFTABLE (&CNodesTrafficInDoor_vftable)
@@ -120,7 +121,8 @@ static void Sectors_UpdateSeen(cTrafficSector *sectors, int num, int *seen, int 
 	*numSeen = 0;
 	*nodes = 0;
 	for (int i = 0; i < num; i++) {
-		byte vis = Sector_Visible(sectors[i].sector);
+		/* the renderer's sectors, a viewer's on a headless process (include/scrap/viewers.h) */
+		byte vis = Viewers_SeesSector(sectors[i].sector);
 		if (vis && !sectors[i].visible) {
 			seen[(*numSeen)++] = i;
 			*nodes += sectors[i].numNodes;

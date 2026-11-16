@@ -192,31 +192,6 @@ void NetPl_Input(NetPlAccum *a, NetRepInput *out) {
 	a->weapon = weapon;
 }
 
-void NetPl_BumpSave(cEntity *e, NetRepInput *in) {
-	in->buttons |= NETREP_IN_BUMP;
-	in->bump[0] = NetRep_QPos(e->pos.x);
-	in->bump[1] = NetRep_QPos(e->pos.y);
-	in->bump[2] = NetRep_QPos(e->pos.z);
-	in->bump[3] = NetRep_QVel(Obj(e)->vel.x);
-	in->bump[4] = NetRep_QVel(Obj(e)->vel.y);
-	in->bump[5] = NetRep_QVel(Obj(e)->vel.z);
-}
-
-byte NetPl_Bump(cEntity *e, const NetRepInput *in, float reach) {
-	if (!(in->buttons & NETREP_IN_BUMP) || NetPl_Kind(e) != NETREP_SHIP) {
-		return 0;
-	}
-	vec3_t p = { NetRep_UPos(in->bump[0]), NetRep_UPos(in->bump[1]), NetRep_UPos(in->bump[2]) };
-	vec3_t v = { (float)in->bump[3], (float)in->bump[4], (float)in->bump[5] };
-	float dx = p.x - e->pos.x, dy = p.y - e->pos.y, dz = p.z - e->pos.z;
-	if (reach > 0.0f && dx * dx + dy * dy + dz * dz > reach * reach) {
-		return 0;
-	}
-	Entity_SetPos(e, &p);
-	Obj_SetVel(e, &v);
-	return 1;
-}
-
 void NetPl_InputSlot(const NetPlAccum *a, NetRepInput *out) {
 	if (a->time <= 0.0f) {
 		return;

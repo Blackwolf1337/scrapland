@@ -155,51 +155,9 @@ cEntity *Players_Nearest(const vec3_t *pos) {
 	return wanted && d < PLAYERS_WANTED_REACH * PLAYERS_WANTED_REACH ? wanted : Players_NearestOf(pos, 0, &d);
 }
 
-byte Players_LineOfSight(const vec3_t *at, const vec3_t *p) {
-	vec3_t eye = { at->x, at->y + PLAYERS_EYE, at->z };
-	return !Engine_TestLine(&eye, p, NULL, NULL);
-}
-
 void Players_Forward(cEntity *e, vec3_t *dir) {
 	float yaw = Entity_IsType(e, TYEN_WALKCHAR) ? WChar(e)->view.y : Obj(e)->ang.y;
 	*dir = (vec3_t){ -sinf(yaw), 0.0f, -cosf(yaw) };
-}
-
-byte Players_Sees(const vec3_t *p) {
-	if (!Players_Net()) {
-		return 0;
-	}
-	for (int i = 0; i < PLAYERS_MAX; i++) {
-		cEntity *e = g_NetPlayer(i);
-		if (!e) {
-			continue;
-		}
-		float dx = p->x - e->pos.x, dz = p->z - e->pos.z, d = Players_DistSq(e, p);
-		if (d > PLAYERS_SEE_DIST * PLAYERS_SEE_DIST) {
-			continue;
-		}
-		if (d > PLAYERS_SEE_NEAR * PLAYERS_SEE_NEAR) {
-			vec3_t f;
-			float h = sqrtf(dx * dx + dz * dz);
-			Players_Forward(e, &f);
-			if (h > 0.0f && (dx * f.x + dz * f.z) / h < PLAYERS_SEE_COS) {
-				continue;
-			}
-		}
-		if (Players_LineOfSight(&e->pos, p)) {
-			return 1;
-		}
-	}
-	return 0;
-}
-
-byte Players_SeesModelAt(const CGameModel *m, const char *site) {
-	vec3_t p;
-	if (Players_Net()) {
-		NetAudit_Func(NA_VISIBLE, "visible.sees:", site);
-		return Players_Sees(CGameModel_GetPos(m, &p));
-	}
-	return CGameModel_IsVisibleAt(m, site);
 }
 
 float Players_MinDistSq(const vec3_t *pos) {
@@ -250,10 +208,6 @@ void Players_SetOwner(int slot, cEntity *e) {
 	} else if (Players_Net() && slot >= PLAYERS_NET_SLOT && slot < PLAYERS_NET_SLOT + PLAYERS_MAX) {
 		cPlayer *p = &g_Pl[slot - PLAYERS_NET_SLOT];
 		p->ent = e;
-		if (e) {
-			p->viewPos = e->pos;
-			p->viewYaw = Entity_IsType(e, TYEN_WALKCHAR) ? WChar(e)->view.y : Obj(e)->ang.y;
-		}
 	}
 }
 
@@ -289,6 +243,7 @@ void Players_Join(int i, int money) {
 	s->input = NULL;
 	s->camName[0] = 0;
 	s->actionSet = -1;
+	s->timeSpeed = 0.0f;
 	s->used = 1;
 	ModVar_OverClearPlayer(i);
 }
@@ -627,6 +582,15 @@ cEntity *Players_NearestWanted(const vec3_t *pos) {
 	return Players_NearestOf(pos, 1, &d);
 }
 
+byte Players_SomeWanted(void) {
+	for (int i = 0; i < PLAYERS_MAX; i++) {
+		if (g_NetPlayer(i) && Players_Alarm(i)->on) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
 void Players_LevelReset(int source) {
 	if (Players_Net()) {
 		for (int i = 0; i <= PLAYERS_MAX; i++) {
@@ -658,6 +622,21 @@ void Players_UpdateAlarms(float dt) {
 			Players_Leave(prev);
 		}
 	}
+}
+
+void Players_SetTimeSpeed(float speed) {
+	if (!Players_Net()) {
+		Timer_SetSpeed(&g_pWorld->timer, speed);
+		return;
+	}
+	cEntity *e = g_Cur != &g_Pl[PLAYERS_NONE] ? g_Cur->ent : NULL;
+	if (!e || speed <= 0.01f || !Entity_IsType(e, TYEN_OBJECT)) {
+		return;
+	}
+	cTimer *t = &Obj(e)->timer;
+	float was = g_Cur->timeSpeed > 0.01f ? g_Cur->timeSpeed : 1.0f;
+	Timer_SetSpeed(t, cTimer_GetSpeed(t) * was / speed);
+	g_Cur->timeSpeed = speed;
 }
 
 void Players_SetGrow(int level) {

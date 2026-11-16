@@ -9,6 +9,7 @@
 
 #include "scrap/chartype.h"
 #include "scrap/scrapmodel.h"
+#include "scrap/viewers.h"
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
 #include "scrap/players.h"
@@ -360,7 +361,7 @@ alert:
 				Logic_RestartState(self);
 				return;
 			}
-			if (!Players_SeesModel(Obj_GetModel(p))) {
+			if (!Viewers_SeesModel(Obj_GetModel(p))) {
 				const vec3_t *up = Entity_GetPos(usr, &t1);
 				if (LP_DistSq(Entity_GetPos(p, &t2), up) >
 					g_LittlePoliceStopAcusingMaxDistFromUser * g_LittlePoliceStopAcusingMaxDistFromUser) {
@@ -390,7 +391,7 @@ alert:
 				Logic_RestartState(self);
 				return;
 			}
-			if (!Players_SeesModel(Obj_GetModel(p))) {
+			if (!Viewers_SeesModel(Obj_GetModel(p))) {
 				const vec3_t *up = Entity_GetPos(usr, &t1);
 				if (LP_DistSq(Entity_GetPos(p, &t2), up) >
 					g_LittlePoliceStopAcusingMaxDistFromUser * g_LittlePoliceStopAcusingMaxDistFromUser) {

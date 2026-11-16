@@ -24,6 +24,7 @@
  */
 #include <string.h>
 
+#include "scrap/logic.h"
 #include "scrap/players.h"
 #include "scrap/replicate.h"
 #include "scrap/scrap.h"
@@ -180,16 +181,12 @@ static byte Traffic_RailDeath(const nativeVal_t *killer) {
 			hit = Mode_VObj(u, "Name", name) ? Mode_Cmp(name, "==", killer) : -1;
 		}
 	}
-	/* a watcher's own rail traffic (include/scrap/replicate.h): the instance keeps the alarm and the statistics */
-	if (hit > 0 && g_Watch) {
-		Watch_RailKill();
-		return Mode_Done(&t, 1);
-	}
 	return Mode_Done(&t, hit >= 0 && (!hit || (Mode_SetAlarm(Mode_I(&t, 1)) && Mode_IncSaveVar("Stats.Traffic"))));
 }
 
 /* the death of a rail ship of list (HeavyTraffic...) from ships (AcHeavyShips...): a new one of type, the hook
- * onTrackCreate, the death, the path back (OBJLIB 5 (9c: the hook a function value of the module)) */
+ * onTrackCreate, the death (none for a NULL killer: a new ship of the instance's quotas), the path back (OBJLIB 5 (9c:
+ * the hook a function value of the module)) */
 static byte Traffic_TrackDeath(const nativeVal_t *killer, const char *ships, const char *list, const char *type) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *ship = Mode_V(&t), *o1 = Mode_V(&t), *name = Mode_V(&t);
@@ -202,7 +199,36 @@ static byte Traffic_TrackDeath(const nativeVal_t *killer, const char *ships, con
 	/* OBJLIB 5 (9c): the hook is a function value of the module */
 	nativeVal_t *hook = Mode_V(&t);
 	return Mode_Done(&t, Mode_G("Traffic", "onTrackCreate", hook) && Mode_CallArgs(hook, NULL, o1, 1) &&
-		Traffic_RailDeath(killer) && Traffic_ResetPathN());
+		(!killer || Traffic_RailDeath(killer)) && Traffic_ResetPathN());
+}
+
+/* the rail traffic of the kinds of include/scrap/logic.h (TRAFFIC_Q_NORMAL, MEDIUM, HEAVY): the module variables of
+ * the count, the ships, the list and the type */
+static const char *const traffic_rail[3][4] = {
+	{ "NumNormal", "AcNormalShips", "NormalTraffic", "Light" },
+	{ "NumMedium", "AcMediumShips", "MediumTraffic", "Medium" },
+	{ "NumHeavy", "AcHeavyShips", "HeavyTraffic", "Heavy" },
+};
+
+int Traffic_RailQuota(int kind) {
+	nativeVal_t v = { 0 }, i = { 0 };
+	int n = 0;
+	if (Mode_ModVar("Traffic", traffic_rail[kind][0], &v) && Native_ToInt(&v, &i)) {
+		n = (int)i.i;
+	} else {
+		Native_ErrClear();
+	}
+	Native_Free(&i);
+	Native_Free(&v);
+	return n;
+}
+
+byte Traffic_RailNew(int kind) {
+	byte ok = Traffic_TrackDeath(NULL, traffic_rail[kind][1], traffic_rail[kind][2], traffic_rail[kind][3]);
+	if (!ok) {
+		Native_ErrPrint();
+	}
+	return ok;
 }
 
 /* InitCivilTraffic(): the death callbacks of the rail lists and NumNormal, NumHeavy and NumMedium ships */

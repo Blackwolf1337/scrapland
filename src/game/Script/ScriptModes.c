@@ -729,7 +729,7 @@ void Mode_SetTimeSpeed(double speed) {
 		return;
 	}
 	NetAudit_Site(NA_TIMESPEED, "timespeed.world:Mode_SetTimeSpeed");
-	Timer_SetSpeed(&g_pWorld->timer, (float)speed);
+	Players_SetTimeSpeed((float)speed);
 }
 
 byte Mode_LoadSound(const nativeVal_t *file) {

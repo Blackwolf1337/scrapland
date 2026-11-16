@@ -16,7 +16,7 @@
 #include "scrap/groundportal.h"
 #include "scrap/table.h"
 
-#define MAX_MODELS_RENDER 1024
+#define MAX_MODELS_RENDER 16384	/* the original had 1024; the instance keeps the traffic of up to 64 viewers */
 extern byte g_ModelsOn;	/* RenderModels: the models are drawn */
 
 /* creation flags of the scenes and models (crear_modelo, crear_escena) */

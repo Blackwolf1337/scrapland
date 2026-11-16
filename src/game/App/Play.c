@@ -99,7 +99,6 @@ static struct {
 	NetRepFollow clock;					/* the input tick time, s */
 	byte half;							/* the first slot of tick tick + 1 ran (with input) */
 	byte live;							/* that tick took the frames' input (its second slot takes the newest moves) */
-	byte bumped;						/* the own ship touched its own rail traffic in the tick under way */
 	double clockNow;					/* the local time of its last step */
 	vec3_t lastServer;
 	int pending;						/* ticks stepped since the last ack */
@@ -477,10 +476,6 @@ static void Play_StepPart(uint32_t tick, int part) {
 	play.half = !part;
 	if (part) {
 		play.lastYaw = NetPl_Kind(e) == NETREP_CHAR ? WChar(e)->view.y : Obj(e)->ang.y;
-		if (play.bumped) {
-			NetPl_BumpSave(e, &play.input);
-			play.bumped = 0;
-		}
 		Play_Record(tick);
 		play.tick = tick;
 		play.pending++;
@@ -496,8 +491,6 @@ static void Play_StepPart(uint32_t tick, int part) {
 
 /* the input of tick (the frames' controls since the tick before, none: no input) and its first slot */
 static void Play_Step(uint32_t tick, byte none) {
-	/* a bump is of its own tick (the input of a tick without frames is the one before) */
-	play.input.buttons &= (uint16_t)~NETREP_IN_BUMP;
 	if (!none) {
 		NetPl_Input(&play.acc, &play.input);
 		play.held &= play.input.buttons;
@@ -833,7 +826,6 @@ void Play_OwnUpdate(uint32_t tick, const NetRepState *st) {
 				Watch_ProxiesAt((double)t / NETREP_TICK_HZ, play.ahead == PLAY_AHEAD_PLAYERS);
 			}
 			NetPl_Step(e, &x, 1, 1);
-			NetPl_Bump(e, &x, 0.0f);
 			Watch_ProxiesBack();
 			play.input = x;
 			Play_Record(t);
@@ -886,13 +878,6 @@ static void Play_Pct(const float *v, uint32_t n, float *out) {
 	out[1] = n ? tmp[n * 95 / 100] : 0.0f;
 	out[2] = n ? tmp[n * 99 / 100] : 0.0f;
 	out[3] = n ? tmp[n - 1] : 0.0f;
-}
-
-void Play_Touch(cEntity *e, cEntity *other) {
-	/* the own ship's step that hits the traffic, or the traffic's move that hits the own ship */
-	if (play.e && !g_PlayReplaying && ((e == play.e && Rep_LocalAmbient(other)) || (other == play.e && Rep_LocalAmbient(e)))) {
-		play.bumped = 1;
-	}
 }
 
 void Play_Switch(void) {
