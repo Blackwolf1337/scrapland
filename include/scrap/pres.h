@@ -92,7 +92,8 @@ enum {
 	PRES_FX_BISHOPRAY,				/* bishop, target ("" none), the point hit: FX_BishopRay */
 	PRES_FX_STEAL,					/* thief, victim: FX_BankerSteal */
 	PRES_FX_SUCTION,				/* bank master, victim: FX_BankMasterSuction */
-	PRES_FX_FLASH					/* Berto, victim: FX_BertoFlash */
+	PRES_FX_FLASH,					/* Berto, victim: FX_BertoFlash */
+	PRES_FX_TAKE					/* messenger, data pack: FX_MessengerTake */
 };
 
 struct cEntity;

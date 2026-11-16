@@ -508,6 +508,15 @@ void ReplicaEnt_Present(cEntity *e, int kind, const NetRepState *a, const NetRep
 	}
 }
 
+cEntity *ReplicaEnt_Find(const char *name) {
+	cEntity *e = World_FindEntity(name);
+	int own = Play_OwnSlot();
+	if (!e && own >= 0 && own < NETREP_MAX_ENTS && !strcmp(rc.s[own].name, name)) {
+		e = Play_Entity();
+	}
+	return e;
+}
+
 void ReplicaEnt_Reset(void) {
 	if (rc.j) {
 		for (int s = 0; s < NETREP_MAX_ENTS; s++) {

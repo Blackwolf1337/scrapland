@@ -147,6 +147,8 @@ void ReplicaEnt_ModLeave(const char *module);
 byte ReplicaEnt_Busy(void);
 /* the connection is gone (a travel): everything of it */
 void ReplicaEnt_Reset(void);
+/* the entity of the instance's name: its replica, or the own entity for the name of the own slot; NULL */
+struct cEntity *ReplicaEnt_Find(const char *name);
 /* the slot of a replica, -1 */
 int ReplicaEnt_SlotOf(const struct cEntity *e);
 /* the client's side of "mirror json" */

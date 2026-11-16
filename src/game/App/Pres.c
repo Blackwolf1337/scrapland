@@ -629,7 +629,7 @@ static void Pres_Missing(int op, const char *name) {
 
 /* an entity of a record: the replica of the instance's name; NULL counted */
 static cEntity *Pres_Ent(int op, const char *name, const char *type) {
-	cEntity *e = *name ? World_FindEntity(name) : NULL;
+	cEntity *e = *name ? ReplicaEnt_Find(name) : NULL;
 	if (!e || (type && !Entity_IsType(e, type))) {
 		Pres_Missing(op, name);
 		return NULL;
@@ -695,6 +695,11 @@ static void Pres_FxPlay(NetRepReader *r) {
 			} else {
 				FX_BertoFlash(ea, eb);
 			}
+		}
+		break;
+	case PRES_FX_TAKE:
+		if ((ea = Pres_Ent(PRES_O_FXENT, a, TYEN_WALKCHAR)) && (eb = Pres_Ent(PRES_O_FXENT, b, NULL))) {
+			FX_MessengerTake(ea, eb);
 		}
 		break;
 	case PRES_FX_ITEMFADE:
