@@ -297,9 +297,15 @@ static int CSoundXBox_PlayVPF(CSoundXBox *self, const char *name, int volume, in
 	return Fmod_Play(v.sample, &d, name);
 }
 
+/* the audit of a play: the slot, and the sample by name (the sound census of the network tests) */
+static void CSoundXBox_Audit(const char *site, const char *name) {
+	NetAudit_Site(NA_SOUND, site);
+	NetAudit_Name(NA_CENSUS, "snd.name:", name);
+}
+
 static int CSoundXBox_PlaySound(CSoundSys *base, const char *name, const cSoundDesc *d, int *handle) {
 	CSoundXBox *self = (CSoundXBox *)base;
-	NetAudit_Site(NA_SOUND, "snd.playsound");
+	CSoundXBox_Audit("snd.playsound", name);
 	if (g_Mp2) {
 		Pres_Sound3D(name, d);
 		Pres_ClientSound(name);
@@ -314,7 +320,7 @@ static int CSoundXBox_PlaySound(CSoundSys *base, const char *name, const cSoundD
 
 static int CSoundXBox_PlayName(CSoundSys *base, const char *name) {
 	CSoundXBox *self = (CSoundXBox *)base;
-	NetAudit_Site(NA_SOUND, "snd.playname");
+	CSoundXBox_Audit("snd.playname", name);
 	if (g_Mp2) {
 		Pres_Sound2D(name, 0, 0);
 		Pres_ClientSound(name);
@@ -324,7 +330,7 @@ static int CSoundXBox_PlayName(CSoundSys *base, const char *name) {
 
 static int CSoundXBox_Play(CSoundSys *base, const char *name, int volume, int pan) {
 	CSoundXBox *self = (CSoundXBox *)base;
-	NetAudit_Site(NA_SOUND, "snd.play");
+	CSoundXBox_Audit("snd.play", name);
 	if (g_Mp2) {
 		Pres_Sound2D(name, volume, pan);
 		Pres_ClientSound(name);
@@ -336,7 +342,7 @@ static int CSoundXBox_PlayAt(CSoundSys *base, const char *name, const vec3_t *po
 	CSoundXBox *self = (CSoundXBox *)base;
 	cSoundDesc d;
 
-	NetAudit_Site(NA_SOUND, "snd.playat");
+	CSoundXBox_Audit("snd.playat", name);
 	if (g_Mp2) {
 		Pres_SoundAt(name, pos, volume);
 		Pres_ClientSound(name);

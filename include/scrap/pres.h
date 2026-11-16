@@ -88,7 +88,8 @@ enum {
 	PRES_FX_CONVERSION,				/* attacker, attacked, time */
 	PRES_FX_SELLLIFE,				/* attacker ("" none), attacked */
 	PRES_FX_MONEY,					/* from, to, time */
-	PRES_FX_EMBEDDED,				/* entity, the effect's type (the embedded effect: state, Pres sends it to all) */
+	PRES_FX_EMBEDDED,				/* entity, the effect's type (the embedded effect: state, a journal entry of the
+									 * entity, REPENT_J_FX, not a record) */
 	PRES_FX_ITEMFADE,				/* item, taker ("" none), scale, mode: FX_ItemFade */
 	PRES_FX_BISHOPRAY,				/* bishop, target ("" none), the point hit: FX_BishopRay */
 	PRES_FX_STEAL,					/* thief, victim: FX_BankerSteal */
@@ -191,6 +192,9 @@ void Pres_HudSet(const struct cScorer *sc, const char *item, const char *var, co
 
 /* a PRES_MSG message */
 void Pres_Message(const uint8_t *data, int size);
+/* each frame: the effect records held until the client has their entities (a replica made again under a new slot),
+ * played once it has them, else after a second (counted missing then) */
+void Pres_ClientFrame(void);
 /* a presentation event on a -mp2 client misses the entity name (what: the function; NULL: counted already): 1 counted
  * there ("pres.missing:<what>:<name>"; the caller returns), 0 elsewhere (the caller's CHECK stays) */
 byte Pres_ClientMissing(const char *what, const char *name);

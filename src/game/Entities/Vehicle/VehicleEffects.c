@@ -549,7 +549,10 @@ void cVehicleEffects_UpdateState(cVehicleEffects *self, float dt) {
 	to.y = out.y + from.y;
 	to.z = out.z + from.z;
 	if (Engine_TestLine(&from, &to, &hit, NULL)) {
+		/* of the ship with the own camera: a -mp2 client draws it for its own entity (include/scrap/pres.h) */
+		Pres_Derive();
 		cVehicleEffects_WindSmoke(&self->owner->effects, hit.x, hit.y, hit.z);
+		Pres_Underive();
 	}
 }
 

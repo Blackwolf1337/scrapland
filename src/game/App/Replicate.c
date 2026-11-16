@@ -25,6 +25,7 @@
 #include "scrap/instance.h"
 #include "scrap/model.h"
 #include "scrap/node3d.h"
+#include "scrap/netaudit.h"
 #include "scrap/netrep.h"
 #include "scrap/places.h"
 #include "scrap/platform.h"
@@ -1585,6 +1586,11 @@ void Rep_RewindEnd(cEntity *v) {
 }
 
 byte Rep_Hurt(cEntity *attacker, cEntity *victim, const char *weapon) {
+	if (g_Mp2 && g_Watch && strcmp(weapon, "Punch")) {
+		/* a -mp2 client: the damage of the weapons is the server's (its replicas take the server's life) */
+		NetAudit_Name(NA_CREATE, "client.damage:", weapon);
+		return 0;
+	}
 	if (!g_Instance) {
 		return 1;
 	}

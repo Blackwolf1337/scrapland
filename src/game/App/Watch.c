@@ -1176,6 +1176,7 @@ void Watch_PreFrame(void) {
 	}
 	if (g_Mp2) {
 		ReplicaEnt_Frame();
+		Pres_ClientFrame();
 	} else {
 		Watch_Purge();
 	}
