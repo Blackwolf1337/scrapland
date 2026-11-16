@@ -332,6 +332,7 @@ def run_side(a, side):
         rows = read_log(log)
         res['frames'] = frames([r for r in rows if r['kind'] != '-'])
         res['walk'] = analyse(rows, walks, 3.0)
+        res['flight_start'] = a.flight_start.get(side)
         res['fly'] = analyse(rows, flights, 3.0 if a.boost else 5.0)
         res['boost'] = analyse(rows, boosts, 0.4, auto=True, within=2.5)
         moving = [r for r in rows if r['kind'] != '-']
@@ -370,11 +371,12 @@ def lift(a, g, inst_dir, side):
 
         def do(line):
             return inst_dir.ask(line, inst=a.level)
-    start = a.flight_start.get(side)
+    start = a.flight_start.get(side) or a.fly_from
     if not start:
         m = re.search(r'\(([-\d.e]+), ([-\d.e]+), ([-\d.e]+)\)', do(target + '.Ang') or '')
         ang = tuple(float(x) for x in m.groups()) if m else None
         start = a.flight_start[side] = ((p[0], p[1] + 15000.0, p[2]), ang)
+    a.flight_start[side] = start
     up, ang = start
     line = 'do e = %s; e.Pos = (%.1f, %.1f, %.1f); e.Vel = (0, 0, 0)' % ((target,) + up)
     if ang:
@@ -520,10 +522,21 @@ def main():
     ap.add_argument('--loss', type=float, default=0.0, help='percent (SCRAP_NET2_LOSS)')
     ap.add_argument('--cell', default='', help='a name added to the JSON files of the sides (<side>-<cell>.json)')
     ap.add_argument('--no-boost', dest='boost', action='store_false', help='flights without the boost button')
+    ap.add_argument('--fly-from', dest='fly_from_json', default=None,
+                    help='the JSON of an earlier side (single player): its flight start for every flight of this run')
     ap.add_argument('--report-only', action='store_true')
     a = ap.parse_args()
     a.net = {}
     a.flight_start = {}
+    a.fly_from = None
+    if a.fly_from_json:
+        # the flights of every side from single player's start place and heading (a client's own boarding place can
+        # lead into a wall: the host side's ship stood still after 1.5 s of each flight)
+        try:
+            st = json.load(open(a.fly_from_json)).get('flight_start')
+            a.fly_from = (tuple(st[0]), tuple(st[1]) if st[1] else None) if st else None
+        except (OSError, ValueError, IndexError, TypeError):
+            a.fly_from = None
     if a.delay:
         a.net['SCRAP_NET2_DELAY'] = str(a.delay)
     if a.jitter:

@@ -174,7 +174,8 @@ def gate_feel(a):
     for cell in [c for c in a.cells.split(',') if c]:
         d, j, l = CELLS[cell]
         for side in [s for s in a.sides.split(',') if s]:
-            jobs.append((cell, side, ['--cell', cell, '--delay', str(d), '--jitter', str(j), '--loss', '%g' % l]))
+            jobs.append((cell, side, ['--cell', cell, '--delay', str(d), '--jitter', str(j), '--loss', '%g' % l,
+                                      '--fly-from', os.path.join(out, 'sp.json')]))
     rows = []
     for cell, side, extra in jobs:
         path = os.path.join(out, side + ('' if side == 'sp' else '-' + cell) + '.json')
