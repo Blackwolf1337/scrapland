@@ -3027,26 +3027,34 @@ static byte Cp_PathPoint(cEntity *e, const vec3_t *to, vec3_t *next) {
 	return got;
 }
 
-/* test: player i on foot (e) further than CP_WALK_FAR from t walks there through its input along the level's AI graph
- * while a follower is near it, waits for one that fell behind and goes back to it after CP_WALK_ALONE s, as a player
- * walks with characters that follow him (BeatPickus' thugs); a walk that does not come on is placed at its path's
- * point; 1 while it walks */
+/* test: character v follows player e: within the scripts' leash, its logic has e as the target (LLogicTarget) */
+static byte Cp_Follows(cEntity *v, cEntity *e) {
+	char *tgt = NULL;
+	float vx = v->pos.x - e->pos.x, vy = v->pos.y - e->pos.y, vz = v->pos.z - e->pos.z;
+	return v->active && Entity_IsType(v, TYEN_WALKCHAR) && Players_Of(v) < 0 && !Obj(v)->proxy &&
+		vx * vx + vy * vy + vz * vz < CP_WALK_LEASH * CP_WALK_LEASH && Entity_VarS(v, "LLogicTarget", &tgt, 0) && tgt &&
+		!strcmp(tgt, e->name);
+}
+
+/* test: player i on foot (e) further than CP_WALK_FAR from t (with followers CP_AUTO_NEAR) walks there through its
+ * input along the level's AI graph while a follower is near it, waits for one that fell behind and goes back to it
+ * after CP_WALK_ALONE s, as a player walks with characters that follow him (BeatPickus' thugs); a walk that does not
+ * come on is placed at its path's point; 1 while it walks */
 static byte Cp_WalkStep(int i, NetRepInput *in, cEntity *e, cEntity *t, double now) {
 	float dx = t->pos.x - e->pos.x, dz = t->pos.z - e->pos.z, d = sqrtf(dx * dx + dz * dz);
-	if (d <= CP_WALK_FAR) {
+	/* with its followers it walks up to the target (BeatPickus' scene starts there with the thugs near) */
+	cEntity *f = cp.pl[i].walk && cp.pl[i].follower[0] ? World_FindEntity(cp.pl[i].follower) : NULL;
+	if (d <= (f && Cp_Follows(f, e) ? CP_AUTO_NEAR : CP_WALK_FAR)) {
 		cp.pl[i].walkWait = 0.0;
 		return 0;
 	}
 	if (now - cp.pl[i].autoSince >= CP_WALK_GAP) {
-		/* its followers: the characters within the scripts' leash whose logic has it as the target (LLogicTarget) */
+		/* its followers (test line walk) */
 		cEntity *back = NULL;
 		float best = 0.0f;
-		for (cEntity *v = cWorld_GetFirstEntity(g_pWorld); v; v = cEntity_Next(v)) {
-			char *tgt = NULL;
+		for (cEntity *v = cp.pl[i].walk ? cWorld_GetFirstEntity(g_pWorld) : NULL; v; v = cEntity_Next(v)) {
 			float vx = v->pos.x - e->pos.x, vy = v->pos.y - e->pos.y, vz = v->pos.z - e->pos.z, vd = vx * vx + vy * vy + vz * vz;
-			if (v != e && v->active && Entity_IsType(v, TYEN_WALKCHAR) && Players_Of(v) < 0 && !Obj(v)->proxy &&
-				vd < CP_WALK_LEASH * CP_WALK_LEASH && Entity_VarS(v, "LLogicTarget", &tgt, 0) && tgt && !strcmp(tgt, e->name) &&
-				(!back || vd < best)) {
+			if (v != e && Cp_Follows(v, e) && (!back || vd < best)) {
 				back = v;
 				best = vd;
 			}
@@ -3054,7 +3062,7 @@ static byte Cp_WalkStep(int i, NetRepInput *in, cEntity *e, cEntity *t, double n
 		if (back) {
 			Str_Copy(cp.pl[i].follower, back->name, sizeof(cp.pl[i].follower));
 			cp.pl[i].walkBack = 0.0;
-		} else if (cp.pl[i].follower[0] && (back = World_FindEntity(cp.pl[i].follower)) != NULL) {
+		} else if (cp.pl[i].walk && cp.pl[i].follower[0] && (back = World_FindEntity(cp.pl[i].follower)) != NULL) {
 			/* one that stopped follows another now (BeatPickus' thugs behind their leader): back to it; next to it for
 			 * CP_WALK_ALONE s without it following again it is no follower */
 			float vx = back->pos.x - e->pos.x, vz = back->pos.z - e->pos.z;
@@ -3130,6 +3138,55 @@ static cEntity *Cp_WaypointItem(void) {
 	return v && v->active && !v->deadNode.target && Entity_IsType(v, "item") ? v : NULL;
 }
 
+/* test: player i as a banker (on foot) robs the first of the mission's characters n in all that has money, as a
+ * player does with the banker's slap (TalkToMayor: Corruptus emptied): it walks there, steps behind it (a victim that
+ * looks away notices fewer robberies) and holds the action key while its arrow is on it; 0 when it is no banker or
+ * no target has money */
+static byte Cp_BankerSlaps(int i, NetRepInput *in, cEntity *e, cEntity **all, int n, double now) {
+	cActCtrl *a = NetPl_Kind(e) == NETREP_CHAR ? WithLife_GetActCtrl(e) : NULL;
+	cEntity *t = NULL;
+	if (!a || !a->cls || strcmp(a->cls->name, "BankDirector")) {
+		return 0;
+	}
+	for (int k = 0; k < n && !t; k++) {
+		if (Entity_IsType(all[k], TYEN_WALKCHAR) && WChar(all[k])->money > 0) {
+			t = all[k];
+		}
+	}
+	if (!t) {
+		return 0;
+	}
+	if (now - cp.pl[i].autoTold >= 5.0) {
+		cp.pl[i].autoTold = now;
+		Con_Printf("coop: player %d (auto) robs %s (money %d, %.0f away, its arrow on %s)\n", i, t->name, WChar(t)->money,
+			(double)sqrtf((t->pos.x - e->pos.x) * (t->pos.x - e->pos.x) + (t->pos.z - e->pos.z) * (t->pos.z - e->pos.z)),
+			WChar_Victim(e) ? WChar_Victim(e)->name : "nothing");
+	}
+	if (Cp_WalkStep(i, in, e, t, now)) {
+		return 1;
+	}
+	/* yaw 0 looks to -z: behind it is along (sin yaw, cos yaw); from in front or aside it steps round to its back
+	 * unless its arrow is on it already near enough */
+	float yaw = WChar(t)->view.y, rot[2], bx = sinf(yaw), bz = cosf(yaw);
+	float dx = e->pos.x - t->pos.x, dz = e->pos.z - t->pos.z, d = sqrtf(dx * dx + dz * dz);
+	byte reach = WChar_Victim(e) == t && d < CP_MELEE * 2.5f;
+	if (!reach && dx * bx + dz * bz < d * 0.7f) {
+		vec3_t back = { t->pos.x + bx * CP_MELEE, t->pos.y, t->pos.z + bz * CP_MELEE };
+		float dyaw = NetPl_Aim(e, &back, rot, 1);
+		in->rot[0] = NetRep_QRot(rot[0]);
+		in->move[0] = NetRep_QMove(fabsf(dyaw) < 0.6f ? 1.0f : 0.0f);
+		return 1;
+	}
+	float dyaw = NetPl_Aim(e, &t->pos, rot, 1);
+	in->rot[0] = NetRep_QRot(rot[0]);
+	in->move[0] = NetRep_QMove(d > CP_MELEE && fabsf(dyaw) < 0.6f ? 1.0f : 0.0f);
+	/* the banker's action loops while the key is held, each loop robs once */
+	if (reach && fabsf(dyaw) < 0.3f) {
+		in->buttons |= NETREP_IN_ACT;
+	}
+	return 1;
+}
+
 /* test: player i plays the mission's targets on its own: fights the ones to fight, flies a race of RaceMaker, else
  * goes to the target (out of its ship) and uses its arrow, again every CP_AUTO_GAP s while no talk plays; a green ship
  * of the mission is escorted as a player does: the red ones near it fought first, else it stays with it (the helper
@@ -3185,6 +3242,9 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	}
 	/* the mission's targets one after the other (the right one of three to talk to: ThreeStooges' mercenaries) */
 	int nt = Cp_FightTargets("", all, CP_FIGHT_MAX, 0);
+	if (cp.pl[i].autoOn != 2 && Cp_BankerSlaps(i, in, e, all, nt, now)) {
+		return;
+	}
 	cEntity *t = cp.pl[i].autoOn == 2 ? escort : nt ? all[cp.pl[i].autoTurn % nt] : NULL;
 	/* else the nearest one the scripts marked with the mission arrow */
 	if (!t) {
