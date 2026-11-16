@@ -60,6 +60,7 @@
 #include <string.h>
 
 #include "scrap/play.h"
+#include "scrap/players.h"
 #include "scrap/pres.h"
 #include "scrap/vehiclemotors.h"
 #include "scrap/embeddedfxvehicle.h"
@@ -86,6 +87,7 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
 #include "scrap/withlifeentity.h"
+#include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptlib.h"
 #include "scrap/scriptnative.h"
@@ -1536,12 +1538,22 @@ static void TC_In(tcBuf *b, const char *arg) {
 	Native_Free(&m);
 }
 
+static void TC_SaveVar(const char *name, const char *value, void *u) {
+	TC_Addf((tcBuf *)u, "save %s=%s\n", name, value);
+}
+
 static void TC_Talk(tcBuf *b, const char *arg) {
 	char ent[64], opt[64];
 	float dx = 300.0f, dz = 0.0f;
+	int pl = 0;
 
 	opt[0] = 0;
-	if (!strncmp(arg, "mark ", 5)) {
+	if (!strncmp(arg, "state", 5)) {
+		/* the money (an instance's player of the number given) and the save variables */
+		sscanf(arg + 5, "%d", &pl);
+		TC_Addf(b, "money %d\n", Players_Net() ? Players_Money(pl) : g_pWorld ? g_pWorld->money : 0);
+		SaveVars_Each(TC_SaveVar, b);
+	} else if (!strncmp(arg, "mark ", 5)) {
 		NetAudit_Talk("mark", "%s", arg + 5);
 		TC_Add(b, "ok\n", -1);
 	} else if (g_Play) {
@@ -1589,7 +1601,8 @@ static void TC_Line(tcBuf *b, const char *line) {
 	}
 	/* "talk goto <entity> [<dx> <dz>]", "talk use <entity> [<option>]": single player's player put next to an entity
 	 * or using it, as the instance's lines goto and use do for a network player (include/scrap/travel.h); not on a
-	 * client, whose use goes to the server as its input. "talk mark <text>": a line of the talk trace (netaudit.h) */
+	 * client, whose use goes to the server as its input. "talk mark <text>": a line of the talk trace (netaudit.h).
+	 * "talk state [<player>]": the money (of an instance's player) and the save variables */
 	if (TC_Verb(line, "talk", &arg)) {
 		TC_Talk(b, arg);
 		return;
