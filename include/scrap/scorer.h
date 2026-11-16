@@ -166,6 +166,13 @@ void Scorer_CancelSpeech(float time);
 /* the talk's time without a talk scorer that draws (a headless instance of the coop story): it runs down, its
  * callback (the end of a remote communication) runs at its end (not in the original) */
 void Scorer_TalkTick(float dt);
+/* not in the original, a -mp2 instance (stage 4.3): each player has a talk of its own (its RemainTalkTime and
+ * FullTalkTime in its context, its speech callback); Scorer_TalkModels turns them on, Scorer_TalkTickPlayers runs the
+ * world's talk and each player's in its context, Scorer_TalkReset empties player i's (its join and part) */
+extern byte g_TalkModels;
+void Scorer_TalkModels(void);
+void Scorer_TalkTickPlayers(float dt);
+void Scorer_TalkReset(int i);
 /* not in the original: the scorer of player where nothing draws it (a coop instance): its deleted items go, its
  * visible timers and bars count on (their warning and end run) as their drawing does */
 void Scorer_Tick(int player);

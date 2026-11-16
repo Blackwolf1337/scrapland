@@ -42,4 +42,12 @@ typedef struct cGVar {
 /* GVAR_SCRIPT_FUNCTION keeps a cPy_Function at +0x10 instead of value/def */
 #define GVar_Function(v) ((cPy_Function *)&(v)->value)
 
+/* not in the original: a variable whose value belongs to the current player's context (a -mp2 instance: the talk times
+ * of a player, src/game/Scorer/TalkScorer.c). NULL (single player, a client): every variable is its own. GVar_Find and
+ * the C names of such variables go through it */
+extern cGVar *(*g_GVarRedirect)(cGVar *v);
+static inline cGVar *GVar_Redirect(cGVar *v) {
+	return g_GVarRedirect ? g_GVarRedirect(v) : v;
+}
+
 #endif

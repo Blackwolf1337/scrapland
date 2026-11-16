@@ -132,7 +132,7 @@ extern cGVar GVar_NotShootAI;
 #define g_NotShootAI (GVar_NotShootAI.value.i)
 #define g_NotShootAIDef (GVar_NotShootAI.def.i)
 extern cGVar GVar_RemainTalkTime;
-#define g_RemainTalkTime (GVar_RemainTalkTime.value.f)
+#define g_RemainTalkTime (GVar_Redirect(&GVar_RemainTalkTime)->value.f)
 extern cGVar GVar_R_SplitScreenCamera;
 #define g_SplitScreenCamera (GVar_R_SplitScreenCamera.value.i)		/* R_SplitScreenCamera */
 extern cGVar GVar_R_SplitScreenUpdate;

@@ -271,7 +271,7 @@ typedef struct cTalkScorer {
 } cTalkScorer;
 
 extern cGVar GVar_RemainTalkTime;
-#define g_RemainTalkTime (GVar_RemainTalkTime.value.f)	/* RemainTalkTime */
+#define g_RemainTalkTime (GVar_Redirect(&GVar_RemainTalkTime)->value.f)	/* RemainTalkTime (a player's own on a -mp2 instance) */
 
 cTalkScorer *cTalkScorer_ctor(cTalkScorer *self);
 
