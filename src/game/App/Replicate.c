@@ -20,6 +20,7 @@
 #include "scrap/crt.h"
 #include "scrap/faction.h"
 #include "scrap/global.h"
+#include "scrap/initsteps.h"
 #include "scrap/inputtape.h"
 #include "scrap/instance.h"
 #include "scrap/model.h"
@@ -750,9 +751,42 @@ static void Rep_DropCorpse(RepPlayer *pl) {
 
 /* the player's character at pos (a spawn point when pos is NULL): its class of the faction or the state
  * (include/scrap/faction.h), Dtritus by default */
+/* the place of player i's new character: pos, else its faction's jail, else a spawn point of the level */
+static void Rep_SpawnPlace(int i, const vec3_t *pos, vec3_t *p, float *yaw) {
+	RepPlayer *pl = &rep.pl[i];
+	if (pos) {
+		*p = *pos;
+	} else if (Faction_SpawnPlace(i, p, yaw)) {
+		/* a member that died in its office level: its jail dummy */
+	} else if (!Rep_PickSpawn(p, yaw, &pl->spawnAt)) {
+		*p = rep.spawn[0];
+		*yaw = rep.spawnYaw[0];
+	}
+}
+
+/* e as player i's character: its faction's class, the instance's death, the heading yaw */
+static void Rep_CharAt(int i, cEntity *e, float yaw) {
+	/* a level that loads no character scripts of its own (GDB) has not even the default class */
+	const char *cls = Faction_CharClass(i);
+	Faction_EnsureClass(cls);
+	if (!WLife(e)->actCtrl || !WLife(e)->actCtrl->cls || strcmp(WLife(e)->actCtrl->cls->name, cls)) {
+		WithLife_SetActCtrl(e, cls);
+	}
+	Rep_SetVarS(e, "TgType", "Green");
+	/* its death is the instance's (Rep_Death), not an NPC's of the scripts (CharAct: respawn from CharsNPC) nor single
+	 * player's (the list Players of the startup player: Chars.MainCharDeath) */
+	Rep_SetVarS(e, "OnDeath", "");
+	Rep_SetVarS(e, "EntityList", "");
+	vec3_t ang = { 0.0f, yaw, 0.0f };
+	Obj_SetAng(e, &ang);
+}
+
+/* player i's entity e is its own now: its slot, the replication of its steps, the state of a new character */
+static cEntity *Rep_OwnNew(int i, cEntity *e, const vec3_t *p);
+
 static cEntity *Rep_SpawnChar(int i, const vec3_t *pos, float yaw) {
 	char name[REP_NAME];
-	vec3_t p, ang;
+	vec3_t p;
 
 	RepPlayer *pl = &rep.pl[i];
 	pl->spawnAt = -1;
@@ -765,27 +799,46 @@ static cEntity *Rep_SpawnChar(int i, const vec3_t *pos, float yaw) {
 		}
 		p = e->pos;
 	} else {
-		if (pos) {
-			p = *pos;
-		} else if (Faction_SpawnPlace(i, &p, &yaw)) {
-			/* a member that died in its office level: its jail dummy */
-		} else if (!Rep_PickSpawn(&p, &yaw, &pl->spawnAt)) {
-			p = rep.spawn[0];
-			yaw = rep.spawnYaw[0];
-		}
+		Rep_SpawnPlace(i, pos, &p, &yaw);
 		if ((e = cWorld_CreateEntity(g_pWorld, name, p.x, p.y, p.z, TYEN_WALKCHAR)) == NULL) {
 			return NULL;
 		}
-		/* a level that loads no character scripts of its own (GDB) has not even the default class */
-		const char *cls = Faction_CharClass(i);
-		Faction_EnsureClass(cls);
-		WithLife_SetActCtrl(e, cls);
-		Rep_SetVarS(e, "TgType", "Green");
-		/* its death is the instance's (Rep_Death), not an NPC's of the scripts (CharAct: respawn from CharsNPC) */
-		Rep_SetVarS(e, "OnDeath", "");
-		ang = (vec3_t){ 0.0f, yaw, 0.0f };
-		Obj_SetAng(e, &ang);
+		Rep_CharAt(i, e, yaw);
 	}
+	return Rep_OwnNew(i, e, &p);
+}
+
+/* the name Rep_EnterChar gives the startup player's character */
+static char rep_enterName[REP_NAME];
+
+const char *Rep_EnterName(void) {
+	return rep_enterName;
+}
+
+/* player i's character of the level's start: single player's startup player, made by the player steps of the level
+ * (include/scrap/initsteps.h) in its context, at the place of the instance's spawn rules; the instance's own where
+ * the level made none (the PvP modes, a level without the steps) */
+static cEntity *Rep_EnterChar(int i, const vec3_t *pos, float yaw) {
+	RepPlayer *pl = &rep.pl[i];
+	if (Arena_On()) {
+		return Rep_SpawnChar(i, pos, yaw);
+	}
+	pl->spawnAt = -1;
+	Str_PrintfQuiet(rep_enterName, sizeof(rep_enterName), REP_PLAYER_PREFIX "%d_%u", i, ++pl->spawns);
+	cEntity *e = InitSteps_Enter(i) ? World_FindEntity(rep_enterName) : NULL;
+	if (!e || !Entity_IsType(e, TYEN_WALKCHAR)) {
+		return Rep_SpawnChar(i, pos, yaw);
+	}
+	vec3_t p;
+	Rep_SpawnPlace(i, pos, &p, &yaw);
+	Entity_SetPos(e, &p);
+	Rep_CharAt(i, e, yaw);
+	Con_Printf("instance: player %d's startup player %s\n", i, e->name);
+	return Rep_OwnNew(i, e, &p);
+}
+
+static cEntity *Rep_OwnNew(int i, cEntity *e, const vec3_t *p) {
+	RepPlayer *pl = &rep.pl[i];
 	Rep_SetSlot(e, PLAYERS_NET_SLOT + i);
 	Obj(e)->netStep = 1;
 	Rep_DropCorpse(pl);
@@ -796,7 +849,7 @@ static cEntity *Rep_SpawnChar(int i, const vec3_t *pos, float yaw) {
 	pl->lost = 0;
 	pl->dead = 0;
 	pl->spawnTick = rep.tick;
-	pl->spawnY = p.y;
+	pl->spawnY = p->y;
 	Faction_Spawned(i, e);
 	Coop_Spawned(e);
 	return e;
@@ -1150,7 +1203,7 @@ static int Rep_Join(int conn) {
 			/* the PvP modes: no ship before its join and its first spawn (Arena_SpawnDue) */
 			pl->lost = rep.tick ? rep.tick : 1;
 			Arena_Joined(i);
-		} else if (!Rep_SpawnChar(i, sp.have ? &sp.pos : NULL, sp.yaw)) {
+		} else if (!Rep_EnterChar(i, sp.have ? &sp.pos : NULL, sp.yaw)) {
 			Players_Part(i);
 			Travel_Left(i);
 			return -1;

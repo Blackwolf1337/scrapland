@@ -95,6 +95,9 @@ void Rep_Remove(int i);
 void Rep_Rebody(int i, const vec3_t *pos, float yaw);
 /* the names of the players' characters on an instance */
 #define REP_PLAYER_PREFIX "NetPlayer"
+/* the name of the character a joining player's startup player gets (the player steps of the level's start,
+ * include/scrap/initsteps.h; Chars.CreateMainChar) */
+const char *Rep_EnterName(void);
 /* the replication slot of an entity of the last snapshot, -1 */
 int Rep_SlotOf(const struct cEntity *e);
 /* a free place for a character around at (the place k of the rings around it on, 0 at itself): 1 with *out */
