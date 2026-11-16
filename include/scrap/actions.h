@@ -224,6 +224,9 @@ byte cActCtrl_PlayNew(void *ctrl, const char *action, int arg, float speed);
 void cActCtrl_SetDefLoop(void *ctrl, const char *action, byte force);
 /* the update of the slot: the ship parts with DinaShip, else cActCtrl_Update */
 void cActCtrl_Tick(cActCtrl *self, float dt);
+/* the Present half of the update, a replica's: the ship parts of DinaShip from the state of the ship; a character's
+ * layers are written and played by the replicator (cActCtrl_NetDrive) */
+void cActCtrl_Present(cActCtrl *self, float dt);
 /* a watcher's proxy: the layers' actions (index + 1 in the class, 0 none) of the network at their rates (time a
  * second, 0 keeps it), the model advanced by dt; of the events only the sounds (Event_IsSound) */
 void cActCtrl_NetDrive(cActCtrl *self, const uint16_t *act, const float *rate, int layers, float dt);

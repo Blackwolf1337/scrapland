@@ -530,6 +530,12 @@ void cActCtrl_Tick(cActCtrl *self, float dt) {
 	}
 }
 
+void cActCtrl_Present(cActCtrl *self, float dt) {
+	if (self->cls->dynShip) {
+		cActCtrl_UpdateShip(self, dt);
+	}
+}
+
 void cActCtrl_StopChan(cActCtrl *self, int i) {
 	CHECK(i > 0);
 	cActLayer *l = &self->layers[i];
