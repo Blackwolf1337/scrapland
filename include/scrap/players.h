@@ -132,8 +132,8 @@ void Players_BindEntity(struct cEntity *e);
 void Players_BindOwner(struct cEntity *e);
 void Players_BindNearest(const vec3_t *pos);
 void Players_BindTurn(void);
-/* the own ship of player i (a ship it called): its Parking.PlayerShip of the scripts (that variable and
- * Parking.LocalShip are kept per player and bound with the rest); NULL for none */
+/* the own ship of player i (a ship it called): its Parking.PlayerShip of the scripts (an overlay per player of the
+ * module variables, include/scrap/modvars.h); NULL for none */
 void Players_SetShip(int i, struct cEntity *ship);
 /* player i's own ship while it is in the world, NULL */
 struct cEntity *Players_Ship(int i);
@@ -144,6 +144,9 @@ int Players_Bound(void);
 /* the current context and the context of player i (PLAYERS_NONE: the world's own); NULL for an unused player */
 cPlayer *Players_Cur(void);
 cPlayer *Players_Ctx(int i);
+/* the player whose overlay holds the module variable module.name (tagged PLAYER, or PARTY outside coop: ModVars.c)
+ * now: the current player, -1 for the module (single player, the world's context) */
+int Players_VarOwnerAt(const char *module, const char *name);
 /* the money and the alarm of the current context (single player: the world's fields); site names the caller */
 int *Players_CurMoneyAt(const char *site);
 cAlarm *Players_CurAlarmAt(const char *site);

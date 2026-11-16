@@ -24,22 +24,12 @@
 #include "scrap/walkcharentity.h"
 #include "scrap/world.h"
 
-/* the variables of the scripts' modules that mean "the player's": the player's own ship (Parking) and, in the sandbox
- * and freeroam (places), Sputnik beside it (include/scrap/sputniks.h; the coop story's Sputnik is the party's) */
+/* the module of the player's own ship variable (Parking.PlayerShip, an overlay per player: include/scrap/modvars.h) */
 #define PLAYERS_VAR_MODULE "Parking"
-static const struct {
-	const char *mod, *var;
-	byte places;
-} g_PlVars[] = { { PLAYERS_VAR_MODULE, "PlayerShip", 0 }, { PLAYERS_VAR_MODULE, "LocalShip", 0 }, { "Sputnik", "spt", 1 } };
-#define PLAYERS_VARS ((int)(sizeof(g_PlVars) / sizeof(g_PlVars[0])))
 
 static cPlayer g_Pl[PLAYERS_MAX + 1];	/* + the world's own (PLAYERS_NONE) */
-static nativeVal_t g_PlVals[PLAYERS_MAX + 1][PLAYERS_VARS];	/* of g_PlVars while the context is not current */
 static cPlayer *g_Cur = &g_Pl[PLAYERS_NONE];
 static int g_Turn;
-static modVarRef_t g_VarRef[PLAYERS_VARS];	/* the modules of g_PlVars, found once a frame (the turn) */
-static int g_VarRefTurn = -1;
-static byte g_VarRefOk[PLAYERS_VARS];
 
 #define g_Bound ((int)(g_Cur - g_Pl))
 #define g_NetPlayer(i) (g_Pl[i].ent)
@@ -275,6 +265,7 @@ void Players_Join(int i, int money) {
 	s->camName[0] = 0;
 	s->actionSet = -1;
 	s->used = 1;
+	ModVar_OverClearPlayer(i);
 }
 
 void Players_Part(int i) {
@@ -285,30 +276,7 @@ void Players_Part(int i) {
 		Players_Bind(PLAYERS_NONE);
 	}
 	g_Pl[i].used = 0;
-	for (int k = 0; k < PLAYERS_VARS; k++) {
-		Native_Free(&g_PlVals[i][k]);
-	}
-}
-
-/* the variables of g_PlVars of context o into its values, those of context n into the module */
-static void Players_SwapVars(int o, int n) {
-	if (g_VarRefTurn != g_Turn) {
-		g_VarRefTurn = g_Turn;
-		for (int k = 0; k < PLAYERS_VARS; k++) {
-			g_VarRefOk[k] = (!g_PlVars[k].places || Places_On()) && ModVar_Named(g_PlVars[k].mod, &g_VarRef[k]);
-		}
-	}
-	for (int k = 0; k < PLAYERS_VARS; k++) {
-		nativeVal_t cur;
-		if (!g_VarRefOk[k] || !ModVar_GetVal(&g_VarRef[k], g_PlVars[k].var, &cur)) {
-			continue;
-		}
-		if (!Native_Equal(&cur, &g_PlVals[n][k])) {
-			ModVar_SetVal(&g_VarRef[k], g_PlVars[k].var, &g_PlVals[n][k]);
-		}
-		Native_Free(&g_PlVals[o][k]);
-		g_PlVals[o][k] = cur;
-	}
+	ModVar_OverClearPlayer(i);
 }
 
 void Players_Bind(int i) {
@@ -318,10 +286,6 @@ void Players_Bind(int i) {
 	if (!Players_Used(i)) {
 		i = PLAYERS_NONE;
 	}
-	if (i == g_Bound) {
-		return;
-	}
-	Players_SwapVars(g_Bound, i);
 	g_Cur = &g_Pl[i];
 }
 
@@ -334,6 +298,12 @@ cPlayer *Players_Ctx(int i) {
 		return &g_Pl[PLAYERS_NONE];
 	}
 	return Players_Used(i) ? &g_Pl[i] : NULL;
+}
+
+int Players_VarOwnerAt(const char *module, const char *name) {
+	(void)module;
+	(void)name;
+	return Players_Net() && g_Cur != &g_Pl[PLAYERS_NONE] ? g_Bound : -1;
 }
 
 int *Players_CurMoneyAt(const char *site) {
