@@ -62,7 +62,7 @@ InitLevel:MissionsFuncs.Init	WORLD	the missions
 OutMap:GVar.FileNameMap2D	DEF	the map picture of the radar
 OutMap:GVar.CharGrav	DEF	the gravity of the characters (a world setting both sides set)
 OutMap:OutMap.BrowseAtmospherePos	DEF	the atmosphere limits from the dummies
-OutMap:OutMap.BrowseSpawnPos	WORLD	the spawn places
+OutMap:OutMap.BrowseSpawnPos	DEF	the spawn places (dummies of the map; the client's rail traffic starts at them)
 OutMap:GVar.GridUseTopLimit	DEF	the collision grid
 OutMap:Mode_SetGrid	DEF	the collision grid
 OutMap:GVar.Max_Rad_Obj	DEF	the object radius limit

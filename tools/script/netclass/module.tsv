@@ -328,6 +328,7 @@ Init.Close	UI	the progress bar of the next level
 OutMap.Init	DEF	the outdoor start: the client runs its DEF steps (initstep.tsv)
 OutMap.InitOutMap	DEF	a group of steps of the outdoor start (initstep.tsv)
 OutMap.BrowseAtmospherePos	DEF	the atmosphere limits from the dummies
+OutMap.BrowseSpawnPos	DEF	the spawn places from the dummies (map data)
 InMap.Init	DEF	the indoor start: the client runs its DEF steps (initstep.tsv)
 Doors.InitDoorInfo	DEF	the table of the door classes
 Doors.CreateDoorClass	DEF	the action class of a door
