@@ -580,7 +580,9 @@ byte cWeaponManager_SetUAmmo(cWeaponManager *self, int w, float v) {
 /* the looping sound snd of the owner while it fires with ammo, else none */
 void cWeaponManager_SetWeapSnd(cWeaponManager *self, int snd) {
 	cEntity *owner = self->owner;
-	int a = TABLE_AT(WEAPS, self->curWeap)->ammo;
+	/* not in the original: a -mp2 replica of a ship without weapons (the indoor traffic) has no current weapon */
+	int a = self->curWeap >= 0 && self->curWeap < g_pWorld->weapons.count ? TABLE_AT(WEAPS, self->curWeap)->ammo :
+		g_pWorld->ammo.count;
 	if (!(a < g_pWorld->ammo.count && !(0.0f >= self->ammo[a]) && Veh(owner)->controls.fire)) {
 		snd = -1;
 	}
