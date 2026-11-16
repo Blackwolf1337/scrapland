@@ -88,13 +88,14 @@ static int FX_NameEq(const char *a, const char *b) {
 	return wa == wb && !strcmp(a + 2, b + 2);
 }
 
-void *FX_DropNew(const char *file, float life) {
+void *FX_DropNew_(const char *file, float life, const char *site) {
 	NetAudit_Site(NA_SFX, "sfx.drop");
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, file);
 	cDebris *d = cDebrisSys_NewElement(sys);
 
 	d->life = life;
-	cDebrisSys_Drop(sys, d);
+	g_DebrisSite = site;
+	cDebrisSys_Drop_(sys, d);
 	return Debris_Element(d);
 }
 
