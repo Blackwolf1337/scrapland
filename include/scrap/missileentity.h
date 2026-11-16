@@ -3,6 +3,17 @@
  * along its angles ("Linear", "Dumb", "Cloud" or "Fall") until its life time ran out or it hit something. A
  * swarm missile carries bees, debris of the system swarmSys that fly around it. src/game/Entities/MissileEntity.c;
  * the original code follows the items, its source file has no CHECK.
+ *
+ * The halves of the update (include/scrap/objentity.h):
+ *   Per frame (cMissileEntity_Update): Present the bees (cDebris_Step, Swarm: they fly around the missile, drawing
+ *   from the game's random numbers); Advance the life time (LifeTick: the end hit and the delete).
+ *   Per slot (cMissileEntity_Tick): Advance the flight (Missile_LocalTick or the original's Missile_NetTick: the
+ *   turn, the target, the hits and their OnHit, the explosions that the hits start) and the growth of the radius;
+ *   Present the volume of the swarm sound by the number of bees.
+ *   UpdateOff: Advance the life time.
+ * State Present reads: the bees (swarm, swarmSys, hiddenSwarm), swarmCount, swarmSpeed, speed, radius, type, lastPos,
+ * the view position and angles, the swarm sound (snd 0), the embedded effect (fx), the render state of cObjEntity
+ * (a missile extrapolates by vel and rotVel while it updates).
  */
 #ifndef SCRAP_MISSILEENTITY_H
 #define SCRAP_MISSILEENTITY_H
