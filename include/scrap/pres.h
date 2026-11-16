@@ -94,7 +94,8 @@ enum {
 	PRES_FX_STEAL,					/* thief, victim: FX_BankerSteal */
 	PRES_FX_SUCTION,				/* bank master, victim: FX_BankMasterSuction */
 	PRES_FX_FLASH,					/* Berto, victim: FX_BertoFlash */
-	PRES_FX_TAKE					/* messenger, data pack: FX_MessengerTake */
+	PRES_FX_TAKE,					/* messenger, data pack: FX_MessengerTake */
+	PRES_FX_POLICESTEAL				/* police, victim: FX_PoliceSteal */
 };
 
 struct cEntity;

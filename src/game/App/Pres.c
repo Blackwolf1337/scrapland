@@ -706,6 +706,11 @@ static void Pres_FxPlay(NetRepReader *r) {
 			}
 		}
 		break;
+	case PRES_FX_POLICESTEAL:
+		if ((ea = Pres_Ent(PRES_O_FXENT, a, TYEN_WALKCHAR)) && (eb = Pres_Ent(PRES_O_FXENT, b, TYEN_WALKCHAR))) {
+			FX_PoliceSteal(ea, eb);
+		}
+		break;
 	case PRES_FX_TAKE:
 		if ((ea = Pres_Ent(PRES_O_FXENT, a, TYEN_WALKCHAR)) && (eb = Pres_Ent(PRES_O_FXENT, b, NULL))) {
 			FX_MessengerTake(ea, eb);

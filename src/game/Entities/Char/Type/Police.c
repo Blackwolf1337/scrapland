@@ -6,7 +6,9 @@
 #include <string.h>
 
 #include "scrap/chartype.h"
+#include "scrap/fx.h"
 #include "scrap/pres.h"
+#include "scrap/repent.h"
 #include "scrap/actions.h"
 #include "scrap/modmove.h"
 #include "scrap/staticinit.h"
@@ -35,7 +37,6 @@ static void ChType_FXPoliceGearConversion(cAbstractFile *params) {
 }
 
 /* params: the attacker and the attacked (both WalkChars): the coins of the steal */
-static void FX_PoliceSteal(cEntity *attacker, cEntity *attacked);
 static void ChType_FXPoliceSteal(cAbstractFile *params) {
 	char a[0x80], b[0x80];
 
@@ -54,9 +55,14 @@ static void ChType_FXPoliceSteal(cAbstractFile *params) {
 	FX_PoliceSteal(attacker, attacked);
 }
 
-/* the coins from attacked to attacker for 1.35 s when the attacker is in sight */
-static void FX_PoliceSteal(cEntity *attacker, cEntity *attacked) {
+/* the coins from attacked to attacker for 1.35 s when the attacker is in sight; a -mp2 instance sends it to the
+ * players near (include/scrap/pres.h) */
+void FX_PoliceSteal(cEntity *attacker, cEntity *attacked) {
 	vec3_t tmp;
+
+	if (g_Mp2 && attacker && attacked) {
+		Pres_FxEnt(PRES_FX_POLICESTEAL, attacker->name, attacked->name, 0.0f, 0, NULL);
+	}
 
 	CHECK(attacker);
 	CHECK(Entity_IsType(attacker, TYEN_WALKCHAR));

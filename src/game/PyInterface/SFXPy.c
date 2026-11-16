@@ -100,7 +100,9 @@ API_FN(SFX, EmbeddedSet) {
 	if (g_Mp2) {
 		Pres_FxEnt(PRES_FX_EMBEDDED, entityName, fxType, 0.0f, 0, NULL);
 	}
+	g_PresIn++;
 	Entity_SetEmbeddedFX(vEntity, fxType);
+	g_PresIn--;
 	return 1;
 }
 

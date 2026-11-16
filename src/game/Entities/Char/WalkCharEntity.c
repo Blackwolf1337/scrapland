@@ -9,6 +9,8 @@
 #include "scrap/fxelements.h"
 #include "scrap/missileentity.h"
 #include "scrap/players.h"
+#include "scrap/pres.h"
+#include "scrap/repent.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/viewers.h"
 #include "scrap/walkcharentity.h"
@@ -1337,7 +1339,14 @@ static void cWalkCharEntity_SetEnergyUsed(cEntity *self, float used) {
 }
 
 static void cWalkCharEntity_SetEmbeddedFX(cEntity *self, const char *fxType) {
+	/* a named effect (not the model's own, which every side sets with the class) goes to the players of a -mp2
+	 * instance (include/scrap/pres.h) */
+	if (g_Mp2 && fxType && !strchr(fxType, '.')) {
+		Pres_FxEnt(PRES_FX_EMBEDDED, self->name, fxType, 0.0f, 0, NULL);
+	}
+	g_PresIn++;
 	FX_Character(self, fxType);
+	g_PresIn--;
 	cWithLifeEntity_SetEmbeddedFX(self, fxType);
 }
 

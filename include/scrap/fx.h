@@ -18,5 +18,6 @@ void FX_BankMasterSuction(cEntity *master, cEntity *victim);
 void FX_BertoFlash(cEntity *from, cEntity *to);
 void FX_BishopRay(cEntity *bishop, cEntity *target, const vec3_t *hit);
 void FX_MessengerTake(cEntity *messenger, cEntity *dataPack);
+void FX_PoliceSteal(cEntity *attacker, cEntity *attacked);
 
 #endif
