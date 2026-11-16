@@ -164,9 +164,15 @@ def run_point(a, name, data, level, key):
         sp.start()
         member.start()
         parity.wait_for(lambda: sp.try_ask('Scrap.GetLevelPath()', timeout=5), 240, 2)
-        sp_story(sp, story, own, level)
-        time.sleep(8)
-        parity.wait_for(lambda: sp.try_ask('Scrap.GetLevelPath()', timeout=5), 240, 2)
+        # the save variables and the level again until single player is in the point's level (a load of the story's
+        # variables can take single player to another level: a run of stage 0.4 had Police for Press)
+        for _ in range(3):
+            sp_story(sp, story, own, level)
+            time.sleep(8)
+            path = parity.wait_for(lambda: sp.try_ask('Scrap.GetLevelPath()', timeout=5), 240, 2) or ''
+            if level.lower() in path.lower():
+                break
+        res['sp_level'] = path.strip().strip("'")
 
         def member_own():
             return parity.own_entity(parity.parse_ents(member.try_ask('entinfo', timeout=5)))
