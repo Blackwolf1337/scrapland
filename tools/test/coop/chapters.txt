@@ -1,0 +1,17 @@
+# The coop chapters of tools/test/mp2.sh coop <name>: name|story point|level of the mission|what
+# A story point is a saved coop world (<name>-data: party.story, party.owner, players/) in the folder of
+# --points-dir (MP2_COOP_POINTS), whose keys/pa.key and keys/pb.key are the identity keys of its two players. The
+# chapter is one autochain.sh round (the automatic players play the mission until the story names the next one, with
+# the hints of chainenv.sh), then coopparity.py at the start and at the end of the chapter.
+tb|tb-data|Press|the boss' talk (TalkToBoss), the short one
+gd1|tb2-1-data|DownTown|the transports' data cubes (GetDataPart1)
+gd2|gd-1-data|Bank|the three downloads with both members (GetDataPart2)
+gd3|gd2-2-data|Commercial|Deep Throat's call from a phone cab (GetDataPart3 at CallDeepThroat)
+tm|tm-data|TownHall|the mayor, the conversor and the banker's slaps (TalkToMayor)
+bp|d2-1-data|Police|the functionary, the thugs and the plans (BeatPickus)
+gdb|c13-2-data|GDB|the bishops' scan and the traitor (IntoTheGDB)
+ih2|p1x-data|Press|the news and Humphrey (IntroHuman2)
+gw|d2-6-data|Press|the walk with the human (GoWithHuman)
+ib|c3-1-data|Bank|the chief of bankers possessed (InfiltrateBank)
+ro|r1-1-data|GDB|the restore point of the matrix (ReinsertOwnMatrix)
+pt|t5-1-data|Commercial|Porkins' transports (DestroyPorkinsTransports)
