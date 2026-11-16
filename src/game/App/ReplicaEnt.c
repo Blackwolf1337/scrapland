@@ -85,29 +85,36 @@ int ReplicaEnt_SlotOf(const cEntity *e) {
 	return e && e->netSlot ? e->netSlot - 1 : -1;
 }
 
-/* a journal value into the entity through its Var functions */
+/* a journal value into the entity through its Var functions (an entry "name#n" of the values that add up is the
+ * variable name) */
 static void ReplicaEnt_Apply(cEntity *e, const NetRepJVal *v) {
+	char name[NETREP_JNAME];
+	Str_Copy(name, v->name, sizeof(name));
+	char *hash = strchr(name, '#');
+	if (hash) {
+		*hash = 0;
+	}
 	switch (v->type) {
 	case NETREP_JI: {
 		int i = v->u.i;
-		Entity_VarI(e, v->name, &i, 1);
+		Entity_VarI(e, name, &i, 1);
 		break;
 	}
 	case NETREP_JF: {
 		double d = v->u.f;
-		Entity_VarF(e, v->name, &d, 1);
+		Entity_VarF(e, name, &d, 1);
 		break;
 	}
 	case NETREP_JV: {
 		double x = v->u.v[0], y = v->u.v[1], z = v->u.v[2];
-		Entity_VarV(e, v->name, &x, &y, &z, 1);
+		Entity_VarV(e, name, &x, &y, &z, 1);
 		break;
 	}
 	case NETREP_JS: {
 		char buf[NETREP_JSTR];
 		char *s = buf;
 		Str_Copy(buf, v->u.s, sizeof(buf));
-		Entity_VarS(e, v->name, &s, 1);
+		Entity_VarS(e, name, &s, 1);
 		break;
 	}
 	}
@@ -264,10 +271,27 @@ static void ReplicaEnt_Purge(void) {
 	}
 }
 
+/* the look of a first replication kind for a replica: a ship without its pilot (the journal sets it in the order of
+ * the server's sets, its animations after it) */
+static const char *ReplicaEnt_Look(int kind, const char *look, char *out, int size) {
+	if (kind != NETREP_SHIP) {
+		return look;
+	}
+	const char *p = strchr(look, '|');
+	p = p ? strchr(p + 1, '|') : NULL;
+	const char *q = p ? strchr(p + 1, '|') : NULL;
+	if (!q) {
+		return look;
+	}
+	Str_PrintfQuiet(out, size, "%.*s%s", (int)(p + 1 - look), look, q);
+	return out;
+}
+
 void ReplicaEnt_Frame(void) {
 	int kind;
 	const char *look;
 	uint32_t tick;
+	char lk[NETREP_LOOK_MAX + 1];
 
 	ReplicaEnt_Purge();
 	for (int slot = 0; slot < NETREP_MAX_ENTS; slot++) {
@@ -294,7 +318,8 @@ void ReplicaEnt_Frame(void) {
 				rc.waits++;
 				continue;
 			}
-			e = kind <= NETREP_ITEM ? Watch_Build(s->name, kind, look, st, 1) : ReplicaEnt_BuildOther(s, kind, look, st);
+			e = kind <= NETREP_ITEM ? Watch_Build(s->name, kind, ReplicaEnt_Look(kind, look, lk, sizeof(lk)), st, 1) :
+				ReplicaEnt_BuildOther(s, kind, look, st);
 			if (e) {
 				e->netSlot = (uint16_t)(slot + 1);
 				ReplicaEnt_Journal(slot, e);
@@ -408,14 +433,18 @@ void ReplicaEnt_Present(cEntity *e, int kind, const NetRepState *a, const NetRep
 			uint32_t ia = ReplicaEnt_Act(a, l), ib = ReplicaEnt_Act(b, l);
 			float ta = ReplicaEnt_ActTime(a, l), tb = ReplicaEnt_ActTime(b, l);
 			act[l] = (uint16_t)ia;
-			rates[l] = span > 0.0f && ia == ib && tb > ta ? (tb - ta) / span : 0.0f;
+			/* the rate of the server between the samples (0 for one sample: no record since, so its time stands),
+			 * not known (-1) when the action changed or went round between them */
+			rates[l] = ia == ib && tb >= ta ? (span > 0.0f ? (tb - ta) / span : 0.0f) : -1.0f;
 			rates[l] = rates[l] > 4.0f ? 4.0f : rates[l];
 			target[l] = ia && ia == ib && tb >= ta ? ta + (tb - ta) * f : ia ? ta : -1.0f;
 		}
 		w->actCtrl->walkSpeed = ReplicaEnt_Sec(a->x[REPX_WALK]);
-		w->actCtrl->headBlend = ReplicaEnt_Sec(a->x[REPX_HEAD] & 0xffff);
-		w->actCtrl->headMod = (a->x[REPX_HEAD] >> 16) - 1;
 		cActCtrl_NetDrive(w->actCtrl, act, rates, target, 4, dt, Event_IsPresent);
+	}
+	if (kind == NETREP_CHAR) {
+		/* the head turns with the view by this lock (WCE_ViewLockBlend, Present) */
+		WChar(e)->viewLock = (byte)a->x[REPX_HEAD];
 	}
 	if (kind == NETREP_SHIP) {
 		cVehicleEntity *v = Veh(e);

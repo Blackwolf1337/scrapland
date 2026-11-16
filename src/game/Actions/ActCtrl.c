@@ -29,7 +29,6 @@ static int Action_Anim(const cAction *a) {
 
 /* the end of the action of the layer, -1 without one */
 #define NETDRIVE_CATCHUP 0.5f
-#define NETDRIVE_MIN_RATE 0.05f
 #define NETDRIVE_MAX_RATE 4.0f
 
 static float Layer_End(const cActLayer *l) {
@@ -514,10 +513,10 @@ void cActCtrl_NetDrive(cActCtrl *self, const uint16_t *act, const float *rate, c
 				err = fmodf(err, end);
 				err = err > end * 0.5f ? err - end : err < -end * 0.5f ? err + end : err;
 			}
-			r = (r > 0.0f ? r : 1.0f) + err / NETDRIVE_CATCHUP;
-			r = r < NETDRIVE_MIN_RATE ? NETDRIVE_MIN_RATE : r > NETDRIVE_MAX_RATE ? NETDRIVE_MAX_RATE : r;
+			r = (r >= 0.0f ? r : 1.0f) + err / NETDRIVE_CATCHUP;
+			r = r < 0.0f ? 0.0f : r > NETDRIVE_MAX_RATE ? NETDRIVE_MAX_RATE : r;
 		}
-		if (l->on && r > 0.0f) {
+		if (l->on && (r > 0.0f || (target && r == 0.0f))) {
 			CGameModel_SetAnimFactor(m, Action_Anim(l->action), r);
 		}
 	}

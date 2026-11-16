@@ -5,7 +5,7 @@
  * Every entity of every class but the cameras gets a slot (src/game/App/RepEnt.c on the instance): the moving ones
  * (ships, characters, missiles) in the interest grid, the others (objects, things with life, items, plain entities)
  * in the level scope that every client gets. The snapshot state of src/netrep carries a class block
- * (NetRepState.x, the REPX_ values below): the four action layers, the walk speed, the head blend, maximum life,
+ * (NetRepState.x, the REPX_ values below): the four action layers, the walk speed, the head's view lock, maximum life,
  * burn, boost, cloud, EMI, the fire of the weapon, the scripted move, radar, render effect, the item's state, a
  * missile's target and level. The look of the create record tells how the client builds the entity (the first
  * replication's looks for ships, characters, missiles and items, "O|model|action class" for the others).
@@ -56,7 +56,7 @@ enum {
 	REPX_ACT2, REPX_ACT2T,			/* action layer 2: action + 1, ms in it */
 	REPX_ACT3, REPX_ACT3T,			/* layer 3 */
 	REPX_WALK,						/* the walk speed of the actions, 1/1000 */
-	REPX_HEAD,						/* the head blend of the actions, 1/1000, and the node modifier + 1 << 16 */
+	REPX_HEAD,						/* character: the view lock its head turn blends to (the blend is Present) */
 	REPX_MAXLIFE,
 	REPX_PREVLIFE,					/* the life of the last check (a replica's hit flash) */
 	REPX_BURN,						/* fire left, ms */

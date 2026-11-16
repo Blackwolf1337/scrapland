@@ -37,6 +37,7 @@
 #define RE_EVENTS 1024				/* events between two snapshots */
 #define RE_MSG 8192					/* a reliable message is sent when it is this long */
 #define RE_REC (NET2_MAX_MESSAGE - 16)	/* the longest record */
+#define RE_RESYNC 32				/* entities whose journal numbers are read back per snapshot */
 
 byte g_Mp2;
 
@@ -75,6 +76,7 @@ static struct {
 void (*g_EntVarTap)(cEntity *e, const char *name, int type, const void *value);
 
 static void RepEnt_Tap(cEntity *e, const char *name, int type, const void *value);
+static byte RepEnt_ReadBack(cEntity *e, const NetRepJVal *j, NetRepJVal *out);
 
 byte RepEnt_ParseParam(const char *param, const char *ext) {
 	(void)ext;
@@ -142,7 +144,6 @@ static void RepEnt_Layers(const cActCtrl *ctrl, NetRepState *s) {
 		}
 	}
 	s->x[REPX_WALK] = RepEnt_Ms(ctrl->walkSpeed);
-	s->x[REPX_HEAD] = RepEnt_Ms(ctrl->headBlend) + ((ctrl->headMod + 1) << 16);
 }
 
 void RepEnt_State(cEntity *e, int kind, NetRepState *s) {
@@ -195,6 +196,9 @@ void RepEnt_State(cEntity *e, int kind, NetRepState *s) {
 	cWithLifeEntity *w = WLife(e);
 	if (w->actCtrl && w->actCtrl->cls) {
 		RepEnt_Layers(w->actCtrl, s);
+	}
+	if (kind == NETREP_CHAR) {
+		s->x[REPX_HEAD] = WChar(e)->viewLock;
 	}
 	s->x[REPX_PREVLIFE] = w->prevLife;
 	s->x[REPX_BURN] = RepEnt_Ms(w->fireRemain > 0.0f ? w->fireRemain : 0.0f);
@@ -269,8 +273,7 @@ static void RepEnt_MarkDirty(int s) {
 /* the variables the base state or the class block carry every snapshot, and the identity: not journaled */
 static byte RepEnt_Carried(const char *name) {
 	static const char *const names[] = { "Pos", "Ang", "Vel", "Life", "Active", "Name", "UsrControl", "isFalling",
-		"isWalking", "MaxLife", "RadarShow", "RenderEffect", "RenderEffectParam0", "ArrowCanUse", "ArrowCanView",
-		"ArrowCanMission", "TgType", "SpeedKmH", "ViewAng", "ViewPos" };
+		"isWalking", "SpeedKmH", "ViewAng", "ViewPos" };
 	for (size_t i = 0; i < sizeof(names) / sizeof(names[0]); i++) {
 		if (!strcmp(name, names[i])) {
 			return 1;
@@ -343,6 +346,18 @@ static void RepEnt_Tap(cEntity *e, const char *name, int type, const void *value
 		return;
 	}
 	RepEnt_Value(&v, name, type, value);
+	/* the variables whose sets add up (an arrow option, a pilot animation): each its own entry, by the option's
+	 * number or the animation (the client applies the name before '#') */
+	if (!strcmp(name, "AddArrOpt") && Entity_IsType(e, TYEN_WITH_LIFE)) {
+		Str_PrintfQuiet(v.name, sizeof(v.name), "AddArrOpt#%d", WLife(e)->arrow.nOpt);
+	} else if (!strcmp(name, "AnmP0") && type == 'i') {
+		Str_PrintfQuiet(v.name, sizeof(v.name), "AnmP0#%d", v.u.i);
+	}
+	if (tag == NC_STATE && v.type != NETREP_JS && strcmp(name, "ArrnOpt")) {
+		/* a number that reads back as it was set: the journal follows its later values (RepEnt_Resync) */
+		NetRepJVal r;
+		v.mark = RepEnt_ReadBack(e, &v, &r) && NetRepJ_Equal(&v, &r);
+	}
 	if (tag == NC_EVENT) {
 		if (re.nev == RE_EVENTS) {
 			re.lostEvents++;
@@ -376,6 +391,31 @@ static void RepEnt_Look(cEntity *e, int kind, char *out, int size) {
 	Str_PrintfQuiet(out, size, "O|%s|%s", model, act);
 }
 
+/* the numbers of the journals that the simulation changed without a set (a character's money given away): the values
+ * the entities read back now, RE_RESYNC entities per snapshot in turn; only the numbers that read back as they were
+ * set (NetRepJVal.mark; not ArrnOpt, which only takes 0, nor texts: a model's path reads back as its name) */
+static void RepEnt_Resync(void) {
+	static int cursor;
+	NetRepJVal r;
+	for (int n = 0, k = 0; n < RE_RESYNC && k < NETREP_MAX_ENTS; k++) {
+		int s = cursor;
+		cursor = (cursor + 1) % NETREP_MAX_ENTS;
+		cEntity *e = re.rec[s].e;
+		if (!e || e->deadNode.target) {
+			continue;
+		}
+		n++;
+		for (int i = NetRepJ_First(re.j, s); i >= 0;) {
+			const NetRepJVal *v = NetRepJ_Get(re.j, i);
+			int next = NetRepJ_Next(re.j, i);
+			if (v->mark && RepEnt_ReadBack(e, v, &r) && !NetRepJ_Equal(v, &r) && NetRepJ_Set(re.j, s, &r) > 0) {
+				RepEnt_MarkDirty(s);
+			}
+			i = next;
+		}
+	}
+}
+
 /* the journal of slot from to slot to */
 static void RepEnt_Move(int from, int to) {
 	for (int k = NetRepJ_First(re.j, from); k >= 0; k = NetRepJ_Next(re.j, k)) {
@@ -388,6 +428,7 @@ void RepEnt_Gather(NetRepServer *srv, uint32_t tick) {
 	NetRepState st;
 
 	re.srv = srv;
+	RepEnt_Resync();
 	NetRepSrv_Begin(srv, tick);
 	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
 		int kind = RepEnt_Kind(e);
@@ -413,6 +454,8 @@ void RepEnt_Gather(NetRepServer *srv, uint32_t tick) {
 				continue;
 			}
 			RepEnt_Move(s, n);
+			/* the create message of the new slot carries all of it: no change to send */
+			NetRepJ_Clean(re.j, n);
 			NetRepJ_Clear(re.j, s);
 			re.rec[s].e = NULL;
 			re.rec[s].dirty = 0;

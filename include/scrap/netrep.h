@@ -515,6 +515,7 @@ void NetRepSmooth_Step(NetRepSmooth *s, float dt);
 
 typedef struct NetRepJVal {
 	uint8_t type;					/* NETREP_J* */
+	uint8_t mark;					/* the owner's own flag (not on the wire, not compared) */
 	char name[NETREP_JNAME];
 	union {
 		int32_t i;
