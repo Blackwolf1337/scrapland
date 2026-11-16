@@ -30,6 +30,7 @@ static int Action_Anim(const cAction *a) {
 /* the end of the action of the layer, -1 without one */
 #define NETDRIVE_CATCHUP 0.5f
 #define NETDRIVE_MAX_RATE 4.0f
+#define NETDRIVE_RESTART 0.5f
 
 static float Layer_End(const cActLayer *l) {
 	return l->action ? l->action->anmTotalTime : -1.0f;
@@ -487,7 +488,10 @@ void cActCtrl_NetDrive(cActCtrl *self, const uint16_t *act, const float *rate, c
 		for (int i = 1; a && i < act[k]; i++) {
 			a = a->next;
 		}
-		if (a != l->action) {
+		/* the same action that is no loop started again on the network (its time far back): started again here */
+		byte again = a && a == l->action && target && target[k] >= 0.0f && !a->isLoop &&
+			target[k] + NETDRIVE_RESTART < l->time;
+		if (a != l->action || again) {
 			if (!a) {
 				if (k > 0) {
 					CGameModel_StopAnim(m, k);
