@@ -3112,11 +3112,13 @@ static byte Cp_FlyPoint(cEntity *e, const vec3_t *to, vec3_t *next) {
 
 /* test: player i's ship (e) flies to g through its input along the level's graph of visibility, as a pilot steers
  * round the buildings; when it comes no nearer for CP_FLY_STUCK s it is placed CP_FIGHT_NEAR from g (the placement of
- * before, kept where the graph gives no way); 1 while it flies, 0 within `near` of g or stuck that near */
+ * before, kept where the graph gives no way); 1 while it flies, 0 within `near` of g (on the ground) or stuck that
+ * near */
 static byte Cp_FlyTo(int i, NetRepInput *in, cEntity *e, cEntity *g, float near, double now) {
 	float dx = g->pos.x - e->pos.x, dy = g->pos.y - e->pos.y, dz = g->pos.z - e->pos.z;
 	float d = sqrtf(dx * dx + dy * dy + dz * dz);
-	if (d <= near) {
+	/* over it (a goal on a platform the ship cannot come down to: out of the ship there, the fall takes it down) */
+	if (dx * dx + dz * dz <= near * near) {
 		cp.pl[i].flyGoal[0] = 0;
 		return 0;
 	}
@@ -3133,7 +3135,7 @@ static byte Cp_FlyTo(int i, NetRepInput *in, cEntity *e, cEntity *g, float near,
 		cp.pl[i].flyMoved = now;
 	} else if (now - cp.pl[i].flyMoved >= CP_FLY_STUCK) {
 		/* as near as the placement puts it: the way ends here (the goal on a platform it cannot fly onto) */
-		if (d <= CP_FIGHT_NEAR * 1.5f) {
+		if (dx * dx + dz * dz <= CP_FIGHT_NEAR * CP_FIGHT_NEAR * 2.25f) {
 			return 0;
 		}
 		float k = CP_FIGHT_NEAR / d;
@@ -3147,7 +3149,7 @@ static byte Cp_FlyTo(int i, NetRepInput *in, cEntity *e, cEntity *g, float near,
 		}
 		cp.pl[i].flyBest = d < CP_FIGHT_NEAR ? d : CP_FIGHT_NEAR;
 		cp.pl[i].flyMoved = now;
-		cp.pl[i].flyAt = 0.0;
+		cp.pl[i].flyAt = now - CP_FLY_GAP;
 		return 1;
 	}
 	if (now - cp.pl[i].flyAt >= CP_FLY_GAP) {
