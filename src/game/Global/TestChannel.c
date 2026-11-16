@@ -44,8 +44,9 @@
  *                            to the list __main__.<list> and returns the literal (None), or raises
  *   native [str|check] <literal>   native values without Python objects (TestNative.c)
  *   audit [json|reset]       the counts of the network audit (include/scrap/netaudit.h) since the last reset: a head
- *                            line, "total\t<category>\t<sum>", then "<count>\t<category>\t<key>" by count down; json
- *                            the same as one line of JSON for tools
+ *                            line, "total\t<category>\t<sum>", then "<count>\t<category>\t<key>" by count down (an
+ *                            entity variable with its tag of include/scrap/netclass.h after a tab); json the same as
+ *                            one line of JSON for tools
  * An error answers "error: <type>: <value>". The channel statements and expressions (TestExpr.c) are a small part of
  * Python's syntax read and run in C (operators, comparisons, lambdas, assignments, no Python code). The verbs work on
  * native values (scrap/scriptnative.h, scrap/nativeobj.h) and the error state in C; the names of __main__ and of the
@@ -68,6 +69,7 @@
 #include "scrap/instance.h"
 #include "scrap/modvars.h"
 #include "scrap/netaudit.h"
+#include "scrap/netclass.h"
 #include "scrap/pyfunction.h"
 #include "scrap/objentity.h"
 #include "scrap/particlesystem.h"
@@ -1347,15 +1349,22 @@ static void TC_AddJsonStr(tcBuf *b, const char *s) {
 
 static void TC_AuditRow(void *ctx, netAuditCat_t cat, const char *key, uint32_t count) {
 	tcAudit *a = ctx;
+	/* an entity variable's tag of the classification table (include/scrap/netclass.h): "untagged", "absent" */
+	const char *tag = cat == NA_ENTVAR && !strncmp(key, "entvar.set:", 11) ?
+		NetClass_TagName(NetClass_Find(NCT_ENTVAR, key + 11)) : NULL;
 
 	if (!a->json) {
-		TC_Addf(a->b, "%u\t%s\t%s\n", count, NetAudit_CatName(cat), key);
+		TC_Addf(a->b, "%u\t%s\t%s%s%s\n", count, NetAudit_CatName(cat), key, tag ? "\t" : "", tag ? tag : "");
 		return;
 	}
 	TC_Add(a->b, a->n ? "," : "", -1);
 	TC_Add(a->b, "{\"key\":", -1);
 	TC_AddJsonStr(a->b, key);
-	TC_Addf(a->b, ",\"cat\":\"%s\",\"count\":%u}", NetAudit_CatName(cat), count);
+	TC_Addf(a->b, ",\"cat\":\"%s\",\"count\":%u", NetAudit_CatName(cat), count);
+	if (tag) {
+		TC_Addf(a->b, ",\"tag\":\"%s\"", tag);
+	}
+	TC_Add(a->b, "}", 1);
 	a->n++;
 }
 

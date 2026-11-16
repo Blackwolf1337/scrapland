@@ -115,6 +115,21 @@ else()
 	find_library(SDL3_LIB SDL3 REQUIRED)
 endif()
 add_dependencies(scrapcode shaders)
+
+# The network classification tables (tools/script/netclass.py, include/scrap/netclass.h): an engine API function
+# (a row of the function table of an engine module) without a tag fails the build here, before the game code
+# compiles; the step runs again when the tables, the generated files or the engine module sources change. The
+# other tables only report their untagged rows (ctest netclass_check).
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+file(GLOB NETCLASS_DEPS CONFIGURE_DEPENDS tools/script/netclass/*.tsv src/game/PyInterface/*.c)
+add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/netclass.stamp
+	COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/script/netclass.py --check --quiet
+	COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_BINARY_DIR}/netclass.stamp
+	DEPENDS tools/script/netclass.py ${NETCLASS_DEPS} src/game/Script/Split.c src/game/Script/NetClassTable.c
+		include/scrap/netclass.h
+	COMMENT "netclass: every engine API function has a network tag")
+add_custom_target(netclass_check DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/netclass.stamp)
+add_dependencies(scrapcode netclass_check)
 target_include_directories(scrapcode PRIVATE ${SHADER_DIR} ${FFMPEG_DIR}/include ${SDL3_INCLUDE})
 
 # ScrapC: the standalone game (docs/standalone.md), in game/Bin; neither the build nor the game needs the original
@@ -155,3 +170,13 @@ add_subdirectory(src/coord)
 add_subdirectory(src/faction)
 # the PvP modes of the original on the new network (include/scrap/arena.h) and their unit test
 add_subdirectory(src/arena)
+# the lookup of the network classification tables and its unit test (ctest netclass_test), the full report of the
+# tables (ctest netclass_check: fails on what the build step fails on)
+add_executable(netclass_test tools/script/netclass_test.c src/game/Script/NetClass.c src/game/Script/NetClassTable.c)
+target_include_directories(netclass_test PRIVATE include)
+target_compile_options(netclass_test PRIVATE -Wall -Wextra -O2 -g)
+if(WIN32)
+	target_link_options(netclass_test PRIVATE -static-libgcc)
+endif()
+add_test(NAME netclass_test COMMAND netclass_test)
+add_test(NAME netclass_check COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/script/netclass.py --check)
