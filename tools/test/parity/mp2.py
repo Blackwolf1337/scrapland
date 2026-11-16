@@ -250,7 +250,16 @@ def gate_coop(a):
              str(a.port), data], env=env, log=log, timeout=a.coop_secs + 600)
     secs = round(time.time() - t0)
     steps = []
-    chap_out = os.path.join(scratch, tag + '1.out')
+    # the chapter's step lines (autochain.sh's chap.sh output), kept next to the gate's JSON
+    chap_out = os.path.join(out, 'chapter.out')
+    if not a.report_only and os.path.exists(os.path.join(scratch, tag + '1.out')):
+        with open(os.path.join(scratch, tag + '1.out')) as f, open(chap_out, 'w') as g:
+            g.write(f.read())
+    if a.report_only:
+        try:
+            secs = json.load(open(os.path.join(out, 'coop.json'))).get('secs', 0)
+        except (OSError, ValueError):
+            pass
     try:
         for line in open(chap_out):
             m = re.match(r'(ok|FAIL): (.*)', line.rstrip('\n'))
@@ -261,14 +270,21 @@ def gate_coop(a):
     end = os.path.join(scratch, tag + '-1-data')
     res = {'chapter': a.chapter, 'point': point, 'what': what, 'mission': story_val(data, 'Mission.Library'),
            'level': level, 'steps': steps, 'secs': secs, 'next': None, 'parity': []}
-    reached = os.path.isdir(end) and any(s['ok'] and 'the next mission' in s['step'] for s in steps)
-    if reached:
+    reached = any(s['ok'] and 'the next mission' in s['step'] for s in steps) and (os.path.isdir(end) or
+                                                                                   a.report_only)
+    if reached and os.path.isdir(end):
         res['next'] = '%s in %s' % (story_val(end, 'Mission.Library'), story_val(end, 'Mission.Map'))
+    elif reached:
+        try:
+            res['next'] = json.load(open(os.path.join(out, 'coop.json'))).get('next')
+        except (OSError, ValueError):
+            pass
     # coopparity at the chapter's story points: its start and (when reached) the start of the next mission
     cp_out = os.path.join(out, 'coopparity')
     pts = [('start', data, level)]
     if reached:
-        pts.append(('end', end, level_name(story_val(end, 'Mission.Map')) or level))
+        nxt = (res['next'] or '').split(' in ')
+        pts.append(('end', end, level_name(story_val(end, 'Mission.Map') or nxt[-1]) or level))
     if not a.no_coopparity:
         cmd = [sys.executable, os.path.join(HERE, 'coopparity.py'), '--out', cp_out, '--scratch',
                os.path.join(a.scratch, 'coopparity'), '--port', str(a.port), '--build', a.build, '--device', a.device]
@@ -311,6 +327,12 @@ def gate_sp(a):
     os.makedirs(out, exist_ok=True)
     rows = []
     env = {'SCRAP_BUILD': a.build, 'SCRAP_VK_DEVICE': a.device, 'REGRESS_VK_DEVICE': a.device}
+    if a.report_only:
+        try:
+            rows = json.load(open(os.path.join(out, 'sp.json')))['rows']
+        except (OSError, ValueError, KeyError):
+            rows = [{'check': 'sp', 'result': 'no result in %s' % out, 'pass': False, 'error': True}]
+        a.checks = []
     if 'regress' in a.checks:
         log = os.path.join(out, 'regress.log')
         rc = run([sys.executable, os.path.join(REPO, 'tools', 'test', 'regress', 'regress.py'), 'check', '--build',
@@ -326,8 +348,8 @@ def gate_sp(a):
     if 'golden' in a.checks:
         log = os.path.join(out, 'golden.log')
         rc = run([os.path.join(REPO, 'tools', 'test', 'golden.sh')], env=env, log=log)
-        tail = open(log, errors='replace').read().strip().splitlines()[-3:]
-        rows.append({'check': 'golden', 'result': ' / '.join(tail)[:160], 'pass': rc == 0})
+        tail = [x for x in open(log, errors='replace').read().splitlines() if x.startswith('golden')]
+        rows.append({'check': 'golden', 'result': (tail[-1] if tail else 'exit %d' % rc)[:160], 'pass': rc == 0})
     if 'levels' in a.checks:
         asan = a.asan_build or a.build + '-asan'
         if not os.path.exists(os.path.join(asan, 'ScrapC')):
@@ -335,7 +357,8 @@ def gate_sp(a):
         else:
             log = os.path.join(out, 'levels.log')
             rc = run([os.path.join(REPO, 'tools', 'test', 'levels.sh')],
-                     env=dict(env, SCRAP_BUILD=asan, LEVELS_TIME=str(a.levels_time), LEVELS_JOBS=str(a.levels_jobs),
+                     env=dict(env, SCRAP_BUILD=asan, SCRAP_VK_DEVICE=a.asan_device, LEVELS_TIME=str(a.levels_time),
+                              LEVELS_JOBS=str(a.levels_jobs),
                               SCRAP_GAME_DIR=os.path.join(a.scratch, 'levels-game')), log=log)
             lines = open(log, errors='replace').read().splitlines()
             fails = [x.split()[0] for x in lines if ' FAIL' in x]
@@ -400,7 +423,8 @@ def gate_numbers(r):
 
 def noisy(key, old, new):
     """a difference within the noise of NOISE[key]"""
-    if old is None or new is None:
+    if old is None or new is None or not all(isinstance(x, (int, float)) and not isinstance(x, bool)
+                                             for x in (old, new)):
         return old == new
     ab, share = NOISE.get(key, (0, 0.0))
     return abs(new - old) <= max(ab, share * abs(old))
@@ -511,7 +535,9 @@ def main():
     # single player
     ap.add_argument('--checks', default='regress,golden,levels')
     ap.add_argument('--lanes', default='s04a,s04b,s04c')
-    ap.add_argument('--asan-build', default=None)
+    ap.add_argument('--asan-build', default=None, help='the ASan build of levels.sh (default <build>-asan)')
+    ap.add_argument('--asan-device', default='1002:164e', help='levels.sh: the Vulkan device of the ASan games (the '
+                    'AMD: the NVIDIA driver raises a signal in the swapchain under ASan when a game is stopped)')
     ap.add_argument('--levels-time', type=int, default=30)
     ap.add_argument('--levels-jobs', type=int, default=6)
     a = ap.parse_args()
