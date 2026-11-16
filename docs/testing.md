@@ -41,7 +41,7 @@ ScrapC -imap:Levels/DownTown -inputtape:play:<file>
 ScrapC -instance:DownTown -solo:<file>
 ```
 
-A tape is a text file with two layers. The D lines (device layer) hold the values of all input actions right after the devices wrote them, and a replay writes them back in place of the devices. The C lines (control layer) hold the controls of the player's character or ship per slot tick of 1/60 s. A single player replay checks them, and the solo instance writes them into its player's controls. A start line holds the place, the yaw and the money of the player, and an E line ends the tape. Floats are the hex of their bits. The line format is in `include/scrap/inputtape.h`.
+A tape is a text file with two layers. The D lines (device layer) hold the values of all input actions right after the devices wrote them, and a replay writes them back in place of the devices. The C lines (control layer) hold the controls of the player's character or ship per slot tick of 1/60 s, ending in `i <len>`, the length of the slot. A single player replay checks the controls and the slot length, and the solo instance writes the controls into its player's controls. An F line (`F <frame> <time>`) comes before each App_Update of a frame and holds the frame's time, and the C lines after it are the slots of that frame. An S line (`S <name> <time>`) is written for each object entity made: the name it was made with and the time to its first slot, the phase of its slot controller. A start line holds the place, the yaw and the money of the player, and an E line ends the tape. Floats are the hex of their bits. Old tapes without F, S and `i` still play, and the solo instance then steps two slots per tick of 1/30 s. The line format is in `include/scrap/inputtape.h`.
 
 While a tape is on, the trace leaves out the event and command file lines and gets a `pl` line per slot tick of the player's entity: kind, type, pos, ang, vel, view, life, the action of each of the four layers, money and alarm. Without a tape the trace is unchanged, so the regress traces stay the same.
 
@@ -58,7 +58,15 @@ tools/test/tape.py cmp <trace A> <trace B>
 tools/test/solo.sh <level> <tape> [secs]
 ```
 
-`solo.sh` runs the replay and the solo instance and prints the first differing slot of the player's state, or `equal`, and the first differing slot per field. The two runs differ today on purpose. The instance steps its players before the frame and its action controllers once per 1/30 s tick, single player does it inside the world update every 1/60 s frame, and the instance lacks single player's setup, such as the boarding of the player's own ship. Stage 3.6 of the multiplayer plan makes them equal.
+`solo.sh` runs the replay and the solo instance and prints the first differing slot of the player's state, or `equal`, and the first differing slot per field.
+
+On a tape with F lines the solo instance runs one world frame per F line with that frame's time. It steps its player's slots in the frames single player stepped them, with their lengths, and gives the entities single player made the same slot phases (the S lines). The S lines are needed because the random numbers are shared by the simulation and by single player's drawing, sounds and effects. The n-th number differs between single player and the headless instance, and an entity such as a parking box would test its touches in other frames.
+
+The player's step on the server is single player's frame of the entity: its actions (`cActCtrl_Tick`), then its slot (`Obj_Tick`), 1/60 s each. It runs in the entity's own update in the world's entity loop, where single player steps its player (`Rep_OwnFrame`). A tick of the network (1/30 s) has two such parts (`NetPl_Step`). The solo player, and every player of a `-mp2` instance that is not in coop or a PvP mode, gets single player's own flows (`Rep_SpFlows`): its own ship and Sputnik at the parking nearest to it (as `Parking.BrowseItemPos` gives single player's), boarding a parked ship by its use arrow, and parking on a box. The old path keeps the instance's stand-ins, the switch into the nearest parked ship and a called ship.
+
+`SCRAP_TAPE_DUMP=<slot>[,<radius>]` writes a trace line per entity within the radius (default 3000) of the player's entity after that slot (`ent <name> <class> <active> <x y z> <action class>`), to find which entities two runs differ in.
+
+On the stage 3.6 tapes (recorded with `tape.py rec`, about 67 s each) DownTown and Outskirts are equal over all slots (4008 and 4010): walking, boarding, flying, firing, parking, walking. Police differs from slot 75 on. The NPCs stand elsewhere (a sentinel at the top of the stairs), because their placement and moves come from random numbers single player shares with its drawing.
 
 A replay whose controls differ from the tape prints `inputtape: the controls of slot ... differ from the tape` in the console.
 
