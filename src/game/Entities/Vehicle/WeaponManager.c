@@ -6,6 +6,7 @@
  */
 #include "scrap/console.h"
 #include "scrap/crt.h"
+#include "scrap/pres.h"
 #include "scrap/scrapmodel.h"
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
@@ -436,6 +437,22 @@ void cWeaponManager_LockEntity(cWeaponManager *self, const char *name) {
 	self->on = 0;
 }
 
+/* HookPlugFunc(owner, on) */
+static void cWeaponManager_Plug(cWeaponManager *self) {
+	cPy_Function_AddParamS(g_HookPlugFunc, self->owner->name);
+	cPy_Function_AddParamI(g_HookPlugFunc, self->on != 0);
+	cPy_Function_Execute(g_HookPlugFunc, 0);
+}
+
+void cWeaponManager_NetPlug(cWeaponManager *self, cEntity *owner, byte on) {
+	if (self->on == on || self->owner != owner) {
+		return;
+	}
+	self->on = on;
+	self->wasOn = on;
+	cWeaponManager_Plug(self);
+}
+
 void cWeaponManager_LockPoint(cWeaponManager *self, const vec3_t *p) {
 	if (p) {
 		CHECK(self->lock.data);
@@ -696,9 +713,10 @@ change:
 	Vehicle_StartSnd(self->owner, 0x14);
 hook:
 	if (self->wasOn != self->on) {
-		cPy_Function_AddParamS(g_HookPlugFunc, self->owner->name);
-		cPy_Function_AddParamI(g_HookPlugFunc, self->on != 0);
-		cPy_Function_Execute(g_HookPlugFunc, 0);
+		/* a -mp2 instance's clients play it from the replicated lock (cWeaponManager_NetPlug, include/scrap/pres.h) */
+		Pres_Derive();
+		cWeaponManager_Plug(self);
+		Pres_Underive();
 	}
 	if (self->curWeap != g_LaserIDWeap || !ctl->cm) {
 		cSndItem *it = PtrArray_Get(&Veh(self->owner)->wl.obj.snd, 0x18);

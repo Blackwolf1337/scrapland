@@ -98,7 +98,7 @@ API_FN(SFX, EmbeddedSet) {
 	cEntity *vEntity = World_FindEntity(entityName);
 	CHECK(vEntity);
 	if (g_Mp2) {
-		Pres_FxEnt(PRES_FX_EMBEDDED, entityName, fxType, 0.0f, 0);
+		Pres_FxEnt(PRES_FX_EMBEDDED, entityName, fxType, 0.0f, 0, NULL);
 	}
 	Entity_SetEmbeddedFX(vEntity, fxType);
 	return 1;

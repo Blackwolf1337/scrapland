@@ -502,6 +502,7 @@ void ReplicaEnt_Present(cEntity *e, int kind, const NetRepState *a, const NetRep
 		v->cloud = ReplicaEnt_Sec(a->x[REPX_CLOUD] & 0x3fffffff);
 		v->cloudOn = (a->x[REPX_CLOUD] >> 30) & 1;
 		v->emi = ReplicaEnt_Sec(a->x[REPX_EMI]);
+		cWeaponManager_NetPlug(&v->weapons, e, ((uint32_t)a->x[REPX_FIREW] >> 31) != 0);
 	} else if (kind == NETREP_MISSILE) {
 		Missile(e)->level = a->x[REPX_LEVEL];
 	}

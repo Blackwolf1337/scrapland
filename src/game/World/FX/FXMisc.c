@@ -262,7 +262,7 @@ static void FX_ItemFadeRun(cEntity *e, int mode, float scale, cEntity *target) {
 /* the effect sent to the players of a -mp2 instance (include/scrap/pres.h), the sinks inside it not again */
 void FX_ItemFade(cEntity *e, int mode, float scale, cEntity *target) {
 	if (g_Mp2) {
-		Pres_FxEnt(PRES_FX_ITEMFADE, e->name, target ? target->name : "", scale, mode);
+		Pres_FxEnt(PRES_FX_ITEMFADE, e->name, target ? target->name : "", scale, mode, NULL);
 	}
 	g_PresIn++;
 	FX_ItemFadeRun(e, mode, scale, target);

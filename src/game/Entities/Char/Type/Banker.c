@@ -7,6 +7,8 @@
 #include "scrap/chartype.h"
 #include "scrap/fx.h"
 #include "scrap/netaudit.h"
+#include "scrap/pres.h"
+#include "scrap/repent.h"
 #include "scrap/staticinit.h"
 #include "scrap/players.h"
 
@@ -99,7 +101,7 @@ static void ChType_BankerAttack(cAbstractFile *params) {
 	}
 }
 
-void FX_BankerSteal(cEntity *thief, cEntity *victim) {
+static void FX_BankerStealRun(cEntity *thief, cEntity *victim) {
 	NetAudit_Site(NA_SFX, "sfx.BankerSteal");
 	cObjElementFXBankerSteal *el = FX_DropNew(g_FXBankerStealFile, 1.35f);
 	if (el) {
@@ -109,6 +111,16 @@ void FX_BankerSteal(cEntity *thief, cEntity *victim) {
 		cObjElementFXBankerSteal_SetEntity(el, thief);
 		((cObjElementFXBankerSteal *)el)->target = victim;
 	}
+}
+
+/* the effect sent to the players of a -mp2 instance (include/scrap/pres.h), the sinks inside it not again */
+void FX_BankerSteal(cEntity *thief, cEntity *victim) {
+	if (g_Mp2 && thief && victim) {
+		Pres_FxEnt(PRES_FX_STEAL, thief->name, victim->name, 0.0f, 0, NULL);
+	}
+	g_PresIn++;
+	FX_BankerStealRun(thief, victim);
+	g_PresIn--;
 }
 
 cEntity *ChType_BankerVictim(cEntity *v) {

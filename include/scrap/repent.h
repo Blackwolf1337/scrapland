@@ -68,7 +68,7 @@ enum {
 	REPX_BOOST,						/* ship: boost left, 1/1000 */
 	REPX_CLOUD,						/* ship: the cloud counter, ms, and its switch << 30 */
 	REPX_EMI,						/* ship: EMI left, ms */
-	REPX_FIREW,						/* ship: bit w for the weapon w firing */
+	REPX_FIREW,						/* ship: bit w for the weapon w firing, bit 31 the weapons' lock (hook plug) */
 	REPX_MOVE,						/* the scripted move: on << 30 | ms done */
 	REPX_MOVET,						/* its length, ms */
 	REPX_ITEM,						/* item: taken, ms left (0 there) */

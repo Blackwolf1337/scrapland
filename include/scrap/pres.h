@@ -62,8 +62,8 @@ enum {
 	PRES_O_VOICESTOP,				/* voice */
 	PRES_O_MUSIC,					/* name ("" none), command, volume: Music_Play */
 	PRES_O_SHIPEXPL,				/* pos, vel, scale, time, flames, collision: FX_ShipExplosion */
-	PRES_O_FXENT,					/* kind, entity, entity, f, i: the effects between two entities (the SFX module's,
-									 * an item's fade) */
+	PRES_O_FXENT,					/* kind, entity, entity, f, i, a place: the effects between two entities (the SFX
+									 * module's, an item's fade, the bishop's ray) */
 	PRES_O_MSGTEXT,					/* text, time, font */
 	PRES_O_LABELTEXT,				/* text, time */
 	PRES_O_SPEECH,					/* text, time, r g b */
@@ -88,7 +88,11 @@ enum {
 	PRES_FX_SELLLIFE,				/* attacker ("" none), attacked */
 	PRES_FX_MONEY,					/* from, to, time */
 	PRES_FX_EMBEDDED,				/* entity, the effect's type (the embedded effect: state, Pres sends it to all) */
-	PRES_FX_ITEMFADE				/* item, taker ("" none), scale, mode: FX_ItemFade */
+	PRES_FX_ITEMFADE,				/* item, taker ("" none), scale, mode: FX_ItemFade */
+	PRES_FX_BISHOPRAY,				/* bishop, target ("" none), the point hit: FX_BishopRay */
+	PRES_FX_STEAL,					/* thief, victim: FX_BankerSteal */
+	PRES_FX_SUCTION,				/* bank master, victim: FX_BankMasterSuction */
+	PRES_FX_FLASH					/* Berto, victim: FX_BertoFlash */
 };
 
 struct cEntity;
@@ -163,7 +167,7 @@ void Pres_VoiceStop(int voice);
 void Pres_VoiceFrom(const vec3_t *pos);
 void Pres_Music(const char *name, const char *cmd, float volume);
 void Pres_ShipExplosion(const vec3_t *pos, const vec3_t *vel, float scale, float time, int flames, int collision);
-void Pres_FxEnt(int kind, const char *a, const char *b, float f, int i);
+void Pres_FxEnt(int kind, const char *a, const char *b, float f, int i, const vec3_t *v);
 void Pres_MsgText(const char *text, float time, const char *font);
 void Pres_LabelText(const char *text, float time);
 void Pres_SpeechText(const char *text, float time, int r, int g, int b);

@@ -989,6 +989,9 @@ byte Mode_SetFX(cEntity *e, const char *type) {
 	if (!Mode_Method(e, "SetFX")) {
 		return 0;
 	}
+	if (g_Mp2) {
+		Pres_FxEnt(PRES_FX_EMBEDDED, e->name, type, 0.0f, 0, NULL);
+	}
 	Entity_SetEmbeddedFX(e, type);
 	return 1;
 }

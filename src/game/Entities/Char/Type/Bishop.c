@@ -164,7 +164,7 @@ static void ChType_BishopAttack(cAbstractFile *params) {
 }
 
 /* the green ray from the bishop to the target (NULL: to the point hit) with its sounds */
-void FX_BishopRay(cEntity *v, cEntity *target, const vec3_t *hit) {
+static void FX_BishopRayRun(cEntity *v, cEntity *target, const vec3_t *hit) {
 	NetAudit_Site(NA_SFX, "sfx.BishopRay");
 	vec3_t t1, q, w, mp, mr, rot2, up, aoff, from, to, to2, from2;
 
@@ -223,6 +223,16 @@ void FX_BishopRay(cEntity *v, cEntity *target, const vec3_t *hit) {
 	}
 }
 
+/* the ray sent to the players of a -mp2 instance (include/scrap/pres.h), the sinks inside it not again */
+void FX_BishopRay(cEntity *v, cEntity *target, const vec3_t *hit) {
+	if (g_Mp2) {
+		Pres_FxEnt(PRES_FX_BISHOPRAY, v->name, target ? target->name : "", 0.0f, 0, hit);
+	}
+	g_PresIn++;
+	FX_BishopRayRun(v, target, hit);
+	g_PresIn--;
+}
+
 /* params: the attacker (none: the life ring only) and the attacked */
 static void ChType_FXBishopSellLife(cAbstractFile *params) {
 	char a[0x80], b[0x80];
@@ -254,7 +264,7 @@ static void FX_BishopSellLifeRun(cEntity *attacker, cEntity *attacked) {
 /* the effect sent to the players of a -mp2 instance (include/scrap/pres.h), the sinks inside it not again */
 void FX_BishopSellLife(cEntity *attacker, cEntity *attacked) {
 	if (g_Mp2 && attacked) {
-		Pres_FxEnt(PRES_FX_SELLLIFE, attacker ? attacker->name : "", attacked->name, 0.0f, 0);
+		Pres_FxEnt(PRES_FX_SELLLIFE, attacker ? attacker->name : "", attacked->name, 0.0f, 0, NULL);
 	}
 	g_PresIn++;
 	FX_BishopSellLifeRun(attacker, attacked);

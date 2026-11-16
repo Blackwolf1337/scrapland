@@ -214,6 +214,10 @@ void RepEnt_State(cEntity *e, int kind, NetRepState *s) {
 		s->x[REPX_EMI] = RepEnt_Ms(v->emi);
 		s->x[REPX_FIREW] = v->controls.fire && v->weapons.curWeap >= 0 && v->weapons.curWeap < 31 ?
 			1 << v->weapons.curWeap : 0;
+		/* the weapons' lock (the hook plug of HookPlugFunc): its effect and sound are the replica's */
+		if (v->weapons.on) {
+			s->x[REPX_FIREW] = (int32_t)((uint32_t)s->x[REPX_FIREW] | 0x80000000u);
+		}
 	} else if (kind == NETREP_MISSILE) {
 		cMissileEntity *m = Missile(e);
 		cEntity *t = m->target[0] ? World_FindEntity(m->target) : NULL;

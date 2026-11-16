@@ -2251,7 +2251,7 @@ static void FX_MoneyTransferRun(cEntity *from, cEntity *to, float time) {
 /* the effect sent to the players of a -mp2 instance (include/scrap/pres.h), the sinks inside it not again */
 void FX_MoneyTransfer(cEntity *from, cEntity *to, float time) {
 	if (g_Mp2) {
-		Pres_FxEnt(PRES_FX_MONEY, from->name, to->name, time, 0);
+		Pres_FxEnt(PRES_FX_MONEY, from->name, to->name, time, 0, NULL);
 	}
 	g_PresIn++;
 	FX_MoneyTransferRun(from, to, time);
@@ -2295,7 +2295,7 @@ static void FX_CharacterConversionRun(cEntity *attacker, cEntity *attacked, floa
 /* the effect sent to the players of a -mp2 instance (include/scrap/pres.h), the sinks inside it not again */
 void FX_CharacterConversion(cEntity *attacker, cEntity *attacked, float time) {
 	if (g_Mp2) {
-		Pres_FxEnt(PRES_FX_CONVERSION, attacker->name, attacked->name, time, 0);
+		Pres_FxEnt(PRES_FX_CONVERSION, attacker->name, attacked->name, time, 0, NULL);
 	}
 	g_PresIn++;
 	FX_CharacterConversionRun(attacker, attacked, time);
@@ -2334,7 +2334,7 @@ static void FX_CharacterConversorRun(cEntity *character, cEntity *conversor, int
 /* the effect sent to the players of a -mp2 instance (include/scrap/pres.h), the sinks inside it not again */
 void FX_CharacterConversor(cEntity *character, cEntity *conversor, int phase, float a, float b) {
 	if (g_Mp2 && character && conversor) {
-		Pres_FxEnt(PRES_FX_CONVERSOR, character->name, conversor->name, 0.0f, phase);
+		Pres_FxEnt(PRES_FX_CONVERSOR, character->name, conversor->name, 0.0f, phase, NULL);
 	}
 	g_PresIn++;
 	FX_CharacterConversorRun(character, conversor, phase, a, b);

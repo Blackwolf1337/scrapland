@@ -419,8 +419,9 @@ void Pres_ShipExplosion(const vec3_t *pos, const vec3_t *vel, float scale, float
 	Pres_Send();
 }
 
-void Pres_FxEnt(int kind, const char *a, const char *b, float f, int i) {
-	cEntity *e = World_FindEntity(b && *b ? b : a);
+void Pres_FxEnt(int kind, const char *a, const char *b, float f, int i, const vec3_t *v) {
+	const vec3_t zero = { 0.0f, 0.0f, 0.0f };
+	cEntity *e = World_FindEntity(b && *b && kind != PRES_FX_EMBEDDED ? b : a);
 	vec3_t pos;
 	if (!Pres_Out() || !e) {
 		return;
@@ -435,6 +436,7 @@ void Pres_FxEnt(int kind, const char *a, const char *b, float f, int i) {
 	Pres_PutStr(b);
 	Pres_PutFloat(f);
 	Pres_PutInt(i);
+	Pres_PutVec(v ? v : &zero);
 	Pres_Send();
 }
 
@@ -642,6 +644,8 @@ static void Pres_FxPlay(NetRepReader *r) {
 	NetRep_GetStr(r, b, sizeof(b));
 	float f = Pres_GetFloat(r);
 	int i = NetRep_GetSVar(r);
+	vec3_t v;
+	Pres_GetVec(r, &v);
 	if (r->bad) {
 		return;
 	}
@@ -672,6 +676,25 @@ static void Pres_FxPlay(NetRepReader *r) {
 	case PRES_FX_EMBEDDED:
 		if ((ea = Pres_Ent(PRES_O_FXENT, a, NULL))) {
 			Entity_SetEmbeddedFX(ea, b);
+		}
+		break;
+	case PRES_FX_BISHOPRAY:
+		eb = *b ? Pres_Ent(PRES_O_FXENT, b, TYEN_OBJECT) : NULL;
+		if ((ea = Pres_Ent(PRES_O_FXENT, a, TYEN_WALKCHAR)) && (eb || !*b)) {
+			FX_BishopRay(ea, eb, &v);
+		}
+		break;
+	case PRES_FX_STEAL:
+	case PRES_FX_SUCTION:
+	case PRES_FX_FLASH:
+		if ((ea = Pres_Ent(PRES_O_FXENT, a, TYEN_WITH_LIFE)) && (eb = Pres_Ent(PRES_O_FXENT, b, TYEN_WITH_LIFE))) {
+			if (kind == PRES_FX_STEAL) {
+				FX_BankerSteal(ea, eb);
+			} else if (kind == PRES_FX_SUCTION) {
+				FX_BankMasterSuction(ea, eb);
+			} else {
+				FX_BertoFlash(ea, eb);
+			}
 		}
 		break;
 	case PRES_FX_ITEMFADE:

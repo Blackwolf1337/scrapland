@@ -5,6 +5,8 @@
 #include "scrap/chartype.h"
 #include "scrap/fx.h"
 #include "scrap/netaudit.h"
+#include "scrap/pres.h"
+#include "scrap/repent.h"
 #include "scrap/staticinit.h"
 
 #define g_FXBertoFlashFile (GVar_FXBertoFlashFile.value.s)
@@ -61,7 +63,7 @@ static void ChType_BertoFlashHit(cAbstractFile *params) {
 	FX_BertoFlash(g_BertoEnt, e);
 }
 
-void FX_BertoFlash(cEntity *from, cEntity *e) {
+static void FX_BertoFlashRun(cEntity *from, cEntity *e) {
 	NetAudit_Site(NA_SFX, "sfx.BertoFlash");
 	vec3_t tmp;
 	cObjElementFXBertoFlash *el = FX_DropNew(g_FXBertoFlashFile, 0.8f);
@@ -77,6 +79,16 @@ void FX_BertoFlash(cEntity *from, cEntity *e) {
 	int vol = Snd_Volume(g_BertoFlashSoundVol);
 	const vec3_t *pos = Entity_GetPos(e, &tmp);
 	SoundSys_PlayAt(g_pSound, sound, pos, vol);
+}
+
+/* the effect sent to the players of a -mp2 instance (include/scrap/pres.h), the sinks inside it not again */
+void FX_BertoFlash(cEntity *from, cEntity *e) {
+	if (g_Mp2 && from && e) {
+		Pres_FxEnt(PRES_FX_FLASH, from->name, e->name, 0.0f, 0, NULL);
+	}
+	g_PresIn++;
+	FX_BertoFlashRun(from, e);
+	g_PresIn--;
 }
 
 /* params: Berto, an event, a float. The flash around him, ChType_BertoFlashHit for each flashed character. */

@@ -389,7 +389,7 @@ static byte cMissileEntity_IsType(cEntity *base, const char *type) {
 static void cMissileEntity_Explode(cMissileEntity *self, const vec3_t *at);
 
 /* n bees die (hidden swarm: only counted), or the missile explodes when there are not that many; 1 if it did */
-byte cMissileEntity_Hit(cMissileEntity *self, int n, float unused) {
+static byte cMissileEntity_HitRun(cMissileEntity *self, int n, float unused) {
 	vec3_t tmp;
 
 	(void)unused;
@@ -446,6 +446,14 @@ byte cMissileEntity_Hit(cMissileEntity *self, int n, float unused) {
 	cMissileEntity_Explode(self, at);
 	Entity_SetActive(Missile_Ent(self), 0);
 	return 1;
+}
+
+/* the bees' deaths and the explosion: a -mp2 instance's clients make their effects themselves (include/scrap/pres.h) */
+byte cMissileEntity_Hit(cMissileEntity *self, int n, float unused) {
+	Pres_Derive();
+	byte r = cMissileEntity_HitRun(self, n, unused);
+	Pres_Underive();
+	return r;
 }
 
 static void cMissileEntity_OnDeath(cEntity *base) {
@@ -804,7 +812,10 @@ static cDebris *Missile_FXDebris(cMissileEntity *self, const char *sysName, byte
 	cDebris *d = cDebrisSys_NewElement(sys);
 
 	d->life = extra ? self->lifeTime + 1.5f : self->lifeTime;
+	/* the embedded effect of a missile: its replica makes its own (include/scrap/pres.h) */
+	Pres_Derive();
 	cDebrisSys_Drop(sys, d);
+	Pres_Underive();
 	return d;
 }
 
@@ -1328,7 +1339,7 @@ void cMissileEntity_AddToSwarm(cMissileEntity *self, int n) {
 }
 
 /* the bees fly to at (beesGather) or die where they are */
-static void cMissileEntity_Explode(cMissileEntity *self, const vec3_t *at) {
+static void cMissileEntity_ExplodeRun(cMissileEntity *self, const vec3_t *at) {
 	vec3_t neg, rot;
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, self->swarmSys);
 
@@ -1393,6 +1404,13 @@ static void cMissileEntity_Explode(cMissileEntity *self, const vec3_t *at) {
 		}
 	}
 	self->swarmCount = 0;
+}
+
+/* the explosion's effects: a -mp2 instance's clients make them themselves (include/scrap/pres.h) */
+static void cMissileEntity_Explode(cMissileEntity *self, const vec3_t *at) {
+	Pres_Derive();
+	cMissileEntity_ExplodeRun(self, at);
+	Pres_Underive();
 }
 
 /* the vtable of cMissileEntity */
