@@ -2582,8 +2582,14 @@ static byte Cp_DeathWanted(cEntity *e) {
 	return hook;
 }
 
+/* test: an entity of the scripts with a life that is no character and no ship (IntoTheGDB's restore point: life 0) */
+static byte Cp_Thing(cEntity *e) {
+	return !Entity_IsType(e, TYEN_WALKCHAR) && !Entity_IsType(e, TYEN_CAR);
+}
+
 /* test: the living entities of src (see fightList) that are no player's (foes 1: only targets to fight, 0: only the
- * others, -1: all), into out; their count */
+ * others, -1: all), into out; their count; of the mission's targets only the ones on the radar (a player does not see
+ * the ones the scripts took off it: IntoTheGDB's scanned bishops); things of the scripts with a life 0 count */
 static int Cp_FightTargets(const char *src, cEntity **out, int max, int foes) {
 	char mod[CP_NAME];
 	nativeVal_t v, it;
@@ -2620,8 +2626,8 @@ static int Cp_FightTargets(const char *src, cEntity **out, int max, int foes) {
 		Native_SetNone(&it);
 		cEntity *e = v.type == NV_STR ? World_FindEntity(Native_Text(&v)) : Native_SeqItem(&v, j, &it) &&
 			it.type == NV_STR ? World_FindEntity(Native_Text(&it)) : NULL;
-		if (e && Entity_IsType(e, TYEN_WITH_LIFE) && WLife(e)->life > 0.0f && !e->deadNode.target && Players_Of(e) < 0 &&
-			(foes < 0 || (Cp_Foe(e) || Cp_DeathWanted(e)) == foes)) {
+		if (e && Entity_IsType(e, TYEN_WITH_LIFE) && (WLife(e)->life > 0.0f || Cp_Thing(e)) && !e->deadNode.target &&
+			Players_Of(e) < 0 && (src[0] || Obj(e)->radarShow) && (foes < 0 || (Cp_Foe(e) || Cp_DeathWanted(e)) == foes)) {
 			out[n++] = e;
 		}
 		Native_Free(&it);

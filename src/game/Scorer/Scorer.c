@@ -419,8 +419,15 @@ void Scorer_Tick(int player) {
 		return;
 	}
 	cScorer_RemoveDeleted(sc, player);
+	/* only the items the drawing would draw count (a hidden bar of IntoTheGDB's scan ends no scan) */
+	if (!sc->visible) {
+		return;
+	}
 	for (cScorerItem *it = sc->items, *next; it; it = next) {
 		next = it->next;
+		if (!it->visible) {
+			continue;
+		}
 		cTimerScorer_Tick(it);
 		cBarScorer_Tick(it);
 	}
