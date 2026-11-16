@@ -3,6 +3,24 @@
  * cWithLifeEntity (0x3e8 bytes) with the flight model, the network controller, the pilot model at the node
  * DC_Player_01, the weapons (cWeaponManager at 0x5f0), the motors (cVehicleMotors at 0x720) and the effects
  * (cVehicleEffects at 0x7f0, include/scrap/vehicleeffects.h). src/game/Entities/Vehicle/VehicleEntity.c.
+ *
+ * The halves of the update (include/scrap/objentity.h):
+ *   Per frame (cVehicleEntity_Update): Advance the controls of a player's ship (cVehicleControls_Tick); Present the
+ *   state of the effects (damage, EMI, fire, wind smoke: cVehicleEffects_UpdateState), the motor and weapon sounds
+ *   (UpdateSounds) and the smooth values the effects, sounds, camera and ship parts read (Smooth; its smoothSpeed
+ *   also sets fireAtt in the slot step). UpdateModel (wobble, floating, tilt, player camera, pilot, motors,
+ *   effects) is Present.
+ *   Per slot (cVehicleEntity_Tick): Advance the controls and boost of the original's network game, the move and the
+ *   collisions, the cloud, EMI, no-fire and boost timers, the trusts, the weapons (cWeaponManager_Update: the fire
+ *   callbacks), the targets of a player, fireAtt and the speed history (UpdateHistory: speed; its crash sound and
+ *   camera quake are presentation events the simulation starts); Present the EMI sound while EMIed.
+ *   UpdateOff: Advance the boost reset.
+ * State Present reads: life, maxLife, emi, cloud, cloudOn, fireRemain, speed, maxSpeed, controls.acc and str,
+ * shake, vel, rotVel, ang, pos, renderPos, renderAng, active, the scripted move (move.active, time, moveTime),
+ * proxyIdle, fixedModel, timeOfs, vertBalance, fxEngineTime, fxBoostEngineTime, the weapon sound (weapSnd), the
+ * pilot (pilotNode, pilot model and its animations), the motors, the effects, slot and cam (the player's camera),
+ * and the smooth values Smooth keeps from them (smoothTurnX, smoothThrust, smoothSpeed, smoothRotVel, smoothAng,
+ * localVel, localAcc, inAtmosphere).
  */
 #ifndef SCRAP_VEHICLEENTITY_H
 #define SCRAP_VEHICLEENTITY_H
