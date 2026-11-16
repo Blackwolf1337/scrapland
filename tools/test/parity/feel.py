@@ -130,13 +130,13 @@ def dist(a, b):
     return sum((x - y) ** 2 for x, y in zip(a, b)) ** 0.5
 
 
-def latency(rows, t0, auto=False):
+def latency(rows, t0, auto=False, within=None):
     """(input seen ms, entity moved ms) after the press at t0: the first frame off the path the frames before the
     press extrapolate (their last 0.3 s, linear) by more than 1 unit; auto: by more than 4 times the largest distance
     of those frames from their own line (an action pressed while the entity already moves: the drawn path shakes by a
     few units)"""
     before = [r for r in rows if t0 - 300_000_000 <= r['t'] <= t0]
-    after = [r for r in rows if r['t'] > t0]
+    after = [r for r in rows if r['t'] > t0 and (within is None or r['t'] <= t0 + within * 1e9)]
     if len(before) < 2 or not after:
         return None, None
     a, b = before[0], before[-1]
@@ -220,7 +220,7 @@ def own_kind(rows, t):
 
 def run_side(a, side):
     res = {'side': side, 'level': a.level, 'cell': a.cell}
-    log = os.path.join(a.scratch, 'feel-%s.csv' % side)
+    log = os.path.join(a.scratch, 'feel-%s%s.csv' % (side, '-' + a.cell if a.cell else ''))
     res['net'] = dict(a.net) if side != 'sp' else {}
     if os.path.exists(log):
         os.remove(log)
@@ -333,7 +333,7 @@ def run_side(a, side):
         res['frames'] = frames([r for r in rows if r['kind'] != '-'])
         res['walk'] = analyse(rows, walks, 3.0)
         res['fly'] = analyse(rows, flights, 3.0 if a.boost else 5.0)
-        res['boost'] = analyse(rows, boosts, 0.4, auto=True)
+        res['boost'] = analyse(rows, boosts, 0.4, auto=True, within=2.5)
         moving = [r for r in rows if r['kind'] != '-']
         if len(moving) > 1:
             mins = (moving[-1]['t'] - moving[0]['t']) / 60e9
@@ -352,7 +352,7 @@ def lift(a, g, inst_dir, side):
     """the own ship to the start of a flight, still: the first time 15000 units above where it is, each later time the
     same place with the same heading (a flight from where the last one ended runs into the walls; single player:
     through its channel; a client: the instance's ship of the player, nearest to the client's own entity)"""
-    rows = read_log(os.path.join(a.scratch, 'feel-%s.csv' % side))
+    rows = read_log(os.path.join(a.scratch, 'feel-%s%s.csv' % (side, '-' + a.cell if a.cell else '')))
     if not rows:
         return
     p = rows[-1]['pos']
@@ -385,7 +385,7 @@ def lift(a, g, inst_dir, side):
 def bump(a, g, inst_dir, side):
     """the own ship put still where a rail traffic ship of this game will be in BUMP_AHEAD s; the window's start (ns),
     the ship's name and the own speed before, or None without one near"""
-    rows = read_log(os.path.join(a.scratch, 'feel-%s.csv' % side))
+    rows = read_log(os.path.join(a.scratch, 'feel-%s%s.csv' % (side, '-' + a.cell if a.cell else '')))
     if not rows:
         return None
     p = rows[-1]['pos']
@@ -437,12 +437,14 @@ def bump_result(rows, bumps):
     return out
 
 
-def analyse(rows, presses, hold, auto=False):
+def analyse(rows, presses, hold, auto=False, within=None):
+    """within: seconds after a press in which the entity must leave its path (else a miss: the boost did nothing
+    while the key was held)"""
     if not presses:
         return None
     seen, moved, ent, cam, corr = [], [], [], [], 0
     for t0 in presses:
-        s, m = latency(rows, t0, auto)
+        s, m = latency(rows, t0, auto, within)
         if s is not None:
             seen.append(s)
         if m is not None:
@@ -464,7 +466,7 @@ def analyse(rows, presses, hold, auto=False):
             'latencies': [round(m, 1) for m in moved],
             'jitter_entity': max(ent, key=lambda j: j['rms']) if ent else None,
             'jitter_camera': max(cam, key=lambda j: j['rms']) if cam else None, 'corrections': corr,
-            'samples': len(moved)}
+            'samples': len(moved), 'misses': len(presses) - len(moved)}
 
 
 def table(results, out):

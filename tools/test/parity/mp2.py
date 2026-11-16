@@ -114,13 +114,14 @@ def feel_row(r, cell):
     """the numbers of one side of one cell"""
     def lat(k):
         x = r.get(k) or {}
-        return x.get('latency_mean'), x.get('latency_p95'), x.get('samples', 0)
+        return x.get('latency_mean'), x.get('latency_p95'), x.get('samples', 0), x.get('misses', 0)
     w, f, b = lat('walk'), lat('fly'), lat('boost')
     jw = ((r.get('walk') or {}).get('jitter_entity') or {}).get('rms')
     jf = ((r.get('fly') or {}).get('jitter_entity') or {}).get('rms')
     return {'cell': cell, 'side': r.get('side'), 'error': r.get('error'),
             'walk_mean': w[0], 'walk_p95': w[1], 'walk_n': w[2], 'fly_mean': f[0], 'fly_p95': f[1], 'fly_n': f[2],
-            'boost_mean': b[0], 'boost_p95': b[1], 'boost_n': b[2], 'jitter_walk': jw, 'jitter_fly': jf,
+            'boost_mean': b[0], 'boost_p95': b[1], 'boost_n': b[2], 'boost_misses': b[3], 'jitter_walk': jw,
+            'jitter_fly': jf,
             'corr_per_min': r.get('corr_per_min'), 'corrections': r.get('corrections'), 'minutes': r.get('minutes'),
             'start_on_foot': r.get('start_on_foot'), 'boarded': r.get('boarded')}
 
@@ -136,6 +137,8 @@ def feel_marks(rows):
             v, ref = r.get(k + '_mean'), sp and sp.get(k + '_mean')
             if v is not None and ref is not None and v > ref + FRAME_MS:
                 r['over'].append(k)
+        if r.get('boost_misses'):
+            r['over'].append('boost missed %d' % r['boost_misses'])
         lim = CORR_LIMIT.get(r['cell'])
         if lim is not None and r.get('corr_per_min') is not None and r['corr_per_min'] > lim:
             r['over'].append('corrections')
@@ -155,7 +158,8 @@ def feel_table(rows):
             continue
         lines.append('| %s | %s | %s/%s | %s/%s | %s/%s | %s/%s | %s | %s |' % (
             cell, r['side'], n(r['walk_mean']), n(r['walk_p95']), n(r['fly_mean']), n(r['fly_p95']),
-            n(r['boost_mean']), n(r['boost_p95']), n(r['jitter_walk'], '%.2f'), n(r['jitter_fly'], '%.2f'),
+            n(r['boost_mean']) + (' (%d missed)' % r['boost_misses'] if r.get('boost_misses') else ''), n(r['boost_p95']),
+            n(r['jitter_walk'], '%.2f'), n(r['jitter_fly'], '%.2f'),
             n(r['corr_per_min'], '%.2f'), ', '.join(r.get('over', [])) or '-'))
     return lines
 
