@@ -62,6 +62,8 @@ TIMED = ('coin', 'item Battery', 'npc Gear', 'item dropped', 'missile')
 # kinds single player has that the multiplayer worlds leave out on purpose: not counted as gaps, marked "single player
 # only" (the players' Sputniks since M12, include/scrap/sputniks.h)
 SP_ONLY = ()
+# and in a PvP mode: single player's companion and its own parked ship, which the PvP modes leave out on purpose
+SP_ONLY_PVP = ('npc Sputnik', 'parked ship')
 SOUND_SAMPLES = 6                  # sounds playing taken this many times, 1 s apart
 # the PvP maps of the original (data/modules/net.mod NetMaps) and the mode parity runs them in by default (every map
 # has DeathMatch)
@@ -607,7 +609,7 @@ def gaps(res):
             gap = a_sp > 0 and (worst == 0 or worst < a_sp * 0.5)
         else:
             gap = worst < a_sp
-        if k in SP_ONLY:
+        if k in SP_ONLY or (res.get('mode', 'freeroam') not in ('freeroam', 'coop') and k in SP_ONLY_PVP):
             gap = False
         extra = cnt and max(cnt) > a_sp and not loose
         names = set(sp.get(k, {}).get('names', []))
@@ -707,7 +709,7 @@ def summary(res):
         if 'sp' not in pt:
             continue
         out['points'] += 1
-        rows = [r for r in gaps(pt) if r[4]]
+        rows = [r for r in gaps(dict(pt, mode=out['mode'])) if r[4]]
         out['entity'] += len(rows)
         kinds |= {r[0] for r in rows}
         out['radar'] += len(lacks(pt, 'radar'))
@@ -762,7 +764,7 @@ def point_lines(res):
         lines.append('| %s | %d | %d | %s | %s | %s | %s | %s |' % (k, n_sp, a_sp, c[0], c[1],
                                                                    ik.get(k, {}).get('active', 0),
                                                                    'gap' if gap else 'extra' if extra else
-                                                                   'single player only' if k in SP_ONLY else '',
+                                                                   'single player only' if k in SP_ONLY or (res.get('mode', 'freeroam') not in ('freeroam', 'coop') and k in SP_ONLY_PVP) else '',
                                                                    ', '.join(miss)))
     lines += ['', 'One-shot sounds (the most of each name, summed; SP, host, join): %s' %
               ', '.join(str(x) for x in sound_shots(res))]
@@ -821,7 +823,7 @@ def report(results, out):
             if 'sp' not in pt:
                 continue
             lines += ['', '### %s (%s)' % (pt.get('name'), pt.get('anchor'))]
-            lines += point_lines(dict(pt, radius=res.get('radius')))
+            lines += point_lines(dict(pt, radius=res.get('radius'), mode=res.get('mode', 'freeroam')))
         lines.append('')
     with open(out, 'w') as f:
         f.write('\n'.join(lines) + '\n')
