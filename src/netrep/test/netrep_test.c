@@ -92,10 +92,14 @@ static void RandState(NetRepState *s) {
 		s->actTime[l] = Rnd() * 3u;
 	}
 	s->weapon = (uint8_t)Rnd();
+	/* the class block: some values, the rest 0 (the first replication has all 0) */
+	for (int i = 0; i < NETREP_X; i++) {
+		s->x[i] = (Rnd() & 3) ? 0 : (int32_t)Rnd();
+	}
 }
 
 static void Test_Fields(void) {
-	uint8_t buf[256];
+	uint8_t buf[512];
 	for (int i = 0; i < 20000; i++) {
 		NetRepState a, b, out;
 		RandState(&a);
@@ -115,6 +119,7 @@ static void Test_Fields(void) {
 		if (pick & NETREP_F_ACT1) { b.act[1] = c.act[1]; b.actTime[1] = c.actTime[1]; }
 		if (pick & NETREP_F_VIEW) memcpy(b.view, c.view, sizeof(b.view));
 		if (pick & NETREP_F_WEAP) b.weapon = c.weapon;
+		if (pick & NETREP_F_X) for (int k = 0; k < NETREP_X; k++) if (Rnd() & 1) b.x[k] = c.x[k];
 		uint32_t mask = NetRep_Diff(&a, &b);
 		CHECK((mask & ~pick) == 0);
 		NetRepBuf w;
@@ -964,12 +969,188 @@ static void Test_PosAt(void) {
 	NetRepSrv_Destroy(s);
 }
 
+/* the class block (replication v2): a state without it writes no class mask, so the first replication's records
+ * stay byte for byte; a record with it round trips; a class mask with bits past NETREP_X is a bad record */
+static void Test_ClassBlock(void) {
+	uint8_t buf[512];
+	NetRepState a, b, out;
+	NetRepBuf w;
+	NetRepReader r;
+
+	RandState(&a);
+	memset(a.x, 0, sizeof(a.x));
+	b = a;
+	b.pos[0] += 4;
+	CHECK(!(NetRep_Diff(&a, &b) & NETREP_F_X));
+	NetRepBuf_Init(&w, buf, sizeof(buf));
+	NetRep_WriteFields(&w, &a, &b, NetRep_Diff(&a, &b));
+	CHECK(w.size == 3);
+	b.x[0] = 7;
+	b.x[NETREP_X - 1] = -100000;
+	uint32_t mask = NetRep_Diff(&a, &b);
+	CHECK(mask == (NETREP_F_POS | NETREP_F_X));
+	NetRepBuf_Init(&w, buf, sizeof(buf));
+	NetRep_WriteFields(&w, &a, &b, mask);
+	NetRepReader_Init(&r, buf, w.size);
+	CHECK(NetRep_ReadFields(&r, &a, &out, mask) && !NetRep_Diff(&out, &b) && r.pos == w.size);
+	/* the full state against zero, as a create writes it */
+	static const NetRepState zero;
+	NetRepBuf_Init(&w, buf, sizeof(buf));
+	NetRep_WriteFields(&w, &zero, &b, NetRep_Diff(&zero, &b));
+	NetRepReader_Init(&r, buf, w.size);
+	CHECK(NetRep_ReadFields(&r, &zero, &out, NetRep_Diff(&zero, &b)) && !NetRep_Diff(&out, &b));
+	/* a class mask past the block */
+	NetRepBuf_Init(&w, buf, sizeof(buf));
+	NetRep_PutVar(&w, 1u << NETREP_X);
+	NetRepReader_Init(&r, buf, w.size);
+	CHECK(!NetRep_ReadFields(&r, &a, &out, NETREP_F_X));
+}
+
+/* the level scope: a slot set with NETREP_SET_LEVEL is in the interest of a client at any distance, the grid's only
+ * within the radius; the created list names the creates of the build */
+static void Test_LevelScope(void) {
+	static uint8_t msgs[NETREP_MAX_MSGS][NETREP_MSG_MAX];
+	int sizes[NETREP_MAX_MSGS];
+	const uint16_t *made;
+	NetRepState st;
+
+	NetRepServer *s = NetRepSrv_Create();
+	CHECK(s != NULL);
+	if (!s) {
+		return;
+	}
+	int look = NetRepSrv_Look(s, "");
+	NetRepClient *c = NetRepSrv_AddClient(s, NETREP_RATE_MAX);
+	NetRepSrv_SetView(c, 0.0f, 0.0f, 0.0f, 10000.0f);
+	NetRepSrv_Begin(s, 1);
+	memset(&st, 0, sizeof(st));
+	st.pos[0] = NetRep_QPos(500000.0f);
+	NetRepSrv_SetEx(s, 10, 5, look, &st, NETREP_SET_LEVEL);
+	NetRepSrv_SetEx(s, 11, 1, look, &st, 0);
+	st.pos[0] = NetRep_QPos(100.0f);
+	st.x[3] = 42;
+	NetRepSrv_SetEx(s, 12, 1, look, &st, 0);
+	NetRepSrv_End(s);
+	int n = NetRepSrv_Build(s, c, msgs, sizes, NETREP_MAX_MSGS);
+	CHECK(n == 1);
+	int k = NetRepSrv_Created(c, &made);
+	CHECK(k == 2);
+	int has10 = 0, has12 = 0, has11 = 0;
+	for (int i = 0; i < k; i++) {
+		has10 |= made[i] == 10;
+		has11 |= made[i] == 11;
+		has12 |= made[i] == 12;
+	}
+	CHECK(has10 && has12 && !has11);
+	/* the client reads the class block of the create */
+	NetRepView *v = NetRepCli_Create();
+	NetRepEvents ev = { NULL, NULL, NULL, NULL };
+	CHECK(v && NetRepCli_Message(v, msgs[0], sizes[0], &ev));
+	int kind, lk;
+	const NetRepState *got = v ? NetRepCli_State(v, 12, &kind, &lk) : NULL;
+	CHECK(got && got->x[3] == 42 && kind == 1);
+	got = v ? NetRepCli_State(v, 10, &kind, &lk) : NULL;
+	CHECK(got && kind == 5);
+	/* nothing new: no creates in the next build */
+	NetRepSrv_Begin(s, 2);
+	NetRepSrv_End(s);
+	NetRepSrv_Build(s, c, msgs, sizes, NETREP_MAX_MSGS);
+	CHECK(NetRepSrv_Created(c, &made) == 0);
+	NetRepCli_Destroy(v);
+	NetRepSrv_Destroy(s);
+}
+
+/* the journal: order of the last sets, values, the pool, the wire form */
+static void Test_Journal(void) {
+	NetRepJournal *j = NetRepJ_Create(8, 6);
+	NetRepJVal v, out;
+	uint8_t buf[512];
+
+	CHECK(j != NULL);
+	if (!j) {
+		return;
+	}
+	memset(&v, 0, sizeof(v));
+	v.type = NETREP_JI;
+	strcpy(v.name, "A");
+	v.u.i = 1;
+	CHECK(NetRepJ_Set(j, 3, &v) == 1);
+	CHECK(NetRepJ_Set(j, 3, &v) == 0);
+	v.type = NETREP_JS;
+	strcpy(v.name, "Model");
+	strcpy(v.u.s, "Models/x.M3D");
+	CHECK(NetRepJ_Set(j, 3, &v) == 1);
+	v.type = NETREP_JI;
+	strcpy(v.name, "A");
+	v.u.i = 1;
+	/* the same value but not the newest entry: moved to the end */
+	CHECK(NetRepJ_Set(j, 3, &v) == 1);
+	int k = NetRepJ_First(j, 3);
+	CHECK(k >= 0 && !strcmp(NetRepJ_Get(j, k)->name, "Model"));
+	k = NetRepJ_Next(j, k);
+	CHECK(k >= 0 && !strcmp(NetRepJ_Get(j, k)->name, "A") && NetRepJ_Next(j, k) < 0);
+	CHECK(NetRepJ_Count(j, 3) == 2 && NetRepJ_Used(j) == 2);
+	CHECK(NetRepJ_IsDirty(j, k));
+	NetRepJ_Clean(j, 3);
+	CHECK(!NetRepJ_IsDirty(j, k));
+	/* the pool: 6 entries */
+	for (int i = 0; i < 6; i++) {
+		v.type = NETREP_JF;
+		snprintf(v.name, sizeof(v.name), "F%d", i);
+		v.u.f = i * 0.25;
+		NetRepJ_Set(j, 5, &v);
+	}
+	CHECK(NetRepJ_Used(j) == 6 && NetRepJ_Lost(j) == 2 && NetRepJ_Count(j, 5) == 4);
+	NetRepJ_Clear(j, 3);
+	CHECK(NetRepJ_Used(j) == 4 && NetRepJ_First(j, 3) < 0);
+	CHECK(NetRepJ_Set(j, 5, &v) == 1 && NetRepJ_Count(j, 5) == 5);
+	CHECK(NetRepJ_Find(j, 5, "F2") >= 0 && NetRepJ_Find(j, 5, "F9") < 0 && NetRepJ_Find(j, 4, "F2") < 0);
+	/* the wire */
+	NetRepJVal vals[4];
+	memset(vals, 0, sizeof(vals));
+	vals[0].type = NETREP_JI;
+	strcpy(vals[0].name, "UsrControl");
+	vals[0].u.i = -123456;
+	vals[1].type = NETREP_JF;
+	strcpy(vals[1].name, "snd0_vol");
+	vals[1].u.f = 0.1;
+	vals[2].type = NETREP_JV;
+	strcpy(vals[2].name, "OffModPos");
+	vals[2].u.v[0] = 1e30;
+	vals[2].u.v[1] = -0.0;
+	vals[2].u.v[2] = 3.5;
+	vals[3].type = NETREP_JS;
+	strcpy(vals[3].name, "WeapList");
+	strcpy(vals[3].u.s, "7,3,1,0,1,0,1");
+	NetRepBuf w;
+	NetRepReader r;
+	NetRepBuf_Init(&w, buf, sizeof(buf));
+	for (int i = 0; i < 4; i++) {
+		NetRep_PutJVal(&w, &vals[i]);
+	}
+	CHECK(!w.bad);
+	NetRepReader_Init(&r, buf, w.size);
+	for (int i = 0; i < 4; i++) {
+		CHECK(NetRep_GetJVal(&r, &out) && NetRepJ_Equal(&out, &vals[i]));
+	}
+	CHECK(r.pos == w.size);
+	NetRepReader_Init(&r, buf, 5);
+	CHECK(!NetRep_GetJVal(&r, &out) || !NetRep_GetJVal(&r, &out));
+	buf[1 + strlen(vals[0].name)] = 9;
+	NetRepReader_Init(&r, buf, w.size);
+	CHECK(!NetRep_GetJVal(&r, &out));
+	NetRepJ_Destroy(j);
+}
+
 int main(void) {
 	Test_Varints();
 	Test_Quant();
 	Test_Fields();
 	Test_Grid();
 	Test_Priority();
+	Test_ClassBlock();
+	Test_LevelScope();
+	Test_Journal();
 	printf("simulation:\n");
 	Sim_Run(0, 0, 0, 300, 48 * 1024);
 	Sim_Run(10, 5, 3, 600, 48 * 1024);

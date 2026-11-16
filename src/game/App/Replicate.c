@@ -44,7 +44,7 @@
 #include "scrap/world.h"
 
 #define REP_CONNS 1024				/* NET2_MAX_CONNS */
-#define REP_HASH 4096				/* pointer table, twice the slots */
+#define REP_HASH (2 * NETREP_MAX_ENTS)	/* pointer table, twice the slots */
 #define REP_NAME 64
 #define REP_REWIND_MAX 0.5					/* s the lag compensation goes back at most */
 #define REP_PARK_HEIGHT 1500.0f			/* units above the floor a ship left by its player is parked at most */
