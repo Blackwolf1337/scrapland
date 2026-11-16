@@ -48,7 +48,6 @@ NOISE = {
     'parity.fx': (5, 0.5), 'parity.total': (8, 0.2), 'parity.audit': (0, 0.2), 'parity.mirror': (2, 0.0), 'parity.census': (2, 0.0),
     'feel.latency': (12.0, 0.15), 'feel.p95': (25.0, 0.25), 'feel.boost': (20.0, 0.3), 'feel.jitter': (0.5, 0.5),
     'feel.corr_per_min': (3.0, 0.0),
-    'coop.gaps': (1, 0.0),
 }
 
 
@@ -319,7 +318,10 @@ def gate_coop(a):
                 res['parity'].append({'point': name, 'level': lv, 'error': 'no result'})
                 continue
             s = parity.summary(dict(r, points=[dict(r, name=name, anchor='member')] if 'join' in r else []))
-            res['parity'].append(dict(s, point=name, level=lv, mission=r.get('mission')))
+            # single player at the story point: its Mission.Library is the story's (a failed load of the story
+            # leaves it at Mission_JailBreak with that mission's page open: HUD gaps that are no client's)
+            sp_ok = (r.get('sp_mission') or '').strip("'") == (r.get('mission') or '').split(' ')[0]
+            res['parity'].append(dict(s, point=name, level=lv, mission=r.get('mission'), sp_ok=sp_ok))
     nfail = sum(1 for s in steps if not s['ok'])
     gaps = sum(p.get(c, 0) for p in res['parity'] if 'error' not in p for c in parity.SUMMARY_COLS)
     status = 'error' if not steps else 'fail' if nfail or not reached or gaps else 'pass'
@@ -333,7 +335,9 @@ def gate_coop(a):
         if 'error' in p:
             table.append('| %s | %s | error: %s | | | | |' % (p['point'], p['level'], p['error']))
         else:
-            table.append('| %s (%s) | %s | %d | %d | %d | %d | %d |' % (p['point'], p.get('mission') or '-',
+            table.append('| %s (%s)%s | %s | %d | %d | %d | %d | %d |' % (p['point'], p.get('mission') or '-',
+                                                                         '' if p.get('sp_ok', True) else
+                                                                         ' (single player not at the story point)',
                                                                        p['level'], p['entity'], p['radar'],
                                                                        p['hud'], p['sound'], p['fx']))
     return write_gate(a, 'coop', dict(res, status=status, failed=nfail, gaps=gaps), table)
@@ -516,7 +520,7 @@ def gate_diff(a):
                 q = op.get(p['point'])
                 if q:
                     for c in parity.SUMMARY_COLS:
-                        add('coopparity %s %s' % (p['point'], c), 'coop.gaps', q.get(c), p.get(c))
+                        add('coopparity %s %s' % (p['point'], c), 'parity.' + c, q.get(c), p.get(c))
         elif gate == 'sp':
             om = {r['check']: r for r in o['rows']}
             for r in n['rows']:
