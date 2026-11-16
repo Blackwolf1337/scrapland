@@ -1,0 +1,57 @@
+# The routes of tools/test/parity/parity.py after the spawn point: level|point|anchor|x y z.
+# Made by tools/test/parity/routes.py from the levels' dummies (see its header); not edited by hand.
+DownTown|busy|DM_Element_DownTAro_16|-146174 -40943 372054
+DownTown|door|DM_Door_Elevator_TownHall|-188143 -30878 368353
+DownTown|parking|ParkParking_01|-189864 -30282 363310
+Outskirts|busy|DM_Element_OutLamp_35|-252990 45337 -10301
+Outskirts|door|DM_Door_Elevator_Police|-269742 74192 14188
+Outskirts|parking|ParkParking_01|-271383 74786 19211
+Commercial|busy|DM_Challenger_Temple|-81893 -35708 737365
+Commercial|door|DM_Door_Elevator_Temple|-81902 -36946 724826
+Commercial|parking|ParkParking_01|-80181 -36350 729869
+Scrapyard|busy|DM_Element_DownTLunasBahia_04|-149947 -16016 -347962
+Scrapyard|door|DM_Door_Elevator_GamblinDen|-145204 -17753 -337544
+Scrapyard|parking|ParkParking_04|-148879 -17158 -341402
+GDB|door|DM_Door_TempleTeleporter_Temple|-5495 20550 193
+GDB|parking|DM_Parked_Temple|3969 21196 -1413
+Police|busy|DM_PointGraph2DAI_151|3980 -1787 26863
+Police|door|DM_Door_Elevator_Outskirts|-115 -1243 21886
+Bank|busy|DM_Element_Banklamptriangluz_44|-18012 1099 -29103
+Bank|door|DM_Door_Elevator_Outskirts|-21272 48 -39050
+Press|busy|DM_Element_PressSegurityGate_05|-3046 242 4239
+Press|door|DM_Door_Elevator_Press|-1323 -1243 -1858
+Temple|busy|DM_NPC_Repos_Bishop_10|32341 -1344 -9585
+Temple|door|DM_Door_Elevator_Commercial|36867 168 -6749
+TownHall|busy|DM_DesktopFunctionary_04|-2133 -1036 4933
+TownHall|door|DM_Door_Elevator_DownTown|-3141 324 11476
+GamblinDen|door|DM_Door_Elevator_Outskirts|8350 -1532 -2267
+Orbit|busy|DM_Element_OrbitBoya1_13|-22780 -331 -20620
+Orbit|door|DM_Door_ElevatorOrbitC_TownHall|-22099 948 -31077
+# Fake: no anchors
+# Junkyard: no anchors
+AB|busy|DM_Spawn|-128109 1710 7690
+AB|door|DM_Door_Teleporter_GamblinDen|-135384 -1886 4892
+AB|parking|ParkParking_AB|-133465 -1256 3626
+ABIndoor|door|DM_Door_Teleporter_GamblinDen|-134891 -1886 1133
+QF|busy|DM_Spawn01|26425 -52815 -15062
+QF|parking|ParkParking_121|38492 -53154 -14382
+FZ|busy|DM_NodeIniAI|-16871 20864 26382
+FZ|parking|ParkParking_121|-15302 15358 25597
+OM|busy|DM_Domination_Friend_Spawn_3|-226255 14310 -6252
+OM|parking|ParkParking_00|-223295 5690 -4463
+CA|busy|DM_Spawn05|17103 -15889 12049
+CA|parking|ParkParking_00|18723 -21442 9266
+MCA|busy|DM_NodeIniAI|-328489 -41870 747976
+MCA|parking|ParkParking_121|-327088 -47357 748267
+MCB|parking|ParkParking_121|-35720 -39534 776526
+# MDA: no anchors
+MDB|busy|DM_Multiplayer_Flag_8|-154716 -66735 232584
+MDB|parking|ParkParking_121|-153909 -56300 231608
+MOA|busy|DM_NodeIniAI|-64779 50188 -103241
+MOA|parking|ParkParking_1421|-63210 44682 -104027
+MOB|busy|DM_NodeIniAI|-330056 38020 229108
+MOB|parking|ParkParking_1281|-328487 32514 228322
+MSA|busy|DM_NodeIniAI|-463144 -6598 -679702
+MSA|parking|ParkParking_151|-461576 -12104 -680488
+MSB|busy|DM_NodeIniAI|-166491 17513 -665836
+MSB|parking|ParkParking_1217|-164922 12006 -666622

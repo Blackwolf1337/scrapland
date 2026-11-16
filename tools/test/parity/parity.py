@@ -1,25 +1,36 @@
 #!/usr/bin/env python3
-"""The parity tool of the free roam multiplayer (stage M10 of issue #1): what a multiplayer client shows against
-single player at the same place of a level.
+"""The parity tool of the multiplayer (stage M10 of issue #1, routes and the audit column since stage 0.4 of the
+rewrite): what a multiplayer client shows against single player at the same places of a level.
 
 For each level it starts (rendered, hidden, muted, in their own game folders under --scratch):
   sp    the single player game (-imap:Levels/<level>)
-  host  a hosting game (-host:<level> -mode:freeroam): the coordinator in the game, the level's instance a child,
-        the host plays as a client over loopback
+  host  a hosting game (-host:<level> -mode:freeroam, or -mode:<mode> -maps:<level> for "Level:mode"): the
+        coordinator in the game, the level's instance a child, the host plays as a client over loopback
   join  a second game that joins that world (-join)
-puts the players at the same place (the host's spawn point: the single player's player and the joined player are
-moved there through the test channel, the joined one on the instance, src/game/Global/TestChannel.c -i), waits and
-compares through the test channel: the entities around the place by kind (entinfo; a replicated proxy is labelled by
-the instance's entity it stands for), the icons of the radar (radar), the HUD items (menu), the sounds playing
-(sounds) and the particle systems drawn (fx), plus screenshots side by side. Output in --out: <level>.json,
-<level>-shots.png and report.md (the gap report: kind, count single player against host and joined client,
-examples).
+and walks a route: the host's spawn, then the points of the level in routes.txt (made by routes.py from the level's
+dummies: the busiest anchor, an elevator or door, a parking). At each point the single player's player, the host's
+player and the joined player (400 units beside) are put there (the clients' players through their entities on the
+instance, src/game/Global/TestChannel.c -i), and after a wait the tool compares through the test channel: the
+entities around the point by kind (entinfo; a replicated proxy is labelled by the instance's entity it stands for),
+the icons of the radar (radar), the HUD items (menu), the sounds playing (sounds) and the particle systems drawn (fx),
+plus screenshots side by side. The instance's audit counts (stage 0.1, test verb audit: reset after the join, audit
+json at the end of the route) go into the audit column, n/a with a build without the verb. Output in --out:
+<tag>.json per level (tag: the level, or <level>-<mode>), <tag>-<point>-shots.png, report.md (the summary table and
+the gaps of each point) and parity.json (the summary per level). Exit code 0 without gaps, 1 with gaps, 2 when a level
+did not run.
 
-  parity.py [--levels DownTown,Outskirts,...] [--port 29940] [--build build-linux64] [--out DIR] [--scratch DIR]
-            [--radius 100000] [--settle 25] [--no-join] [--mp2]
+  parity.py [--levels DownTown,Outskirts,MCA:dm,...] [--port 29940] [--build build-linux64] [--out DIR]
+            [--scratch DIR] [--points 4] [--radius 30000] [--settle 25] [--settle-point 12] [--no-join] [--no-shots]
+            [--mp2]
 
-Needs a build with the M10 test channel verbs (entinfo, radar, fx, sounds, the instance files). Network only on
-loopback (the ports --port .. --port + 40)."""
+--mp2: the replication v2 (-mp2 for the host, its instance and the joined client, include/scrap/repent.h); at the
+end of each level's route also the mirror diff (mirror.py: the declared state of every replicated entity, instance
+against the joined client) and the positional sound census (census.py, joined client against single player and the
+instance) at the last point, as the columns mirror and census.
+
+Default levels: every level a free world hosts (the city and the listed places of data/places/places.def, the coop
+story's levels among them) in free roam, and the PvP maps of the original in --pvp-mode (dm). Network only on
+loopback (a world takes --port and its instances --port + 8 + the index of the level: up to --port + 36)."""
 import argparse
 import json
 import os
@@ -35,6 +46,14 @@ REPO = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
 sys.path.insert(0, os.path.join(REPO, 'tools', 'test'))
 import channel  # noqa: E402
 
+try:
+    import resource
+    # no core files of the games (the rendered games killed at the end of a run leave NVIDIA cores of ~100 MB each);
+    # the games inherit the limit
+    resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+except (ImportError, ValueError, OSError):
+    pass
+
 CITY = ['DownTown', 'Outskirts', 'Commercial', 'Scrapyard', 'GDB', 'Police', 'Bank', 'Press', 'Temple', 'TownHall',
         'GamblinDen']
 RAIL = ('NormalTraffic', 'MediumTraffic', 'HeavyTraffic')
@@ -42,14 +61,21 @@ FREE = ('Traffic', 'FightingTraffic', 'ChasingTraffic', 'EnemiesTraffic')
 # kinds whose count changes with time (traffic, effects of fights): compared loosely
 # the frames of the blinking mission marks (RadarScorer.c Radar_DrawMission) as their first one
 RADAR_BLINK = {'13': '12', '14': '12', '10': '9', '11': '9'}
-LOOSE = ('rail traffic', 'traffic', 'police', 'coin', 'missile', 'npc', 'parked ship')
+LOOSE = ('rail traffic', 'traffic', 'police', 'coin', 'missile', 'npc', 'parked ship',
+         'ship T')                 # the traffic models (TLight, TMed, TAsteroid: indoor fake traffic, asteroids)
 # kinds that come and go with the moment (coins, batteries and the items of shot traffic dropped in a fight, missiles, gears that police fuse into where a
 # player sees them and that turn back): the clients against what the instance has, not against single player
 TIMED = ('coin', 'item Battery', 'npc Gear', 'item dropped', 'missile')
 # kinds single player has that the multiplayer worlds leave out on purpose: not counted as gaps, marked "single player
 # only" (the players' Sputniks since M12, include/scrap/sputniks.h)
 SP_ONLY = ()
+# and in a PvP mode: single player's companion and its own parked ship, which the PvP modes leave out on purpose
+SP_ONLY_PVP = ('npc Sputnik', 'parked ship')
 SOUND_SAMPLES = 6                  # sounds playing taken this many times, 1 s apart
+# the PvP maps of the original (data/modules/net.mod NetMaps) and the mode parity runs them in by default (every map
+# has DeathMatch)
+PVP_MAPS = ['QF', 'FZ', 'OM', 'CA', 'GDB', 'MCA', 'MCB', 'MDA', 'MDB', 'MOA', 'MOB', 'MSA', 'MSB']
+PVP_MODE = 'dm'
 
 
 class Game:
@@ -209,7 +235,10 @@ def kind_of(e):
     if cls == 'WalkChar':
         return 'npc ' + (e['act'] or base(e['model']))
     if cls == 'Car':
-        return 'ship ' + (e['act'] or base(e['model']))
+        k = e['act'] or base(e['model'])
+        # the traffic models (TLight1B, TMed3B, TAsteroid5, ...) as one kind per family: which variant flies by is
+        # chance
+        return 'ship ' + (re.sub(r'\d+[A-Z]?$', '', k) if k.startswith('T') else k)
     return '%s %s' % (cls, re.sub(r'[\d_]+$', '', n))
 
 
@@ -283,34 +312,52 @@ def hist(lines, key):
 def collect(g, at, radius, inst=None):
     """inst: a function that gives the instance's entities of now (a proxy is labelled by the instance's entity at
     the same moment: the traffic moves)"""
-    out = {}
-    fresh = inst() if inst else None
-    out['ents'] = parse_ents(g.ask('entinfo %.0f %.0f %.0f %.0f' % (at[0], at[1], at[2], radius), timeout=30))
-    if fresh is not None:
-        label_proxies(out['ents'], fresh)
-    out['radar'] = hist(g.ask('radar'), lambda f: 'icon %s%s' % (RADAR_BLINK.get(f[0], f[0]), ' rim' if f[1] == '1' else ''))
-    out['fx'] = hist(g.ask('fx'), lambda f: f[0])
-    # the sounds playing near the player, by name: the most of each over a few samples (one-shot sounds such as
-    # steps play only for a moment)
-    out['sounds'] = {}
-    loops = set()
+    return collect_all([('x', g, inst)], at, radius)['x']
+
+
+def collect_all(sides, at, radius):
+    """collect for several games at once, sides: (key, game, inst function or None); the sounds of all games are
+    sampled in the same rounds (SOUND_SAMPLES rounds 1 s apart), so a point costs the same time for one game or three"""
+    outs = {}
+    for key, g, inst in sides:
+        out = outs[key] = {}
+        fresh = inst() if inst else None
+        out['ents'] = parse_ents(g.ask('entinfo %.0f %.0f %.0f %.0f' % (at[0], at[1], at[2], radius), timeout=30))
+        if fresh is not None:
+            label_proxies(out['ents'], fresh)
+        out['radar'], out['radar_seen'], out['fx'], out['fx_seen'] = {}, {}, {}, {}
+        out['sounds'] = {}
+        out['loops'] = set()
+    # the sounds playing near the player, the radar icons and the particle systems drawn, by name: the most of each
+    # over a few samples and the samples that had it (one-shot sounds, a fight's effects and the icons of passing
+    # traffic are there only for a moment; *_seen tells the steady ones)
     for i in range(SOUND_SAMPLES):
         if i:
             time.sleep(1.0)
-        text = g.ask('sounds')
-        h = hist(text, lambda f: '%s %s' % (f[0], f[2] if f[0] == 'ch' else f[1]))
-        for k, n in h.items():
-            out['sounds'][k] = max(out['sounds'].get(k, 0), n)
-        for line in (text or '').splitlines():
-            f = line.split('\t')
-            if f[0] == 'ps' or (f[0] == 'ch' and len(f) > 3 and f[3] == '1'):
-                loops.add('%s %s' % (f[0], f[2] if f[0] == 'ch' else f[1]))
-    out['loops'] = sorted(loops)
-    out['parked'] = parked_motors(g, out['ents'], at, radius)
-    menu = g.ask('menu') or ''
-    out['hud'] = sorted(set(re.findall(r"\[\s*'([^']*)'", menu)))
-    out['kinds'] = count(out['ents'], at, radius)
-    return out
+        for key, g, _ in sides:
+            out = outs[key]
+            for what, h in (('radar', hist(g.ask('radar'), lambda f: 'icon %s%s' % (
+                    RADAR_BLINK.get(f[0], f[0]), ' rim' if f[1] == '1' else ''))), ('fx', hist(g.ask('fx'),
+                                                                                         lambda f: f[0]))):
+                for k, n in h.items():
+                    out[what][k] = max(out[what].get(k, 0), n)
+                    out[what + '_seen'][k] = out[what + '_seen'].get(k, 0) + 1
+            text = g.ask('sounds')
+            h = hist(text, lambda f: '%s %s' % (f[0], f[2] if f[0] == 'ch' else f[1]))
+            for k, n in h.items():
+                out['sounds'][k] = max(out['sounds'].get(k, 0), n)
+            for line in (text or '').splitlines():
+                f = line.split('\t')
+                if f[0] == 'ps' or (f[0] == 'ch' and len(f) > 3 and f[3] == '1'):
+                    out['loops'].add('%s %s' % (f[0], f[2] if f[0] == 'ch' else f[1]))
+    for key, g, _ in sides:
+        out = outs[key]
+        out['loops'] = sorted(out['loops'])
+        out['parked'] = parked_motors(g, out['ents'], at, radius)
+        menu = g.ask('menu') or ''
+        out['hud'] = sorted(set(re.findall(r"\[\s*'([^']*)'", menu)))
+        out['kinds'] = count(out['ents'], at, radius)
+    return outs
 
 
 def wait_for(fn, secs, step=1.0):
@@ -365,23 +412,145 @@ def parked_motors(g, ents, at, radius):
     return out
 
 
-def run_level(a, level):
-    """one level: the three games, the place, the collection; the result dict"""
+def places():
+    """the listed places of data/places/places.def (the levels a free world has besides the city)"""
+    out = []
+    try:
+        with open(os.path.join(REPO, 'data', 'places', 'places.def')) as f:
+            for line in f:
+                p = line.split()
+                if len(p) >= 3 and p[0] == 'place' and 'listed' in p[2:]:
+                    out.append(p[1])
+    except OSError:
+        pass
+    return out
+
+
+def world_levels():
+    """the levels a free world hosts: the city and the places (the coop story's levels are among them)"""
+    return CITY + [x for x in places() if x not in CITY]
+
+
+def default_specs(pvp_mode=PVP_MODE):
+    """the parity runs of a full gate: every world level in free roam, every PvP map in pvp_mode"""
+    return world_levels() + ['%s:%s' % (m, pvp_mode) for m in PVP_MAPS]
+
+
+def pick_device():
+    """the RTX when it has >= 3000 MiB free, else the AMD"""
+    try:
+        free = int(subprocess.run(['nvidia-smi', '--query-gpu=memory.free', '--format=csv,noheader,nounits'],
+                                  capture_output=True, text=True).stdout.split()[0])
+    except (OSError, ValueError, IndexError):
+        free = 0
+    return '10de:27b0' if free >= 3000 else '1002:164e'
+
+
+def load_routes(path):
+    """routes.txt: {level: [(point, anchor, (x, y, z)), ...]}"""
+    out = {}
+    try:
+        with open(path) as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                lv, name, anchor, xyz = line.split('|')
+                out.setdefault(lv, []).append((name, anchor, tuple(float(v) for v in xyz.split())))
+    except OSError:
+        pass
+    return out
+
+
+def audit(g, inst, verb):
+    """the instance's audit verb (stage 0.1, src/game/Global/NetAudit.c): verb 'reset' or 'json'; None when the build
+    has no such verb (the answer is an error) or the answer is no JSON object"""
+    text = g.try_ask('audit ' + verb, inst, 10)
+    if text is None or text.startswith('error'):
+        return None
+    if verb != 'json':
+        return {}
+    at = text.find('{')
+    try:
+        v = json.loads(text[at:]) if at >= 0 else None
+    except ValueError:
+        return None
+    return v if isinstance(v, dict) else None
+
+
+# the categories of the audit (include/scrap/netaudit.h) that are presentation calls; soundsrc (the callers of the
+# sound sinks), entvar, player and visible are counted apart
+AUDIT_PRES = ('sound', 'voice', 'music', 'sfx', 'debris', 'animevent', 'hud', 'fade', 'cinema', 'camera', 'actionset',
+              'timespeed')
+
+
+def audit_total(a):
+    """one number for an audit answer: the presentation calls of its "totals" (stage 0.1's audit json: {"secs",
+    "keys", "lost", "totals": {category: count}, "rows": [...]}); else its "total" when it has one, else the sum of its
+    numbers; None without an answer"""
+    if not isinstance(a, dict):
+        return None
+    if isinstance(a.get('totals'), dict):
+        return sum(v for k, v in a['totals'].items() if k in AUDIT_PRES and isinstance(v, (int, float)))
+    for k in ('total', 'unforwarded'):
+        if isinstance(a.get(k), (int, float)):
+            return a[k]
+
+    def walk(v):
+        if isinstance(v, bool):
+            return 0
+        if isinstance(v, (int, float)):
+            return v
+        if isinstance(v, dict):
+            return sum(walk(x) for x in v.values())
+        if isinstance(v, list):
+            return sum(walk(x) for x in v)
+        return 0
+    return walk(a)
+
+
+def player_entities(ents, near):
+    """the instance's entity of each client: the players' entity (a NetPlayer character or a player's ship, owner
+    slot 4 on) nearest to the client's own position; near: [(key, pos)]. A player keeps the entity found first"""
+    cands = [e for e in ents if e['name'].startswith('NetPlayer') or e.get('owner', -1) >= 4]
+    out, taken = {}, set()
+    for key, pos in near:
+        c = sorted((e for e in cands if e['name'] not in taken), key=lambda e: dist(e['pos'], pos))
+        if c:
+            out[key] = c[0]['name']
+            taken.add(c[0]['name'])
+    return out
+
+
+def put(g, ent, at, ang, inst=None):
+    """an entity to a place, still (ent None: the single player's player)"""
+    target = 'Scrap.UsrEntity(0)' if ent is None else 'Scrap.GetEntity("%s")' % ent
+    g.ask('do e = %s; e.Pos = (%.1f, %.1f, %.1f); e.Ang = (%.3f, %.3f, %.3f)' % ((target,) + tuple(at) + tuple(ang)),
+          inst=inst)
+
+
+def run_level(a, spec, routes=None):
+    """one level (spec "Level" for free roam or "Level:mode" for a PvP mode): the three games, the route, the
+    collection at each point; the result dict"""
+    level, _, mode = spec.partition(':')
+    mode = mode or 'freeroam'
     port = a.port
-    res = {'level': level, 'radius': a.radius}
+    res = {'level': level, 'mode': mode, 'tag': tag_of(spec), 'radius': a.radius, 'points': [], 'mp2': a.mp2}
     v2 = ['-mp2'] if a.mp2 else []
-    host = Game(a, 'ph', ['-host:' + level, '-port:%d' % port, '-mode:freeroam', '-name:Host'] + v2)
+    hargs = ['-host:' + level, '-port:%d' % port, '-mode:' + mode, '-name:Host'] + v2
+    if mode != 'freeroam':
+        hargs.append('-maps:' + level)
+    host = Game(a, 'ph', hargs, a.env)
     sp = Game(a, 'ps', ['-imap:Levels/' + level])
-    join = Game(a, 'pj', ['-join:127.0.0.1', '-port:%d' % port, '-name:Join'] + v2) if a.join else None
+    join = Game(a, 'pj', ['-join:127.0.0.1', '-port:%d' % port, '-name:Join'] + v2, a.env) if a.join else None
     games = [g for g in (host, sp, join) if g]
     try:
         host.start()
         sp.start()
 
-        def host_own():
-            ents = parse_ents(host.try_ask('entinfo', timeout=5))
-            return own_entity(ents)
-        me = wait_for(host_own, 240, 2)
+        def own(g):
+            return own_entity(parse_ents(g.try_ask('entinfo', timeout=5)))
+        me = wait_for(lambda: own(host), 240, 2)
         if not me:
             res['error'] = 'the host has no own entity'
             return res
@@ -389,94 +558,151 @@ def run_level(a, level):
         still, end = 0, time.time() + 40
         while still < 4 and time.time() < end:
             time.sleep(1.0)
-            now = host_own() or me
+            now = own(host) or me
             still = still + 1 if dist(now['pos'], me['pos']) < 50.0 else 0
             me = now
         at = me['pos']
-        res['at'] = at
         m = re.search(r"\('Ang', \(([-\d.e]+), ([-\d.e]+), ([-\d.e]+)\)\)", host.ask('ent %s Ang' % me['name']))
         ang = tuple(float(x) for x in m.groups()) if m else (0.0, 0.0, 0.0)
         res['ang'] = ang
+        jme = None
         if join:
             join.start()
-        # the single player's player to the place
-        wait_for(lambda: sp.try_ask('Scrap.GetLevelPath()', timeout=5), 180, 2)
-        sp.ask('do e = Scrap.UsrEntity(0); e.Pos = (%.1f, %.1f, %.1f); e.Ang = (%.3f, %.3f, %.3f)' % (at + ang))
-        inst_me = None
-        if join:
-            def join_own():
-                return own_entity(parse_ents(join.try_ask('entinfo', timeout=5)))
-            jme = wait_for(join_own, 240, 2)
+            jme = wait_for(lambda: own(join), 240, 2)
             # (a drop in the first seconds after a spawn counts as a fall from a bad spawn point, Replicate.c)
             time.sleep(6)
-            jme = join_own() or jme
-            # the joined player beside the host's (its instance entity: the NetPlayer nearest to the joined client's
-            # own entity)
-            iel = parse_ents(host.try_ask('entinfo', inst=level, timeout=10))
-            if jme:
-                cands = [e for e in iel if e['name'].startswith('NetPlayer')]
-                cands.sort(key=lambda e: dist(e['pos'], jme['pos']))
-                if cands:
-                    inst_me = cands[0]['name']
-                    host.ask('do e = Scrap.GetEntity("%s"); e.Pos = (%.1f, %.1f, %.1f); e.Ang = (%.3f, %.3f, %.3f)' %
-                             ((inst_me, at[0] + 400.0, at[1], at[2]) + ang), inst=level)
+            jme = own(join) or jme
             res['join_own'] = bool(jme)
-        time.sleep(a.settle)
-        inst = parse_ents(host.ask('entinfo %.0f %.0f %.0f %.0f' % (at[0], at[1], at[2], a.radius * 1.2),
-                                   inst=level, timeout=30))
-        res['instance'] = {'kinds': count(inst, at, a.radius)}
-        res['sp'] = collect(sp, at, a.radius)
-        def inst_now():
-            return parse_ents(host.ask('entinfo %.0f %.0f %.0f %.0f' % (at[0], at[1], at[2], a.radius * 1.2),
-                                       inst=level, timeout=30))
-        res['host'] = collect(host, at, a.radius, inst_now)
-        if join:
-            res['join'] = collect(join, at, a.radius, inst_now)
-        shots = []
-        for g in [g for g in (sp, host, join) if g]:
-            p = os.path.join(a.out, '%s-%s.png' % (level, g.name))
-            shots.append(g.shot(p))
-        res['sheet'] = side_by_side(shots, ['single player', 'host (client of its own world)', 'joined client'],
-                                    os.path.join(a.out, '%s-shots.png' % level))
-        for s in shots:
-            if s:
-                os.remove(s)
-        for side in ('sp', 'host', 'join'):
-            if side in res:
-                del res[side]['ents']
+        wait_for(lambda: sp.try_ask('Scrap.GetLevelPath()', timeout=5), 180, 2)
+        iel = parse_ents(host.try_ask('entinfo', inst=level, timeout=10))
+        near = [('host', (own(host) or me)['pos'])] + ([('join', jme['pos'])] if jme else [])
+        pents = player_entities(iel, near)
+        res['players'] = pents
+        # the audit counts cover the route (n/a without the verb)
+        res['audit_verb'] = audit(host, level, 'reset') is not None
+        points = [('spawn', 'host spawn', at)] + [(n, an, (x, y + 150.0, z)) for n, an, (x, y, z) in
+                                                  (routes or {}).get(level, [])]
+        for k, (name, anchor, pos) in enumerate(points[:a.points]):
+            pt = {'name': name, 'anchor': anchor, 'at': pos}
+            put(sp, None, pos, ang)
+            if k and 'host' in pents:
+                put(host, pents['host'], pos, ang, inst=level)
+            if 'join' in pents:
+                put(host, pents['join'], (pos[0] + 400.0, pos[1], pos[2]), ang, inst=level)
+            time.sleep(a.settle if k == 0 else a.settle_point)
+
+            def inst_now():
+                return parse_ents(host.ask('entinfo %.0f %.0f %.0f %.0f' % (pos[0], pos[1], pos[2], a.radius * 1.2),
+                                           inst=level, timeout=30))
+            pt['instance'] = {'kinds': count(inst_now(), pos, a.radius)}
+            sides = [('sp', sp, None), ('host', host, inst_now)] + ([('join', join, inst_now)] if join else [])
+            pt.update(collect_all(sides, pos, a.radius))
+            if a.shots:
+                shots = [g.shot(os.path.join(a.out, '%s-%s-%s.png' % (res['tag'], name, g.name)))
+                         for g in (sp, host, join) if g]
+                pt['sheet'] = side_by_side(shots, ['single player', 'host (client of its own world)', 'joined client'],
+                                           os.path.join(a.out, '%s-%s-shots.png' % (res['tag'], name)))
+                for s in shots:
+                    if s:
+                        os.remove(s)
+            for side in ('sp', 'host', 'join'):
+                if side in pt:
+                    del pt[side]['ents']
+            res['points'].append(pt)
+        if a.mp2 and join:
+            res.update(mirror_census(a, res['tag'], level, host, sp, join))
+        res['audit'] = audit(host, level, 'json')
     finally:
         for g in games:
             g.stop()
     return res
 
 
+def mirror_census(a, tag, level, host, sp, join):
+    """the -mp2 checks at the route's last point: mirror.py (instance against the joined client) and census.py (the
+    joined client's sound sources against single player and the instance); their JSON next to the level's"""
+    out = {}
+    for name, cmd in (('mirror', ['mirror.py', '--game', join.dir, '--instance', host.dir, '--level', level]),
+                      ('census', ['census.py', '--client', join.dir, '--instance', host.dir, '--level', level,
+                                  '--sp', sp.dir])):
+        path = os.path.join(a.out, '%s-%s.json' % (tag, name))
+        if os.path.exists(path):
+            os.remove(path)
+        try:
+            r = subprocess.run([sys.executable, os.path.join(HERE, cmd[0])] + cmd[1:] + ['--json', path],
+                               capture_output=True, text=True, timeout=600)
+            text = (r.stdout or '').strip().splitlines()
+            out[name + '_line'] = text[0] if text else ''
+            out[name] = json.load(open(path)) if os.path.exists(path) else {'error': 'exit %d' % r.returncode}
+        except (subprocess.TimeoutExpired, OSError, ValueError) as ex:
+            out[name] = {'error': str(ex)}
+    return out
+
+
+def mirror_total(res):
+    """the differences of the mirror diff (None without one)"""
+    m = res.get('mirror')
+    if not isinstance(m, dict) or 'error' in m:
+        return None
+    return sum(m.get('counts', {}).values())
+
+
+def census_total(res):
+    c = res.get('census')
+    if not isinstance(c, dict) or 'error' in c:
+        return None
+    return c.get('gaps')
+
+
+def tag_of(spec):
+    level, _, mode = spec.partition(':')
+    return level if not mode or mode == 'freeroam' else '%s-%s' % (level, mode)
+
+
+def norm_kind(k):
+    """the kind as kind_of names it now (results stored before the traffic models were one kind per family)"""
+    return re.sub(r'\d+[A-Z]?$', '', k) if k.startswith('ship T') else k
+
+
+def norm_kinds(kinds):
+    out = {}
+    for k, v in (kinds or {}).items():
+        d = out.setdefault(norm_kind(k), {'n': 0, 'active': 0, 'names': []})
+        d['n'] += v.get('n', 0)
+        d['active'] += v.get('active', 0)
+        d['names'] = d['names'] + v.get('names', [])
+    return out
+
+
 def gaps(res):
     """the rows of the gap report: kind, sp, host, join, gap flag, missing examples"""
     rows = []
-    sp = res.get('sp', {}).get('kinds', {})
+    sp = norm_kinds(res.get('sp', {}).get('kinds', {}))
     sides = [s for s in ('host', 'join') if s in res]
+    sk = {s: norm_kinds(res[s]['kinds']) for s in sides}
+    ik = norm_kinds(res.get('instance', {}).get('kinds', {}))
     kinds = set(sp)
     for s in sides:
-        kinds |= set(res[s]['kinds'])
+        kinds |= set(sk[s])
     for k in sorted(kinds):
         n_sp = sp.get(k, {}).get('n', 0)
         a_sp = sp.get(k, {}).get('active', 0)
-        cnt = [res[s]['kinds'].get(k, {}).get('active', 0) for s in sides]
+        cnt = [sk[s].get(k, {}).get('active', 0) for s in sides]
         loose = any(k.startswith(x) for x in LOOSE)
         worst = min(cnt) if cnt else 0
         if k in TIMED:
             # what the instance has there now; single player's count is of its own moment
-            a_sp = res.get('instance', {}).get('kinds', {}).get(k, {}).get('active', 0)
+            a_sp = ik.get(k, {}).get('active', 0)
         if loose:
             gap = a_sp > 0 and (worst == 0 or worst < a_sp * 0.5)
         else:
             gap = worst < a_sp
-        if k in SP_ONLY:
+        if k in SP_ONLY or (res.get('mode', 'freeroam') not in ('freeroam', 'coop') and k in SP_ONLY_PVP):
             gap = False
         extra = cnt and max(cnt) > a_sp and not loose
         names = set(sp.get(k, {}).get('names', []))
         for s in sides:
-            names -= set(res[s]['kinds'].get(k, {}).get('names', []))
+            names -= set(sk[s].get(k, {}).get('names', []))
         rows.append((k, n_sp, a_sp, cnt, gap, extra, sorted(names)[:4]))
     return rows
 
@@ -535,118 +761,250 @@ def sound_shots(res):
     return out
 
 
+def lacks(res, key):
+    """the names of a histogram (radar icons, particle systems) a client shows none of or less than half as many as
+    single player (the most over the samples), only the steady ones of single player (seen in at least half of the
+    samples: the icons of passing traffic and the effects of a fight come and go): [(name, [sp, host, join])]"""
+    seen = res.get('sp', {}).get(key + '_seen')
+    return [(k, v) for k, v in hist_gaps(res, key) if len(v) > 1 and v[0] > 0 and min(v[1:]) < v[0] * 0.5 and
+            (seen is None or seen.get(k, 0) * 2 >= SOUND_SAMPLES)]
+
+
+def hud_lacks(res):
+    sp = set(res.get('sp', {}).get('hud', []))
+    out = set()
+    for s in ('host', 'join'):
+        if s in res:
+            out |= sp - set(res[s].get('hud', []))
+    return sorted(out)
+
+
+def points_of(res):
+    """the points of a result (an older result of one place is one point)"""
+    if 'points' in res:
+        return res['points']
+    return [dict(res, name='spawn', anchor='host spawn')] if 'sp' in res else []
+
+
+def summary(res):
+    """the gap counts of a level over its points: entity kinds, radar icons, HUD items, steady sounds, particle
+    systems (a name counts once per point), the audit total (None: n/a); 'error' when the level did not run"""
+    out = {'tag': res.get('tag', res.get('level')), 'level': res.get('level'), 'mode': res.get('mode', 'freeroam'),
+           'points': 0, 'entity': 0, 'radar': 0, 'hud': 0, 'sound': 0, 'fx': 0, 'kinds': [],
+           'audit': audit_total(res.get('audit')), 'secs': res.get('secs'),
+           'audit_totals': (res.get('audit') or {}).get('totals') if isinstance(res.get('audit'), dict) else None,
+           'mirror': mirror_total(res), 'census': census_total(res), 'mp2': bool(res.get('mp2'))}
+    if 'error' in res:
+        out['error'] = res['error']
+    kinds = set()
+    for pt in points_of(res):
+        if 'sp' not in pt:
+            continue
+        out['points'] += 1
+        rows = [r for r in gaps(dict(pt, mode=out['mode'])) if r[4]]
+        out['entity'] += len(rows)
+        kinds |= {r[0] for r in rows}
+        out['radar'] += len(lacks(pt, 'radar'))
+        out['fx'] += len(lacks(pt, 'fx'))
+        out['hud'] += len(hud_lacks(pt))
+        out['sound'] += len(sound_gaps(pt))
+    out['kinds'] = sorted(kinds)
+    if not out['points'] and 'error' not in out:
+        out['error'] = 'no point collected'
+    return out
+
+
+SUMMARY_COLS = ('entity', 'radar', 'hud', 'sound', 'fx')
+
+
+def gap_total(s):
+    """the gaps of a level summary: its columns, with -mp2 also the mirror differences and the census gaps"""
+    return sum(s[c] for c in SUMMARY_COLS) + sum(s.get(k) or 0 for k in ('mirror', 'census'))
+
+
+def summary_table(sums):
+    """the markdown table of the level summaries"""
+    mp2 = any(s.get('mp2') for s in sums)
+    lines = ['| level | mode | points | entity gaps | radar gaps | HUD gaps | sound gaps | particle gaps | audit | '
+             'player reads |%s entity gap kinds |' % (' mirror | census |' if mp2 else ''),
+             '|---|---|---|---|---|---|---|---|---|---|%s---|' % ('---|---|' if mp2 else '')]
+    tot = {c: 0 for c in SUMMARY_COLS}
+    for s in sums:
+        if 'error' in s:
+            lines.append('| %s | %s | error: %s | | | | | | | | |%s' % (s['level'], s['mode'], s['error'],
+                                                                     ' | |' if mp2 else ''))
+            continue
+        for c in SUMMARY_COLS:
+            tot[c] += s[c]
+        pr = (s.get('audit_totals') or {}).get('player') if s.get('audit_totals') is not None else None
+        lines.append('| %s | %s | %d | %d | %d | %d | %d | %d | %s | %s |%s %s |' % (
+            s['level'], s['mode'], s['points'], s['entity'], s['radar'], s['hud'], s['sound'], s['fx'],
+            'n/a' if s['audit'] is None else s['audit'], 'n/a' if s.get('audit_totals') is None else pr or 0,
+            (' %s | %s |' % tuple('n/a' if s.get(k) is None else s[k] for k in ('mirror', 'census'))) if mp2 else '',
+            ', '.join(s['kinds'][:6]) +
+            (' ...' if len(s['kinds']) > 6 else '')))
+    au = [s['audit'] for s in sums if s.get('audit') is not None]
+    lines.append('| all | | %d | %d | %d | %d | %d | %d | %s | |%s |' % (
+        sum(s['points'] for s in sums if 'error' not in s), tot['entity'], tot['radar'], tot['hud'], tot['sound'],
+        tot['fx'], sum(au) if au else 'n/a', (' %s | %s |' % tuple(
+            sum(s[k] for s in sums if s.get(k) is not None) if any(s.get(k) is not None for s in sums) else 'n/a'
+            for k in ('mirror', 'census'))) if mp2 else ''))
+    return lines
+
+
+def point_lines(res):
+    """the detail of one point"""
+    lines = []
+    rows = gaps(res)
+    ng = sum(1 for r in rows if r[4])
+    sg = sound_gaps(res)
+    lines += ['', 'Place %.0f %.0f %.0f, radius %.0f; %d gaps, %d sound gaps.%s' % (
+        res['at'][0], res['at'][1], res['at'][2], res.get('radius', 0) or 0, ng, len(sg),
+        ' Shots: %s' % os.path.basename(res['sheet']) if res.get('sheet') else ''), '',
+        '| kind | SP (all) | SP | host | join | instance | | missing on the clients (examples) |',
+        '|---|---|---|---|---|---|---|---|']
+    ik = norm_kinds(res.get('instance', {}).get('kinds', {}))
+    for k, n_sp, a_sp, cnt, gap, extra, miss in rows:
+        c = cnt + ['-'] * (2 - len(cnt))
+        lines.append('| %s | %d | %d | %s | %s | %s | %s | %s |' % (k, n_sp, a_sp, c[0], c[1],
+                                                                   ik.get(k, {}).get('active', 0),
+                                                                   'gap' if gap else 'extra' if extra else
+                                                                   'single player only' if k in SP_ONLY or (res.get('mode', 'freeroam') not in ('freeroam', 'coop') and k in SP_ONLY_PVP) else '',
+                                                                   ', '.join(miss)))
+    lines += ['', 'One-shot sounds (the most of each name, summed; SP, host, join): %s' %
+              ', '.join(str(x) for x in sound_shots(res))]
+    if 'parked' in res.get('sp', {}):
+        lines += ['', 'Parked ships whose motor plays, idle/flying (SP, host, join): %s' % ', '.join(
+            '%d/%d' % (sum(1 for m in res[s].get('parked', []) if m['role'] == 'idle'),
+                       sum(1 for m in res[s].get('parked', []) if m['role'] == 'flying'))
+            for s in ('sp', 'host', 'join') if s in res)]
+    if sg:
+        lines += ['', 'Sound gaps (steady sounds single player plays near the player, a client not; SP, host, join):',
+                  '']
+        lines += ['- %s: %s' % (k, ', '.join(str(x) for x in v)) for k, v in sg]
+    for key, title in (('radar', 'Radar icons'), ('hud', 'HUD items'), ('sounds', 'Sounds playing'),
+                       ('fx', 'Particle systems drawn')):
+        if key == 'hud':
+            sp = set(res['sp']['hud'])
+            diffs = [(s, sorted(sp - set(res[s]['hud'])), sorted(set(res[s]['hud']) - sp))
+                     for s in ('host', 'join') if s in res]
+            diffs = [d for d in diffs if d[1] or d[2]]
+            lines += ['', '%s: %s' % (title, '; '.join('%s lacks %s, has more %s' % (s, m or '-', x or '-')
+                                                        for s, m, x in diffs) or 'same')]
+            continue
+        hg = hist_gaps(res, key)
+        if not hg:
+            lines += ['', '%s: same' % title]
+            continue
+        lines += ['', '%s (SP, host, join):' % title, '']
+        lines += ['- %s: %s' % (k, ', '.join(str(x) for x in v)) for k, v in hg[:40]]
+        if len(hg) > 40:
+            lines.append('- ... %d more' % (len(hg) - 40))
+    return lines
+
+
 def report(results, out):
+    """report.md (the summary table, then each level and point) and parity.json (the summaries) next to it; the
+    total of the gap columns"""
+    sums = [summary(r) for r in results]
     lines = ['# Parity report', '',
-             'Single player (SP) against the multiplayer clients at the same place: the host (a -host game, client of '
-             'its own world over loopback) and a joined client. Counts are active entities within the radius of '
-             'the place, by kind; "gap" marks a kind the clients show less of (loose kinds such as traffic: less '
-             'than half), "extra" more; coins count against what the instance has at that moment. A sound gap is a '
-             'steady sound (a loop or a positional set) single player plays near the player (the most of each name '
-             'over %d samples) that a client does not play; one-shot sounds are compared by their totals. Generated by tools/test/parity/parity.py.' % SOUND_SAMPLES, '']
-    total = total_snd = 0
+             'Single player (SP) against the multiplayer clients at the same places: the host (a -host game, client of '
+             'its own world over loopback) and a joined client, at each point of the level\'s route (the host\'s '
+             'spawn, then the points of tools/test/parity/routes.txt). Entity gaps: kinds the clients show less of '
+             'within the radius of the point (loose kinds such as traffic: less than half; coins against what the '
+             'instance has at that moment), summed over the points. Radar, HUD, particle gaps: icons, items and '
+             'particle systems single player shows steadily (in at least half of the %d samples) that a client shows none of or less than half as many of. Sound gaps: steady sounds (a loop or a '
+             'positional set, the most of each name over %d samples) single player plays near the player that a client '
+             'does not play. Audit: the instance\'s count of presentation calls during the route (`audit json`, the categories '
+             'of AUDIT_PRES; n/a without the verb). Generated by tools/test/parity/parity.py.' % (SOUND_SAMPLES, SOUND_SAMPLES), '']
+    lines += summary_table(sums) + ['']
     for res in results:
-        lines.append('## %s' % res['level'])
+        lines.append('## %s' % res.get('tag', res['level']))
         if 'error' in res:
             lines += ['', 'error: ' + res['error'], '']
-            continue
-        rows = gaps(res)
-        ng = sum(1 for r in rows if r[4])
-        total += ng
-        sg = sound_gaps(res)
-        total_snd += len(sg)
-        lines += ['', 'Place %.0f %.0f %.0f, radius %.0f; %d gaps, %d sound gaps.%s' % (
-                                                                     res['at'][0], res['at'][1], res['at'][2],
-                                                                     res['radius'], ng, len(sg),
-                                                                     ' Shots: %s' % os.path.basename(res['sheet'])
-                                                                     if res.get('sheet') else ''), '',
-                  '| kind | SP (all) | SP | host | join | instance | | missing on the clients (examples) |',
-                  '|---|---|---|---|---|---|---|---|']
-        ik = res.get('instance', {}).get('kinds', {})
-        for k, n_sp, a_sp, cnt, gap, extra, miss in rows:
-            c = cnt + ['-'] * (2 - len(cnt))
-            lines.append('| %s | %d | %d | %s | %s | %s | %s | %s |' % (k, n_sp, a_sp, c[0], c[1],
-                                                                       ik.get(k, {}).get('active', 0),
-                                                                       'gap' if gap else 'extra' if extra else
-                                                                       'single player only' if k in SP_ONLY else '',
-                                                                       ', '.join(miss)))
-        lines += ['', 'One-shot sounds (the most of each name, summed; SP, host, join): %s' %
-                  ', '.join(str(x) for x in sound_shots(res))]
-        if 'parked' in res.get('sp', {}):
-            lines += ['', 'Parked ships whose motor plays, idle/flying (SP, host, join): %s' % ', '.join(
-                '%d/%d' % (sum(1 for m in res[s].get('parked', []) if m['role'] == 'idle'),
-                           sum(1 for m in res[s].get('parked', []) if m['role'] == 'flying'))
-                for s in ('sp', 'host', 'join') if s in res)]
-        if sg:
-            lines += ['', 'Sound gaps (steady sounds single player plays near the player, a client not; SP, host, join):',
-                      '']
-            lines += ['- %s: %s' % (k, ', '.join(str(x) for x in v)) for k, v in sg]
-        for key, title in (('radar', 'Radar icons'), ('hud', 'HUD items'), ('sounds', 'Sounds playing'),
-                           ('fx', 'Particle systems drawn')):
-            if key == 'hud':
-                sp = set(res['sp']['hud'])
-                diffs = [(s, sorted(sp - set(res[s]['hud'])), sorted(set(res[s]['hud']) - sp))
-                         for s in ('host', 'join') if s in res]
-                diffs = [d for d in diffs if d[1] or d[2]]
-                lines += ['', '%s: %s' % (title, '; '.join('%s lacks %s, has more %s' % (s, m or '-', x or '-')
-                                                            for s, m, x in diffs) or 'same')]
+        if isinstance(res.get('audit'), dict):
+            tot = res['audit'].get('totals')
+            if isinstance(tot, dict):
+                lines += ['', 'Audit over the route (%s s): %s; presentation calls %s' % (
+                    res['audit'].get('secs'), ', '.join('%s %s' % kv for kv in sorted(tot.items())) or 'none',
+                    audit_total(res['audit']))]
+                rows = res['audit'].get('rows') or []
+                if rows:
+                    lines += ['', 'Most counted (first 12): ' + '; '.join(json.dumps(r, sort_keys=True)
+                                                                          for r in rows[:12])]
+            else:
+                lines += ['', 'Audit: `%s`' % json.dumps(res['audit'], sort_keys=True)[:2000]]
+        for k in ('mirror_line', 'census_line'):
+            if res.get(k):
+                lines += ['', res[k]]
+        for pt in points_of(res):
+            if 'sp' not in pt:
                 continue
-            hg = hist_gaps(res, key)
-            if not hg:
-                lines += ['', '%s: same' % title]
-                continue
-            lines += ['', '%s (SP, host, join):' % title, '']
-            lines += ['- %s: %s' % (k, ', '.join(str(x) for x in v)) for k, v in hg[:40]]
-            if len(hg) > 40:
-                lines.append('- ... %d more' % (len(hg) - 40))
+            lines += ['', '### %s (%s)' % (pt.get('name'), pt.get('anchor'))]
+            lines += point_lines(dict(pt, radius=res.get('radius'), mode=res.get('mode', 'freeroam')))
         lines.append('')
-    lines.insert(3, 'Total gaps (entity kinds): %d; sound gaps (by name): %d' % (total, total_snd))
-    lines.insert(4, '')
     with open(out, 'w') as f:
         f.write('\n'.join(lines) + '\n')
-    return total + total_snd
+    with open(os.path.join(os.path.dirname(out), 'parity.json'), 'w') as f:
+        json.dump({'levels': sums}, f, indent=1)
+    return sums
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('--levels', default=','.join(CITY))
+    ap.add_argument('--levels', default=None, help='Level or Level:mode, comma separated (default: every world level '
+                    'in free roam and every PvP map in %s)' % PVP_MODE)
+    ap.add_argument('--pvp-mode', default=PVP_MODE)
     ap.add_argument('--port', type=int, default=29940)
     ap.add_argument('--build', default=os.path.join(REPO, 'build-linux64'))
     ap.add_argument('--out', default=os.path.join(REPO, 'build-linux64', 'parity'))
     ap.add_argument('--scratch', default=os.path.join(REPO, 'build-linux64', 'parity-games'))
-    ap.add_argument('--radius', type=float, default=100000.0)
-    ap.add_argument('--settle', type=float, default=25.0)
-    ap.add_argument('--timeout', type=int, default=900)
+    ap.add_argument('--routes', default=os.path.join(HERE, 'routes.txt'))
+    ap.add_argument('--points', type=int, default=4, help='points of a route at most (1: the spawn only)')
+    ap.add_argument('--radius', type=float, default=30000.0)
+    ap.add_argument('--settle', type=float, default=25.0, help='seconds at the first point')
+    ap.add_argument('--settle-point', type=float, default=12.0, help='seconds at each further point')
+    ap.add_argument('--timeout', type=int, default=1200)
     ap.add_argument('--device', default=None, help='Vulkan device (default the RTX with >= 3000 MiB free, else the AMD)')
     ap.add_argument('--no-join', dest='join', action='store_false')
+    ap.add_argument('--no-shots', dest='shots', action='store_false')
     ap.add_argument('--mp2', action='store_true', help='the replication v2 (-mp2 for the host, its instance and the '
-                    'joined client, include/scrap/repent.h)')
+                    'joined client, include/scrap/repent.h), with the mirror diff and the sound census')
     ap.add_argument('--report-only', action='store_true', help='the report of the JSON files in --out')
     a = ap.parse_args()
     a.build = os.path.abspath(a.build)
+    a.env = {}
     os.makedirs(a.out, exist_ok=True)
     os.makedirs(a.scratch, exist_ok=True)
-    if not a.device:
-        try:
-            free = int(subprocess.run(['nvidia-smi', '--query-gpu=memory.free', '--format=csv,noheader,nounits'],
-                                      capture_output=True, text=True).stdout.split()[0])
-        except (OSError, ValueError, IndexError):
-            free = 0
-        a.device = '10de:27b0' if free >= 3000 else '1002:164e'
-    levels = [x for x in a.levels.split(',') if x]
+    a.device = a.device or pick_device()
+    specs = [x for x in (a.levels.split(',') if a.levels else default_specs(a.pvp_mode)) if x]
+    routes = load_routes(a.routes)
     results = []
-    for level in levels:
-        path = os.path.join(a.out, level + '.json')
+    for spec in specs:
+        path = os.path.join(a.out, tag_of(spec) + '.json')
         if not a.report_only:
             t0 = time.time()
-            res = run_level(a, level)
+            try:
+                res = run_level(a, spec, routes)
+            except Exception as ex:  # noqa: BLE001 (a level that breaks the tool is a row with an error)
+                res = {'level': spec.partition(':')[0], 'mode': spec.partition(':')[2] or 'freeroam',
+                       'tag': tag_of(spec), 'error': '%s: %s' % (type(ex).__name__, ex)}
             res['secs'] = round(time.time() - t0)
             with open(path, 'w') as f:
                 json.dump(res, f, indent=1)
-            print('%s: %s' % (level, res.get('error', 'done in %d s' % res['secs'])), flush=True)
+            s = summary(res)
+            print('%s: %s' % (tag_of(spec), s.get('error') or 'done in %d s, %d points, gaps entity %d radar %d hud %d '
+                                                              'sound %d fx %d, audit %s' % (
+                res['secs'], s['points'], s['entity'], s['radar'], s['hud'], s['sound'], s['fx'],
+                'n/a' if s['audit'] is None else s['audit'])), flush=True)
         if os.path.exists(path):
             results.append(json.load(open(path)))
-    total = report(results, os.path.join(a.out, 'report.md'))
-    print('report %s: %d gaps' % (os.path.join(a.out, 'report.md'), total))
+    sums = report(results, os.path.join(a.out, 'report.md'))
+    print('\n'.join(summary_table(sums)))
+    errors = sum(1 for s in sums if 'error' in s) + len(specs) - len(sums)
+    total = sum(gap_total(s) for s in sums if 'error' not in s)
+    print('report %s: %d gaps, %d levels with errors' % (os.path.join(a.out, 'report.md'), total, errors))
+    sys.exit(2 if errors else 1 if total else 0)
 
 
 if __name__ == '__main__':

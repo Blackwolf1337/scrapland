@@ -143,6 +143,20 @@ def sp_story(sp, story, own, level):
     sp.ask('do SaveGame.QLoad(%s)' % lit('Levels/' + level), timeout=30)
 
 
+def sp_mission(sp):
+    """single player's Mission.Library (a failed load of the story leaves an older mission: Mission_JailBreak)"""
+    return (sp.try_ask('Scrap.GetSaveVar("Mission.Library")', timeout=10) or '').strip().strip("'")
+
+
+def same_level(sp, inst):
+    """single player has at least half of the instance's DM_ entities (the level's named places) by name"""
+    want = {e['name'] for e in inst if e['name'].startswith('DM_')}
+    if not want:
+        return True
+    have = {e['name'] for e in parity.parse_ents(sp.try_ask('entinfo', timeout=30)) if e['name'].startswith('DM_')}
+    return len(want & have) * 2 >= len(want)
+
+
 def run_point(a, name, data, level, key):
     res = {'point': name, 'level': level, 'radius': a.radius}
     story = load_store(os.path.join(data, 'party.story'))
@@ -164,9 +178,15 @@ def run_point(a, name, data, level, key):
         sp.start()
         member.start()
         parity.wait_for(lambda: sp.try_ask('Scrap.GetLevelPath()', timeout=5), 240, 2)
-        sp_story(sp, story, own, level)
-        time.sleep(8)
-        parity.wait_for(lambda: sp.try_ask('Scrap.GetLevelPath()', timeout=5), 240, 2)
+        # the save variables and the level again until single player is in the point's level (a load of the story's
+        # variables can take single player to another level: a run of stage 0.4 had Police for Press)
+        for _ in range(3):
+            sp_story(sp, story, own, level)
+            time.sleep(8)
+            path = parity.wait_for(lambda: sp.try_ask('Scrap.GetLevelPath()', timeout=5), 240, 2) or ''
+            if level.lower() in path.lower():
+                break
+        res['sp_level'] = path.strip().strip("'")
 
         def member_own():
             return parity.own_entity(parity.parse_ents(member.try_ask('entinfo', timeout=5)))
@@ -185,16 +205,33 @@ def run_point(a, name, data, level, key):
         m = re.search(r"\('Ang', \(([-\d.e]+), ([-\d.e]+), ([-\d.e]+)\)\)", member.ask('ent %s Ang' % me['name']))
         ang = tuple(float(x) for x in m.groups()) if m else (0.0, 0.0, 0.0)
         sp.ask('do e = Scrap.UsrEntity(0); e.Pos = (%.1f, %.1f, %.1f); e.Ang = (%.3f, %.3f, %.3f)' % (at + ang))
+        # the instance's audit counts over the wait (stage 0.1; None without the verb)
+        res['audit_verb'] = parity.audit(world, level, 'reset') is not None
         time.sleep(a.settle)
         def inst_now():
             return parity.parse_ents(world.ask('entinfo %.0f %.0f %.0f %.0f' % (at[0], at[1], at[2], a.radius * 1.2),
                                                level, timeout=30))
         inst = inst_now()
+        # single player in the instance's level and the story's mission (its level path can name the point's level
+        # while the story's load took it to the level of an older mission: stage 0.4 runs had the Police station and
+        # Mission_JailBreak for Press): its named places against the instance's and its Mission.Library against the
+        # story's, the story loaded again when they differ
+        for _ in range(3):
+            if same_level(sp, inst) and sp_mission(sp) == story.get('Mission.Library', ''):
+                break
+            sp_story(sp, story, own, level)
+            time.sleep(8)
+            parity.wait_for(lambda: sp.try_ask('Scrap.GetLevelPath()', timeout=5), 240, 2)
+            sp.ask('do e = Scrap.UsrEntity(0); e.Pos = (%.1f, %.1f, %.1f); e.Ang = (%.3f, %.3f, %.3f)' % (at + ang))
+            time.sleep(a.settle)
+            inst = inst_now()
+        res['sp_same_level'] = same_level(sp, inst) and sp_mission(sp) == story.get('Mission.Library', '')
         res['instance'] = {'kinds': parity.count(inst, at, a.radius)}
         res['sp'] = parity.collect(sp, at, a.radius)
         # the instance's entities of the member's moment (parity.collect labels the proxies by them, M11)
         res['join'] = parity.collect(member, at, a.radius, inst_now)
         res['sp_mission'] = (sp.try_ask('Scrap.GetSaveVar("Mission.Library")') or '').strip()
+        res['audit'] = parity.audit(world, level, 'json')
         shots = []
         for g in (sp, member):
             p = os.path.join(a.out, '%s-%s.png' % (name, g.name))
