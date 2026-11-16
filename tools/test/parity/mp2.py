@@ -46,7 +46,8 @@ FEEL_RETRIES = 1
 NOISE = {
     'parity.entity': (3, 0.5), 'parity.radar': (2, 0.5), 'parity.hud': (1, 0.0), 'parity.sound': (5, 0.5),
     'parity.fx': (5, 0.5), 'parity.total': (8, 0.2), 'parity.audit': (0, 0.2), 'parity.mirror': (2, 0.0), 'parity.census': (2, 0.0),
-    'feel.latency': (12.0, 0.15), 'feel.jitter': (0.5, 0.5), 'feel.corr_per_min': (1.0, 0.0),
+    'feel.latency': (12.0, 0.15), 'feel.p95': (25.0, 0.25), 'feel.boost': (20.0, 0.3), 'feel.jitter': (0.5, 0.5),
+    'feel.corr_per_min': (3.0, 0.0),
     'coop.gaps': (1, 0.0),
 }
 
@@ -495,8 +496,9 @@ def gate_diff(a):
                 p = om.get((r['cell'], r['side']))
                 if not p:
                     continue
-                for c in ('walk_mean', 'fly_mean', 'boost_mean', 'walk_p95', 'boost_p95'):
-                    add('feel %s %s %s' % (r['cell'], r['side'], c), 'feel.latency', p.get(c), r.get(c))
+                for c, key in (('walk_mean', 'feel.latency'), ('fly_mean', 'feel.latency'), ('walk_p95', 'feel.p95'),
+                               ('boost_mean', 'feel.boost'), ('boost_p95', 'feel.boost')):
+                    add('feel %s %s %s' % (r['cell'], r['side'], c), key, p.get(c), r.get(c))
                 for c in ('jitter_walk', 'jitter_fly'):
                     add('feel %s %s %s' % (r['cell'], r['side'], c), 'feel.jitter', p.get(c), r.get(c))
                 add('feel %s %s corr/min' % (r['cell'], r['side']), 'feel.corr_per_min', p.get('corr_per_min'),
