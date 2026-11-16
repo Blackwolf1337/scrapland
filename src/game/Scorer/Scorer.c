@@ -3,6 +3,7 @@
  * models, the cursor moves, the screen effects (fade, cinema bars, noise, motion blur, clouds) and the full screen
  * console. See include/scrap/scorer.h and include/scrap/scoreritems.h.
  */
+#include <stddef.h>
 #include <string.h>
 
 #include "scrap/app.h"
@@ -14,6 +15,9 @@
 #include "scrap/itementity.h"
 #include "scrap/missileentity.h"
 #include "scrap/netaudit.h"
+#include "scrap/players.h"
+#include "scrap/pres.h"
+#include "scrap/repent.h"
 #include "scrap/nodestraffic.h"
 #include "scrap/nodesworld.h"
 #include "scrap/nodesworld2d.h"
@@ -315,6 +319,9 @@ cScorerModel *cScorer_FindModel(cScorer *scorer, const char *name) {
 
 void cScorer_Clear(cScorer *scorer) {
 	NetAudit_Site(NA_HUD, "scorer.clear");
+	if (g_Mp2) {
+		Pres_HudClear(scorer);
+	}
 	scorer->found = NULL;
 	cString_Set(&scorer->defaultItem, NULL);
 	scorer->cursor = NULL;
@@ -420,6 +427,16 @@ void Scorer_Tick(int player) {
 	if (!sc) {
 		return;
 	}
+	/* the HUD models of the players of a -mp2 instance tick with the world's scorer 0, each in its player's context */
+	if (g_PresHud && player == 0 && Players_Current() == PLAYERS_NONE) {
+		for (int i = 0; i < PLAYERS_MAX; i++) {
+			if (Pres_HudMade(i)) {
+				int was = Players_Enter(i);
+				Scorer_Tick(0);
+				Players_Leave(was);
+			}
+		}
+	}
 	cScorer_RemoveDeleted(sc, player);
 	/* only the items the drawing would draw count (a hidden bar of IntoTheGDB's scan ends no scan) */
 	if (!sc->visible) {
@@ -438,6 +455,9 @@ void Scorer_Tick(int player) {
 /* a new item of the class type, first in the list or last (append) */
 cScorerItem *cScorer_AddItem(cScorer *scorer, const char *name, const char *type, byte append) {
 	NetAudit_Name(NA_HUD, "scorer.add:", type);
+	if (g_Mp2) {
+		Pres_HudAdd(scorer, name, type, append);
+	}
 	/* the item classes of SScorer.Add by type name, in the order the original compares them */
 	const struct {
 		const char *type;
@@ -647,9 +667,27 @@ static cScorer *g_Scorers;
 
 cScorer *Scorer_Get(int player) {
 	if (player < 4 && player >= 0) {
+		/* a -mp2 instance: scorer 0 of a player's context is that player's HUD model (include/scrap/pres.h) */
+		if (g_PresHud && !player && Players_Current() != PLAYERS_NONE) {
+			return Pres_HudModel(-1);
+		}
 		return &g_Scorers[player];
 	}
 	return NULL;
+}
+
+cScorer *Scorer_GetWorld(int player) {
+	return player < 4 && player >= 0 ? &g_Scorers[player] : NULL;
+}
+
+void Scorer_InitModel(cScorer *sc) {
+	memset(sc, 0, sizeof(*sc));
+	cScorer_ctor(sc);
+}
+
+void Scorer_FreeModel(cScorer *sc) {
+	cScorer_dtor(sc);
+	memset(sc, 0, sizeof(*sc));
 }
 
 void Scorer_SetInputState(int state) {
@@ -850,6 +888,9 @@ uint32_t Scorer_ColorLerp(uint32_t a, uint32_t b, float t) {
 
 void ScorerFade_Start(ScorerFade *fade, uint32_t from, uint32_t to, float time) {
 	NetAudit_Site(NA_FADE, "fade");
+	if (g_Mp2) {
+		Pres_Fade((const cScorer *)((const byte *)fade - offsetof(cScorer, fade)), from, to, time);
+	}
 	fade->from[0] = (float)(int)(from >> 16 & 0xff);
 	fade->from[1] = (float)(int)(from >> 8 & 0xff);
 	fade->from[2] = (float)(int)(from & 0xff);
@@ -885,6 +926,9 @@ static void ScorerFade_Draw(ScorerFade *fade, int player, float dt) {
 
 void ScorerCinema_Set(ScorerCinema *cinema, byte on, float time) {
 	NetAudit_Site(NA_CINEMA, "cinema");
+	if (g_Mp2) {
+		Pres_Cinema((const cScorer *)((const byte *)cinema - offsetof(cScorer, cinema)), on, time);
+	}
 	CHECK(time >= 0);
 	if (time == 0.0f) {
 		cinema->time = 1.0f;

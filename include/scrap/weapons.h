@@ -106,6 +106,8 @@ int cWeaponManager_NextWeap(cWeaponManager *self, uint32_t w);
 int cWeaponManager_PrevWeap(cWeaponManager *self, uint32_t w);
 float cWeaponManager_SetAmmo(cWeaponManager *self, int ammo, float v);
 void cWeaponManager_LockEntity(cWeaponManager *self, const char *name);
+/* a -mp2 client: the lock of a ship replica (the class block) changed to on: HookPlugFunc as the server ran it */
+void cWeaponManager_NetPlug(cWeaponManager *self, struct cEntity *owner, byte on);
 void cWeaponManager_LockPoint(cWeaponManager *self, const vec3_t *p);
 void cWeaponManager_SetTeslaFiring(cWeaponManager *self, byte v);
 void cWeaponManager_SetWeapList(cWeaponManager *self, const char *list);

@@ -10,6 +10,7 @@
 #include "scrap/fxvehicle.h"
 #include "scrap/global.h"
 #include "scrap/mathlib.h"
+#include "scrap/pres.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/weapons.h"
@@ -60,7 +61,10 @@ static void *VE_Drop(const char *file, float life, byte noRadius, uint32_t size,
 	}
 	cDebris *d = cDebrisSys_NewElement(sys);
 	d->life = life;
+	/* the effects of a ship's state (damage, EMI, fire, spawn): its replica makes its own (include/scrap/pres.h) */
+	Pres_Derive();
 	cDebrisSys_Drop(sys, d);
+	Pres_Underive();
 	if (ctor && !Debris_Element(d)) {
 		void *mem = operator_new(size);
 		cObjElementFX *el = mem ? ctor(mem) : NULL;

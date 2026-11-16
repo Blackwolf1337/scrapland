@@ -9,6 +9,8 @@
 #include "scrap/game.h"
 #include "scrap/net.h"
 #include "scrap/netaudit.h"
+#include "scrap/pres.h"
+#include "scrap/repent.h"
 #include "scrap/scoreritems.h"
 #include "scrap/staticinit.h"
 
@@ -566,6 +568,9 @@ static void cMsgScorer_Draw(cScorerItem *base, int player) {
 
 void Scorer_SetLabelText(const char *text, float time) {
 	NetAudit_Site(NA_HUD, "hud.labeltext");
+	if (g_Mp2) {
+		Pres_LabelText(text, time);
+	}
 	Str_Copy(g_LabelText, text, 0xfa);
 	g_LabelTime = time;
 }
@@ -575,6 +580,9 @@ static char g_MsgText[62500];
 
 void Scorer_SetMsgText(const char *text, float time, const char *font) {
 	NetAudit_Site(NA_HUD, "hud.msgtext");
+	if (g_Mp2) {
+		Pres_MsgText(text, time, font);
+	}
 	/* not in the original: the coop story's mission messages on the clients (include/scrap/coop.h) */
 	if (g_Instance) {
 		Coop_MsgText(text, time, font);

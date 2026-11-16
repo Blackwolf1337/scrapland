@@ -9,6 +9,8 @@
 #include "scrap/fxmisc.h"
 #include "scrap/mathlib.h"
 #include "scrap/netaudit.h"
+#include "scrap/pres.h"
+#include "scrap/repent.h"
 #include "scrap/objentity.h"
 #include "scrap/scoreritems.h"
 #include "scrap/scrapcamera.h"
@@ -845,6 +847,9 @@ static void cMonitorScorer_SetAnim(cScorerItem *base, int anim) {
 
 void Scorer_SetHeadMonitor(const char *a, const char *b, int c) {
 	NetAudit_Site(NA_HUD, "hud.headmonitor");
+	if (g_Mp2) {
+		Pres_HeadMonitor(a, b, c);
+	}
 	Str_Copy(g_HeadMonitorName, a, 0x80);
 	Str_Copy(g_HeadMonitorText, b, 0x80);
 	g_HeadMonitorAnim = c;

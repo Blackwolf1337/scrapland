@@ -21,6 +21,7 @@
 #include "scrap/places.h"
 #include "scrap/play.h"
 #include "scrap/players.h"
+#include "scrap/pres.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/scrapmodel.h"
@@ -222,6 +223,7 @@ void Players_Join(int i, int money) {
 	if (!Players_Net() || i < 0 || i >= PLAYERS_MAX) {
 		return;
 	}
+	Pres_HudReset(i);
 	if (g_Bound == i) {
 		Players_Enter(PLAYERS_NONE);
 	}
@@ -252,6 +254,7 @@ void Players_Part(int i) {
 	if (!Players_Net() || i < 0 || i >= PLAYERS_MAX) {
 		return;
 	}
+	Pres_HudReset(i);
 	if (g_Bound == i) {
 		Players_Enter(PLAYERS_NONE);
 	}

@@ -59,6 +59,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "scrap/pres.h"
+#include "scrap/vehiclemotors.h"
+#include "scrap/embeddedfxvehicle.h"
 #include "scrap/repent.h"
 #include "scrap/app.h"
 #include "scrap/console.h"
@@ -1163,6 +1166,32 @@ static void TC_Radar(tcBuf *b) {
 }
 
 /* fx: a line per particle system the last frame drew: type, active particles, position */
+/* pres ship <name>: the presentation state of a ship (its embedded effect and motors), for the glow of replicas */
+static void TC_PresShip(tcBuf *b, const char *name) {
+	cEntity *e = World_FindEntity(name);
+	if (!e || !Entity_IsType(e, TYEN_CAR)) {
+		TC_Add(b, "error: no ship\n", -1);
+		return;
+	}
+	cVehicleEntity *v = Veh(e);
+	cEmbeddedFXVehicle *fx = Veh_FX(v);
+	TC_Addf(b, "replica %d active %d vactive %.2f thrust %.2f speed %.0f smoothSpeed %.0f stopped %d mspeed %.2f "
+		"visible %d model %d\n", Obj(e)->replica, e->active, (double)v->active, (double)v->smoothThrust,
+		(double)v->speed, (double)v->smoothSpeed, v->motors.stopped, (double)v->motors.speed,
+		CGameModel_IsVisible(&Obj(e)->model), CGameModel_IsEnabled(&Obj(e)->model));
+	if (fx) {
+		TC_Addf(b, "fx visible %d traffic %d alpha %.2f camDist %.0f fading %d enabled %d\n", fx->visible, fx->traffic,
+			(double)fx->alpha, (double)fx->camDist, fx->fading, CGameModel_IsEnabled(&fx->model));
+	}
+	for (int i = 0; i < VM_MOTORS; i++) {
+		if (v->motors.motor[i]) {
+			TC_Addf(b, "motor %d %s type %d glow %d\n", i, v->motors.motor[i]->name, v->motors.motor[i]->effects.type,
+				v->motors.motor[i]->effects.glowOn);
+		}
+	}
+	TC_Addf(b, "effects type %d glow %d\n", v->motors.effects.type, v->motors.effects.glowOn);
+}
+
 static void TC_Fx(tcBuf *b) {
 	int n;
 	const ParticleDrawn *d = ParticleSystem_Drawn(&n);
@@ -1582,6 +1611,15 @@ static void TC_Line(tcBuf *b, const char *line) {
 	/* mirror [json]: the replicated entities of the replication v2 (include/scrap/repent.h) */
 	if (TC_Verb(line, "mirror", &arg)) {
 		RepEnt_Mirror(b, arg);
+		return;
+	}
+	/* pres: the records of the presentation interface sent and played (include/scrap/pres.h) */
+	if (TC_Verb(line, "pres", &arg)) {
+		if (arg && !strncmp(arg, "ship ", 5)) {
+			TC_PresShip(b, arg + 5);
+			return;
+		}
+		Pres_Status(b);
 		return;
 	}
 	/* tape [key <Set>.<Action> <value> | key clear | end]: the input tape (include/scrap/inputtape.h) */

@@ -9,6 +9,8 @@
 #include "scrap/console.h"
 #include "scrap/filepak.h"
 #include "scrap/netaudit.h"
+#include "scrap/pres.h"
+#include "scrap/repent.h"
 #include "scrap/scrapfont.h"
 #include "scrap/scrapmain.h"
 #include "scrap/snd.h"
@@ -298,6 +300,10 @@ static int CSoundXBox_PlayVPF(CSoundXBox *self, const char *name, int volume, in
 static int CSoundXBox_PlaySound(CSoundSys *base, const char *name, const cSoundDesc *d, int *handle) {
 	CSoundXBox *self = (CSoundXBox *)base;
 	NetAudit_Site(NA_SOUND, "snd.playsound");
+	if (g_Mp2) {
+		Pres_Sound3D(name, d);
+		Pres_ClientSound(name);
+	}
 	int ch = CSoundXBox_PlayDesc(self, name, d);
 
 	if (handle) {
@@ -309,12 +315,20 @@ static int CSoundXBox_PlaySound(CSoundSys *base, const char *name, const cSoundD
 static int CSoundXBox_PlayName(CSoundSys *base, const char *name) {
 	CSoundXBox *self = (CSoundXBox *)base;
 	NetAudit_Site(NA_SOUND, "snd.playname");
+	if (g_Mp2) {
+		Pres_Sound2D(name, 0, 0);
+		Pres_ClientSound(name);
+	}
 	return CSoundXBox_PlayVPF(self, name, 0, 0, 1.0f);
 }
 
 static int CSoundXBox_Play(CSoundSys *base, const char *name, int volume, int pan) {
 	CSoundXBox *self = (CSoundXBox *)base;
 	NetAudit_Site(NA_SOUND, "snd.play");
+	if (g_Mp2) {
+		Pres_Sound2D(name, volume, pan);
+		Pres_ClientSound(name);
+	}
 	return CSoundXBox_PlayVPF(self, name, volume, pan, 1.0f);
 }
 
@@ -323,6 +337,10 @@ static int CSoundXBox_PlayAt(CSoundSys *base, const char *name, const vec3_t *po
 	cSoundDesc d;
 
 	NetAudit_Site(NA_SOUND, "snd.playat");
+	if (g_Mp2) {
+		Pres_SoundAt(name, pos, volume);
+		Pres_ClientSound(name);
+	}
 	cSoundDesc_Init(&d);
 	cSoundDesc_SetPos(&d, pos);
 	d.volume += volume;

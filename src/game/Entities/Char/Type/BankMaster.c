@@ -7,6 +7,8 @@
 #include "scrap/chartype.h"
 #include "scrap/fx.h"
 #include "scrap/netaudit.h"
+#include "scrap/pres.h"
+#include "scrap/repent.h"
 #include "scrap/staticinit.h"
 
 #define g_FXBankMasterAttackFile (GVar_FXBankMasterAttackFile.value.s)
@@ -131,7 +133,7 @@ static void ChType_BankMasterSuction(cAbstractFile *params) {
 	}
 }
 
-void FX_BankMasterSuction(cEntity *master, cEntity *victim) {
+static void FX_BankMasterSuctionRun(cEntity *master, cEntity *victim) {
 	NetAudit_Site(NA_SFX, "sfx.BankMasterSuction");
 	cObjElementFXBankMasterSuction *el = FX_DropNew(g_FXBankMasterSuctionFile, 0.8f);
 	if (el) {
@@ -142,6 +144,16 @@ void FX_BankMasterSuction(cEntity *master, cEntity *victim) {
 		FXCharActions_SetEntity8(el, victim);
 		cObjElementFXBankMasterSuction_RandomPoints(el);
 	}
+}
+
+/* the effect sent to the players of a -mp2 instance (include/scrap/pres.h), the sinks inside it not again */
+void FX_BankMasterSuction(cEntity *master, cEntity *victim) {
+	if (g_Mp2 && master && victim) {
+		Pres_FxEnt(PRES_FX_SUCTION, master->name, victim->name, 0.0f, 0, NULL);
+	}
+	g_PresIn++;
+	FX_BankMasterSuctionRun(master, victim);
+	g_PresIn--;
 }
 
 /* params: the bank master, an event, a float. The energy of a shot, then the suction in the sphere around it. */

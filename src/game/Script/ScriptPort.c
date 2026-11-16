@@ -17,6 +17,7 @@
 #include "scrap/modvars.h"
 #include "scrap/nativeobj.h"
 #include "scrap/replicate.h"
+#include "scrap/pres.h"
 #include "scrap/repent.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -484,6 +485,8 @@ byte Port_Entry(const portRef_t *ref, const nativeVal_t *a, int n, nativeVal_t *
 	/* not in the original: the audit of a -mp2 client's calls (include/scrap/repent.h) */
 	if (g_Mp2 && g_Watch) {
 		ReplicaEnt_ModCall(ref->module, ref->name);
+	} else if (g_Mp2 && g_Instance) {
+		Pres_ModCall(ref->module);
 	}
 	/* the frame address, as Script_CallObject takes it */
 	if (Script_Enter((uintptr_t)__builtin_frame_address(0))) {
@@ -495,6 +498,8 @@ byte Port_Entry(const portRef_t *ref, const nativeVal_t *a, int n, nativeVal_t *
 	}
 	if (g_Mp2 && g_Watch) {
 		ReplicaEnt_ModLeave(ref->module);
+	} else if (g_Mp2 && g_Instance) {
+		Pres_ModLeave(ref->module);
 	}
 	return ok;
 }

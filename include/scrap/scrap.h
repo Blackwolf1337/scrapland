@@ -164,7 +164,10 @@ cDebrisSys *cWorld_GetDebrisSys(cWorld *world, const char *name);
 byte cWorld_DeleteDebrisSys(cWorld *world, const char *name);
 void cDebrisSys_Init(cDebrisSys *sys, int n, int e);
 cDebris *cDebrisSys_NewElement(cDebrisSys *sys);
-void cDebrisSys_Drop(cDebrisSys *sys, cDebris *debris);
+void cDebrisSys_Drop_(cDebrisSys *sys, cDebris *debris);
+/* the caller of the last drop, for the presentation interface's audit (include/scrap/pres.h) */
+extern const char *g_DebrisSite;
+#define cDebrisSys_Drop(sys, debris) (g_DebrisSite = __func__, cDebrisSys_Drop_(sys, debris))
 /* the move of a debris of the system, 0 when it is gone */
 byte cDebris_Update(cDebris *self, cDebrisSys *sys);
 

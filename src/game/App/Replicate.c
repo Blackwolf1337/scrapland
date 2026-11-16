@@ -31,6 +31,7 @@
 #include "scrap/play.h"
 #include "scrap/players.h"
 #include "scrap/replicate.h"
+#include "scrap/pres.h"
 #include "scrap/repent.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapcollision.h"
@@ -1442,7 +1443,10 @@ void Rep_PreFrame(uint64_t tick) {
 			continue;
 		}
 		pl->buttons = in.buttons;
+		/* its client steps its own entity too: what the step presents is not sent to it (include/scrap/pres.h) */
+		Pres_OwnStep(i);
 		NetPl_Step(e, &in, 0, 0);
+		Pres_OwnStep(-1);
 		Players_Cur()->input = NULL;
 	}
 	Players_Leave(prev);
@@ -1804,6 +1808,7 @@ void Rep_Tick(Net2Host *host, uint64_t tick) {
 	uint64_t t1 = Plat_RealNs();
 	if (g_Mp2) {
 		RepEnt_Flush(host, REP_CONNS);
+		Pres_Flush(host);
 	}
 	for (int i = 0; i < REP_CONNS; i++) {
 		if (!rep.conn[i].c) {

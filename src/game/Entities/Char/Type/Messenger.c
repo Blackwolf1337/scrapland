@@ -11,6 +11,8 @@
 #include "scrap/modmove.h"
 #include "scrap/staticinit.h"
 #include "scrap/players.h"
+#include "scrap/pres.h"
+#include "scrap/repent.h"
 
 #define g_FXMessengerAttackFile (GVar_FXMessengerAttackFile.value.s)
 #define g_FXMessengerTakeDataPackFile (GVar_FXMessengerTakeDataPackFile.value.s)
@@ -140,6 +142,34 @@ static void ChType_MessengerAttack(cAbstractFile *params) {
 /* the OnTake of the data pack a messenger dropped: params the data pack, the one that touches it. A messenger that
  * is not flashed takes it back on its node DC_DataPack (crab close in front, else the drop end) and the
  * MessengerTakenCallback hears its name */
+/* the effect and sound of messenger m taking the data pack dp; a -mp2 instance sends it to the players near
+ * (include/scrap/pres.h), the sinks inside it not again */
+void FX_MessengerTake(cEntity *m, cEntity *dp) {
+	vec3_t t4;
+
+	if (g_Mp2) {
+		Pres_FxEnt(PRES_FX_TAKE, m->name, dp->name, 0.0f, 0, NULL);
+	}
+	g_PresIn++;
+	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXMessengerTakeDataPackFile);
+	cDebris *d = cDebrisSys_NewElement(sys);
+	d->life = 0.699999988f;
+	cDebrisSys_Drop(sys, d);
+	cObjElementFXMessengerTakeDataPack *el = Debris_Element(d);
+	if (el) {
+		if (!el->started) {
+			el->started = 1;
+		}
+		cObjElementFXMessengerTakeDataPack_SetOwner(el, m);
+		cObjElementFXMessengerTakeDataPack_SetItem(el, dp);
+		cObjElementFXMessengerTakeDataPack_Start(el);
+		const char *s = g_MessengerTakeDataPackSound;
+		int vol = Snd_Volume(g_MessengerTakeDataPackSoundVol);
+		SoundSys_PlayAt(g_pSound, s, Entity_GetPos(m, &t4), vol);
+	}
+	g_PresIn--;
+}
+
 void ChType_MessengerTakeDataPack(cAbstractFile *params) {
 	char item[0x80], name[0x80];
 	vec3_t t1, t2, t3, t4;
@@ -177,22 +207,7 @@ void ChType_MessengerTakeDataPack(cAbstractFile *params) {
 	} else {
 		cActCtrl_Play(ChType_ActCtrl(m), "CrabClose", 1, 1.0f);
 	}
-	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXMessengerTakeDataPackFile);
-	cDebris *d = cDebrisSys_NewElement(sys);
-	d->life = 0.699999988f;
-	cDebrisSys_Drop(sys, d);
-	cObjElementFXMessengerTakeDataPack *el = Debris_Element(d);
-	if (el) {
-		if (!el->started) {
-			el->started = 1;
-		}
-		cObjElementFXMessengerTakeDataPack_SetOwner(el, m);
-		cObjElementFXMessengerTakeDataPack_SetItem(el, dp);
-		cObjElementFXMessengerTakeDataPack_Start(el);
-		const char *s = g_MessengerTakeDataPackSound;
-		int vol = Snd_Volume(g_MessengerTakeDataPackSoundVol);
-		SoundSys_PlayAt(g_pSound, s, Entity_GetPos(m, &t4), vol);
-	}
+	FX_MessengerTake(m, dp);
 	if (cPy_Function_IsValid(g_MessengerTakenCallback)) {
 		/* not in the original: the scripts' player is the one that takes it (the instance: its context) */
 		int was = Players_EnterEntity(m);

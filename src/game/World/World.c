@@ -17,7 +17,9 @@
 #include "scrap/material.h"
 #include "scrap/netaudit.h"
 #include "scrap/play.h"
+#include "scrap/initsteps.h"
 #include "scrap/players.h"
+#include "scrap/pres.h"
 #include "scrap/replicate.h"
 #include "scrap/missileentity.h"
 #include "scrap/scheduler.h"
@@ -1000,6 +1002,10 @@ int cWorld_SetCam(cWorld *world, int i, const char *name) {
 	CHECK(name != NULL);
 	if (i == 0) {
 		Players_NoteCam(name);
+		/* the client's camera is its own (Play.c); the scripts' cameras of a player are stage 4.5's scenes */
+		if (g_Mp2 && !InitSteps_Entering()) {
+			Pres_NoRoute(NA_CAMERA, "pres.unforwarded:camera:", __func__);
+		}
 	}
 	if (*name) {
 		cPtrItem *it = PtrTable_Find(&world->entities, name, HashTable_Slot(&world->entities, name));
@@ -1119,9 +1125,12 @@ void cWorld_Update(cWorld *self, float dt) {
 				Players_Leave(prev);
 			}
 		}
+		/* the effects' elements are presentation: a -mp2 client has the same (include/scrap/pres.h) */
+		Pres_Derive();
 		for (cDebrisSys *d = self->debrisList; d; d = d->next) {
 			cDebrisSys_Update(d, cTimer_GetDelta(timer));
 		}
+		Pres_Underive();
 		Grid_EndFrame(&self->grid);
 		for (;;) {
 			n = self->deadList.next;

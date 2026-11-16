@@ -10,6 +10,8 @@
 #include "scrap/fxmisc.h"
 #include "scrap/fxscene.h"
 #include "scrap/netaudit.h"
+#include "scrap/pres.h"
+#include "scrap/repent.h"
 #include "scrap/objentity.h"
 #include "scrap/scorer.h"
 #include "scrap/scrapmain.h"
@@ -86,13 +88,14 @@ static int FX_NameEq(const char *a, const char *b) {
 	return wa == wb && !strcmp(a + 2, b + 2);
 }
 
-void *FX_DropNew(const char *file, float life) {
+void *FX_DropNew_(const char *file, float life, const char *site) {
 	NetAudit_Site(NA_SFX, "sfx.drop");
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, file);
 	cDebris *d = cDebrisSys_NewElement(sys);
 
 	d->life = life;
-	cDebrisSys_Drop(sys, d);
+	g_DebrisSite = site;
+	cDebrisSys_Drop_(sys, d);
 	return Debris_Element(d);
 }
 
@@ -208,7 +211,7 @@ void FX_ItemBlink(cEntity *e) {
 
 static void cObjElementFXItemFade_Start(cObjElementFXItemFade *self, cEntity *e);
 static void cObjElementFXItemTake_Start(cObjElementFXItemTake *self, cEntity *e);
-void FX_ItemFade(cEntity *e, int mode, float scale, cEntity *target) {
+static void FX_ItemFadeRun(cEntity *e, int mode, float scale, cEntity *target) {
 	NetAudit_Site(NA_SFX, "sfx.ItemFade");
 	cObjElementFXItemFade *fade = FX_DropNew(g_FXItemFadeFile, 0.5f);
 
@@ -255,6 +258,16 @@ void FX_ItemFade(cEntity *e, int mode, float scale, cEntity *target) {
 	if (sc) {
 		ScorerFade_Start(&sc->fade, 0x40c0c0ff, 0x2020ff, 0.22f);
 	}
+}
+
+/* the effect sent to the players of a -mp2 instance (include/scrap/pres.h), the sinks inside it not again */
+void FX_ItemFade(cEntity *e, int mode, float scale, cEntity *target) {
+	if (g_Mp2) {
+		Pres_FxEnt(PRES_FX_ITEMFADE, e->name, target ? target->name : "", scale, mode, NULL);
+	}
+	g_PresIn++;
+	FX_ItemFadeRun(e, mode, scale, target);
+	g_PresIn--;
 }
 
 void FX_Sputnik(cEntity *e, const char *name) {

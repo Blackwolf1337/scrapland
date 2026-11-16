@@ -12,6 +12,7 @@
 #include "scrap/missileentity.h"
 #include "scrap/net.h"
 #include "scrap/netaudit.h"
+#include "scrap/pres.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/withlifeentity.h"
@@ -51,6 +52,13 @@ static inline float Missile_RandSym(float v) {
 	float range = v - Float_Keep(lo);
 
 	return Missile_Rand((double)range, (double)lo);
+}
+
+/* OnHit runs: its effects are the clients' own (they play a missile's hit themselves, include/scrap/pres.h) */
+static void Missile_ExecHit(cMissileEntity *self) {
+	Pres_Derive();
+	cPy_Function_Execute(&self->onHit, 0);
+	Pres_Underive();
 }
 
 /* OnHit with the missile, its parent and other */
@@ -381,7 +389,7 @@ static byte cMissileEntity_IsType(cEntity *base, const char *type) {
 static void cMissileEntity_Explode(cMissileEntity *self, const vec3_t *at);
 
 /* n bees die (hidden swarm: only counted), or the missile explodes when there are not that many; 1 if it did */
-byte cMissileEntity_Hit(cMissileEntity *self, int n, float unused) {
+static byte cMissileEntity_HitRun(cMissileEntity *self, int n, float unused) {
 	vec3_t tmp;
 
 	(void)unused;
@@ -396,7 +404,7 @@ byte cMissileEntity_Hit(cMissileEntity *self, int n, float unused) {
 		}
 		if (self->hitType == MISSILE_HIT_HIT) {
 			Missile_CallHit(self, self->target);
-			cPy_Function_Execute(&self->onHit, 0);
+			Missile_ExecHit(self);
 		}
 		self->swarmCount = 0;
 		Entity_SetActive(Missile_Ent(self), 0);
@@ -423,7 +431,7 @@ byte cMissileEntity_Hit(cMissileEntity *self, int n, float unused) {
 	}
 	if (self->hitType == MISSILE_HIT_HIT) {
 		Missile_CallHit(self, self->target);
-		cPy_Function_Execute(&self->onHit, 0);
+		Missile_ExecHit(self);
 	}
 	if (!self->beesGather && !self->beesHit) {
 		self->wl.life = 0;
@@ -438,6 +446,14 @@ byte cMissileEntity_Hit(cMissileEntity *self, int n, float unused) {
 	cMissileEntity_Explode(self, at);
 	Entity_SetActive(Missile_Ent(self), 0);
 	return 1;
+}
+
+/* the bees' deaths and the explosion: a -mp2 instance's clients make their effects themselves (include/scrap/pres.h) */
+byte cMissileEntity_Hit(cMissileEntity *self, int n, float unused) {
+	Pres_Derive();
+	byte r = cMissileEntity_HitRun(self, n, unused);
+	Pres_Underive();
+	return r;
 }
 
 static void cMissileEntity_OnDeath(cEntity *base) {
@@ -500,7 +516,7 @@ static void cMissileEntity_SetHitType(cMissileEntity *self, int type) {
 			if (self->hits[i][0]) {
 				Missile_CallHit(self, self->hits[i]);
 				cPy_Function_AddParamI(&self->onHit, 0);
-				cPy_Function_Execute(&self->onHit, 0);
+				Missile_ExecHit(self);
 			}
 		}
 	}
@@ -796,7 +812,10 @@ static cDebris *Missile_FXDebris(cMissileEntity *self, const char *sysName, byte
 	cDebris *d = cDebrisSys_NewElement(sys);
 
 	d->life = extra ? self->lifeTime + 1.5f : self->lifeTime;
+	/* the embedded effect of a missile: its replica makes its own (include/scrap/pres.h) */
+	Pres_Derive();
 	cDebrisSys_Drop(sys, d);
+	Pres_Underive();
 	return d;
 }
 
@@ -964,7 +983,7 @@ static void Missile_InOut(cMissileEntity *self, const vec3_t *old, const vec3_t 
 		if (k == 4) {
 			Missile_CallHit(self, h);
 			cPy_Function_AddParamI(&self->onHit, 0);
-			cPy_Function_Execute(&self->onHit, 0);
+			Missile_ExecHit(self);
 			h[0] = 0;
 		}
 	}
@@ -989,7 +1008,7 @@ static void Missile_InOut(cMissileEntity *self, const vec3_t *old, const vec3_t 
 		}
 		Missile_CallHit(self, g);
 		cPy_Function_AddParamI(&self->onHit, 1);
-		cPy_Function_Execute(&self->onHit, 0);
+		Missile_ExecHit(self);
 		/* both are the names of Touch are shorter */
 		char *dst = self->hits[slot];
 		int c = 0;
@@ -1067,7 +1086,7 @@ static byte Missile_LocalTick(cMissileEntity *self, float dt) {
 		if (cWorld_TestSphereEntities(g_pWorld, Missile_Ent(self), MISSILE_ENTLIST, &old, self->radius,
 			&found, 1, pos)) {
 			Missile_CallHit(self, found->name);
-			cPy_Function_Execute(&self->onHit, 0);
+			Missile_ExecHit(self);
 		}
 		break;
 	}
@@ -1320,7 +1339,7 @@ void cMissileEntity_AddToSwarm(cMissileEntity *self, int n) {
 }
 
 /* the bees fly to at (beesGather) or die where they are */
-static void cMissileEntity_Explode(cMissileEntity *self, const vec3_t *at) {
+static void cMissileEntity_ExplodeRun(cMissileEntity *self, const vec3_t *at) {
 	vec3_t neg, rot;
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, self->swarmSys);
 
@@ -1385,6 +1404,13 @@ static void cMissileEntity_Explode(cMissileEntity *self, const vec3_t *at) {
 		}
 	}
 	self->swarmCount = 0;
+}
+
+/* the explosion's effects: a -mp2 instance's clients make them themselves (include/scrap/pres.h) */
+static void cMissileEntity_Explode(cMissileEntity *self, const vec3_t *at) {
+	Pres_Derive();
+	cMissileEntity_ExplodeRun(self, at);
+	Pres_Underive();
 }
 
 /* the vtable of cMissileEntity */

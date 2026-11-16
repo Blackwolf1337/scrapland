@@ -863,6 +863,8 @@ void cSentinelLocalLogic_Watch(void *self, const vec3_t *pos);
 void cSentinelLocalLogic_Return(void *self);
 /* the voice event of the character of that name (Sound/) */
 byte Sound_PlayVoice(const char *name, const char *event, const char *arg, int force);
+/* the talk voice file of speaker opened (arg as SoundSys_OpenVoice's), played after the delay (Sound_Update) */
+void Sound_OpenTalk(const char *file, const char *speaker, int arg);
 /* GearLogic.cpp */
 cGearLocalLogic *cGearLocalLogic_ctor(cGearLocalLogic *self, cEntity *parent);
 byte cGearLocalLogic_Call(cGearLocalLogic *self, cEntity *e);

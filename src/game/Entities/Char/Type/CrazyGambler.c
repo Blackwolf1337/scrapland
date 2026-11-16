@@ -6,6 +6,7 @@
 
 #include "scrap/chartype.h"
 #include "scrap/embeddedfxchar.h"
+#include "scrap/pres.h"
 #include "scrap/staticinit.h"
 
 /* params: an event, the head entity, a float. The hair glow of the gambler goes to the head node of that model. */
@@ -18,11 +19,20 @@ static void ChType_FXCrazyGamblerSetHeadModel(cAbstractFile *params) {
 	cAbstractFile_ReadString(params, head, 0x80);
 	VFile_Read(params, &unused, 4);
 	cEntity *e = World_FindEntity("MeetGamblerCrazyGambler");
+	cEntity *h = World_FindEntity(head);
+	/* a -mp2 client plays the event on a replica: one it does not have is counted, not the end (pres.h) */
+	if ((!e || !Entity_IsType(e, TYEN_WITH_LIFE) || !WChar_FX(e)) &&
+		Pres_ClientMissing("CrazyGambler", "MeetGamblerCrazyGambler")) {
+		return;
+	}
+	if ((!h || !Entity_IsType(h, TYEN_WITH_LIFE) || !CGameModel_IsLoaded(Obj_GetModel(h))) &&
+		Pres_ClientMissing("CrazyGambler", head)) {
+		return;
+	}
 	CHECK(e);
 	CHECK(Entity_IsType(e, TYEN_WITH_LIFE));
 	cEmbeddedFXCrazyGambler *fx = WChar_FX(e);
 	CHECK(fx);
-	cEntity *h = World_FindEntity(head);
 	CHECK(h);
 	CHECK(Entity_IsType(h, TYEN_WITH_LIFE));
 	CHECK(CGameModel_IsLoaded(Obj_GetModel(h)));

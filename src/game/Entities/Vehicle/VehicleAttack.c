@@ -8,6 +8,7 @@
 #include "scrap/net.h"
 #include "scrap/objentity.h"
 #include "scrap/play.h"
+#include "scrap/pres.h"
 #include "scrap/vehicleattack.h"
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
@@ -167,6 +168,8 @@ void cVehicleAttack_Update(cVehicleAttack *self) {
 		return;
 	}
 	cPy_Function *f = &TABLE_AT(g_pWorld->weapons, Veh(self->owner)->weapons.curWeap)->onHit;
+	/* the hit effects: the instance's clients play them from the shot (Rep_Shot, include/scrap/pres.h) */
+	Pres_Derive();
 	for (int i = 1; i < self->count; i++) {
 		int n = self->count;
 		float a = (float)(n - i);
@@ -190,6 +193,7 @@ void cVehicleAttack_Update(cVehicleAttack *self) {
 	cPy_Function_AddParamS(f, Nto1Node_TargetName(&self->target));
 	cPy_Function_AddParamI(f, 0);
 	cPy_Function_Execute(f, 0);
+	Pres_Underive();
 	if (g_Instance) {
 		Rep_Shot(owner, Veh(owner)->weapons.curWeap, self->count, &self->lastPoint, &self->point,
 			World_FindEntity(Nto1Node_TargetName(&self->target)));

@@ -31,6 +31,8 @@
 #include "scrap/utild3d.h"
 #include "scrap/misc.h"
 #include "scrap/netaudit.h"
+#include "scrap/pres.h"
+#include "scrap/repent.h"
 #include "scrap/video.h"
 #include "scrap/platform.h"
 #include "scrap/staticinit.h"
@@ -577,6 +579,9 @@ const void *Eng_Identity(const void *v) {
 byte Music_Play(const char *name, const char *cmd, float volume) {
 	CHECK(cmd);
 	NetAudit_Name(NA_MUSIC, "music.", cmd);
+	if (g_Mp2) {
+		Pres_Music(name, cmd, volume);
+	}
 	if (!crt_stricmp(cmd, "play")) {
 		return Music_PlayFile(name, NULL);
 	}

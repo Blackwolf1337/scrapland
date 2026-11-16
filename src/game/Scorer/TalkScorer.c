@@ -12,6 +12,8 @@
 #include "scrap/logic.h"
 #include "scrap/nativeobj.h"
 #include "scrap/netaudit.h"
+#include "scrap/pres.h"
+#include "scrap/repent.h"
 #include "scrap/players.h"
 #include "scrap/scorerhud.h"
 #include "scrap/scrapmain.h"
@@ -314,6 +316,9 @@ static void cTalkScorer_DrawUse(cTalkScorer *self, int player, float *pos) {
 
 void Scorer_CancelSpeech(float time) {
 	NetAudit_Site(NA_HUD, "speech.cancel");
+	if (g_Mp2) {
+		Pres_SpeechCancel(time);
+	}
 	g_RemainTalkTime = time;
 }
 
@@ -355,6 +360,9 @@ static void Talk_AddCallbackParam(const nativeVal_t *item) {
 
 void Scorer_SetSpeechText(const char *text, float time, int r, int g, int b) {
 	NetAudit_Site(NA_HUD, "speech.text");
+	if (g_Mp2) {
+		Pres_SpeechText(text, time, r, g, b);
+	}
 	/* not in the original: the coop story's conversations on the clients (include/scrap/coop.h) */
 	if (g_Instance) {
 		Coop_SpeechText(text, time, r, g, b);

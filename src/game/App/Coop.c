@@ -34,6 +34,7 @@
 #include "scrap/play.h"
 #include "scrap/players.h"
 #include "scrap/replicate.h"
+#include "scrap/repent.h"
 #include "scrap/scorer.h"
 #include "scrap/scorerhud.h"
 #include "scrap/scrap.h"
@@ -2101,8 +2102,9 @@ static void Cp_SetMissionPlayer(int i) {
 }
 
 /* a scene the clients play themselves makes its own texts and voices */
+/* the texts, voices and heads of the conversations; on -mp2 they go by include/scrap/pres.h */
 static byte Cp_Quiet(void) {
-	return !Coop_On() || cp.inScene;
+	return !Coop_On() || cp.inScene || g_Mp2;
 }
 
 void Coop_SpeechText(const char *text, float time, int r, int g, int b) {
@@ -2160,7 +2162,7 @@ void Coop_MsgText(const char *text, float time, const char *font) {
 void Coop_Fade(const int *from, const int *to, double time) {
 	uint8_t buf[16];
 	NetRepBuf w;
-	if (!Coop_On()) {
+	if (!Coop_On() || g_Mp2) {
 		return;
 	}
 	NetRepBuf_Init(&w, buf, sizeof(buf));

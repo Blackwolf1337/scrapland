@@ -224,7 +224,9 @@ void FXMisc_SetFC(void *self, float v);
  * original does) */
 void FX_AttachDummy(CGameParticles *sp, CGameModel *m);
 /* a new debris of the system of file, life set, dropped; its element */
-void *FX_DropNew(const char *file, float life);
+void *FX_DropNew_(const char *file, float life, const char *site);
+/* site: the caller, for the presentation interface's audit of the debris drops (include/scrap/pres.h) */
+#define FX_DropNew(file, life) FX_DropNew_(file, life, __func__)
 /* the sphere x y z (radius) seen by the camera (the actual one for NULL) nearer than maxDist (0 any), in its view
  * cone and with sector in a visible sector; 1 always in split screen */
 byte FX_IsVisible(float x, float y, float z, float radius, float maxDist, const CGameCamera *cam, byte sector);

@@ -26,6 +26,7 @@
 #include "scrap/platform.h"
 #include "scrap/play.h"
 #include "scrap/replicate.h"
+#include "scrap/pres.h"
 #include "scrap/repent.h"
 #include "scrap/coord.h"
 #include "scrap/travel.h"
@@ -1137,6 +1138,8 @@ void Watch_PreFrame(void) {
 				Arena_ClientMessage(ev.data, ev.size);
 			} else if (ev.channel == REP_CH_RELIABLE && ev.data[0] == REPENT_MSG) {
 				ReplicaEnt_Message(ev.data, ev.size);
+			} else if (ev.channel == REP_CH_RELIABLE && ev.data[0] == PRES_MSG && g_Mp2) {
+				Pres_Message(ev.data, ev.size);
 			} else if (ev.channel == REP_CH_RELIABLE && ev.data[0] == SPUTNIKS_MSG) {
 				Sputniks_ClientMessage(ev.data, ev.size);
 			} else if (ev.channel == REP_CH_RELIABLE && ev.data[0] == REP_MSG_STATICS && watch.phase == WATCH_RUN) {

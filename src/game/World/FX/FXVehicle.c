@@ -10,6 +10,8 @@
 #include "scrap/global.h"
 #include "scrap/mathlib.h"
 #include "scrap/netaudit.h"
+#include "scrap/pres.h"
+#include "scrap/repent.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/timer.h"
 #include "scrap/vehicleentity.h"
@@ -2348,7 +2350,7 @@ static uint32_t FX_ShipExplosionTable[28] = {
 	0xff000000, 0x80ffe8c0, 0x40ffe8c0, 0x40ffe8c0, 0x40ffe8c0, 0x80c4a58c, 0xc4806450, 0xff000000, 0xff000000,
 };
 
-void FX_ShipExplosion(vec3_t pos, vec3_t vel, float scale, float time, int numFlames, int collision) {
+static void FX_ShipExplosionRun(vec3_t pos, vec3_t vel, float scale, float time, int numFlames, int collision) {
 	NetAudit_Site(NA_SFX, "sfx.ShipExplosion");
 	vec3_t from, to, hit, tmp;
 	CCollisionTri tri;
@@ -2506,6 +2508,16 @@ void FX_ShipExplosion(vec3_t pos, vec3_t vel, float scale, float time, int numFl
 		CGameParticles_Apply(p);
 		CGameParticles_EmitN(p, 1, 1);
 	}
+}
+
+/* the effect sent to the players of a -mp2 instance (include/scrap/pres.h), the sinks inside it not again */
+void FX_ShipExplosion(vec3_t pos, vec3_t vel, float scale, float time, int numFlames, int collision) {
+	if (g_Mp2) {
+		Pres_ShipExplosion(&pos, &vel, scale, time, numFlames, collision);
+	}
+	g_PresIn++;
+	FX_ShipExplosionRun(pos, vel, scale, time, numFlames, collision);
+	g_PresIn--;
 }
 
 /* ---- Sputnik ---- */

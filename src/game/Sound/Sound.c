@@ -8,6 +8,8 @@
 #include "scrap/console.h"
 #include "scrap/musicfmod.h"
 #include "scrap/netaudit.h"
+#include "scrap/pres.h"
+#include "scrap/repent.h"
 #include "scrap/scrap.h"
 #include "scrap/sound.h"
 #include "scrap/staticinit.h"
@@ -73,6 +75,9 @@ void cSoundDesc_SetPos(cSoundDesc *desc, const vec3_t *pos) {
 	CHECK(g_pSound);
 	vel.x = vel.y = vel.z = 0.0f;
 	SoundSys_Compute3D(g_pSound, desc, pos, &vel, 0);
+	if (g_Mp2) {
+		Pres_SoundPos(desc, pos);
+	}
 }
 
 /* cSound */
@@ -134,7 +139,11 @@ void cSound_SetPitch(cSound *self, float semitones) {
 
 byte cSound_Play(cSound *self) {
 	cSound_Stop(self);
-	return (byte)SoundSys_PlaySound(g_pSound, self->name, &self->desc, &self->handle);
+	/* the sound items of entities and the positional sets: a replica plays them from its state (include/scrap/pres.h) */
+	Pres_Derive();
+	byte r = (byte)SoundSys_PlaySound(g_pSound, self->name, &self->desc, &self->handle);
+	Pres_Underive();
+	return r;
 }
 
 void cSound_SetPosVel(cSound *self, const vec3_t *pos, const vec3_t *vel) {
@@ -147,7 +156,9 @@ byte cSound_Update(cSound *self) {
 	if (self->desc.loop) {
 		if (self->desc.volume > (int)(g_SoundAutoplayVolume * 100.0f)) {
 			if (self->desc.volume >= 300 - (int)(g_SoundAutoplayVolume * -100.0f) && !self->handle) {
+				Pres_Derive();
 				SoundSys_PlaySound(g_pSound, self->name, &self->desc, &self->handle);
+				Pres_Underive();
 			}
 		} else if (self->handle) {
 			cSound_Stop(self);
@@ -433,18 +444,27 @@ void CSoundSys_StopMusic(CSoundSys *self) {
 int CSoundSys_OpenVoice(CSoundSys *self, const char *name, int voice, int arg) {
 	(void)self;
 	NetAudit_Site(NA_VOICE, "voice.open");
+	if (g_Mp2) {
+		Pres_VoiceOpen(name, voice, arg);
+	}
 	return Voice_Open(name, voice, arg);
 }
 
 int CSoundSys_PlayVoice(CSoundSys *self, int voice) {
 	(void)self;
 	NetAudit_Site(NA_VOICE, "voice.play");
+	if (g_Mp2) {
+		Pres_VoicePlay(voice);
+	}
 	return Voice_Play(voice);
 }
 
 int CSoundSys_StopVoice(CSoundSys *self, int voice) {
 	(void)self;
 	NetAudit_Site(NA_VOICE, "voice.stop");
+	if (g_Mp2) {
+		Pres_VoiceStop(voice);
+	}
 	return Voice_Stop(voice);
 }
 

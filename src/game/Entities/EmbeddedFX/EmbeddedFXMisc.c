@@ -11,6 +11,7 @@
 #include "scrap/fxmisc.h"
 #include "scrap/global.h"
 #include "scrap/mathlib.h"
+#include "scrap/pres.h"
 #include "scrap/scorer.h"
 #include "scrap/timer.h"
 #include "scrap/withlifeentity.h"
@@ -1134,6 +1135,10 @@ void EmbeddedFXMisc_Create(cEntity *obj, const char *model, cEmbeddedFX **fx) {
 static cEmbeddedFX *EFXM_ObjFX(const char *name) {
 	cEntity *v = World_FindEntity(name);
 
+	/* a -mp2 client plays these events on replicas: one it does not have is counted, not the end (pres.h) */
+	if ((!v || !Entity_IsType(v, TYEN_OBJECT) || !Obj(v)->fx) && Pres_ClientMissing("EFXM_ObjFX", name)) {
+		return NULL;
+	}
 	CHECK(v);
 	CHECK(Entity_IsType(v, TYEN_OBJECT));
 	return Obj(v)->fx;
@@ -1143,6 +1148,9 @@ static cEmbeddedFX *EFXM_ObjFX(const char *name) {
 static void EmbeddedFXMisc_BossShieldHit(void) {
 	cEmbeddedFXBossShield *fx = (cEmbeddedFXBossShield *)EFXM_ObjFX("BossShield");
 
+	if (!fx && Pres_ClientMissing(NULL, NULL)) {
+		return;
+	}
 	CHECK(fx);
 	fx->hit = 1.0f;
 }
@@ -1155,6 +1163,9 @@ static void EmbeddedFXMisc_BossShieldMsg(cAbstractFile *f) {
 	cAbstractFile_ReadString(f, name, sizeof(name));
 	VFile_Read(f, &v, 4);
 	cEmbeddedFXBossShield *fx = (cEmbeddedFXBossShield *)EFXM_ObjFX(name);
+	if (!fx && Pres_ClientMissing(NULL, NULL)) {
+		return;
+	}
 	CHECK(fx);
 	fx->mode = v;
 }
@@ -1169,6 +1180,9 @@ static void EmbeddedFXMisc_MeetingPointMsg(cAbstractFile *f) {
 	VFile_Read(f, &a, 4);
 	VFile_Read(f, &count, 4);
 	cEmbeddedFXMeetingPoint *fx = (cEmbeddedFXMeetingPoint *)EFXM_ObjFX(name);
+	if (!fx && Pres_ClientMissing(NULL, NULL)) {
+		return;
+	}
 	CHECK(fx);
 	cEmbeddedFXMeetingPoint_SetCountDown(fx, a, (float)count * 220.0f);
 }

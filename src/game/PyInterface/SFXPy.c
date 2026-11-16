@@ -4,6 +4,8 @@
  */
 #include "scrap/fx.h"
 #include "scrap/global.h"
+#include "scrap/pres.h"
+#include "scrap/repent.h"
 #include "scrap/scriptapi.h"
 
 /* ShipExplosion(V3D Pos, V3D Vel, float scale, float time, float nflames, bool bcolision) : Explosión de la nave */
@@ -95,7 +97,12 @@ API_FN(SFX, EmbeddedSet) {
 	}
 	cEntity *vEntity = World_FindEntity(entityName);
 	CHECK(vEntity);
+	if (g_Mp2) {
+		Pres_FxEnt(PRES_FX_EMBEDDED, entityName, fxType, 0.0f, 0, NULL);
+	}
+	g_PresIn++;
 	Entity_SetEmbeddedFX(vEntity, fxType);
+	g_PresIn--;
 	return 1;
 }
 

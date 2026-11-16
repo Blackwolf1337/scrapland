@@ -20,6 +20,8 @@
 #include "scrap/nativeobj.h"
 #include "scrap/net.h"
 #include "scrap/netaudit.h"
+#include "scrap/pres.h"
+#include "scrap/repent.h"
 #include "scrap/pyentity.h"
 #include "scrap/ai.h"
 #include "scrap/alarm.h"
@@ -984,7 +986,12 @@ byte Mode_SetFX(cEntity *e, const char *type) {
 	if (!Mode_Method(e, "SetFX")) {
 		return 0;
 	}
+	if (g_Mp2) {
+		Pres_FxEnt(PRES_FX_EMBEDDED, e->name, type, 0.0f, 0, NULL);
+	}
+	g_PresIn++;
 	Entity_SetEmbeddedFX(e, type);
+	g_PresIn--;
 	return 1;
 }
 

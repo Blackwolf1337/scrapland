@@ -152,17 +152,23 @@ static inline int SoundSys_OpenVoice(void *self, const char *name, int voice, in
 	return VT(CSoundSysVtbl, self)->OpenVoice(self, name, voice, arg);
 }
 
-static inline int SoundSys_Play(void *self, const char *name, int volume, int pan) {
+static inline int SoundSys_Play_(void *self, const char *name, int volume, int pan) {
 	return VT(CSoundSysVtbl, self)->Play(self, name, volume, pan);
 }
 
-static inline int SoundSys_PlayAt(void *self, const char *name, const vec3_t *pos, int volume) {
+static inline int SoundSys_PlayAt_(void *self, const char *name, const vec3_t *pos, int volume) {
 	return VT(CSoundSysVtbl, self)->PlayAt(self, name, pos, volume);
 }
 
-static inline int SoundSys_PlaySound(void *self, const char *name, const cSoundDesc *d, int *handle) {
+static inline int SoundSys_PlaySound_(void *self, const char *name, const cSoundDesc *d, int *handle) {
 	return VT(CSoundSysVtbl, self)->PlaySound(self, name, d, handle);
 }
+
+/* the caller of a play for the presentation interface's audit (include/scrap/pres.h) */
+extern const char *g_SndSite;
+#define SoundSys_Play(...) (g_SndSite = __func__, SoundSys_Play_(__VA_ARGS__))
+#define SoundSys_PlayAt(...) (g_SndSite = __func__, SoundSys_PlayAt_(__VA_ARGS__))
+#define SoundSys_PlaySound(...) (g_SndSite = __func__, SoundSys_PlaySound_(__VA_ARGS__))
 
 static inline int SoundSys_PlayVoice(void *self, int voice) {
 	return VT(CSoundSysVtbl, self)->PlayVoice(self, voice);

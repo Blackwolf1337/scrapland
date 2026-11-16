@@ -484,6 +484,14 @@ AUDIT_PRES = ('sound', 'voice', 'music', 'sfx', 'debris', 'animevent', 'hud', 'f
               'timespeed')
 
 
+def pres_keys(a, prefixes):
+    """the count of the audit rows whose key starts with one of prefixes (the presentation interface's keys,
+    include/scrap/pres.h); None without an answer"""
+    if not isinstance(a, dict):
+        return None
+    return sum(r.get('count', 0) for r in a.get('rows', []) if str(r.get('key', '')).startswith(prefixes))
+
+
 def audit_total(a):
     """one number for an audit answer: the presentation calls of its "totals" (stage 0.1's audit json: {"secs",
     "keys", "lost", "totals": {category: count}, "rows": [...]}); else its "total" when it has one, else the sum of its
@@ -580,6 +588,8 @@ def run_level(a, spec, routes=None):
         res['players'] = pents
         # the audit counts cover the route (n/a without the verb)
         res['audit_verb'] = audit(host, level, 'reset') is not None
+        if a.mp2 and join:
+            audit(join, None, 'reset')
         points = [('spawn', 'host spawn', at)] + [(n, an, (x, y + 150.0, z)) for n, an, (x, y, z) in
                                                   (routes or {}).get(level, [])]
         for k, (name, anchor, pos) in enumerate(points[:a.points]):
@@ -612,6 +622,8 @@ def run_level(a, spec, routes=None):
         if a.mp2 and join:
             res.update(mirror_census(a, res['tag'], level, host, sp, join))
         res['audit'] = audit(host, level, 'json')
+        if a.mp2 and join:
+            res['jaudit'] = audit(join, None, 'json')
     finally:
         for g in games:
             g.stop()
@@ -793,7 +805,12 @@ def summary(res):
            'points': 0, 'entity': 0, 'radar': 0, 'hud': 0, 'sound': 0, 'fx': 0, 'kinds': [],
            'audit': audit_total(res.get('audit')), 'secs': res.get('secs'),
            'audit_totals': (res.get('audit') or {}).get('totals') if isinstance(res.get('audit'), dict) else None,
-           'mirror': mirror_total(res), 'census': census_total(res), 'mp2': bool(res.get('mp2'))}
+           'mirror': mirror_total(res), 'census': census_total(res), 'mp2': bool(res.get('mp2')),
+           # -mp2: the instance's calls without a route, the joined client's sounds played twice and records whose
+           # entity it lacked (include/scrap/pres.h)
+           'pres': None if res.get('jaudit') is None and res.get('audit') is None else
+           (pres_keys(res.get('audit'), ('pres.unforwarded',)), pres_keys(res.get('jaudit'), ('pres.double',)),
+            pres_keys(res.get('jaudit'), ('pres.missing',)))}
     if 'error' in res:
         out['error'] = res['error']
     kinds = set()
@@ -826,13 +843,14 @@ def summary_table(sums):
     """the markdown table of the level summaries"""
     mp2 = any(s.get('mp2') for s in sums)
     lines = ['| level | mode | points | entity gaps | radar gaps | HUD gaps | sound gaps | particle gaps | audit | '
-             'player reads |%s entity gap kinds |' % (' mirror | census |' if mp2 else ''),
-             '|---|---|---|---|---|---|---|---|---|---|%s---|' % ('---|---|' if mp2 else '')]
+             'player reads |%s entity gap kinds |' % (' mirror | census | pres unforwarded/double/missing |' if mp2
+                                                      else ''),
+             '|---|---|---|---|---|---|---|---|---|---|%s---|' % ('---|---|---|' if mp2 else '')]
     tot = {c: 0 for c in SUMMARY_COLS}
     for s in sums:
         if 'error' in s:
             lines.append('| %s | %s | error: %s | | | | | | | | |%s' % (s['level'], s['mode'], s['error'],
-                                                                     ' | |' if mp2 else ''))
+                                                                     ' | | |' if mp2 else ''))
             continue
         for c in SUMMARY_COLS:
             tot[c] += s[c]
@@ -840,15 +858,17 @@ def summary_table(sums):
         lines.append('| %s | %s | %d | %d | %d | %d | %d | %d | %s | %s |%s %s |' % (
             s['level'], s['mode'], s['points'], s['entity'], s['radar'], s['hud'], s['sound'], s['fx'],
             'n/a' if s['audit'] is None else s['audit'], 'n/a' if s.get('audit_totals') is None else pr or 0,
-            (' %s | %s |' % tuple('n/a' if s.get(k) is None else s[k] for k in ('mirror', 'census'))) if mp2 else '',
+            (' %s | %s | %s |' % (tuple('n/a' if s.get(k) is None else s[k] for k in ('mirror', 'census')) +
+                                  ('n/a' if not s.get('pres') else
+                                   '/'.join('n/a' if x is None else str(x) for x in s['pres']),))) if mp2 else '',
             ', '.join(s['kinds'][:6]) +
             (' ...' if len(s['kinds']) > 6 else '')))
     au = [s['audit'] for s in sums if s.get('audit') is not None]
     lines.append('| all | | %d | %d | %d | %d | %d | %d | %s | |%s |' % (
         sum(s['points'] for s in sums if 'error' not in s), tot['entity'], tot['radar'], tot['hud'], tot['sound'],
-        tot['fx'], sum(au) if au else 'n/a', (' %s | %s |' % tuple(
+        tot['fx'], sum(au) if au else 'n/a', (' %s | %s | %s |' % (tuple(
             sum(s[k] for s in sums if s.get(k) is not None) if any(s.get(k) is not None for s in sums) else 'n/a'
-            for k in ('mirror', 'census'))) if mp2 else ''))
+            for k in ('mirror', 'census')) + ('',))) if mp2 else ''))
     return lines
 
 
