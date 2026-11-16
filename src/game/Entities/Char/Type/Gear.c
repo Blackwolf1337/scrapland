@@ -116,11 +116,11 @@ static void ChType_GearHitChar(const char *name, byte noLogic) {
 		}
 		if (usr && Players_Is(gear)) {
 			if (WChar(e)->wl.life <= damage) {
-				Alarm_Set(&g_pWorld->alarm, 1.0f);
+				Alarm_Set(Players_CurAlarm(), 1.0f);
 				SaveVar_Inc("Stats.Gear", 1);
 				SaveVar_Inc("Stats.Killer", 1);
 			} else {
-				Alarm_Set(&g_pWorld->alarm, g_pWorld->alarm.value + g_GearShootHitAlarm);
+				Alarm_Set(Players_CurAlarm(), Players_CurAlarm()->value + g_GearShootHitAlarm);
 			}
 		}
 	}
@@ -256,7 +256,7 @@ static void ChType_GearShoot(cAbstractFile *params) {
 	if (Players_Is(v)) {
 		usr = 1;
 		AICtrl_SendSentinelToWatch(&g_pWorld->logic.aiCtrl, Entity_GetPos(v, &t2));
-		Alarm_Set(&g_pWorld->alarm, g_pWorld->alarm.value + g_GearShootFailAlarm);
+		Alarm_Set(Players_CurAlarm(), Players_CurAlarm()->value + g_GearShootFailAlarm);
 	} else {
 		usr = 0;
 	}

@@ -213,13 +213,13 @@ static void ChType_PoliceEndActionMoney(cAbstractFile *params) {
 		if (usr) {
 			if (ChLogic_PoliceResult(ll) == -1) {
 				act = "ActionBad";
-				Alarm_Set(&g_pWorld->alarm, 1.0f);
+				Alarm_Set(Players_CurAlarm(), 1.0f);
 			} else {
 				if (WChar(me)->control.act) {
 					return;
 				}
 				act = "Relax";
-				Alarm_Set(&g_pWorld->alarm, g_pWorld->alarm.value + g_PoliceAlarmStepSTM);
+				Alarm_Set(Players_CurAlarm(), Players_CurAlarm()->value + g_PoliceAlarmStepSTM);
 			}
 		} else {
 			cLocalLogic *vl = Logic_GetLocalLogic(victim);

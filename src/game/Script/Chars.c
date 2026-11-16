@@ -22,6 +22,9 @@
 #include "scrap/console.h"
 #include "scrap/coop.h"
 #include "scrap/game.h"
+#include "scrap/initsteps.h"
+#include "scrap/players.h"
+#include "scrap/replicate.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -415,8 +418,9 @@ static byte Ch_CreateMainChar(const nativeVal_t *a, nativeVal_t *out) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *c = Mode_V(&t), *x = Mode_V(&t), *y = Mode_V(&t), *z = Mode_V(&t), *v = Mode_V(&t), *hook = Mode_V(&t);
 	nativeVal_t *cam = Mode_V(&t), *cname = Mode_V(&t), *text = Mode_V(&t);
-	/* not in the original: a coop member's own name (include/scrap/coop.h) */
-	const char *own = Coop_MainCharName();
+	/* not in the original: the instance's name of a joining player's character (the player steps of the level's
+	 * start, include/scrap/initsteps.h), a coop member's own name (include/scrap/coop.h) */
+	const char *own = InitSteps_Entering() ? Rep_EnterName() : Coop_MainCharName();
 	nativeVal_t *ownName = Mode_V(&t);
 	if (own) {
 		Native_SetStr(ownName, own);
@@ -428,7 +432,7 @@ static byte Ch_CreateMainChar(const nativeVal_t *a, nativeVal_t *out) {
 	if (!Native_True(c)) {
 		Native_Free(c);
 		if (!LvN_Item(pos, 0, x) || !LvN_Item(pos, 1, y) || !LvN_Item(pos, 2, z) || !LvN_Create(name, x, y, z, "WalkChar", c) ||
-			!Mode_VSet(c, "ActCtrl", type) || !LvN_SetI(c, "UsrControl", 0) || !LvN_SetI(c, "AutoSelect", 1) ||
+			!Mode_VSet(c, "ActCtrl", type) || !LvN_SetI(c, "UsrControl", InitSteps_UsrSlot()) || !LvN_SetI(c, "AutoSelect", 1) ||
 			!LvN_Item(ang, 1, x)) {
 			return Mode_Done(&t, 0);
 		}
@@ -452,7 +456,12 @@ static byte Ch_CreateMainChar(const nativeVal_t *a, nativeVal_t *out) {
 				Mode_PrintV(text));
 		}
 	}
-	Mode_CamName(0, cname);
+	/* a joining player's camera of view 0 is the one of its context (include/scrap/initsteps.h) */
+	if (InitSteps_Entering()) {
+		LvN_Str(cname, Players_Cur()->camName);
+	} else {
+		Mode_CamName(0, cname);
+	}
 	if (!Mode_EntitySeam(cname, cam) || !Mode_VObj(c, "Name", v) || !Mode_VSet(cam, "MainTarget", v) ||
 		!Mode_VSet(cam, "Target", v) || !LvN_SetI(cam, "FreeCam", 0) || !Mode_ActionSet("Walk") ||
 		!PORT_CALL(CharScorer, Create, NULL, "i", 0L)) {
@@ -474,10 +483,6 @@ static byte Ch_CreateStartupPlayer(nativeVal_t *out) {
 	int off = Native_NetOff();
 	if (off <= 0) {
 		return Mode_Done(&t, off == 0);
-	}
-	/* the headless instance: its players come over the network (include/scrap/players.h) */
-	if (g_Instance) {
-		return Mode_Done(&t, 1);
 	}
 	Mode_SaveVar("Spawn", spawn);
 	if (!Mode_DummyStartV(spawn, 1) || !Mode_DummyNextSeam(dummy)) {
@@ -511,11 +516,17 @@ static byte Ch_CreateStartupPlayer(nativeVal_t *out) {
 		}
 	}
 	if (!LvN_Item(dummy, 1, at) || !LvN_Item(at, 0, x) || !LvN_Item(at, 1, y) || !LvN_Item(at, 2, z) ||
-		!LvN_Create(Mode_S(&t, "MainCam"), x, y, z, "FCam", cam) || !Mode_VObj(cam, "Name", cname) ||
+		!LvN_Create(Mode_S(&t, InitSteps_CamName()), x, y, z, "FCam", cam) || !Mode_VObj(cam, "Name", cname) ||
 		!Native_ArgStr(cname, 2, &s)) {
 		return Mode_Done(&t, 0);
 	}
-	cWorld_SetCam(g_pWorld, 0, s);
+	/* not in the original: a joining player's camera is the camera of view 0 of its context (the instance's view 0
+	 * stays: include/scrap/initsteps.h) */
+	if (InitSteps_Entering()) {
+		Players_NoteCam(s);
+	} else {
+		cWorld_SetCam(g_pWorld, 0, s);
+	}
 	Native_Free(head);
 	Native_Free(at);
 	if (!Mode_G(CH, "CreateMainChar", fn) || !LvN_Item(dummy, 2, rot) || !LvN_Item(rot, 1, head) ||

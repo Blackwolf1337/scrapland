@@ -94,13 +94,13 @@ static void ExtPolice_CopDamage(const char *name, const char *attacker, byte die
 		return;
 	}
 	if (Players_Is(a)) {
-		Alarm_Set(&g_pWorld->alarm, 1.0f);
+		Alarm_Set(Players_CurAlarm(), 1.0f);
 		if (died && strstr(((cVehicleEntity *)cop)->typeName, "Poli")) {
 			SaveVar_Inc("Stats.OutPolice", 1);
 		}
 		return;
 	}
-	if (!g_pWorld->alarm.on) {
+	if (!Players_CurAlarm()->on) {
 		if (cAIVehicle_GetState(ai) != AIV_FREEZE) {
 			return;
 		}
@@ -143,12 +143,12 @@ static void cExtPolice_Think(cExtPolice *self) {
 	vec3_t tmp;
 	Nto1Node *n = Logic_ListFirst(self->list);
 	/* the instance: the police goes for the players whose alarm is on (include/scrap/players.h) */
-	byte alarm = Players_Net() ? Players_NearestWanted(&g_pWorld->camPos[0]) != NULL : g_pWorld->alarm.on;
+	byte alarm = Players_Net() ? Players_NearestWanted(&g_pWorld->camPos[0]) != NULL : Players_CurAlarm()->on;
 
 	Players_LevelReset(PLAYERS_LV_POLICE);
 	if (alarm && !self->alarm && (byte)Talk_IsShown()) {
 		alarm = 0;
-		Alarm_Set(&g_pWorld->alarm, 1.0f);
+		Alarm_Set(Players_CurAlarm(), 1.0f);
 		self->raised = 1;
 	} else {
 		self->raised = -1;
@@ -176,9 +176,10 @@ static void cExtPolice_Think(cExtPolice *self) {
 			}
 		} else if (alarm) {
 			if (cAIVehicle_ControlFlag(ai) && AIMove_GetTargetEnt(ai) == near) {
-				Players_BindEntity(near);
-				Alarm_Set(&g_pWorld->alarm, 1.0f);
+				int was = Players_EnterEntity(near);
+				Alarm_Set(Players_CurAlarm(), 1.0f);
 				Players_LevelRaise(PLAYERS_LV_POLICE, 1);
+				Players_Leave(was);
 				self->raised = 1;
 			}
 		}

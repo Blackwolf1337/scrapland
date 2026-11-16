@@ -10,6 +10,7 @@
 #include "scrap/global.h"
 #include "scrap/input.h"
 #include "scrap/netaudit.h"
+#include "scrap/players.h"
 #include "scrap/scorer.h"
 #include "scrap/world.h"
 #include "scrap/staticinit.h"
@@ -502,6 +503,7 @@ static void cActionSet_Keep(cActionSet *s) {
 static void cActionSet_Latch(cActionSet *s);
 void Input_SelectActionSet(int index) {
 	NetAudit_Name(NA_ACTIONSET, "actionset:", index >= 0 && index < NUM_SETS ? TABLE_AT(g_ActionSets, index)->name : "?");
+	Players_NoteActionSet(index);
 	Scorer_SetConsole(0);
 	CHECK(NUM_SETS > index);
 	cActionSet_Clear(TABLE_AT(g_ActionSets, g_CurActionSet));

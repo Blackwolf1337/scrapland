@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include "scrap/collisiongrid.h"
+#include "scrap/initsteps.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/replicate.h"
@@ -36,12 +37,15 @@ static byte InMap_Start(void) {
 		return Watch_ArenaWorld() || (PORT_CALL(CharConversor, Init, NULL, "") &&
 			PORT_CALL(DTritusDesktop, Init, NULL, "") && PORT_CALL(NewsPanel, Init, NULL, ""));
 	}
-	if (!PORT_CALL(Chars, CreateStartupPlayer, NULL, "") || !PORT_CALL(CharsNPC, Init, NULL, "")) {
+	/* the player steps (include/scrap/initsteps.h: the instance runs them for each player that joins) */
+	if ((InitStep_Now("InMap:Chars.CreateStartupPlayer") && !PORT_CALL(Chars, CreateStartupPlayer, NULL, "")) ||
+		!PORT_CALL(CharsNPC, Init, NULL, "")) {
 		return 0;
 	}
 	GVar_SetNum("CameraCloudDistance", 0);
 	if (!PORT_CALL(CharConversor, Init, NULL, "") || !PORT_CALL(CrazyWing, InitCrazyWing, NULL, "") ||
-		!PORT_CALL(Elevator, PlayerCreatedElevator, NULL, "") || !PORT_CALL(InPolice, Init, NULL, "")) {
+		(InitStep_Now("InMap:Elevator.PlayerCreatedElevator") && !PORT_CALL(Elevator, PlayerCreatedElevator, NULL, "")) ||
+		!PORT_CALL(InPolice, Init, NULL, "")) {
 		return 0;
 	}
 	/* the mercenaries only stay friends in Gamblinden and the Junkyard (Init.UpperMap is a variable of

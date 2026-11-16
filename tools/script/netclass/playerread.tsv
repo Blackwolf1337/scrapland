@@ -1,0 +1,131 @@
+# The reads of "the player" in the world's context of an instance (stage 1.3 of the second multiplayer design: the
+# resolver Players_ResolveAt of src/game/World/Players.c): the C function that reads it (Players_Any, Players_Script
+# and the scripts' accessors Mode_Usr*, the money and the alarm of the context, Players_ActingAt, Players_LevelRaise)
+# or Module.variable for a module variable tagged PLAYER (or PARTY outside coop), tag, why. Tags: NEAREST (the player
+# nearest to the entity that runs: an entity's update, a logic's think of an entity; a wanted one first; as ANY when
+# nothing runs), ANY (some player, the next one each frame: code that polls every frame sees all in turn), PARTY
+# (coop: the party's acting member, its mission's; outside coop as NEAREST), WORLD (no player: the world's own money,
+# alarm and module variables, no entity). A site without a row is counted by the audit as player.world.norule and
+# resolved as PARTY in coop and NEAREST elsewhere. The rows come from the audit of the instance runs (the city levels
+# with 8 bots, the coop chapters).
+Doors_Slot	NEAREST	a door opens for the player near it
+Doors_Usr0AutoDoorSlot	NEAREST	an automatic door opens for the player near it
+cMessengers_Think	ANY	the messengers' group polls the player every frame (each player in turn)
+Parking_Think	ANY	one parking zone per frame for the player's ship or foot (each player in turn)
+cEnemiesTraffic_Think	ANY	the enemies' traffic polls the player every frame (each player in turn)
+cExtPolice_Think	ANY	the police wave follows some player (each car goes for the nearest: Players_Nearest)
+Taunts_Warnings	ANY	the police warnings poll the alarm every frame (each player in turn)
+Taunts_Think	ANY	the police taunts poll the alarm every frame (each player in turn)
+MT_TriggerTakenN	NEAREST	a ship group's trigger taken by a ship that is no player's: is it the player's (the one near it)
+cShipGroupData_Think	ANY	the mosquitos and mad hunters poll the intruder every half second (each player in turn)
+Parking.PlayerShip	NEAREST	the own ship of the player near the entity that runs (a parked ship's death, a parking's callback)
+Veh_OnClientDeathN	NEAREST	a ship died by no player's hand: the player near it
+Om_GetFreeSpawnPos	NEAREST	an NPC's respawn place around the player near it
+Om_SpawnPosBy	NEAREST	an NPC's respawn place around the player near it
+Mi_GiveMoney	NEAREST	a mission item's money for the player near it
+Mi_BoxKind	NEAREST	a mission box for the player near it
+Pk_ParkedDeatN	NEAREST	a parked ship died: the player near it
+cGenCharLocalLogic_Update	NEAREST	an NPC's logic reacts to the alarm of the player near it
+cGenCharLocalLogic_UpdateView	NEAREST	an NPC sees the player near it
+cGenCharLocalLogic_RestartState	NEAREST	an NPC's logic reacts to the alarm of the player near it
+cAIChar_CheckTalk	NEAREST	an NPC talks to the player near it
+cAIChar_ThinkPatrol	NEAREST	an NPC's patrol reacts to the alarm of the player near it
+Logic_IsSuspectType	NEAREST	the class of the player near the NPC is a suspect's
+cEmbeddedFXSentinel_Update	NEAREST	a sentinel's alarm light for the player near it
+cLittlePoliceLocalLogic_Update	NEAREST	a police character reacts to the alarm of the player near it
+cLittlePoliceLocalLogic_UpdateView	NEAREST	a police character sees the player near it
+cLittlePoliceLocalLogic_UpdateLook	NEAREST	a police character looks at the player near it
+cFunctionaryLocalLogic_UpdateView	NEAREST	a functionary sees the player near it
+cSentinelLocalLogic_UpdateState	NEAREST	a sentinel reacts to the alarm of the player near it
+cSentinelLocalLogic_Think	NEAREST	a sentinel watches the player near it
+cSentinelLocalLogic_Return	NEAREST	a sentinel goes back while the alarm of the player near it is off
+cNurseLocalLogic_Update	NEAREST	a nurse reacts to the alarm of the player near it
+cNurseLocalLogic_SetState	NEAREST	a nurse reacts to the alarm of the player near it
+cGearLocalLogic_Update	NEAREST	a gear reacts to the alarm of the player near it
+cGearLocalLogic_UpdateAnim	NEAREST	a gear reacts to the alarm of the player near it
+cGateKeeperLocalLogic_Update	NEAREST	a gate keeper reacts to the alarm of the player near it
+cGateKeeperLocalLogic_UpdateView	NEAREST	a gate keeper sees the player near it
+cBishopLocalLogic_FindTarget	NEAREST	a bishop's target is the player near it
+Sound_Update	ANY	the action music while the alarm is on (the instance plays none; each player in turn)
+Sound_PlayVoice	NEAREST	a voice for the player near the speaker
+Npc_Respawn	NEAREST	an NPC respawns around the player near it
+Mode_AlarmOn	NEAREST	the scripts ask for the alarm of the player near the entity that runs
+Cw_SetCrazy	NEAREST	the crazy wing for the player near it
+cAIDesktop_UpdateAction0	NEAREST	a desktop NPC reacts to the alarm of the player near it
+WCE_AlarmOn	NEAREST	a character relaxes unless the alarm of the player near it is on
+cGenCharLocalLogic_SetState	NEAREST	an NPC's logic reacts to the alarm of the player near it
+cGenCharGroup_RaiseLevel	NEAREST	an NPC raises the alarm level of the player near it
+AICtrl_RaiseLevel	NEAREST	a sentinel or gear raises the alarm level of the player near it
+AICtrl_SendSentinelToNPC	NEAREST	a sentinel goes to an NPC while the alarm of the player near it is off
+ChType_PoliceEndActionMoney	NEAREST	a police character's action event on the alarm of the player near it
+Veh_Taunt	NEAREST	a ship's taunt for the player near it
+Coop_StandIn	ANY	is any player there for the coop level start
+Cp_HangarBack	NEAREST	acts for a player in its context; in the world's context the player near the entity that runs
+Cp_ClientMenu	NEAREST	acts for a player in its context; in the world's context the player near the entity that runs
+Cp_ClientHangarBack	NEAREST	acts for a player in its context; in the world's context the player near the entity that runs
+Fr_AddMoney	NEAREST	acts for a player in its context; in the world's context the player near the entity that runs
+Fr_Arrest	NEAREST	acts for a player in its context; in the world's context the player near the entity that runs
+Fr_Crimes	NEAREST	acts for a player in its context; in the world's context the player near the entity that runs
+Fd_Bribe	NEAREST	acts for a player in its context; in the world's context the player near the entity that runs
+Instance_Line	NEAREST	acts for a player in its context; in the world's context the player near the entity that runs
+Play_OwnStatus	NEAREST	acts for a player in its context; in the world's context the player near the entity that runs
+Rep_CallShip	NEAREST	acts for a player in its context; in the world's context the player near the entity that runs
+Rep_Death	NEAREST	acts for a player in its context; in the world's context the player near the entity that runs
+Rep_Hello	NEAREST	acts for a player in its context; in the world's context the player near the entity that runs
+Sputniks_Message	NEAREST	acts for a player in its context; in the world's context the player near the entity that runs
+Sputniks_ClientMessage	NEAREST	acts for a player in its context; in the world's context the player near the entity that runs
+Sputniks_ClientDone	NEAREST	acts for a player in its context; in the world's context the player near the entity that runs
+Travel_Joined	NEAREST	acts for a player in its context; in the world's context the player near the entity that runs
+ChType_Steal	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+ChType_BettyKill	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+ChType_BishopAttack	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+ChType_DesktopActionPress	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+Dtritus_Relax	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+ChType_DtritusKill	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+ChType_GearHitChar	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+ChType_GearShoot	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+ChType_MayorSphereHit	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+ChType_NurseHit	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+ChType_SentinelTarget	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+ChType_SentinelCanCall	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+ChType_SentinelPoint	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+cFXVehicleSirens_Update	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+Alarm_SetOnIn	NEAREST	an alarm's own player (its context); in the world's context the player near the entity that runs
+Alarm_Update	NEAREST	an alarm's own player (its context); in the world's context the player near the entity that runs
+cBaseLocalLogic_Update	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+cEnemies_Think	ANY	the enemies poll the player every frame (each player in turn)
+ExtPolice_CopDamage	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+cFunctionaryLocalLogic_AcceptsArrow	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+cGateKeeperLocalLogic_RestartState	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+cGearLocalLogic_OnRobbery	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+Gear_React	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+cGearLocalLogic_ToPolice	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+cGenCharLocalLogic_CanDiscover	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+AICtrl_Voices	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+AICtrl_SendAccuser	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+AICtrl_Update	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+cLittlePoliceLocalLogic_OnHit	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+cLittlePoliceLocalLogic_OnSeen	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+Messenger_Deliver	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+cNurseLocalLogic_Relax	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+ShipGroup_DeathNative	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+cSentinelLocalLogic_OnRobbery	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+cSentinelLocalLogic_OnAttack	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+cSentinelLocalLogic_OnUsr	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+cSentinelLocalLogic_GivesMoney	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+Traffic_DeathNative	NEAREST	an NPC, entity or logic acts on the money or alarm of the player near it
+NoProfiles	NEAREST	the scripts' money or alarm in the world's context: the player near the entity that runs
+cCopMeterScorer_ctor	ANY	the HUD of the instance (draws nothing): some player
+cCopMeterScorer_Draw	ANY	the HUD of the instance (draws nothing): some player
+cNewsPanel_Update	NEAREST	the HUD of the player near the entity that runs
+GearAim_SphereFunc	NEAREST	the HUD of the player near the entity that runs
+cStatusScorer_ctor	ANY	the HUD of the instance (draws nothing): some player
+Status_DrawMoney	ANY	the HUD of the instance (draws nothing): some player
+SG_PrintAlarm	NEAREST	the scripts' money or alarm in the world's context: the player near the entity that runs
+SG_LoadAlarm	NEAREST	the scripts' money or alarm in the world's context: the player near the entity that runs
+Mode_GetMoney	NEAREST	the scripts' money or alarm in the world's context: the player near the entity that runs
+Mode_SetMoney	NEAREST	the scripts' money or alarm in the world's context: the player near the entity that runs
+Mode_SetAlarm	NEAREST	the scripts' money or alarm in the world's context: the player near the entity that runs
+Mode_SetLockAlarm	NEAREST	the scripts' money or alarm in the world's context: the player near the entity that runs
+Sound_UpdateMusic	ANY	the action music while the alarm is on (the instance plays none)
+SG_MarkWayPoint	NEAREST	the way point of the player near the entity that runs (a conversor, a door)

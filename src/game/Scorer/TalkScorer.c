@@ -12,6 +12,7 @@
 #include "scrap/logic.h"
 #include "scrap/nativeobj.h"
 #include "scrap/netaudit.h"
+#include "scrap/players.h"
 #include "scrap/scorerhud.h"
 #include "scrap/scrapmain.h"
 #include "scrap/staticinit.h"
@@ -176,6 +177,9 @@ static void cTalkScorer_Draw(cScorerItem *base, int player) {
 }
 
 static cPy_Function g_TalkCallback;
+/* the instance: the player whose context set the callback and its join (the callback runs in its context) */
+static int g_TalkPlayer = PLAYERS_NONE;
+static uint16_t g_TalkJoined;
 
 static int g_TalkColor[3] = { 174, 229, 251 };
 
@@ -184,7 +188,9 @@ static byte Talk_Run(float dt) {
 	if (!(g_RemainTalkTime > 0.01f)) {
 		g_RemainTalkTime = 0.0f;
 		if (cPy_Function_IsValid((&g_TalkCallback))) {
+			int was = Players_EnterJoined(g_TalkPlayer, g_TalkJoined);
 			cPy_Function_Execute((&g_TalkCallback), 1);
+			Players_Leave(was);
 		}
 		return 0;
 	}
@@ -316,6 +322,8 @@ void Scorer_SetSpeechCallback(const char *func, const nativeVal_t *arg) {
 	NetAudit_Site(NA_HUD, "speech.callback");
 	nativeVal_t key, item;
 	cPy_Function_SetFunc((&g_TalkCallback), func);
+	g_TalkPlayer = Players_Current();
+	g_TalkJoined = Players_Joined(g_TalkPlayer);
 	if (arg && arg->type == NV_LIST) {
 		for (int k = 0; k < arg->n; k++) {
 			Talk_AddCallbackParam(&arg->items[k]);

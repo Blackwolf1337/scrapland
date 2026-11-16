@@ -25,7 +25,7 @@ API_FN(Scrap, GetLevelPath) {
 
 /* money Scrap.GetMoney() : Devuelve el liquido disponible. */
 API_FN(Scrap, GetMoney) {
-	return Mode_Parse(a, n, "") && Api_Build(out, "i", g_pWorld->money);
+	return Mode_Parse(a, n, "") && Api_Build(out, "i", *Players_CurMoney());
 }
 
 /* --- batch 2: the small functions of the module (A to L) --- */
@@ -273,15 +273,15 @@ API_FN(Scrap, GetAlarm) {
 	if (!Mode_Parse(a, n, "")) {
 		return 0;
 	}
-	float level = g_pWorld->alarm.value;
-	byte on = g_pWorld->alarm.on;
-	int value = Alarm_GetValue(&g_pWorld->alarm);
+	float level = Players_CurAlarm()->value;
+	byte on = Players_CurAlarm()->on;
+	int value = Alarm_GetValue(Players_CurAlarm());
 	return Api_Build(out, "ifi", on != 0, (double)level, value);
 }
 
 /* GetAlarmChars() */
 API_FN(Scrap, GetAlarmChars) {
-	return Mode_Parse(a, n, "") && Api_Build(out, "ss", g_pWorld->alarm.chars, g_pWorld->alarm.lastChars);
+	return Mode_Parse(a, n, "") && Api_Build(out, "ss", Players_CurAlarm()->chars, Players_CurAlarm()->lastChars);
 }
 
 /* GetCam(i) : name of the camera */
@@ -365,7 +365,7 @@ API_FN(Scrap, GetLanguage) {
 
 /* GetLockAlarm() */
 API_FN(Scrap, GetLockAlarm) {
-	return Mode_Parse(a, n, "") && Api_Build(out, "i", Alarm_IsLocked(&g_pWorld->alarm) != 0);
+	return Mode_Parse(a, n, "") && Api_Build(out, "i", Alarm_IsLocked(Players_CurAlarm()) != 0);
 }
 
 /* GetNetFlags() : (bit 0, bit 1, bit 2) of the application flags */
@@ -629,7 +629,7 @@ API_FN(Scrap, SetAlarm) {
 	if (!Mode_Parse(a, n, "f", &level)) {
 		return 0;
 	}
-	Alarm_Set(&g_pWorld->alarm, level);
+	Alarm_Set(Players_CurAlarm(), level);
 	return 1;
 }
 
@@ -639,7 +639,7 @@ API_FN(Scrap, SetAlarmChar) {
 	if (!Mode_Parse(a, n, "s", &name)) {
 		return 0;
 	}
-	Alarm_SetChar(&g_pWorld->alarm, name);
+	Alarm_SetChar(Players_CurAlarm(), name);
 	return 1;
 }
 
@@ -649,7 +649,7 @@ API_FN(Scrap, SetAlarmGrow) {
 	if (!Mode_Parse(a, n, "i", &grow)) {
 		return 0;
 	}
-	Alarm_SetGrow(&g_pWorld->alarm, grow);
+	Alarm_SetGrow(Players_CurAlarm(), grow);
 	return 1;
 }
 
@@ -683,7 +683,7 @@ API_FN(Scrap, SetLockAlarm) {
 	if (!Mode_Parse(a, n, "i", &lock)) {
 		return 0;
 	}
-	Alarm_SetLock(&g_pWorld->alarm, lock != 0);
+	Alarm_SetLock(Players_CurAlarm(), lock != 0);
 	return 1;
 }
 
@@ -693,7 +693,7 @@ API_FN(Scrap, SetMoney) {
 	if (!Mode_Parse(a, n, "i", &money)) {
 		return 0;
 	}
-	g_pWorld->money = money;
+	*Players_CurMoney() = money;
 	return 1;
 }
 

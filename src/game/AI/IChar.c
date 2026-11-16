@@ -1133,7 +1133,7 @@ void cAIChar_ThinkPatrol(cAI *elem) {
 		}
 		return;
 	case AICI_RELAX:
-		if (!g_pWorld->alarm.on) {
+		if (!Players_CurAlarm()->on) {
 			AICC_SetHold(self->control, 1);
 			if (AIC_ActionIs(self->ent, 1, 3)) {
 				return;
@@ -1170,7 +1170,7 @@ void cAIChar_CheckTalk(cAI *base) {
 
 	if (!self->canTalk ||
 		(self->internState != AICI_FINISHING_LINE && self->internState != AICI_FOLLOW_THE_PATH) ||
-		g_pWorld->alarm.on || !(self->routeTime > 5.0f)) {
+		Players_CurAlarm()->on || !(self->routeTime > 5.0f)) {
 		return;
 	}
 	o = AIChar_GetCollide(self);

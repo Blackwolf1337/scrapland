@@ -14,6 +14,7 @@
 #include "scrap/hashtable.h"
 #include "scrap/logic.h"
 #include "scrap/netaudit.h"
+#include "scrap/players.h"
 #include "scrap/scrapfont.h"
 #include "scrap/scrapmain.h"
 #include "scrap/sound.h"
@@ -307,7 +308,7 @@ static void Sound_UpdateMusic(float dt) {
 			want = 1;
 		} else {
 			want = g_isActionMusic;
-			if (g_pWorld->alarm.on) {
+			if (Players_CurAlarm()->on) {
 				want = 1;
 			}
 		}
@@ -494,7 +495,7 @@ byte Sound_PlayVoice(const char *name, const char *event, const char *arg, int f
 	}
 	byte anm = !strcmp(event, "AnmStr");
 	byte abort = !strcmp(event, "Abort");
-	if (!abort && !anm && !g_pWorld->alarm.on) {
+	if (!abort && !anm && !Players_CurAlarm()->on) {
 		return 0;
 	}
 	SoundSys_GetVoiceString(g_pSound, TALK_VOICE, buf, sizeof(buf));
@@ -567,7 +568,7 @@ void Sound_Update(float dt) {
 			cSoundPS_Update(ps, dt);
 		}
 	}
-	if (!g_ForceNoActionMusic && !g_IsMapOutDoor && g_isActionIndoor && g_pWorld->alarm.on &&
+	if (!g_ForceNoActionMusic && !g_IsMapOutDoor && g_isActionIndoor && Players_CurAlarm()->on &&
 		g_RemainTalkTime <= 0.0f) {
 		g_S_VoiceoverVolume = 1.0f;
 	} else {

@@ -1052,8 +1052,9 @@ static byte Elv_SpawnUsr(const char *port, nativeVal_t *usr) {
 static byte Elv_PlayerCreatedElevator(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *from = Mode_V(&t), *key = Mode_V(&t), *e = Mode_V(&t), *usr = Mode_V(&t);
-	/* the headless instance has no startup player to place (include/scrap/players.h; a coop instance's first member:
-	 * Elevator_FirstMember) */
+	/* the instance runs this step for each player that joins (include/scrap/initsteps.h): its arrival's place is the
+	 * travel's (Travel_Admit, Elevator_Arrive) and the coop story's first launch comes with its first member
+	 * (Elevator_FirstMember) */
 	if (g_Instance) {
 		return Mode_Done(&t, 1);
 	}

@@ -20,9 +20,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "scrap/coop.h"
 #include "scrap/global.h"
 #include "scrap/modvars.h"
 #include "scrap/nativeobj.h"
+#include "scrap/netclass.h"
+#include "scrap/players.h"
 #include "scrap/script.h"
 
 /* the overflow list of a module file: sorted by name, the names Mem_Alloc'd */
@@ -43,6 +46,7 @@ typedef struct {
 	const nativeVal_t *vars;	/* the variables of the module the file was made into last (only compared) */
 	mvSpace_t *space;	/* that module while it is bound */
 	mvExtra_t extra;
+	uint8_t *tags;		/* the netclass tag of each name of the table + 2 (0: not looked up yet), on the instance */
 } mvFile_t;
 
 /* one per entry of g_ModVarModules */
@@ -117,6 +121,47 @@ static const modVar_t *MV_AddExtra(int file, const char *name) {
 	x->v[at] = (modVar_t){ copy, MVK_EXTRA, MVT_ANY, 0, NULL };
 	x->n++;
 	return &x->v[at];
+}
+
+/* ---- per player (stage 1.2): the overlay of ModVarOver.c ---- */
+
+/* the netclass tag of module.name of a file */
+static int MV_TagOf(int file, const char *name) {
+	char key[256];
+	snprintf(key, sizeof(key), "%s.%s", g_ModVarModules[file].module, name);
+	return NetClass_Find(NCT_MODVAR, key);
+}
+
+/* the tag of an entry of a file (the table's kept once looked up) */
+static int MV_Tag(int file, const modVar_t *e) {
+	const modVarModule_t *t = &g_ModVarModules[file];
+	if (e < t->vars || e >= t->vars + t->count) {
+		return MV_TagOf(file, e->name);
+	}
+	mvFile_t *f = MV_File(file);
+	if (!f->tags) {
+		f->tags = Mem_Calloc((uint32_t)t->count);
+	}
+	int i = (int)(e - t->vars);
+	if (!f->tags[i]) {
+		f->tags[i] = (uint8_t)(MV_TagOf(file, e->name) + 2);
+	}
+	return f->tags[i] - 2;
+}
+
+/* the player whose overlay holds name of ref now, -1 for the module (single player, a namespace, a module the file is
+ * not bound to, a variable of the world, the world's context); *mod and *key the static texts of the registry */
+static int MV_Owner(const modVarRef_t *ref, const char *name, const char **mod, const char **key) {
+	if (!Players_Net() || ref->file < 0 || MV_File(ref->file)->vars != ref->vars) {
+		return -1;
+	}
+	const modVar_t *e = MV_Known(ref->file, name);
+	if (!e || !ModVar_OverTagged(MV_Tag(ref->file, e), Coop_On())) {
+		return -1;
+	}
+	*mod = g_ModVarModules[ref->file].module;
+	*key = e->name;
+	return Players_VarOwnerAt(*mod, *key);
 }
 
 /* ---- the values ---- */
@@ -219,6 +264,9 @@ static void MV_Made(const char *module, const char *level, const nativeVal_t *mo
 		}
 	}
 	mvSpace_t *s = MV_Bind(mod);
+	if (Players_Net()) {
+		ModVar_OverClearModule(g_ModVarModules[first].module);
+	}
 	if (file >= 0) {
 		modVarRef_t ref;
 		MV_File(file)->vars = s->vars;
@@ -378,15 +426,28 @@ const modVar_t *ModVar_Find(const modVarRef_t *ref, const char *name) {
 	return e;
 }
 
-byte ModVar_Has(const modVarRef_t *ref, const char *name) {
+/* the module's own value of name (borrowed), NULL */
+static nativeVal_t *MV_ModuleSlot(const modVarRef_t *ref, const char *name) {
 	nativeVal_t *t = MV_Table(ref);
-	return t && MV_Slot(t, name) != NULL;
+	return t ? MV_Slot(t, name) : NULL;
+}
+
+byte ModVar_Has(const modVarRef_t *ref, const char *name) {
+	const char *mod, *key;
+	const nativeVal_t *v;
+	int pl = MV_Owner(ref, name, &mod, &key), st = pl >= 0 ? ModVar_OverGet(pl, mod, key, &v) : -1;
+	return st >= 0 ? (byte)st : MV_ModuleSlot(ref, name) != NULL;
 }
 
 byte ModVar_GetVal(const modVarRef_t *ref, const char *name, nativeVal_t *out) {
-	nativeVal_t *t = MV_Table(ref), *s;
+	const char *mod, *key;
+	const nativeVal_t *s;
+	int pl = MV_Owner(ref, name, &mod, &key), st = pl >= 0 ? ModVar_OverGet(pl, mod, key, &s) : -1;
 	Native_SetNone(out);
-	if (!t || (s = MV_Slot(t, name)) == NULL) {
+	if (st < 0) {
+		s = MV_ModuleSlot(ref, name);
+	}
+	if (!s) {
 		return 0;
 	}
 	Native_Copy(out, s);
@@ -396,11 +457,18 @@ byte ModVar_GetVal(const modVarRef_t *ref, const char *name, nativeVal_t *out) {
 
 int ModVar_SetVal(const modVarRef_t *ref, const char *name, const nativeVal_t *v) {
 	nativeVal_t *t = MV_Table(ref), key, x;
+	const char *mod, *k;
 	if (!t) {
 		Native_Raise(NE_SYSTEM, "module variables without their dict");
 		return -1;
 	}
 	MV_Form(v, &x);
+	int pl = MV_Owner(ref, name, &mod, &k);
+	if (pl >= 0) {
+		ModVar_OverSet(pl, mod, k, &x);
+		Native_Free(&x);
+		return 0;
+	}
 	MV_Key(&key, name);
 	Native_DictSet(t, &key, &x);
 	MV_Seen(ref, name);
@@ -410,8 +478,17 @@ int ModVar_SetVal(const modVarRef_t *ref, const char *name, const nativeVal_t *v
 int ModVar_Del(const modVarRef_t *ref, const char *name) {
 	/* the name stays in the table or the overflow list */
 	nativeVal_t *t = MV_Table(ref), key;
+	const char *mod, *k;
+	const nativeVal_t *v;
+	int pl = MV_Owner(ref, name, &mod, &k), st = pl >= 0 ? ModVar_OverGet(pl, mod, k, &v) : -1;
 	MV_Key(&key, name);
-	byte ok = t && Native_DictDel(t, &key);
+	byte ok;
+	if (pl >= 0 && (st > 0 || (st < 0 && MV_ModuleSlot(ref, name)))) {
+		ModVar_OverDel(pl, mod, k);
+		ok = 1;
+	} else {
+		ok = pl < 0 && t && Native_DictDel(t, &key);
+	}
 	if (!ok) {
 		/* the KeyError of a dict delete */
 		Native_RaiseKey(&key);

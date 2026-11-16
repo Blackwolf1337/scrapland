@@ -6,6 +6,7 @@
 
 #include "scrap/chartype.h"
 #include "scrap/fxelements.h"
+#include "scrap/players.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/scrapparticles.h"
 #include "scrap/weapons.h"
@@ -263,10 +264,10 @@ static void ChType_DesktopActionPress(cAbstractFile *params) {
 		!Entity_IsType(target, TYEN_WALKCHAR) || !ChType_ActCtrl(target)) {
 		return;
 	}
-	g_pWorld->money += g_DesktopJumpPrice;
+	*Players_CurMoney() += g_DesktopJumpPrice;
 	SaveVar_Inc("Stats.Jump", 1);
 	if (Desktop_BonusClass(target)) {
-		g_pWorld->money += g_DesktopJumpPrice;
+		*Players_CurMoney() += g_DesktopJumpPrice;
 		SaveVar_Inc("Stats.Jump.Police", 1);
 	}
 }

@@ -172,7 +172,7 @@ static struct {
 	char dataModule[CP_NAME], dataSection[CP_NAME];	/* the level data section that runs, "" */
 	byte inScene;					/* a scene of the scripts plays */
 	int scene;						/* its table (the clients play it), -1 none */
-	int scenePlayer;				/* the member bound when it started */
+	int scenePlayer;				/* the member current when it started */
 	uint32_t serial;				/* scenes started so far */
 	uint32_t endingSerial;			/* the one whose end runs (its callback may start the next) */
 	int endingTable;
@@ -264,7 +264,8 @@ static struct {
 	int pilot;						/* the member the parking's mission callbacks of boarding ran for last, -1 */
 	uint16_t missionJoined;			/* its join */
 	int remote;						/* a remote communication of the scripts is told (Coop_RemoteCom, nested) */
-	int remoteWas;					/* the member bound before it */
+	int sceneWas;					/* the context before the scene's member entered for the scene's end */
+	int remoteWas;					/* the context before it */
 	byte partyDead;					/* every member here died: the single player's death runs (Coop_Died) */
 	char gone[CP_GONE][CP_NAME];	/* the entities the level's start deleted (the mission's removals), for the clients */
 	int ngone;
@@ -394,8 +395,8 @@ void Coop_SaveVarChanged(const char *name, const char *old, byte inc) {
 		return;
 	}
 	/* the member that sets the next mission is its member */
-	if (g_Instance && !strcmp(name, "Mission.Library") && Players_Bound() != PLAYERS_NONE) {
-		Cp_SetMissionPlayer(Players_Bound());
+	if (g_Instance && !strcmp(name, "Mission.Library") && Players_Current() != PLAYERS_NONE) {
+		Cp_SetMissionPlayer(Players_Current());
 	}
 	int i = Cp_DirtyAt(name);
 	if (i < 0) {
@@ -729,7 +730,7 @@ void Coop_Boarded(int i, cEntity *ship) {
 	if (stand) {
 		Players_SetShip(i, stand);
 	}
-	Players_Bind(i);
+	int was = Players_Enter(i);
 	for (int k = 0; k < 2; k++) {
 		if (!Mode_CallIf("Parking", cb[ship != NULL][k], &called)) {
 			Native_ErrPrint();
@@ -737,7 +738,7 @@ void Coop_Boarded(int i, cEntity *ship) {
 			Con_Printf("coop: player %d %s a ship: Parking.%s\n", i, ship ? "into" : "out of", cb[ship != NULL][k]);
 		}
 	}
-	Players_BindTurn();
+	Players_Leave(was);
 	if (stand && Players_Ship(i) == stand) {
 		Players_SetShip(i, NULL);
 	}
@@ -1223,9 +1224,9 @@ static void Cp_Notice(int i, const char *key, const char *arg) {
 	}
 }
 
-/* the member the scripts act for: the bound one, else the first one here */
+/* the member the scripts act for: the current one, else the first one here */
 static int Cp_Player(void) {
-	int i = Players_Bound();
+	int i = Players_Current();
 	if (i != PLAYERS_NONE && Players_Get(i)) {
 		return i;
 	}
@@ -1393,10 +1394,11 @@ void Coop_Died(int i, cEntity *e) {
 	Native_SetStr(&a[0], e->name);
 	Native_SetStr(&a[1], "");
 	cp.partyDead = 1;
-	Players_Bind(i);
+	int was = Players_Enter(i);
 	if (!Mode_Import("Chars") || !PORT_CALL(Chars, MainCharDeath, NULL, "vv", &a[0], &a[1])) {
 		Native_ErrPrint();
 	}
+	Players_Leave(was);
 	cp.partyDead = 0;
 	Native_Free(&a[0]);
 	Native_Free(&a[1]);
@@ -1750,7 +1752,7 @@ cEntity *Coop_StandInEntity(void) {
 }
 
 const char *Coop_MainCharName(void) {
-	int i = Coop_On() ? Players_Bound() : PLAYERS_NONE;
+	int i = Coop_On() ? Players_Acting() : PLAYERS_NONE;
 	if (i == PLAYERS_NONE) {
 		return NULL;
 	}
@@ -1850,14 +1852,14 @@ static void Cp_TalkPlayer(int i) {
 		/* its line again for the member (the stand-in's had no client and no end) */
 		nativeVal_t cur;
 		Native_SetNone(&cur);
-		Players_Bind(i);
+		int was = Players_Enter(i);
 		if (Mode_SetModVar("Speech", "PlayerName", &v) && Mode_ModGet("Speech", "CurrNI", &cur) && cur.type == NV_INT &&
 			PORT_CALL(Speech, RunNI, NULL, "v", &cur)) {
 			Con_Printf("coop: the talk of the level's start goes on with player %d\n", i);
 		} else {
 			Native_ErrPrint();
 		}
-		Players_BindTurn();
+		Players_Leave(was);
 		Native_Free(&cur);
 		Native_Free(&v);
 	}
@@ -1979,7 +1981,7 @@ int Coop_UsrSlot(cEntity *e, int old, int slot) {
 	}
 	int i = Coop_HeldPlayer(e);
 	if (i < 0) {
-		i = Players_Bound();
+		i = Players_Acting();
 	}
 	if (i == PLAYERS_NONE) {
 		return slot;
@@ -2018,9 +2020,11 @@ void Coop_SceneEnding(void) {
 	cp.endingSerial = cp.serial;
 	cp.endingTable = cp.scene;
 	Str_Copy(cp.endingCls, cp.sceneCls, sizeof(cp.endingCls));
-	/* the scene's member (hidden by the scene its entity is no player found: its connection counts) */
+	/* the scene's member (hidden by the scene its entity is no player found: its connection counts) for the end and its
+	 * callback, until Coop_SceneEnd */
+	cp.sceneWas = Players_Current();
 	if (cp.scenePlayer >= 0 && Rep_PlayerConn(cp.scenePlayer) >= 0) {
-		Players_Bind(cp.scenePlayer);
+		Players_Enter(cp.scenePlayer);
 	}
 }
 
@@ -2046,7 +2050,7 @@ void Coop_SceneEnd(void) {
 		Input_SelectActionSetNamed("");
 	}
 	cp.endingSerial = 0;
-	Players_BindTurn();
+	Players_Leave(cp.sceneWas);
 }
 
 /* ---- the texts and voices of the scripts ---- */
@@ -2084,13 +2088,8 @@ static int Cp_MissionPlayer(void) {
 	return -1;
 }
 
-byte Coop_BindMission(void) {
-	int i = Coop_On() ? Cp_MissionPlayer() : -1;
-	if (i < 0) {
-		return 0;
-	}
-	Players_Bind(i);
-	return 1;
+int Coop_MissionPlayer(void) {
+	return Coop_On() ? Cp_MissionPlayer() : -1;
 }
 
 static void Cp_SetMissionPlayer(int i) {
@@ -2125,7 +2124,7 @@ void Coop_SpeechText(const char *text, float time, int r, int g, int b) {
 	NetRep_PutU8(&w, (uint32_t)(b & 255));
 	/* the speaker's client shows the conversation; a remote communication the mission's member and the members near it
 	 * */
-	int i = Players_Bound();
+	int i = Players_Acting();
 	Con_Printf("coop: %s for player %d: %.160s\n", cp.remote ? "remote communication" : "speech",
 		i == PLAYERS_NONE ? -1 : i, text);
 	if (!cp.remote && i != PLAYERS_NONE) {
@@ -2195,7 +2194,7 @@ void Coop_PlayVoice(int channel) {
 	NetRep_PutU8(&w, (uint32_t)channel);
 	NetRep_PutStr(&w, cp.voice[channel]);
 	/* the speaker and the members near it hear it */
-	Cp_ToNear(Players_Bound(), buf, w.size);
+	Cp_ToNear(Players_Acting(), buf, w.size);
 }
 
 void Coop_RemoteCom(byte on) {
@@ -2208,12 +2207,9 @@ void Coop_RemoteCom(byte on) {
 	}
 	if (on) {
 		int i = Cp_MissionPlayer();
-		cp.remoteWas = Players_Bound();
-		if (i >= 0) {
-			Players_Bind(i);
-		}
+		cp.remoteWas = i >= 0 ? Players_Enter(i) : Players_Current();
 	} else if (!--cp.remote) {
-		Players_Bind(cp.remoteWas);
+		Players_Leave(cp.remoteWas);
 	}
 }
 
@@ -2230,7 +2226,7 @@ void Coop_RemoteHead(const char *model, const char *text, int index) {
 	NetRep_PutStr(&w, text);
 	NetRep_PutU8(&w, (uint32_t)(index & 255));
 	if (!w.bad) {
-		Cp_ToNear(Players_Bound(), buf, w.size);
+		Cp_ToNear(Players_Acting(), buf, w.size);
 	}
 }
 
@@ -2398,25 +2394,24 @@ static void Cp_MenuFunc(int i, const char *fn) {
 		return;
 	}
 	Str_PrintfQuiet(mod, sizeof(mod), "%.*s", (int)(dot - fn), fn);
-	Players_Bind(i);
+	int was = Players_Enter(i);
 	Str_Copy(cp.via, fn, sizeof(cp.via));
 	if (!Mode_Import(mod) || !Native_CallMod(mod, dot + 1, NULL, "is", 0L, "")) {
 		Native_ErrPrint();
 	}
 	cp.via[0] = 0;
-	Players_BindTurn();
+	Players_Leave(was);
 }
 
-/* player i's money and hangar from its client into the story (a menu of the hangar closed there): its money, -1 for a
- * bad message; player i stays bound */
-static int Cp_HangarBack(int i, NetRepReader *r) {
+/* the current player's money and hangar from its client into the story (a menu of the hangar closed there): its
+ * money, -1 for a bad message */
+static int Cp_HangarBack(NetRepReader *r) {
 	int money = (int)NetRep_GetU32(r);
 	if (r->bad) {
 		return -1;
 	}
-	Players_Bind(i);
 	Cp_GetVars(r, 0);
-	g_pWorld->money = money;
+	*Players_CurMoney() = money;
 	return money;
 }
 
@@ -2445,8 +2440,10 @@ static void Cp_MenuCallback(const char *mod, const char *var, byte args, byte cl
 /* player i closed the ship editor: its hangar into the story, its money, the ship on the platform as the editor's end
  * leaves it, then the editor's callback of the scripts */
 static void Cp_ShipEdited(int i, NetRepReader *r) {
-	int money = Cp_HangarBack(i, r);
+	int was = Players_Enter(i);
+	int money = Cp_HangarBack(r);
 	if (money < 0) {
+		Players_Leave(was);
 		return;
 	}
 	if (!Junkyard_PlatformShip()) {
@@ -2455,7 +2452,7 @@ static void Cp_ShipEdited(int i, NetRepReader *r) {
 	const char *cur = SaveVar_Get(CP_HANGAR "iHangarShip");
 	Con_Printf("coop: player %d closed the ship editor (hangar %s, money %d)\n", i, cur ? cur : "-", money);
 	Cp_MenuCallback("ShipEdit", "EndShipEditCallBack", 1, 0);
-	Players_BindTurn();
+	Players_Leave(was);
 }
 
 byte Coop_Warning(const char *text) {
@@ -2485,7 +2482,7 @@ byte Coop_SputnikOpen(void) {
 	NetRepBuf w;
 	nativeVal_t spt;
 	Native_SetNone(&spt);
-	/* the member that used the party's Sputnik (its interface's events may run while another one is bound) */
+	/* the member that used the party's Sputnik (its interface's events may run in another one's context) */
 	int user = Coop_On() && Mode_ModGet("Sputnik", "spt", &spt) && spt.type == NV_ENT ? Sputniks_CoopUser(Native_Ent(&spt)) : -1;
 	Native_Free(&spt);
 	Native_ErrClear();
@@ -2510,14 +2507,16 @@ byte Coop_SputnikOpen(void) {
 
 /* player i closed Sputnik's screen: its hangar and money, then the callback of the scripts (once) */
 static void Cp_SputnikDone(int i, NetRepReader *r) {
-	int money = Cp_HangarBack(i, r);
+	int was = Players_Enter(i);
+	int money = Cp_HangarBack(r);
 	if (money < 0) {
+		Players_Leave(was);
 		return;
 	}
 	const char *cur = SaveVar_Get(CP_HANGAR "iHangarShip");
 	Con_Printf("coop: player %d closed Sputnik's screen (hangar %s, money %d)\n", i, cur ? cur : "-", money);
 	Cp_MenuCallback("SputnikInterface", "EndSputnikCallBack", 0, 1);
-	Players_BindTurn();
+	Players_Leave(was);
 }
 
 /* the machine of the member's conversor runs (1) or waits for its pick (0) */
@@ -2531,7 +2530,7 @@ static void Cp_ConvMachine(byte run) {
 
 void Coop_ConvEnter(void) {
 	nativeVal_t c;
-	int i = Coop_On() ? Players_Bound() : PLAYERS_NONE;
+	int i = Coop_On() ? Players_Acting() : PLAYERS_NONE;
 	if (i == PLAYERS_NONE) {
 		return;
 	}
@@ -2571,10 +2570,11 @@ byte Coop_ConvMenu(void) {
 		return 1;
 	}
 	/* the menu's bookkeeping of the single player (the mode and time to go back to), the machine waits */
-	Players_Bind(i);
+	int was = Players_Enter(i);
 	if (!Mode_Import("Menu") || !PORT_CALL(Menu, InitMenuSys, NULL, "i", 0L)) {
 		Native_ErrPrint();
 	}
+	Players_Leave(was);
 	cp.pl[i].menu = COOP_MENU_CONV;
 	cp.convAsked = 1;
 	Cp_ConvMachine(0);
@@ -2587,7 +2587,7 @@ byte Coop_ConvMenu(void) {
 static void Cp_ConvPicked(int i, const char *cls) {
 	char k[CP_NAME + 8];
 	nativeVal_t v;
-	Players_Bind(i);
+	int was = Players_Enter(i);
 	cp.convAsked = 0;
 	Cp_ConvMachine(1);
 	Con_Printf("coop: player %d picks %s in the conversor\n", i, cls[0] ? cls : "nothing");
@@ -2599,12 +2599,13 @@ static void Cp_ConvPicked(int i, const char *cls) {
 		Native_ErrPrint();
 	}
 	Native_Free(&v);
-	Players_BindTurn();
+	Players_Leave(was);
 }
 
 void Coop_ConvEnd(void) {
+	/* the member's context for the rest of the machine's end (the dispatch point around it leaves it again) */
 	if (Coop_On() && cp.conv >= 0) {
-		Players_Bind(cp.conv);
+		Players_Enter(cp.conv);
 		cp.conv = -1;
 	}
 }
@@ -3808,7 +3809,7 @@ byte Coop_Command(const char *line) {
 	}
 	if (sscanf(line, "qload %63s", name) == 1 || !strcmp(line, "restart") || !strcmp(line, "theend")) {
 		/* as the scripts do: SaveGame.QLoad, SaveGame.Restart (a super deal), the end's credits section */
-		Players_Bind(Cp_Player());
+		int was = Players_Enter(Cp_Player());
 		if (!strcmp(line, "theend")) {
 			SaveVars_ScriptDelete("");
 			Str_Copy(name, "Levels/Menu", sizeof(name));
@@ -3818,16 +3819,16 @@ byte Coop_Command(const char *line) {
 		if (!ok) {
 			Native_ErrPrint();
 		}
-		Players_BindTurn();
+		Players_Leave(was);
 		return 1;
 	}
 	if (!strncmp(line, "call ", 5) && line[5] != '@') {
-		/* a call of the scripts as a call table line ("Module.Func|arg|..."), for the bound player */
+		/* a call of the scripts as a call table line ("Module.Func|arg|..."), for the current player */
 		const char *one[2] = { line + 5, NULL };
-		Players_Bind(Cp_Player());
+		int was = Players_Enter(Cp_Player());
 		Con_Printf("coop: call %s: %s\n", line + 5, Mode_Calls(NULL, one) ? "done" : "failed");
 		Native_ErrPrint();
-		Players_BindTurn();
+		Players_Leave(was);
 		return 1;
 	}
 	if (sscanf(line, "show %63s", name) == 1 && strchr(name, '.')) {
@@ -4386,7 +4387,7 @@ static void Cp_ClientMenu(NetRepReader *r) {
 			return;
 		}
 		Cp_GetVars(r, 1);
-		g_pWorld->money = m;
+		*Players_CurMoney() = m;
 		cp.cmenu = COOP_MENU_SPUTNIK;
 		cp.cmenuAt = Watch_ShownTime();
 		if (!Mode_Import("SputnikInterface") || !PORT_CALL(SputnikInterface, EnterSputnikInterface, NULL, "i", 0L)) {
@@ -4404,7 +4405,7 @@ static void Cp_ClientMenu(NetRepReader *r) {
 		return;
 	}
 	Cp_GetVars(r, 1);
-	g_pWorld->money = money;
+	*Players_CurMoney() = money;
 	if (cp.testEdit) {
 		/* test: the hangar's spare ship is the member's (SCRAP_COOP_SHIPEDIT) */
 		SaveVar_Set(CP_HANGAR "HangarShipAux", CP_LIFEBOAT);
@@ -4453,11 +4454,11 @@ static void Cp_ClientHangarBack(int kind) {
 	NetRep_PutU8(&w, COOP_MSG);
 	NetRep_PutU8(&w, COOP_C_ANSWER);
 	NetRep_PutU8(&w, (uint32_t)kind);
-	NetRep_PutU32(&w, (uint32_t)g_pWorld->money);
+	NetRep_PutU32(&w, (uint32_t)*Players_CurMoney());
 	Cp_PutVars(&w, 0);
 	if (!w.bad && Watch_SendReliable(buf, w.size)) {
 		Con_Printf("coop: the hangar to the instance (ship %s, money %d)\n", SaveVar_Get(CP_HANGAR "iHangarShip") ?
-			SaveVar_Get(CP_HANGAR "iHangarShip") : "-", g_pWorld->money);
+			SaveVar_Get(CP_HANGAR "iHangarShip") : "-", *Players_CurMoney());
 	}
 }
 

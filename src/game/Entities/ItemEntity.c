@@ -123,9 +123,11 @@ static void cItemEntity_Touch(cEntity *elem, cEntity *other, const vec3_t *point
 		Nto1Node_Unlink(&self->taker);
 	}
 	cEntity_AddLink(other, &self->taker);
+	int was = Players_EnterEntity(other);
 	cPy_Function_AddParamS(&self->onTake, self->base.name);
 	cPy_Function_AddParamS(&self->onTake, other->name);
 	cPy_Function_Execute(&self->onTake, 0);
+	Players_Leave(was);
 }
 
 static void cItemEntity_SetBackTime(cItemEntity *self, float t);

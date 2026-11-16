@@ -14,12 +14,12 @@
  * story's (where it is: Map, Spawn, ComeFrom, PrevMap; Char, AcBatteries, Money, Alarm, GameplayTime): they stay out.
  *
  * "The player" of a mission is the member that triggered it: the binding of the players (include/scrap/players.h)
- * runs the use of a mission entity, a scene and its callbacks with that member bound, so the items the scripts give
+ * runs the use of a mission entity, a scene and its callbacks in that member's context, so the items the scripts give
  * to "the player" go to it. In coop every use arrow of an entity (keypads, characters to talk to) runs on the
  * instance, not only the doors (Coop_UseAny).
  *
  * Mission level changes (SaveGame.QLoad and StartGame on an instance, Coop_QLoad) are travel through the coordinator
- * (include/scrap/travel.h): the bound player goes to the level at the spawn of its way point (the save variable
+ * (include/scrap/travel.h): the current player goes to the level at the spawn of its way point (the save variable
  * Spawn); a change into or out of a level of the story alone (Orbit, Fake, Junkyard, AB, ABIndoor) is a chapter of the
  * story and takes every member of the party along (COORD_SR_PARTY: the coordinator summons the others from their
  * instances). A chapter's way point (Map, Spawn, ComeFrom, PrevMap of the travel) goes into the story as
@@ -35,7 +35,7 @@
  * (COOP_Y_SCENE), the client runs the table and Scene.Play itself (the actors, the camera, the subtitles and voices
  * of the scene; no callback of the scripts), and ends it with the instance's end (COOP_Y_SCENEEND). The members in
  * other instances get a notice through the coordinator. Outside such a scene the speech texts of the scripts go to
- * the client of the bound player (the speaker of a conversation), their voices to it and to the members within
+ * the client of the current player (the speaker of a conversation), their voices to it and to the members within
  * COOP_HEAR, the mission messages to all clients in the instance. After a scene the other members of the instance
  * stand next to the member of the scene. A member that comes in while a scene plays gets it too (its character
  * hidden like the others' until the end); Escape on a client ends its own copy only (its character comes back with
@@ -97,7 +97,7 @@
  * member's own money that the coordinator keeps (the other modes' per player money) follows the purse.
  *
  * Remote communications (Speech.ForceRemoteComunication: a call with the caller's head on the monitor) go to the
- * mission's member (the one bound when the story's mission changed, else the first member that came into the instance
+ * mission's member (the current one when the story's mission changed, else the first member that came into the instance
  * while it was gone) and to the members within COOP_HEAR of it, with the caller's head (COOP_Y_HEAD); the scripts act
  * for that member during the call.
  *
@@ -213,7 +213,7 @@ void Coop_Pass(void);
 byte Coop_CoordMessage(const uint8_t *data, int size);
 /* the coordinator's connection is gone (the whole story comes again when it is back) */
 void Coop_CoordLost(void);
-/* SaveGame.QLoad(map) on an instance: 1 when it became the travel of the bound player (or its party), the end of
+/* SaveGame.QLoad(map) on an instance: 1 when it became the travel of the current player (or its party), the end of
  * the story (the menu) or the level's restart for its members (the same level) */
 byte Coop_QLoad(const char *map);
 /* a call table of the scripts ran (Mode_Calls): a scene's is kept */
@@ -222,7 +222,7 @@ void Coop_SceneTable(const char *module, const char *const *lines);
  * section for that scene (a scene made from the level's .def data has no call table) */
 void Coop_DataSection(const char *module, const char *section);
 void Coop_SceneLoad(const char *cls);
-/* Scene.Play(cls) started; EndOfScene of it begins (the member of the scene bound for its callback) and ended */
+/* Scene.Play(cls) started; EndOfScene of it begins (the member of the scene current for its callback) and ended */
 void Coop_ScenePlay(const char *cls);
 /* the camera of view 0 a scene or a talk uses (the instance has none of its own): made when missing */
 void Coop_SceneCamera(void);
@@ -234,7 +234,7 @@ void Coop_Fade(const int *from, const int *to, double time);
 void Coop_SpeechText(const char *text, float time, int r, int g, int b);
 void Coop_MsgText(const char *text, float time, const char *font);
 void Coop_OpenVoice(const char *file, int channel);
-/* a remote communication of the scripts (Speech.ForceRemoteComunication) begins (on 1: the mission's member bound,
+/* a remote communication of the scripts (Speech.ForceRemoteComunication) begins (on 1: the mission's member current,
  * its text and voice go to that member and the members near it) and ends (0: the binding before it again; nested
  * calls count); Coop_RemoteHead: the caller's head on their monitors */
 void Coop_RemoteCom(byte on);
@@ -265,7 +265,7 @@ byte Coop_SceneHolds(void);
 byte Coop_Holds(int i);
 /* the player slot a script gives character e (UsrControl; old: its slot now): on a coop instance a member's
  * character the scripts take (-1) is held for its member, and the scripts' 0..3 is that member's slot again (else
- * the bound member's: the single player's player 0) */
+ * the current member's: the single player's player 0) */
 int Coop_UsrSlot(struct cEntity *e, int old, int slot);
 /* the slot the scripts read of a character or ship (UsrControl): on a coop instance a member's slot is the single
  * player's 0 (the scripts' "the player": a race's checkpoints, the coins), else slot */
@@ -282,7 +282,7 @@ byte Coop_NoShipCall(void);
 /* a player's new character: it selects what it looks at, as the single player's (the conversations need it) */
 void Coop_Spawned(struct cEntity *e);
 /* the name of a player's character the scripts make (Chars.CreateMainChar of a possession or a conversor) on a coop
- * instance: a new one for the bound member each time (the single player's Player0 and PlayerZ would be the same
+ * instance: a new one for the current member each time (the single player's Player0 and PlayerZ would be the same
  * entity for two members), NULL elsewhere */
 const char *Coop_MainCharName(void);
 /* player i's slot is on e, a live character or ship other than the one the instance gave it: 1 when it is the
@@ -321,7 +321,7 @@ byte Coop_ShipEditOpen(void);
 /* the character conversor's interface (CharConversor.AddInterfaceContent at the middle of the machine's action, 1:
  * it went to the client of the member that entered the machine, Coop_ConvEnter; the machine waits until the member
  * picked a class: the conversion runs here for it) and the end of the machine's action (Coop_ConvEnd: that member
- * bound for the end's callbacks) */
+ * in its context for the end's callbacks) */
 void Coop_ConvEnter(void);
 byte Coop_ConvMenu(void);
 void Coop_ConvEnd(void);
@@ -375,9 +375,10 @@ void Coop_BeforeUse(int i, struct cEntity *t);
  * BankersCTF's flags), "upto <player> <Module.var> <n>" (its fights hold fire while that variable of the scripts is n
  * or more: DistractHumphrey's count; 0 off) */
 byte Coop_Command(const char *line);
-/* the scheduled functions of the scripts run: on a coop instance the mission's member is bound (single player's player:
- * BeatPickus' check of the thugs near "the player" every second); 0 elsewhere or without a member */
-byte Coop_BindMission(void);
+/* the mission's member of a coop instance (the party's acting member: the rule PARTY of the player resolver,
+ * include/scrap/players.h; single player's player: BeatPickus' check of the thugs near "the player" every second); -1
+ * elsewhere or without a member */
+int Coop_MissionPlayer(void);
 
 /* player i got into ship or out of its ship (NULL): the mission's callbacks of single player's parking run for it
  * (Parking.SwitchVehicleMissionCallback, SwitchCharMissionCallback and their Aux: the final fight's boss comes) */

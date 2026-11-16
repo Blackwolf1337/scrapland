@@ -80,7 +80,7 @@ void cGenCharLocalLogic_UpdateView(cLocalLogic *elem) {
 		WChar(p)->wl.arrow.canUse = 0;
 	} else {
 		int st = b->state;
-		WChar(p)->wl.arrow.canUse = !b->busy && !g_pWorld->alarm.on && st != 4 && st != 3 && st != 5 &&
+		WChar(p)->wl.arrow.canUse = !b->busy && !Players_CurAlarm()->on && st != 4 && st != 3 && st != 5 &&
 			st != 10;
 	}
 	WLife(p)->arrow.coneStatus = 0;
@@ -98,7 +98,7 @@ static byte cGenCharLocalLogic_CanDiscover(cGenCharLocalLogic *self, cEntity *e)
 	if (strcmp(type, "Berto") && strcmp(type, "Betty")) {
 		return 1;
 	}
-	return cString_CmpStr(g_UsrDefChar, g_pWorld->alarm.chars) != 0;
+	return cString_CmpStr(g_UsrDefChar, Players_CurAlarm()->chars) != 0;
 }
 
 /* the state of the alarm against e */
@@ -144,7 +144,7 @@ byte cGenCharLocalLogic_VarI(cLocalLogic *elem, const char *name, int *i, byte s
 
 /* the type of the player draws the attention of a generic character */
 static byte Logic_IsSuspectType(const char *type) {
-	if (Alarm_IsLocked(&g_pWorld->alarm)) {
+	if (Alarm_IsLocked(Players_CurAlarm())) {
 		return 0;
 	}
 	return !strcmp(type, "PoliceBoss") || !strcmp(type, "Betty") || !strcmp(type, "Berto") || !strcmp(type, "Mayor");
@@ -190,17 +190,17 @@ void cGenCharLocalLogic_Update(cLocalLogic *elem, float dt) {
 	const char *type = Logic_TypeName(p);
 	const char *usrType = Logic_TypeName(usr);
 	byte discover = cGenCharLocalLogic_CanDiscover(self, p) && self->accuseAgain == 0.0f;
-	byte alarm = g_pWorld->alarm.on && !self->ignoreAlarm;
-	byte sameChar = g_pWorld->alarm.sameChar;
+	byte alarm = Players_CurAlarm()->on && !self->ignoreAlarm;
+	byte sameChar = Players_CurAlarm()->sameChar;
 	byte seen = Logic_InView(p, Entity_GetPos(usr, &t), g_GenCharStdFar, g_GenCharStdFovY, g_GenCharStdFovX, 1);
 	byte suspect = Logic_IsSuspectType(type);
 	byte same = !strcmp(type, usrType) && suspect;
 	cAIChar *ai = Entity_GetAI(b->parent);
-	if (suspect && !Alarm_IsLocked(&g_pWorld->alarm)) {
+	if (suspect && !Alarm_IsLocked(Players_CurAlarm())) {
 		WLife(p)->arrow.coneFov = g_GenCharStdFovY;
 		WLife(p)->arrow.coneDist = g_GenCharStdFar;
 		WLife(p)->arrow.coneStatus = same ? 2 : 0;
-		WLife(p)->arrow.tgType = same ? (g_pWorld->alarm.on ? 0 : 2) : 3;
+		WLife(p)->arrow.tgType = same ? (Players_CurAlarm()->on ? 0 : 2) : 3;
 	}
 	int st = b->state;
 	if (st != GENCHAR_ACCUSE && seen && discover) {
@@ -208,7 +208,7 @@ void cGenCharLocalLogic_Update(cLocalLogic *elem, float dt) {
 			if (!same) {
 				goto states;
 			}
-			Alarm_Set(&g_pWorld->alarm, 1.0f);
+			Alarm_Set(Players_CurAlarm(), 1.0f);
 		}
 		GenChar_Accuse(self, usr);
 	}
@@ -383,7 +383,7 @@ void cGenCharLocalLogic_Discover(cGenCharLocalLogic *self) {
 void cGenCharLocalLogic_RestartState(cLocalLogic *elem) {
 	cGenCharLocalLogic *self = (cGenCharLocalLogic *)elem;
 	cGenCharLocalLogic_ResetSpecial(self);
-	if (g_pWorld->alarm.on && !self->ignoreAlarm) {
+	if (Players_CurAlarm()->on && !self->ignoreAlarm) {
 		Logic_SetState(self, GENCHAR_ALERT, NULL);
 		return;
 	}
@@ -454,7 +454,7 @@ byte cGenCharLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) 
 		}
 		break;
 	case GENCHAR_ACCUSE:
-		if (ok && g_pWorld->alarm.sameChar) {
+		if (ok && Players_CurAlarm()->sameChar) {
 			self->time = g_GenCharAcuseTime;
 			AIChar_SetState(ai, AIC_ORIENT_DYNAMIC_OBJECTIVE, target, 1);
 			if (WithLife_GetAction(p, "Discover")) {

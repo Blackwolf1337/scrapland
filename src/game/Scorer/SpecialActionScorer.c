@@ -5,6 +5,7 @@
  */
 #include "scrap/gvar.h"
 #include "scrap/chartype.h"
+#include "scrap/players.h"
 #include "scrap/scoreritems.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/scrapfont.h"
@@ -610,7 +611,7 @@ static void GearAim_SphereFunc(cAbstractFile *params) {
 				kind = 3;
 			}
 		}
-		if (g_pWorld->alarm.on) {
+		if (Players_CurAlarm()->on) {
 			if (Obj(e)->radarShow == 1) {
 				kind = 5;
 			} else if (!strcmp(Logic_TypeName(e), "Gear")) {
