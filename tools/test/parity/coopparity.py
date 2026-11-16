@@ -185,6 +185,8 @@ def run_point(a, name, data, level, key):
         m = re.search(r"\('Ang', \(([-\d.e]+), ([-\d.e]+), ([-\d.e]+)\)\)", member.ask('ent %s Ang' % me['name']))
         ang = tuple(float(x) for x in m.groups()) if m else (0.0, 0.0, 0.0)
         sp.ask('do e = Scrap.UsrEntity(0); e.Pos = (%.1f, %.1f, %.1f); e.Ang = (%.3f, %.3f, %.3f)' % (at + ang))
+        # the instance's audit counts over the wait (stage 0.1; None without the verb)
+        res['audit_verb'] = parity.audit(world, level, 'reset') is not None
         time.sleep(a.settle)
         def inst_now():
             return parity.parse_ents(world.ask('entinfo %.0f %.0f %.0f %.0f' % (at[0], at[1], at[2], a.radius * 1.2),
@@ -195,6 +197,7 @@ def run_point(a, name, data, level, key):
         # the instance's entities of the member's moment (parity.collect labels the proxies by them, M11)
         res['join'] = parity.collect(member, at, a.radius, inst_now)
         res['sp_mission'] = (sp.try_ask('Scrap.GetSaveVar("Mission.Library")') or '').strip()
+        res['audit'] = parity.audit(world, level, 'json')
         shots = []
         for g in (sp, member):
             p = os.path.join(a.out, '%s-%s.png' % (name, g.name))
