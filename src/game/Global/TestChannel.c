@@ -59,6 +59,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "scrap/pres.h"
 #include "scrap/repent.h"
 #include "scrap/app.h"
 #include "scrap/console.h"
@@ -1582,6 +1583,11 @@ static void TC_Line(tcBuf *b, const char *line) {
 	/* mirror [json]: the replicated entities of the replication v2 (include/scrap/repent.h) */
 	if (TC_Verb(line, "mirror", &arg)) {
 		RepEnt_Mirror(b, arg);
+		return;
+	}
+	/* pres: the records of the presentation interface sent and played (include/scrap/pres.h) */
+	if (TC_Verb(line, "pres", &arg)) {
+		Pres_Status(b);
 		return;
 	}
 	/* tape [key <Set>.<Action> <value> | key clear | end]: the input tape (include/scrap/inputtape.h) */

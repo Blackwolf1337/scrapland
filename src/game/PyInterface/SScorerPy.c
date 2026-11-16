@@ -8,6 +8,8 @@
 #include "scrap/coop.h"
 #include "scrap/input.h"
 #include "scrap/netaudit.h"
+#include "scrap/pres.h"
+#include "scrap/repent.h"
 #include "scrap/scorer.h"
 #include "scrap/scriptapi.h"
 
@@ -350,6 +352,9 @@ API_FN(SScorer, Show) {
 	if (!sc) {
 		return 1;
 	}
+	if (g_Mp2) {
+		Pres_HudShow(sc, 1);
+	}
 	sc->visible = 1;
 	return Api_Build(out, "i", 1);
 }
@@ -364,6 +369,9 @@ API_FN(SScorer, Hide) {
 	NetAudit_Site(NA_HUD, "scorer.hide");
 	if (!sc) {
 		return 1;
+	}
+	if (g_Mp2) {
+		Pres_HudShow(sc, 0);
 	}
 	sc->visible = 0;
 	return Api_Build(out, "i", 1);

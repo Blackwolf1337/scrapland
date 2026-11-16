@@ -123,6 +123,11 @@ typedef struct cScorer {
 } cScorer;
 
 cScorer *Scorer_Get(int player);
+/* the scorer of view player whatever the context (Scorer_Get gives a player's HUD model on a -mp2 instance) */
+cScorer *Scorer_GetWorld(int player);
+/* a scorer of no view (a HUD model of include/scrap/pres.h): made empty, freed */
+void Scorer_InitModel(cScorer *sc);
+void Scorer_FreeModel(cScorer *sc);
 cScorerItem *cScorer_FindItem(cScorer *scorer, const char *name);
 /* runs the OnAccept of the item with the player and the item name, as the accept key of the menu does (SScorer.Accept,
  * the test channel); 0 when the item or its OnAccept is missing */

@@ -10,6 +10,8 @@
 #include "scrap/global.h"
 #include "scrap/mathlib.h"
 #include "scrap/netaudit.h"
+#include "scrap/pres.h"
+#include "scrap/repent.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/timer.h"
 #include "scrap/vehicleentity.h"
@@ -2350,6 +2352,9 @@ static uint32_t FX_ShipExplosionTable[28] = {
 
 void FX_ShipExplosion(vec3_t pos, vec3_t vel, float scale, float time, int numFlames, int collision) {
 	NetAudit_Site(NA_SFX, "sfx.ShipExplosion");
+	if (g_Mp2) {
+		Pres_ShipExplosion(&pos, &vel, scale, time, numFlames, collision);
+	}
 	vec3_t from, to, hit, tmp;
 	CCollisionTri tri;
 

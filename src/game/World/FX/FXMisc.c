@@ -10,6 +10,8 @@
 #include "scrap/fxmisc.h"
 #include "scrap/fxscene.h"
 #include "scrap/netaudit.h"
+#include "scrap/pres.h"
+#include "scrap/repent.h"
 #include "scrap/objentity.h"
 #include "scrap/scorer.h"
 #include "scrap/scrapmain.h"
@@ -210,6 +212,9 @@ static void cObjElementFXItemFade_Start(cObjElementFXItemFade *self, cEntity *e)
 static void cObjElementFXItemTake_Start(cObjElementFXItemTake *self, cEntity *e);
 void FX_ItemFade(cEntity *e, int mode, float scale, cEntity *target) {
 	NetAudit_Site(NA_SFX, "sfx.ItemFade");
+	if (g_Mp2) {
+		Pres_FxEnt(PRES_FX_ITEMFADE, e->name, target ? target->name : "", scale, mode);
+	}
 	cObjElementFXItemFade *fade = FX_DropNew(g_FXItemFadeFile, 0.5f);
 
 	if (fade) {

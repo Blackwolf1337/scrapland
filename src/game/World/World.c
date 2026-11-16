@@ -18,6 +18,7 @@
 #include "scrap/netaudit.h"
 #include "scrap/play.h"
 #include "scrap/players.h"
+#include "scrap/pres.h"
 #include "scrap/replicate.h"
 #include "scrap/missileentity.h"
 #include "scrap/scheduler.h"
@@ -1115,9 +1116,12 @@ void cWorld_Update(cWorld *self, float dt) {
 				Players_Leave(prev);
 			}
 		}
+		/* the effects' elements are presentation: a -mp2 client has the same (include/scrap/pres.h) */
+		Pres_Derive();
 		for (cDebrisSys *d = self->debrisList; d; d = d->next) {
 			cDebrisSys_Update(d, cTimer_GetDelta(timer));
 		}
+		Pres_Underive();
 		Grid_EndFrame(&self->grid);
 		for (;;) {
 			n = self->deadList.next;

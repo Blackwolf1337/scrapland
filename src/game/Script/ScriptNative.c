@@ -19,6 +19,8 @@
 #include "scrap/modvars.h"
 #include "scrap/nativeobj.h"
 #include "scrap/netaudit.h"
+#include "scrap/pres.h"
+#include "scrap/repent.h"
 #include "scrap/pyentity.h"
 #include "scrap/scorer.h"
 #include "scrap/scrap.h"
@@ -2684,6 +2686,9 @@ int Native_ScorerStore(int id, const char *item, const char *var, const nativeVa
 	cScorerItem *it = sc ? cScorer_FindItem(sc, item) : NULL;
 	if (!it) {
 		return 0;
+	}
+	if (g_Mp2) {
+		Pres_HudSet(sc, item, var, s, d);
 	}
 	*r = s ? ScorerItem_Var(it, var, 1, &s, NULL, NULL) : ScorerItem_Var(it, var, 1, NULL, &d, &i);
 	return 1;

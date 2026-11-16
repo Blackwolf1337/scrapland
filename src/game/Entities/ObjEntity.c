@@ -15,6 +15,7 @@
 #include "scrap/inputtape.h"
 #include "scrap/net.h"
 #include "scrap/netaudit.h"
+#include "scrap/pres.h"
 #include "scrap/objentity.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/staticinit.h"
@@ -753,7 +754,10 @@ void cObjEntity_Update(cEntity *self) {
 		Obj_SlotJump(self);
 	}
 	if (o->fx) {
+		/* presentation: a replica has its own (include/scrap/pres.h) */
+		Pres_Derive();
 		EFX_Update(o->fx, dt);
+		Pres_Underive();
 	}
 	cEntity_Update(self);
 }

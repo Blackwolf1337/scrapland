@@ -9,6 +9,8 @@
 #include "scrap/console.h"
 #include "scrap/cstring.h"
 #include "scrap/netaudit.h"
+#include "scrap/pres.h"
+#include "scrap/repent.h"
 #include "scrap/staticinit.h"
 
 #define g_DefInterpTime (GVar_DefInterpTime.value.f)	/* DefInterpTime of new actions */
@@ -134,10 +136,18 @@ byte Event_IsPresent(const cActEvent *ev) {
 
 void cActEvent_Fire(cActEvent *self, const char *entity) {
 	cActEvent_Audit(self);
+	/* a -mp2 instance: the replicas play the presentation events of their layers themselves (include/scrap/pres.h) */
+	byte derived = g_Mp2 && g_Instance && Event_IsPresent(self);
+	if (derived) {
+		Pres_Derive();
+	}
 	cPy_Function_AddParamS(&self->func, entity);
 	cPy_Function_AddParamS(&self->func, self->name);
 	cPy_Function_AddParamF(&self->func, self->time);
 	cPy_Function_Execute(&self->func, 0);
+	if (derived) {
+		Pres_Underive();
+	}
 }
 
 /* the variables after "Event": of the last event */

@@ -11,6 +11,8 @@
 #include "scrap/global.h"
 #include "scrap/mathlib.h"
 #include "scrap/netaudit.h"
+#include "scrap/pres.h"
+#include "scrap/repent.h"
 #include "scrap/sound.h"
 #include "scrap/timer.h"
 #include "scrap/walkcharentity.h"
@@ -2236,6 +2238,9 @@ void cObjElementFXMaintenanceWork_Start(cObjElementFXMaintenanceWork *self, cDeb
 
 void FX_MoneyTransfer(cEntity *from, cEntity *to, float time) {
 	NetAudit_Site(NA_SFX, "sfx.MoneyTransfer");
+	if (g_Mp2) {
+		Pres_FxEnt(PRES_FX_MONEY, from->name, to->name, time, 0);
+	}
 	cObjElementFXMoneyTransfer *el = FX_DropNew(g_FXMoneyTransferFile, time);
 
 	if (el) {
@@ -2248,6 +2253,9 @@ void FX_MoneyTransfer(cEntity *from, cEntity *to, float time) {
 
 void FX_CharacterConversion(cEntity *attacker, cEntity *attacked, float time) {
 	NetAudit_Site(NA_SFX, "sfx.CharacterConversion");
+	if (g_Mp2) {
+		Pres_FxEnt(PRES_FX_CONVERSION, attacker->name, attacked->name, time, 0);
+	}
 	vec3_t t1, t2, t3, pos;
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXCharacterConversionFile);
 	cDebris *d = cDebrisSys_NewElement(sys);
@@ -2282,6 +2290,9 @@ void FX_CharacterConversion(cEntity *attacker, cEntity *attacked, float time) {
 
 void FX_CharacterConversor(cEntity *character, cEntity *conversor, int phase, float a, float b) {
 	NetAudit_Site(NA_SFX, "sfx.CharacterConversor");
+	if (g_Mp2 && character && conversor) {
+		Pres_FxEnt(PRES_FX_CONVERSOR, character->name, conversor->name, 0.0f, phase);
+	}
 	vec3_t tmp;
 
 	CHECK(conversor);

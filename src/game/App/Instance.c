@@ -22,6 +22,7 @@
 #include "scrap/places.h"
 #include "scrap/platform.h"
 #include "scrap/players.h"
+#include "scrap/scorer.h"
 #include "scrap/play.h"
 #include "scrap/replicate.h"
 #include "scrap/sputniks.h"
@@ -282,7 +283,7 @@ void Instance_Line(char *line) {
 	/* tests: "alarm <player> <level>" sets one player's alarm (include/scrap/players.h), "money <player> <n>" its
 	 * money, "use <player> <entity> [<option>]" makes it use an entity (include/scrap/travel.h), "goto <player>
 	 * <entity> [<dx> <dz>]" puts it next to one, "switch <player>" gets it into the nearest parked ship or out of its ship, "call
-	 * <player>" calls a ship beside it */
+	 * <player>" calls a ship beside it, "msg <player> <text>" shows a message on its HUD (include/scrap/pres.h) */
 	int player, money;
 	float level;
 	char ent[64], opt[64];
@@ -305,6 +306,12 @@ void Instance_Line(char *line) {
 	}
 	if (sscanf(line, "switch %d", &player) == 1 || sscanf(line, "call %d", &player) == 1) {
 		Rep_TestSwitch(player, line[0] == 'c');
+		return;
+	}
+	if (sscanf(line, "msg %d %63[^\n]", &player, opt) == 2) {
+		int was = Players_Enter(player);
+		Scorer_SetMsgText(opt, 5.0f, "Horatio");
+		Players_Leave(was);
 		return;
 	}
 	if (sscanf(line, "alarm %d %f", &player, &level) == 2) {

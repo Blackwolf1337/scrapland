@@ -8,6 +8,8 @@
 #include "scrap/fx.h"
 #include "scrap/fxelements.h"
 #include "scrap/netaudit.h"
+#include "scrap/pres.h"
+#include "scrap/repent.h"
 #include "scrap/vehicleattack.h"
 #include "scrap/staticinit.h"
 #include "scrap/players.h"
@@ -234,6 +236,9 @@ static void ChType_FXBishopSellLife(cAbstractFile *params) {
 
 void FX_BishopSellLife(cEntity *attacker, cEntity *attacked) {
 	NetAudit_Site(NA_SFX, "sfx.BishopSellLife");
+	if (g_Mp2 && attacked) {
+		Pres_FxEnt(PRES_FX_SELLLIFE, attacker ? attacker->name : "", attacked->name, 0.0f, 0);
+	}
 	if (attacker) {
 		CHECK(Entity_IsType(attacker, TYEN_WITH_LIFE));
 	}

@@ -12,6 +12,7 @@
 #include "scrap/missileentity.h"
 #include "scrap/net.h"
 #include "scrap/netaudit.h"
+#include "scrap/pres.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/withlifeentity.h"
@@ -51,6 +52,13 @@ static inline float Missile_RandSym(float v) {
 	float range = v - Float_Keep(lo);
 
 	return Missile_Rand((double)range, (double)lo);
+}
+
+/* OnHit runs: its effects are the clients' own (they play a missile's hit themselves, include/scrap/pres.h) */
+static void Missile_ExecHit(cMissileEntity *self) {
+	Pres_Derive();
+	cPy_Function_Execute(&self->onHit, 0);
+	Pres_Underive();
 }
 
 /* OnHit with the missile, its parent and other */
@@ -396,7 +404,7 @@ byte cMissileEntity_Hit(cMissileEntity *self, int n, float unused) {
 		}
 		if (self->hitType == MISSILE_HIT_HIT) {
 			Missile_CallHit(self, self->target);
-			cPy_Function_Execute(&self->onHit, 0);
+			Missile_ExecHit(self);
 		}
 		self->swarmCount = 0;
 		Entity_SetActive(Missile_Ent(self), 0);
@@ -423,7 +431,7 @@ byte cMissileEntity_Hit(cMissileEntity *self, int n, float unused) {
 	}
 	if (self->hitType == MISSILE_HIT_HIT) {
 		Missile_CallHit(self, self->target);
-		cPy_Function_Execute(&self->onHit, 0);
+		Missile_ExecHit(self);
 	}
 	if (!self->beesGather && !self->beesHit) {
 		self->wl.life = 0;
@@ -500,7 +508,7 @@ static void cMissileEntity_SetHitType(cMissileEntity *self, int type) {
 			if (self->hits[i][0]) {
 				Missile_CallHit(self, self->hits[i]);
 				cPy_Function_AddParamI(&self->onHit, 0);
-				cPy_Function_Execute(&self->onHit, 0);
+				Missile_ExecHit(self);
 			}
 		}
 	}
@@ -964,7 +972,7 @@ static void Missile_InOut(cMissileEntity *self, const vec3_t *old, const vec3_t 
 		if (k == 4) {
 			Missile_CallHit(self, h);
 			cPy_Function_AddParamI(&self->onHit, 0);
-			cPy_Function_Execute(&self->onHit, 0);
+			Missile_ExecHit(self);
 			h[0] = 0;
 		}
 	}
@@ -989,7 +997,7 @@ static void Missile_InOut(cMissileEntity *self, const vec3_t *old, const vec3_t 
 		}
 		Missile_CallHit(self, g);
 		cPy_Function_AddParamI(&self->onHit, 1);
-		cPy_Function_Execute(&self->onHit, 0);
+		Missile_ExecHit(self);
 		/* both are the names of Touch are shorter */
 		char *dst = self->hits[slot];
 		int c = 0;
@@ -1067,7 +1075,7 @@ static byte Missile_LocalTick(cMissileEntity *self, float dt) {
 		if (cWorld_TestSphereEntities(g_pWorld, Missile_Ent(self), MISSILE_ENTLIST, &old, self->radius,
 			&found, 1, pos)) {
 			Missile_CallHit(self, found->name);
-			cPy_Function_Execute(&self->onHit, 0);
+			Missile_ExecHit(self);
 		}
 		break;
 	}

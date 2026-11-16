@@ -15,6 +15,8 @@
 #include "scrap/logic.h"
 #include "scrap/netaudit.h"
 #include "scrap/players.h"
+#include "scrap/pres.h"
+#include "scrap/repent.h"
 #include "scrap/scrapfont.h"
 #include "scrap/scrapmain.h"
 #include "scrap/sound.h"
@@ -550,11 +552,24 @@ byte Sound_PlayVoice(const char *name, const char *event, const char *arg, int f
 			crt_sprintf(file, "%sGenerics_%s_Warning_%d.mp3", g_VoicePath, type, n % 3 + 1);
 		}
 	}
-	SoundSys_OpenVoice(g_pSound, file, TALK_VOICE, (byte)force || !arg ? 1 : 0);
-	SoundSys_SetVoiceString(g_pSound, TALK_VOICE, sp->name);
+	if (g_Mp2) {
+		/* the players near the speaker hear it (include/scrap/pres.h) */
+		Pres_VoiceFrom(ps);
+	}
+	Sound_OpenTalk(file, sp->name, (byte)force || !arg ? 1 : 0);
+	return 1;
+}
+
+void Sound_OpenTalk(const char *file, const char *speaker, int arg) {
+	if (g_Mp2) {
+		Pres_Talk(file, speaker, arg);
+	}
+	g_PresIn++;
+	SoundSys_OpenVoice(g_pSound, file, TALK_VOICE, arg);
+	g_PresIn--;
+	SoundSys_SetVoiceString(g_pSound, TALK_VOICE, speaker);
 	g_TalkDelay = g_VoicePlayDelay;
 	g_TalkStop = 0;
-	return 1;
 }
 
 void Sound_Update(float dt) {
