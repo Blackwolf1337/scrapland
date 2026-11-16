@@ -19,16 +19,85 @@
  * GetEntity, UsrEntity, SetLockAlarm, GetAlarm, GetLangEntries, DeleteScheduledFuncs and the scheduler go through
  * their seams (the cases record most of them); SVec.GetRotAng and NormAng go through their refs (stage 7),
  * string.split and find are the native twins (PORT_CALL; by name for an argument that holds an object, OBJLIB 9).
+ *
+ * Not in the original (stage 4.3 of the second multiplayer design): on an instance a talk is the state of one player.
+ * The variables of a talk and of the remote communications are per player in the netclass table (PLAYER, PARTY: the
+ * overlay of ModVars.c), the talk's time and callback and the voices are the player's (TalkScorer.c, the voice models
+ * of include/scrap/pres.h), and every entry of the module runs in a player's context: one the world's context calls (a
+ * mission's remote communication, an enemy's taunt, a scheduled call) enters the player of its site's rule in the
+ * playerread table first (Sp_Push). A character that talks to another player's entity is busy (Sp_Busy).
  */
 #include <string.h>
 
 #include "scrap/coop.h"
+#include "scrap/players.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
+#include "scrap/world.h"
 #include "game/Script/levels/Levels.h"
 
 #define SP "Speech"
+
+/* ---- the player of an entry (instance) ---- */
+
+#define SP_DEPTH 64
+static int sp_was[SP_DEPTH];
+static int sp_depth;
+
+/* an entry begins: in the world's context of an instance the player of the site's rule (Players_ActingAt) */
+static void Sp_Push(const char *site) {
+	int cur = Players_Current();
+	int in = Players_Net() && cur == PLAYERS_NONE ? Players_ActingAt(site) : cur;
+	if (sp_depth < SP_DEPTH) {
+		sp_was[sp_depth] = cur;
+	}
+	sp_depth++;
+	if (in != cur) {
+		Players_Enter(in);
+	}
+}
+
+/* the entry ends with r: the context it began in */
+static byte Sp_Pop(byte r) {
+	sp_depth--;
+	if (sp_depth < SP_DEPTH && Players_Current() != sp_was[sp_depth]) {
+		Players_Leave(sp_was[sp_depth]);
+	}
+	return r;
+}
+
+/* the entries of the module as scriptmodes.h makes them, each inside Sp_Push and Sp_Pop */
+#undef MODE_FN
+#define MODE_FN(pre, name, nargs, call) \
+	static byte pre##_##name##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
+		(void)a; \
+		(void)out; \
+		return n == (nargs) ? (Sp_Push(__func__), Sp_Pop(call)) : Port_Arity(n, nargs); \
+	}
+#undef MODE_FNANY
+#define MODE_FNANY(pre, name, call) \
+	static byte pre##_##name##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
+		(void)a; \
+		(void)n; \
+		(void)out; \
+		return Sp_Push(__func__), Sp_Pop(call); \
+	}
+#undef MODE_KW
+#define MODE_KW(pre, name, fmt, ...) \
+	static char *pre##_##name##_N[] = { __VA_ARGS__, NULL }; \
+	[[maybe_unused]] static const char pre##_##name##_F[] = fmt; \
+	static byte pre##_##name##_K([[maybe_unused]] nativeVal_t *v, [[maybe_unused]] const byte *given, \
+		[[maybe_unused]] nativeVal_t *out); \
+	static byte pre##_##name##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
+		nativeVal_t v[8]; \
+		byte given[8]; \
+		return Mode_KwSlots(a, n, fmt, v, given) && (Sp_Push(__func__), Sp_Pop(pre##_##name##_K(v, given, out))); \
+	} \
+	static byte pre##_##name##_K([[maybe_unused]] nativeVal_t *v, [[maybe_unused]] const byte *given, \
+		[[maybe_unused]] nativeVal_t *out)
+
+static int Sp_Busy(const nativeVal_t *me, const nativeVal_t *ch);
 
 /* ---- the variables of the module ---- */
 
@@ -527,6 +596,10 @@ static int Sp_SetPlayerToTalk(const nativeVal_t *me, const nativeVal_t *ch) {
 	if (!Native_True(me)) {
 		return 0;
 	}
+	int busy = Sp_Busy(me, ch);
+	if (busy) {
+		return busy > 0 ? 0 : -1;
+	}
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *sel = Mode_V(&t), *life = Mode_V(&t), *name = Mode_V(&t), *ni = Mode_V(&t), *cur = Mode_V(&t);
 	nativeVal_t *cam = Mode_V(&t), *v = Mode_V(&t), *h = Mode_V(&t), *vang = Mode_V(&t), *y = Mode_V(&t), *pos = Mode_V(&t);
@@ -703,6 +776,23 @@ static byte Sp_Msg(const char *key) {
 	return ok;
 }
 
+/* not in the original: on an instance the character ch (a handle) talks to another player's entity (its
+ * SelectedEntity, which OnSpeech sets until AbortSpeech): busy for the player me, who gets single player's answer of a
+ * character that cannot talk now. 1 busy, 0 free, -1 with the error */
+static int Sp_Busy(const nativeVal_t *me, const nativeVal_t *ch) {
+	if (!Players_Net() || !Native_True(me) || !Native_True(ch)) {
+		return 0;
+	}
+	nativeVal_t sel = { 0 }, name = { 0 };
+	int busy = Mode_VObj(ch, "SelectedEntity", &sel) && Mode_VObj(me, "Name", &name) ? 0 : -1;
+	if (!busy && sel.type == NV_STR && sel.n > 0 && Native_Compare(&sel, &name) != 0) {
+		busy = Players_Of(World_FindEntity(Native_Text(&sel))) >= 0;
+	}
+	Native_Free(&sel);
+	Native_Free(&name);
+	return busy > 0 ? (Sp_Msg("INSPECT_CHAR_CantTalk") ? 1 : -1) : busy;
+}
+
 /* InspectChar(UsrName, CharName, optId, FullOption): why the character does not talk */
 static byte Sp_InspectChar(const nativeVal_t *usr, const nativeVal_t *chName) {
 	modeVals_t t = { .n = 0 };
@@ -751,6 +841,14 @@ static byte Sp_InspectChar(const nativeVal_t *usr, const nativeVal_t *chName) {
 static byte Sp_AutoSpeech(const nativeVal_t *a) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *ch = Mode_V(&t), *type = Mode_V(&t), *routines = Mode_V(&t), *f = Mode_V(&t), *msg = Mode_V(&t), *ans = Mode_V(&t);
+	nativeVal_t *me = Mode_V(&t);
+	if (Players_Net()) {
+		int busy = Mode_EntitySeam(&a[0], me) && Mode_EntitySeam(&a[1], ch) ? Sp_Busy(me, ch) : -1;
+		if (busy) {
+			return Mode_Done(&t, busy > 0);
+		}
+		Native_Free(ch);
+	}
 	Mode_ModPut(SP, "PlayerName", &a[0]);
 	Mode_ModPut(SP, "NPCName", &a[1]);
 	if (!Sp_Entity("NPCName", ch) || !Mode_VObj(ch, "ActCtrl", type) || !Sp_G("SpeechRoutines", routines)) {
