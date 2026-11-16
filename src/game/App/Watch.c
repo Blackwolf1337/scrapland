@@ -446,9 +446,10 @@ static void Watch_Player(const uint8_t *data, int size) {
 	const NetRepState *st = NetRepCli_State(watch.view, slot, &k, &look);
 	if (st && watch.px[slot].e) {
 		Watch_Free(slot);
-		Play_OwnCreate(k, NetRepCli_LookString(watch.view, look), NetRepCli_Tick(watch.view), st);
 		if (g_Mp2) {
-			ReplicaEnt_Journal(slot, Play_Entity());
+			ReplicaEnt_OwnCreate(slot, k, NetRepCli_LookString(watch.view, look), NetRepCli_Tick(watch.view), st);
+		} else {
+			Play_OwnCreate(k, NetRepCli_LookString(watch.view, look), NetRepCli_Tick(watch.view), st);
 		}
 	}
 }

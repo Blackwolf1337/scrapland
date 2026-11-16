@@ -1256,6 +1256,24 @@ void Rep_SoloJoin(void) {
 	}
 }
 
+/* single player's flows: player i leaves, its own ship (when no one sits in it) and its Sputnik go with it */
+static void Rep_SpLeave(int i) {
+	nativeVal_t v;
+	cEntity *ship = Players_Ship(i);
+	if (ship && Entity_IsType(ship, TYEN_CAR) && cVehicleEntity_GetOwnerSlot(ship) == -1 && !ship->deadNode.target) {
+		cEntity_Del(ship);
+	}
+	int was = Players_Enter(i);
+	Native_SetNone(&v);
+	if (Mode_ModGet("Sputnik", "spt", &v) && v.type == NV_ENT && Native_Ent(&v) && !Native_Ent(&v)->deadNode.target) {
+		cEntity_Del(Native_Ent(&v));
+	}
+	Native_Free(&v);
+	Native_ErrClear();
+	Players_Leave(was);
+	Players_SetShip(i, NULL);
+}
+
 static void Rep_Leave(int i) {
 	RepPlayer *pl = &rep.pl[i];
 	Con_Printf("instance: player %d left (%u inputs, %u late, %u missed, %u shots, %u hits)\n", i, pl->in.got,
@@ -1266,6 +1284,9 @@ static void Rep_Leave(int i) {
 	Rep_DropOwn(i);
 	Rep_DropCorpse(pl);
 	Sputniks_Left(i);
+	if (Rep_SpFlows()) {
+		Rep_SpLeave(i);
+	}
 	/* its called ships stay in the world, owned by no one; in the sandbox and freeroam its parked own ship goes with
 	 * it (its next level gives it the ship again: Rep_Join) */
 	while (pl->nships) {

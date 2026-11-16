@@ -563,6 +563,10 @@ int Players_ShipOwner(cEntity *e) {
 	return -1;
 }
 
+byte Players_InUse(int i) {
+	return Players_Used(i);
+}
+
 uint16_t Players_Joined(int i) {
 	return Players_Net() && i >= 0 && i < PLAYERS_MAX ? g_Pl[i].joined : 0;
 }

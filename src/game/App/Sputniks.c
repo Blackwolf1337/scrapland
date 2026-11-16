@@ -302,8 +302,35 @@ static byte Spk_CoopUse(int i, cEntity *t) {
 	return 1;
 }
 
+/* with single player's flows (include/scrap/play.h): the player whose own Sputnik (its Sputnik.spt) e is, -1 */
+static int Spk_SpOwner(cEntity *e) {
+	cActCtrl *a = Entity_IsType(e, TYEN_WALKCHAR) ? WLife(e)->actCtrl : NULL;
+	if (!a || !a->cls || !a->cls->name || strcmp(a->cls->name, "Sputnik")) {
+		return -1;
+	}
+	for (int i = 0; i < PLAYERS_MAX; i++) {
+		nativeVal_t s;
+		if (!Players_InUse(i)) {
+			continue;
+		}
+		int was = Players_Enter(i);
+		Native_SetNone(&s);
+		cEntity *spt = Mode_ModGet("Sputnik", "spt", &s) && s.type == NV_ENT ? Native_Ent(&s) : NULL;
+		Native_Free(&s);
+		Native_ErrClear();
+		Players_Leave(was);
+		if (spt == e) {
+			return i;
+		}
+	}
+	return -1;
+}
+
 int Sputniks_CoopUser(cEntity *e) {
 	nativeVal_t s;
+	if (e && Rep_SpFlows()) {
+		return Spk_SpOwner(e);
+	}
 	if (!e || e != spk.coopSpt || !Coop_On() || Rep_PlayerConn(spk.coopUser) < 0 || Players_Joined(spk.coopUser) != spk.coopJoined) {
 		return -1;
 	}

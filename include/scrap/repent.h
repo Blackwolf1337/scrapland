@@ -134,6 +134,9 @@ void ReplicaEnt_Present(struct cEntity *e, int kind, const NetRepState *a, const
 	float dt);
 /* the journal of a slot into an entity (the own entity of the prediction) */
 void ReplicaEnt_Journal(int slot, struct cEntity *e);
+/* the server gave the client the replica of slot as its own entity (Play_SetOwn): the own entity made from it with the
+ * slot's journal, as the replication's creation */
+void ReplicaEnt_OwnCreate(int slot, int kind, const char *look, uint32_t tick, const NetRepState *st);
 /* cWorld_CreateEntity on a -mp2 client: counted unless the replication made it */
 void ReplicaEnt_Created(const char *name, const char *type);
 /* Port_Entry on a -mp2 client: a call of module.func counted when the module table tags it SIM
