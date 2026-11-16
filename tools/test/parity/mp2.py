@@ -518,7 +518,11 @@ def gate_diff(a):
             op = {p['point']: p for p in o.get('parity', [])}
             for p in n.get('parity', []):
                 q = op.get(p['point'])
-                if q:
+                if q and not (q.get('sp_ok', True) and p.get('sp_ok', True)):
+                    rows.append(('coopparity %s' % p['point'], 'sp ok' if q.get('sp_ok', True) else 'sp off',
+                                 'sp ok' if p.get('sp_ok', True) else 'sp off',
+                                 'not compared (single player not at the story point)'))
+                elif q:
                     for c in parity.SUMMARY_COLS:
                         add('coopparity %s %s' % (p['point'], c), 'parity.' + c, q.get(c), p.get(c))
         elif gate == 'sp':
@@ -557,7 +561,7 @@ def main():
     ap.add_argument('--pvp-mode', default=parity.PVP_MODE)
     # feel
     ap.add_argument('--cells', default='0,50,150')
-    ap.add_argument('--sides', default='join', help='feel: the multiplayer sides of each cell (join, host)')
+    ap.add_argument('--sides', default='join,host', help='feel: the multiplayer sides of each cell (join, host)')
     ap.add_argument('--level', default='DownTown')
     ap.add_argument('--walks', type=int, default=12)
     # coop
