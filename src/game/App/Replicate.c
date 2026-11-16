@@ -870,7 +870,8 @@ static void Rep_Loadout(cEntity *ship) {
 		pos += (int)strlen(list + pos);
 	}
 	char *l = list;
-	cWeaponManager_VarS(wm, "WeapList", &l, 1);
+	/* through the entity (the variable journal of the replication v2 sees it) */
+	Entity_VarS(ship, "WeapList", &l, 1);
 	for (int k = 0; k < g_pWorld->ammo.count; k++) {
 		cWeaponManager_SetAmmo(wm, k, TABLE_AT(g_pWorld->ammo, k)->max);
 	}
