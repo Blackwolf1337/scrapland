@@ -103,6 +103,7 @@
 #define CP_FLY_STUCK 8.0			/* test: s, else it is placed CP_FIGHT_NEAR from its goal (as before) */
 #define CP_AUTO_SHIP 8000.0f		/* test: outdoors a target on foot further than this is flown to */
 #define CP_SHIP_ASK 12.0			/* test: s it asks for a ship (the switch) before it walks */
+#define CP_MSG_NEAR 700.0f			/* test: a messenger this near the pack's carrier is shot first */
 #define CP_MSG_SHOT 1500.0f			/* test: a messenger fires its lightning at a messenger this near (it reaches 2000) */
 #define CP_WALK_FAR 600.0f			/* test: a walker steps to a target further than this */
 #define CP_WALK_STEP 300.0f			/* test: a walk comes a quarter of this further within CP_WALK_STUCK */
@@ -2962,14 +2963,15 @@ static byte Cp_ShipFoe(cEntity *v) {
 }
 
 /* test: the nearest entity to e the scripts marked with the mission arrow (MissionsFuncs.ActivateTarget: a clue to take,
- * a blueprint), not a door of the level's exits; a ship to shoot down before the others (Ambush's probes while the
+ * a blueprint; things with life 0 too: GetDataPart2's desks), not a door of the level's exits; a ship to shoot down before the others (Ambush's probes while the
  * phone cab of the mission's start keeps its arrow); NULL */
 static cEntity *Cp_ArrowTarget(const cEntity *e) {
 	cEntity *t = NULL;
 	float best = 0.0f;
 	byte ship = 0;
 	for (cEntity *v = cWorld_GetFirstEntity(g_pWorld); v; v = cEntity_Next(v)) {
-		if (!Entity_IsType(v, TYEN_WITH_LIFE) || !WLife(v)->arrow.canMission || WLife(v)->life <= 0.0f || v->deadNode.target ||
+		if (!Entity_IsType(v, TYEN_WITH_LIFE) || !WLife(v)->arrow.canMission || (WLife(v)->life <= 0.0f && !Cp_Thing(v)) ||
+			v->deadNode.target ||
 			Obj(v)->proxy || Players_Of(v) >= 0 || !strncmp(v->name, "DM_Door", 7)) {
 			continue;
 		}
@@ -3169,13 +3171,23 @@ static byte Cp_FlyTo(int i, NetRepInput *in, cEntity *e, cEntity *g, float near,
 	return 1;
 }
 
-/* test: character v follows player e: within the scripts' leash, its logic has e as the target (LLogicTarget) */
+/* test: character v follows player e within the scripts' leash: its logic chases e (LLogicTarget, LLogicState
+ * GENCHAR_CHASE: BeatPickus' thugs) or, marked by the mission, its AI goes after e without an action (SAI.SetStateChar
+ * 3: TalkToBoss' human); not the ones that attack it or inspect it */
 static byte Cp_Follows(cEntity *v, cEntity *e) {
 	char *tgt = NULL;
+	int st = -1;
 	float vx = v->pos.x - e->pos.x, vy = v->pos.y - e->pos.y, vz = v->pos.z - e->pos.z;
-	return v->active && Entity_IsType(v, TYEN_WALKCHAR) && Players_Of(v) < 0 && !Obj(v)->proxy &&
-		vx * vx + vy * vy + vz * vz < CP_WALK_LEASH * CP_WALK_LEASH && Entity_VarS(v, "LLogicTarget", &tgt, 0) && tgt &&
-		!strcmp(tgt, e->name);
+	if (!v->active || !Entity_IsType(v, TYEN_WALKCHAR) || Players_Of(v) >= 0 || Obj(v)->proxy ||
+		vx * vx + vy * vy + vz * vz >= CP_WALK_LEASH * CP_WALK_LEASH) {
+		return 0;
+	}
+	if (Entity_VarS(v, "LLogicTarget", &tgt, 0) && tgt && !strcmp(tgt, e->name) && Entity_VarI(v, "LLogicState", &st, 0) &&
+		st == GENCHAR_CHASE) {
+		return 1;
+	}
+	cAIChar *ai = Entity_GetAI(v);
+	return ai && WLife(v)->arrow.canMission && AIChar_GetState(ai) == AIC_CHASE_WITHOUT_ACTION && ai->base.target.target == e;
 }
 
 /* test: player i on foot (e) further than CP_WALK_FAR from t (with followers CP_AUTO_NEAR) walks there through its
@@ -3332,7 +3344,8 @@ static byte Cp_BankerSlaps(int i, NetRepInput *in, cEntity *e, cEntity **all, in
 /* test: player i as a messenger plays the messengers' game of the data pack where the mission marks it
  * (MessengerDataPackMissionArrow: GetAuthorization's tube): another messenger's pack is shot off it (the action key
  * held at it: the lightning flashes it, it drops the pack), a free pack or one on an open desk is walked onto (the
- * touch takes it), its own pack goes to the desk with the mission arrow (the messengers' logic drops it there); 0
+ * touch takes it), its own pack goes to the desk with the mission arrow (the messengers' logic drops it there; the
+ * messengers that come for it are shot on the way); 0
  * when it is no messenger or no pack is marked */
 static byte Cp_MessengerPack(int i, NetRepInput *in, cEntity *e, double now) {
 	cActCtrl *a = NetPl_Kind(e) == NETREP_CHAR ? WithLife_GetActCtrl(e) : NULL;
@@ -3351,7 +3364,18 @@ static byte Cp_MessengerPack(int i, NetRepInput *in, cEntity *e, double now) {
 	byte shoot = carrier && carrier != e && Entity_IsType(carrier, TYEN_WALKCHAR) && Players_Of(carrier) < 0 &&
 		!strcmp(ChType_ActClass(ChType_ActCtrl(carrier))->name, "Messenger");
 	if (carrier == e) {
+		/* the messengers go for the one that carries it: one near (not flashed) is shot first, as a player keeps them off */
 		to = Cp_ArrowTarget(e);
+		for (cEntity *m = cWorld_GetFirstEntity(g_pWorld); m; m = cEntity_Next(m)) {
+			float mx = m->pos.x - e->pos.x, mz = m->pos.z - e->pos.z;
+			if (m->active && Entity_IsType(m, TYEN_WALKCHAR) && Players_Of(m) < 0 && mx * mx + mz * mz < CP_MSG_NEAR * CP_MSG_NEAR &&
+				!strcmp(ChType_ActClass(ChType_ActCtrl(m))->name, "Messenger") &&
+				crt_strncmp(cActCtrl_GetActionName(ChType_ActCtrl(m), 0), "Flashed", 7)) {
+				to = m;
+				shoot = 1;
+				break;
+			}
+		}
 	} else if (shoot) {
 		to = carrier;
 	}
@@ -3360,22 +3384,34 @@ static byte Cp_MessengerPack(int i, NetRepInput *in, cEntity *e, double now) {
 	}
 	if (now - cp.pl[i].autoTold >= 5.0) {
 		cp.pl[i].autoTold = now;
-		Con_Printf("coop: player %d (auto) %s %s (the pack %s)\n", i, carrier == e ? "carries the pack to" : shoot ?
-			"shoots the pack off" : "takes the pack at", to->name, carrier ? carrier->name : "free");
+		Con_Printf("coop: player %d (auto) %s %s (the pack %s)\n", i, shoot ? carrier == e ? "keeps off" : "shoots the pack off" :
+			carrier == e ? "carries the pack to" : "takes the pack at", to->name, carrier ? carrier->name : "free");
 	}
+	/* one that comes for its own pack is shot where it stands (no chase away from the desk) */
+	byte keep = shoot && carrier == e;
 	float dx = to->pos.x - e->pos.x, dz = to->pos.z - e->pos.z, d = sqrtf(dx * dx + dz * dz);
-	if ((!shoot || d > CP_MSG_SHOT) && Cp_WalkStep(i, in, e, to, now)) {
+	if (!keep && (!shoot || d > CP_MSG_SHOT) && Cp_WalkStep(i, in, e, to, now)) {
 		return 1;
 	}
 	float rot[2], dyaw = NetPl_Aim(e, &to->pos, rot, 1);
 	in->rot[0] = NetRep_QRot(rot[0]);
-	in->move[0] = NetRep_QMove(d > (shoot ? CP_MSG_SHOT * 0.25f : CP_MELEE * 0.5f) && fabsf(dyaw) < 0.6f ? 1.0f : 0.0f);
+	in->move[0] = NetRep_QMove(!keep && d > (shoot ? CP_MSG_SHOT * 0.25f : CP_MELEE * 0.5f) && fabsf(dyaw) < 0.6f ? 1.0f : 0.0f);
 	/* the messenger's lightning fires while the key is held */
 	vec3_t from = { e->pos.x, e->pos.y + 100.0f, e->pos.z }, at = { to->pos.x, to->pos.y + 100.0f, to->pos.z };
 	if (shoot && fabsf(dyaw) < 0.15f && !Engine_TestLine(&from, &at, NULL, NULL)) {
 		in->buttons |= NETREP_IN_ACT;
 	}
 	return 1;
+}
+
+/* test: the mission waits for the player to board (Parking.SwitchVehicleMissionCallback: GetDataPart1, the super
+ * deals) */
+static byte Cp_WaitsForShip(void) {
+	nativeVal_t v;
+	byte set = Mode_ModGet("Parking", "SwitchVehicleMissionCallback", &v) && v.type != NV_NONE;
+	Native_Free(&v);
+	Native_ErrClear();
+	return set;
 }
 
 /* test: player i plays the mission's targets on its own: fights the ones to fight, flies a race of RaceMaker, else
@@ -3460,6 +3496,9 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 		if (cp.pl[i].autoList[0]) {
 			Str_Copy(cp.pl[i].fightList, cp.pl[i].autoList, sizeof(cp.pl[i].fightList));
 			Cp_TestFight(i, in, back);
+		} else if (kind == NETREP_CHAR && Cp_WaitsForShip()) {
+			/* the mission starts when the player boards (its level again after a failure): into a ship */
+			in->buttons |= pulse ? NETREP_IN_SWITCH : 0;
 		}
 		return;
 	}
