@@ -3103,6 +3103,7 @@ static const netClassRow_t nc_playerread[] = {
 	{ "Rep_Death", NC_NEAREST },
 	{ "Rep_Hello", NC_NEAREST },
 	{ "SG_LoadAlarm", NC_NEAREST },
+	{ "SG_MarkWayPoint", NC_NEAREST },
 	{ "SG_PrintAlarm", NC_NEAREST },
 	{ "ShipGroup_DeathNative", NC_NEAREST },
 	{ "Sound_PlayVoice", NC_NEAREST },

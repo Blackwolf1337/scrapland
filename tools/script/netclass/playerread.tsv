@@ -128,3 +128,4 @@ Mode_SetMoney	NEAREST	the scripts' money or alarm in the world's context: the pl
 Mode_SetAlarm	NEAREST	the scripts' money or alarm in the world's context: the player near the entity that runs
 Mode_SetLockAlarm	NEAREST	the scripts' money or alarm in the world's context: the player near the entity that runs
 Sound_UpdateMusic	ANY	the action music while the alarm is on (the instance plays none)
+SG_MarkWayPoint	NEAREST	the way point of the player near the entity that runs (a conversor, a door)
