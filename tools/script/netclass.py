@@ -36,7 +36,7 @@ GAME = os.path.join(ROOT, 'src/game')
 # every tag, in the order of the enum (NC_UNTAGGED is 0)
 TAGS = ['SIM', 'DEF', 'PRES_STATE', 'PRES_EVENT', 'UI', 'QUERY', 'CLIENT', 'NET_OLD', 'STATE', 'EVENT',
 	'SERVER_ONLY', 'CLIENT_ONLY', 'WORLD_SETTING', 'SCENE', 'WORLD', 'PLAYER', 'PARTY', 'STORY', 'PLAYER_ENTER',
-	'NEAREST', 'ANY']
+	'NEAREST', 'ANY', 'PLAYER_SHARED', 'PARTY_SHARED']
 # the tables: name, the tags its rows may have, what a row is
 TABLES = collections.OrderedDict([
 	('api', (['SIM', 'DEF', 'PRES_STATE', 'PRES_EVENT', 'UI', 'QUERY', 'CLIENT', 'NET_OLD'],
@@ -45,7 +45,8 @@ TABLES = collections.OrderedDict([
 	('gvar', (['SIM', 'STATE', 'EVENT', 'SERVER_ONLY', 'CLIENT_ONLY', 'WORLD_SETTING'],
 		'an engine variable scripts or data set')),
 	('module', (['DEF', 'SIM', 'UI', 'SCENE'], 'a script module: Module, or level/Module for a module of a level')),
-	('modvar', (['WORLD', 'PLAYER', 'PARTY', 'CLIENT'], 'a script module variable: Module.name')),
+	('modvar', (['WORLD', 'PLAYER', 'PARTY', 'PLAYER_SHARED', 'PARTY_SHARED', 'CLIENT'],
+		'a script module variable: Module.name')),
 	('savevar', (['STORY', 'PLAYER'], 'a save variable prefix (the name up to its first dot)')),
 	('initstep', (['WORLD', 'PLAYER_ENTER', 'DEF'], 'a step of the level start: File:call')),
 	('playerread', (['NEAREST', 'ANY', 'PARTY', 'WORLD'],

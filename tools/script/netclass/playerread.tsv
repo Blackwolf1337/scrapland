@@ -19,10 +19,35 @@ Taunts_Think	ANY	the police taunts poll the alarm every frame (each player in tu
 MT_TriggerTakenN	NEAREST	a ship group's trigger taken by a ship that is no player's: is it the player's (the one near it)
 cShipGroupData_Think	ANY	the mosquitos and mad hunters poll the intruder every half second (each player in turn)
 Parking.PlayerShip	NEAREST	the own ship of the player near the entity that runs (a parked ship's death, a parking's callback)
-Speech.LaunchedTauntEntityName	NEAREST	the taunt of the NPC near the player
 Veh_OnClientDeathN	NEAREST	a ship died by no player's hand: the player near it
 Om_GetFreeSpawnPos	NEAREST	an NPC's respawn place around the player near it
 Om_SpawnPosBy	NEAREST	an NPC's respawn place around the player near it
 Mi_GiveMoney	NEAREST	a mission item's money for the player near it
 Mi_BoxKind	NEAREST	a mission box for the player near it
 Pk_ParkedDeatN	NEAREST	a parked ship died: the player near it
+cGenCharLocalLogic_Update	NEAREST	an NPC's logic reacts to the alarm of the player near it
+cGenCharLocalLogic_UpdateView	NEAREST	an NPC sees the player near it
+cGenCharLocalLogic_RestartState	NEAREST	an NPC's logic reacts to the alarm of the player near it
+cAIChar_CheckTalk	NEAREST	an NPC talks to the player near it
+cAIChar_ThinkPatrol	NEAREST	an NPC's patrol reacts to the alarm of the player near it
+Logic_IsSuspectType	NEAREST	the class of the player near the NPC is a suspect's
+cEmbeddedFXSentinel_Update	NEAREST	a sentinel's alarm light for the player near it
+cLittlePoliceLocalLogic_Update	NEAREST	a police character reacts to the alarm of the player near it
+cLittlePoliceLocalLogic_UpdateView	NEAREST	a police character sees the player near it
+cLittlePoliceLocalLogic_UpdateLook	NEAREST	a police character looks at the player near it
+cFunctionaryLocalLogic_UpdateView	NEAREST	a functionary sees the player near it
+cSentinelLocalLogic_UpdateState	NEAREST	a sentinel reacts to the alarm of the player near it
+cSentinelLocalLogic_Think	NEAREST	a sentinel watches the player near it
+cSentinelLocalLogic_Return	NEAREST	a sentinel goes back while the alarm of the player near it is off
+cNurseLocalLogic_Update	NEAREST	a nurse reacts to the alarm of the player near it
+cNurseLocalLogic_SetState	NEAREST	a nurse reacts to the alarm of the player near it
+cGearLocalLogic_Update	NEAREST	a gear reacts to the alarm of the player near it
+cGearLocalLogic_UpdateAnim	NEAREST	a gear reacts to the alarm of the player near it
+cGateKeeperLocalLogic_Update	NEAREST	a gate keeper reacts to the alarm of the player near it
+cGateKeeperLocalLogic_UpdateView	NEAREST	a gate keeper sees the player near it
+cBishopLocalLogic_FindTarget	NEAREST	a bishop's target is the player near it
+Sound_Update	ANY	the action music while the alarm is on (the instance plays none; each player in turn)
+Sound_PlayVoice	NEAREST	a voice for the player near the speaker
+Npc_Respawn	NEAREST	an NPC respawns around the player near it
+Mode_AlarmOn	NEAREST	the scripts ask for the alarm of the player near the entity that runs
+Cw_SetCrazy	NEAREST	the crazy wing for the player near it

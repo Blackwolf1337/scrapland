@@ -1,7 +1,9 @@
 # The script module variables (src/game/Script/ModVarTable.c, every level's module under one name): Module.name,
 # tag, why. Tags: WORLD (one value for the world), PLAYER (one value per player: an overlay of ModVars.c in stage
-# 1.2), PARTY (one value per party: the coop party, the acting player outside coop), CLIENT (a client's own menu or
-# view state). netclass.py counts the rows without a tag.
+# 1.2), PARTY (one value per party: the coop party, the acting player outside coop), PLAYER_SHARED and PARTY_SHARED
+# (state of one player or party whose flow still runs in the world's context of a machine, an NPC, a race or a scene:
+# one shared value as before until a later stage gives the flow its player, then PLAYER or PARTY), CLIENT (a client's
+# own menu or view state). netclass.py counts the rows without a tag.
 ATPC.IDAmmo	WORLD	one value for the world (DEF module)
 ATPC.IDWeap	WORLD	one value for the world (DEF module)
 ATPC.ShootFile	WORLD	one value for the world (DEF module)
@@ -37,15 +39,15 @@ CTF.flagsSpecial	WORLD	one value for the world (SIM module)
 CTF.friends	WORLD	one value for the world (SIM module)
 CTF.maxFlags	WORLD	one value for the world (SIM module)
 CTF.onDeathSpawnTime	WORLD	one value for the world (SIM module)
-Challenge.challengeType	PLAYER	state of one player (its conversation, ship, machine or race)
+Challenge.challengeType	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
 Challenge.combatRewards	WORLD	one value for the world (SIM module)
-Challenge.foeType	PLAYER	state of one player (its conversation, ship, machine or race)
+Challenge.foeType	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
 Challenge.groups	WORLD	one value for the world (SIM module)
 Challenge.numChallengeEnemies	WORLD	one value for the world (SIM module)
-Challenge.playerWinsRevenge	PLAYER	state of one player (its conversation, ship, machine or race)
+Challenge.playerWinsRevenge	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
 Challenge.raceRewards	WORLD	one value for the world (SIM module)
-CharAct.TakenPhoto	PLAYER	state of one player (its conversation, ship, machine or race)
-CharAct.TakenPhotoMap	PLAYER	state of one player (its conversation, ship, machine or race)
+CharAct.TakenPhoto	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
+CharAct.TakenPhotoMap	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
 CharAct.onNPCDeath	WORLD	one value for the world (SIM module)
 CharConversor.AvailableChars	WORLD	table or constant of the interface
 CharConversor.CheckConversor	WORLD	table or constant of the interface
@@ -53,14 +55,14 @@ CharConversor.ConversionChars	WORLD	table or constant of the interface
 CharConversor.ConversionPoints	WORLD	table or constant of the interface
 CharConversor.OnPossession	WORLD	table or constant of the interface
 CharConversor.PossessionTime	WORLD	table or constant of the interface
-CharConversor.PrevConv	PLAYER	state of one player (its conversation, ship, machine or race)
-CharConversor._charName	PLAYER	state of one player (its conversation, ship, machine or race)
+CharConversor.PrevConv	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
+CharConversor._charName	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
 CharConversor._fullOption	CLIENT	menu or interface state of the client
 CharConversor._optId	CLIENT	menu or interface state of the client
-CharConversor._usrName	PLAYER	state of one player (its conversation, ship, machine or race)
-CharConversor.afterExitConversor	PLAYER	state of one player (its conversation, ship, machine or race)
-CharConversor.newChar	PLAYER	state of one player (its conversation, ship, machine or race)
-CharConversor.prevChar	PLAYER	state of one player (its conversation, ship, machine or race)
+CharConversor._usrName	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
+CharConversor.afterExitConversor	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
+CharConversor.newChar	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
+CharConversor.prevChar	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
 CharScorer.BackMenuFunc	CLIENT	menu or interface state of the client
 Chars.CanDriveList	WORLD	one value for the world (DEF module)
 Chars.CharRes	WORLD	one value for the world (DEF module)
@@ -201,14 +203,14 @@ Ffa.REDCOLOR	WORLD	one value for the world (SIM module)
 Ffa.STDCOLOR	WORLD	one value for the world (SIM module)
 Ffa.Scorer	WORLD	one value for the world (SIM module)
 Ffa.ScorerFraglimit	WORLD	one value for the world (SIM module)
-Ffa.SpectatorMode	PLAYER	state of one player (its conversation, ship, machine or race)
+Ffa.SpectatorMode	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
 Ffa.TotalGreen	WORLD	one value for the world (SIM module)
 Ffa.TotalRed	WORLD	one value for the world (SIM module)
 Ffa.USRCOLOR	WORLD	one value for the world (SIM module)
 Ffa.Winner	WORLD	one value for the world (SIM module)
-Ffa.YourPosition	PLAYER	state of one player (its conversation, ship, machine or race)
-Ffa.YourScore	PLAYER	state of one player (its conversation, ship, machine or race)
-Ffa.isScorerVisible	PLAYER	state of one player (its conversation, ship, machine or race)
+Ffa.YourPosition	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
+Ffa.YourScore	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
+Ffa.isScorerVisible	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
 Functionary.FXFunctionarySpecialActionFile	WORLD	one value for the world (DEF module)
 Functionary.MinFov	WORLD	one value for the world (DEF module)
 Functionary.charSpeed	WORLD	one value for the world (DEF module)
@@ -561,8 +563,8 @@ Messenger.FXMessengerTakeDataPackFile	WORLD	one value for the world (DEF module)
 Messenger.MDP	WORLD	one value for the world (DEF module)
 Messenger.MakeMDP	WORLD	one value for the world (DEF module)
 MessengerSound.isPC	WORLD	one value for the world (DEF module)
-Metro.MissionMap	PLAYER	state of one player (its conversation, ship, machine or race)
-Metro.OutOfMetro	PLAYER	state of one player (its conversation, ship, machine or race)
+Metro.MissionMap	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
+Metro.OutOfMetro	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
 Metro.WalkCharSpeed	CLIENT	menu or interface state of the client
 MisItems.COIN_RADIUS_INDOOR	WORLD	one value for the world (SIM module)
 MisItems.COIN_RADIUS_OUTDOOR	WORLD	one value for the world (SIM module)
@@ -966,14 +968,14 @@ MissionsFuncs.WorldMap	WORLD	one value for the world (SIM module)
 MissionsFuncs.bgColorGreen	WORLD	one value for the world (SIM module)
 MissionsFuncs.bgColorRed	WORLD	one value for the world (SIM module)
 MissionsFuncs.cameraData	WORLD	one value for the world (SIM module)
-MissionsFuncs.currentBertos	PARTY	state of the mission or race the party plays
-MissionsFuncs.currentTarget	PARTY	state of the mission or race the party plays
+MissionsFuncs.currentBertos	PARTY_SHARED	state of the mission or race the party plays; one shared value until its flow runs in a player's context (stage 1.2)
+MissionsFuncs.currentTarget	PARTY_SHARED	state of the mission or race the party plays; one shared value until its flow runs in a player's context (stage 1.2)
 MissionsFuncs.enemiesNames	WORLD	one value for the world (SIM module)
 MissionsFuncs.friendsNames	WORLD	one value for the world (SIM module)
-MissionsFuncs.launchNewWave	PARTY	state of the mission or race the party plays
+MissionsFuncs.launchNewWave	PARTY_SHARED	state of the mission or race the party plays; one shared value until its flow runs in a player's context (stage 1.2)
 MissionsFuncs.mapsCameraData	WORLD	one value for the world (SIM module)
 MissionsFuncs.maxBertos	WORLD	one value for the world (SIM module)
-MissionsFuncs.targetsList	PARTY	state of the mission or race the party plays
+MissionsFuncs.targetsList	PARTY_SHARED	state of the mission or race the party plays; one shared value until its flow runs in a player's context (stage 1.2)
 MissionsFuncs.textColor	WORLD	one value for the world (SIM module)
 MissionsFuncs.timeBetweenWaves	WORLD	one value for the world (SIM module)
 MortalRace.BatonModel	WORLD	one value for the world (SIM module)
@@ -989,21 +991,21 @@ MortalRace.MeetPointModel	WORLD	one value for the world (SIM module)
 MortalRace.NUM_WAYPOINTS_AHEAD	WORLD	one value for the world (SIM module)
 MortalRace.WayPointModel	WORLD	one value for the world (SIM module)
 MortalRace.WaypRadius	WORLD	one value for the world (SIM module)
-MortalRace.YourScore	PARTY	state of the mission or race the party plays
-MortalRace.baton	PARTY	state of the mission or race the party plays
-MortalRace.iStartPos	PARTY	state of the mission or race the party plays
+MortalRace.YourScore	PARTY_SHARED	state of the mission or race the party plays; one shared value until its flow runs in a player's context (stage 1.2)
+MortalRace.baton	PARTY_SHARED	state of the mission or race the party plays; one shared value until its flow runs in a player's context (stage 1.2)
+MortalRace.iStartPos	PARTY_SHARED	state of the mission or race the party plays; one shared value until its flow runs in a player's context (stage 1.2)
 MortalRace.messageKillShipThrown	WORLD	one value for the world (SIM module)
-MortalRace.nameProfileDict	PARTY	state of the mission or race the party plays
-MortalRace.numRacers	PARTY	state of the mission or race the party plays
+MortalRace.nameProfileDict	PARTY_SHARED	state of the mission or race the party plays; one shared value until its flow runs in a player's context (stage 1.2)
+MortalRace.numRacers	PARTY_SHARED	state of the mission or race the party plays; one shared value until its flow runs in a player's context (stage 1.2)
 MortalRace.numWaypoints	WORLD	one value for the world (SIM module)
-MortalRace.prevCadenceShoot	PARTY	state of the mission or race the party plays
-MortalRace.prevControlAim	PARTY	state of the mission or race the party plays
-MortalRace.prof	PARTY	state of the mission or race the party plays
-MortalRace.profileType	PARTY	state of the mission or race the party plays
-MortalRace.racers	PARTY	state of the mission or race the party plays
+MortalRace.prevCadenceShoot	PARTY_SHARED	state of the mission or race the party plays; one shared value until its flow runs in a player's context (stage 1.2)
+MortalRace.prevControlAim	PARTY_SHARED	state of the mission or race the party plays; one shared value until its flow runs in a player's context (stage 1.2)
+MortalRace.prof	PARTY_SHARED	state of the mission or race the party plays; one shared value until its flow runs in a player's context (stage 1.2)
+MortalRace.profileType	PARTY_SHARED	state of the mission or race the party plays; one shared value until its flow runs in a player's context (stage 1.2)
+MortalRace.racers	PARTY_SHARED	state of the mission or race the party plays; one shared value until its flow runs in a player's context (stage 1.2)
 MortalRace.respawnTime	WORLD	one value for the world (SIM module)
-MortalRace.shipWithBaton	PARTY	state of the mission or race the party plays
-MortalRace.userWithBaton	PARTY	state of the mission or race the party plays
+MortalRace.shipWithBaton	PARTY_SHARED	state of the mission or race the party plays; one shared value until its flow runs in a player's context (stage 1.2)
+MortalRace.userWithBaton	PARTY_SHARED	state of the mission or race the party plays; one shared value until its flow runs in a player's context (stage 1.2)
 MortalRace.waypointName	WORLD	one value for the world (SIM module)
 NDeathMatch.MultiplayerMenuOnGame	WORLD	one value for the world (SIM module)
 NDeathMatch.MultiplayerMenuSpectator	WORLD	one value for the world (SIM module)
@@ -1062,8 +1064,8 @@ NewsPanel.MissionUse	CLIENT	menu or interface state of the client
 NewsPanel.NewsOnMem	CLIENT	menu or interface state of the client
 NewsPanel.NewsPanelModel	CLIENT	menu or interface state of the client
 NewsPanel.Panels	CLIENT	menu or interface state of the client
-NewsPanel.ShowingNews	PLAYER	state of one player (its conversation, ship, machine or race)
-NewsPanel.act	PLAYER	state of one player (its conversation, ship, machine or race)
+NewsPanel.ShowingNews	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
+NewsPanel.act	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
 Nurse.HitFile	WORLD	one value for the world (DEF module)
 OutMap.StartPos	WORLD	one value for the world (SIM module)
 OutMap.iStartPos	WORLD	one value for the world (SIM module)
@@ -1132,7 +1134,7 @@ Parking.SwitchCharMissionCallback	WORLD	one value for the world (SIM module)
 Parking.SwitchCharMissionCallbackAux	WORLD	one value for the world (SIM module)
 Parking.SwitchVehicleMissionCallback	WORLD	one value for the world (SIM module)
 Parking.SwitchVehicleMissionCallbackAux	WORLD	one value for the world (SIM module)
-PhoneCab.audioComEntity	PLAYER	state of one player (its conversation, ship, machine or race)
+PhoneCab.audioComEntity	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
 Police.FXPoliceGearConversionFile	WORLD	one value for the world (DEF module)
 Police.FXPoliceStealFile	WORLD	one value for the world (DEF module)
 Police.ResState	WORLD	one value for the world (DEF module)
@@ -1140,37 +1142,37 @@ PoliceBoss.BrupBaseFile	WORLD	one value for the world (DEF module)
 PoliceBossSound.isPC	WORLD	one value for the world (DEF module)
 PoliceSound.isPC	WORLD	one value for the world (DEF module)
 RaceMaker.AISHIPS	WORLD	race constant
-RaceMaker.BayScorer	PLAYER	the race of the player that challenged
-RaceMaker.ChallengeFoeType	PLAYER	the race of the player that challenged
-RaceMaker.EndOfRaceCallback	PLAYER	the race of the player that challenged
-RaceMaker.FoesScorer	PLAYER	the race of the player that challenged
+RaceMaker.BayScorer	PLAYER_SHARED	the race of the player that challenged; one shared value until its flow runs in a player's context (stage 1.2)
+RaceMaker.ChallengeFoeType	PLAYER_SHARED	the race of the player that challenged; one shared value until its flow runs in a player's context (stage 1.2)
+RaceMaker.EndOfRaceCallback	PLAYER_SHARED	the race of the player that challenged; one shared value until its flow runs in a player's context (stage 1.2)
+RaceMaker.FoesScorer	PLAYER_SHARED	the race of the player that challenged; one shared value until its flow runs in a player's context (stage 1.2)
 RaceMaker.GetDealType	WORLD	race constant
-RaceMaker.NumOponNotGoNextItem	PLAYER	the race of the player that challenged
-RaceMaker.OnCheckPointCallback	PLAYER	the race of the player that challenged
-RaceMaker.OnInitRace	PLAYER	the race of the player that challenged
-RaceMaker.OnInitialTaunt	PLAYER	the race of the player that challenged
-RaceMaker.OnPlayerLoosesRace	PLAYER	the race of the player that challenged
-RaceMaker.OnPlayerWinsRace	PLAYER	the race of the player that challenged
-RaceMaker.OnPreInitRace	PLAYER	the race of the player that challenged
-RaceMaker.OnRaceGoCallback	PLAYER	the race of the player that challenged
-RaceMaker.Players	PLAYER	the race of the player that challenged
+RaceMaker.NumOponNotGoNextItem	PLAYER_SHARED	the race of the player that challenged; one shared value until its flow runs in a player's context (stage 1.2)
+RaceMaker.OnCheckPointCallback	PLAYER_SHARED	the race of the player that challenged; one shared value until its flow runs in a player's context (stage 1.2)
+RaceMaker.OnInitRace	PLAYER_SHARED	the race of the player that challenged; one shared value until its flow runs in a player's context (stage 1.2)
+RaceMaker.OnInitialTaunt	PLAYER_SHARED	the race of the player that challenged; one shared value until its flow runs in a player's context (stage 1.2)
+RaceMaker.OnPlayerLoosesRace	PLAYER_SHARED	the race of the player that challenged; one shared value until its flow runs in a player's context (stage 1.2)
+RaceMaker.OnPlayerWinsRace	PLAYER_SHARED	the race of the player that challenged; one shared value until its flow runs in a player's context (stage 1.2)
+RaceMaker.OnPreInitRace	PLAYER_SHARED	the race of the player that challenged; one shared value until its flow runs in a player's context (stage 1.2)
+RaceMaker.OnRaceGoCallback	PLAYER_SHARED	the race of the player that challenged; one shared value until its flow runs in a player's context (stage 1.2)
+RaceMaker.Players	PLAYER_SHARED	the race of the player that challenged; one shared value until its flow runs in a player's context (stage 1.2)
 RaceMaker.RaceCountDownSound1	WORLD	race constant
 RaceMaker.RaceCountDownSound1Vol	WORLD	race constant
 RaceMaker.RaceCountDownSound2	WORLD	race constant
 RaceMaker.RaceCountDownSound2Vol	WORLD	race constant
-RaceMaker.RaceSpeachers	PLAYER	the race of the player that challenged
-RaceMaker.SkipTimer	PLAYER	the race of the player that challenged
-RaceMaker.StartPos	PLAYER	the race of the player that challenged
+RaceMaker.RaceSpeachers	PLAYER_SHARED	the race of the player that challenged; one shared value until its flow runs in a player's context (stage 1.2)
+RaceMaker.SkipTimer	PLAYER_SHARED	the race of the player that challenged; one shared value until its flow runs in a player's context (stage 1.2)
+RaceMaker.StartPos	PLAYER_SHARED	the race of the player that challenged; one shared value until its flow runs in a player's context (stage 1.2)
 RaceMaker.WayPointlimit	WORLD	race constant
-RaceMaker.YourScore	PLAYER	the race of the player that challenged
-RaceMaker.cameraItemName	PLAYER	the race of the player that challenged
-RaceMaker.cameraVehicleName	PLAYER	the race of the player that challenged
-RaceMaker.challengePartners	PLAYER	the race of the player that challenged
-RaceMaker.challenged_NPCs_Names	PLAYER	the race of the player that challenged
-RaceMaker.iStartPos	PLAYER	the race of the player that challenged
-RaceMaker.nextIAProfile	PLAYER	the race of the player that challenged
-RaceMaker.nextStartPos	PLAYER	the race of the player that challenged
-RaceMaker.prevCamera	PLAYER	the race of the player that challenged
+RaceMaker.YourScore	PLAYER_SHARED	the race of the player that challenged; one shared value until its flow runs in a player's context (stage 1.2)
+RaceMaker.cameraItemName	PLAYER_SHARED	the race of the player that challenged; one shared value until its flow runs in a player's context (stage 1.2)
+RaceMaker.cameraVehicleName	PLAYER_SHARED	the race of the player that challenged; one shared value until its flow runs in a player's context (stage 1.2)
+RaceMaker.challengePartners	PLAYER_SHARED	the race of the player that challenged; one shared value until its flow runs in a player's context (stage 1.2)
+RaceMaker.challenged_NPCs_Names	PLAYER_SHARED	the race of the player that challenged; one shared value until its flow runs in a player's context (stage 1.2)
+RaceMaker.iStartPos	PLAYER_SHARED	the race of the player that challenged; one shared value until its flow runs in a player's context (stage 1.2)
+RaceMaker.nextIAProfile	PLAYER_SHARED	the race of the player that challenged; one shared value until its flow runs in a player's context (stage 1.2)
+RaceMaker.nextStartPos	PLAYER_SHARED	the race of the player that challenged; one shared value until its flow runs in a player's context (stage 1.2)
+RaceMaker.prevCamera	PLAYER_SHARED	the race of the player that challenged; one shared value until its flow runs in a player's context (stage 1.2)
 RacerScorer.BackMenuFunc	CLIENT	menu or interface state of the client
 RacerScorer.MultiplayerUpdatePing_LastTime	CLIENT	menu or interface state of the client
 RacerScorer.SPECTATOR_POINTS	CLIENT	menu or interface state of the client
@@ -1199,13 +1201,13 @@ SRace.RaceCountDownSound1Vol	WORLD	one value for the world (SIM module)
 SRace.RaceCountDownSound2	WORLD	one value for the world (SIM module)
 SRace.RaceCountDownSound2Vol	WORLD	one value for the world (SIM module)
 SRace.race	WORLD	one value for the world (SIM module)
-Scene.AcActionSet	PARTY	the scene the party watches
-Scene.Actors	PARTY	the scene the party watches
-Scene.EndOfSceneCallback	PARTY	the scene the party watches
-Scene.InvulnerableChars	PARTY	the scene the party watches
-Scene.LocalActors	PARTY	the scene the party watches
-Scene.SceneName	PARTY	the scene the party watches
-Scene.VoiceChannel	PARTY	the scene the party watches
+Scene.AcActionSet	PARTY_SHARED	the scene the party watches; one shared value until its flow runs in a player's context (stage 1.2)
+Scene.Actors	PARTY_SHARED	the scene the party watches; one shared value until its flow runs in a player's context (stage 1.2)
+Scene.EndOfSceneCallback	PARTY_SHARED	the scene the party watches; one shared value until its flow runs in a player's context (stage 1.2)
+Scene.InvulnerableChars	PARTY_SHARED	the scene the party watches; one shared value until its flow runs in a player's context (stage 1.2)
+Scene.LocalActors	PARTY_SHARED	the scene the party watches; one shared value until its flow runs in a player's context (stage 1.2)
+Scene.SceneName	PARTY_SHARED	the scene the party watches; one shared value until its flow runs in a player's context (stage 1.2)
+Scene.VoiceChannel	PARTY_SHARED	the scene the party watches; one shared value until its flow runs in a player's context (stage 1.2)
 Scorer.MarginH	CLIENT	menu or interface state of the client
 Scorer.MarginV	CLIENT	menu or interface state of the client
 Scorer.MissionScorerBar_ColorBack	CLIENT	menu or interface state of the client
@@ -1313,30 +1315,30 @@ Sound.WayVolume	WORLD	one value for the world (DEF module)
 Speech.AnsAnima	WORLD	table or constant of the interface
 Speech.ArrowCanMission	WORLD	table or constant of the interface
 Speech.CanLaunchRemote	WORLD	table or constant of the interface
-Speech.CurrentRemoteCom	PLAYER	state of one player (its conversation, ship, machine or race)
+Speech.CurrentRemoteCom	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
 Speech.DefTextColor	WORLD	table or constant of the interface
 Speech.HeadDict	WORLD	table or constant of the interface
-Speech.LaunchedTauntEntityName	PLAYER	state of one player (its conversation, ship, machine or race)
+Speech.LaunchedTauntEntityName	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
 Speech.LockAlarm	WORLD	table or constant of the interface
-Speech.NPCAnswer	PLAYER	state of one player (its conversation, ship, machine or race)
-Speech.NPCAnswerTime	PLAYER	state of one player (its conversation, ship, machine or race)
-Speech.NPCName	PLAYER	state of one player (its conversation, ship, machine or race)
-Speech.ObjAnswer	PLAYER	state of one player (its conversation, ship, machine or race)
-Speech.ObjAutoAnswerAction	PLAYER	state of one player (its conversation, ship, machine or race)
-Speech.ObjAutoAnswerDefLoop	PLAYER	state of one player (its conversation, ship, machine or race)
-Speech.ObjCharType	PLAYER	state of one player (its conversation, ship, machine or race)
-Speech.ObjEntity	PLAYER	state of one player (its conversation, ship, machine or race)
-Speech.OnEndOfSpeech	PLAYER	state of one player (its conversation, ship, machine or race)
-Speech.OnEndOfSpeechParams	PLAYER	state of one player (its conversation, ship, machine or race)
-Speech.OnOutOfRange	PLAYER	state of one player (its conversation, ship, machine or race)
-Speech.PlayerName	PLAYER	state of one player (its conversation, ship, machine or race)
-Speech.RemoteCom	PLAYER	state of one player (its conversation, ship, machine or race)
+Speech.NPCAnswer	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
+Speech.NPCAnswerTime	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
+Speech.NPCName	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
+Speech.ObjAnswer	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
+Speech.ObjAutoAnswerAction	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
+Speech.ObjAutoAnswerDefLoop	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
+Speech.ObjCharType	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
+Speech.ObjEntity	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
+Speech.OnEndOfSpeech	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
+Speech.OnEndOfSpeechParams	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
+Speech.OnOutOfRange	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
+Speech.PlayerName	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
+Speech.RemoteCom	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
 Speech.SpeechRoutines	WORLD	table or constant of the interface
-Speech.TalkListen	PLAYER	state of one player (its conversation, ship, machine or race)
+Speech.TalkListen	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
 Speech.TextColor	WORLD	table or constant of the interface
 Speech.UsrTextColor	WORLD	table or constant of the interface
 Speech.VoiceShTime	WORLD	table or constant of the interface
-Speech.prevTaunt	PLAYER	state of one player (its conversation, ship, machine or race)
+Speech.prevTaunt	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
 Split.FirstTime	WORLD	one value for the world (SIM module)
 Split.FuncGetReSpawnPos	WORLD	one value for the world (SIM module)
 Split.FuncGetSpawnPos	WORLD	one value for the world (SIM module)
@@ -1409,9 +1411,9 @@ VehiclesNPC.StdShips	WORLD	one value for the world (SIM module)
 VehiclesNPC.UseMercs	WORLD	one value for the world (SIM module)
 VehiclesNPC.lmigd	WORLD	one value for the world (SIM module)
 Versus.CharLangTrans	WORLD	one value for the world (SIM module)
-Versus.combatDeaths	PLAYER	state of one player (its conversation, ship, machine or race)
-Versus.enemyName	PLAYER	state of one player (its conversation, ship, machine or race)
-Versus.playerDeaths	PLAYER	state of one player (its conversation, ship, machine or race)
+Versus.combatDeaths	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
+Versus.enemyName	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
+Versus.playerDeaths	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
 Vulcan.BulletFile	WORLD	one value for the world (DEF module)
 Vulcan.HitFile	WORLD	one value for the world (DEF module)
 Vulcan.HitForce	WORLD	one value for the world (DEF module)

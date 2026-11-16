@@ -127,18 +127,23 @@ void Players_SetOwner(int slot, struct cEntity *e);
 void Players_Join(int i, int money);
 void Players_Part(int i);
 /* the current context set to player i (PLAYERS_NONE or an unused one: the world's own); the previous one for
- * Players_Leave, which sets it back (no-ops outside the instance) */
-int Players_Enter(int i);
+ * Players_Leave, which sets it back (no-ops outside the instance); site names the dispatch point for the trace of the
+ * tests (SCRAP_PLAYER_TRACE=1: "pltrace" lines of each callback, money and alarm change with its player) */
+int Players_EnterAt(int i, const char *site);
+#define Players_Enter(i) Players_EnterAt(i, __func__)
 void Players_Leave(int prev);
 /* Players_Enter for the player of the entity (or the owner of the ship: Players_ShipOwner), else the world's */
-int Players_EnterEntity(struct cEntity *e);
+int Players_EnterEntityAt(struct cEntity *e, const char *site);
+#define Players_EnterEntity(e) Players_EnterEntityAt(e, __func__)
 /* Players_Enter for the player whose owner slot e has, also while e is not one of the players found (made inactive by
  * the scripts), else the owner of the ship e */
-int Players_EnterOwner(struct cEntity *e);
+int Players_EnterOwnerAt(struct cEntity *e, const char *site);
+#define Players_EnterOwner(e) Players_EnterOwnerAt(e, __func__)
 /* the joins of player slot i so far (0 outside the instance); Players_Enter for player i when it is still the same
  * join (a scheduled call runs with the player that scheduled it), else the world's */
 uint16_t Players_Joined(int i);
-int Players_EnterJoined(int i, uint16_t joined);
+int Players_EnterJoinedAt(int i, uint16_t joined, const char *site);
+#define Players_EnterJoined(i, joined) Players_EnterJoinedAt(i, joined, __func__)
 /* the entity the world's context runs for (the NEAREST rule of the resolver): an entity's update, a logic's think of
  * an entity; the previous one */
 struct cEntity *Players_Run(struct cEntity *e);

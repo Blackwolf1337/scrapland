@@ -35,6 +35,8 @@ typedef enum {
 	NC_PLAYER_ENTER = 19,
 	NC_NEAREST = 20,
 	NC_ANY = 21,
+	NC_PLAYER_SHARED = 22,
+	NC_PARTY_SHARED = 23,
 	NC_TAGS
 } netTag_t;
 

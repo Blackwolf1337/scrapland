@@ -5,8 +5,11 @@
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "scrap/alarm.h"
+#include "scrap/console.h"
 #include "scrap/coop.h"
 #include "scrap/faction.h"
 #include "scrap/game.h"
@@ -32,6 +35,8 @@
 static cPlayer g_Pl[PLAYERS_MAX + 1];	/* + the world's own (PLAYERS_NONE) */
 static cPlayer *g_Cur = &g_Pl[PLAYERS_NONE];
 static cEntity *g_Runner;		/* the entity the world's context runs for (Players_Run), NULL */
+static byte Players_Tracing(void);
+static void Players_TraceLook(void);
 static int g_Turn;				/* frames: the rule ANY takes the next player each frame */
 
 #define g_Bound ((int)(g_Cur - g_Pl))
@@ -233,6 +238,9 @@ void Players_Clear(void) {
 			g_NetPlayer(i) = NULL;
 		}
 		g_Turn++;
+		if (Players_Tracing()) {
+			Players_TraceLook();
+		}
 	}
 }
 
@@ -296,30 +304,95 @@ void Players_Part(int i) {
 	ModVar_OverClearPlayer(i);
 }
 
-int Players_Enter(int i) {
-	int prev = g_Bound;
-	if (Players_Net()) {
-		g_Cur = &g_Pl[Players_Used(i) ? i : PLAYERS_NONE];
+/* ---- the trace of the tests (SCRAP_PLAYER_TRACE=1 on an instance): each change of a player's money and alarm with
+ * the context it happened in, each dispatch of a callback; "pltrace WRONG" when a player's context changed another
+ * player's ---- */
+
+static signed char g_Trace = -1;
+static const char *g_TraceSite = "-";	/* where the current context was entered */
+static int g_TraceMoney[PLAYERS_MAX];
+static float g_TraceValue[PLAYERS_MAX];
+static byte g_TraceOn[PLAYERS_MAX];
+static byte g_TraceSeen[PLAYERS_MAX];
+
+static byte Players_Tracing(void) {
+	if (g_Trace < 0) {
+		const char *v = getenv("SCRAP_PLAYER_TRACE");
+		g_Trace = v && v[0] == '1';
 	}
+	return g_Trace && Players_Net();
+}
+
+/* the changes since the last look, made in the current context */
+static void Players_TraceLook(void) {
+	for (int i = 0; i < PLAYERS_MAX; i++) {
+		cPlayer *p = &g_Pl[i];
+		if (!p->used) {
+			g_TraceSeen[i] = 0;
+			continue;
+		}
+		byte changed = g_TraceSeen[i] && (p->money != g_TraceMoney[i] || p->alarm.on != g_TraceOn[i] ||
+			p->alarm.value != g_TraceValue[i]);
+		if (changed) {
+			char ctx[32];
+			snprintf(ctx, sizeof(ctx), g_Cur == &g_Pl[PLAYERS_NONE] ? "the world" : "player %d", g_Bound);
+			Con_Printf("pltrace player %d money %d -> %d alarm %.3f %d -> %.3f %d in %s (%s)\n", i, g_TraceMoney[i],
+				p->money, (double)g_TraceValue[i], g_TraceOn[i], (double)p->alarm.value, p->alarm.on, ctx, g_TraceSite);
+			if (g_Cur != &g_Pl[PLAYERS_NONE] && g_Cur != p) {
+				Con_Printf("pltrace WRONG player %d changed in the context of player %d (%s)\n", i, g_Bound, g_TraceSite);
+			}
+		}
+		g_TraceSeen[i] = 1;
+		g_TraceMoney[i] = p->money;
+		g_TraceValue[i] = p->alarm.value;
+		g_TraceOn[i] = p->alarm.on;
+	}
+}
+
+/* the frame loops, the steps of a player's own entity and the alarm's update (Alarm_SetOn) enter for every frame: no
+ * callback lines for them (their changes have lines) */
+static byte Players_TraceQuiet(const char *site) {
+	return !strcmp(site, "cWorld_Update") || !strcmp(site, "Rep_PreFrame") || !strcmp(site, "Players_UpdateAlarms") ||
+		!strcmp(site, "Players_SetGrow") || !strcmp(site, "AICtrl_Think") || !strcmp(site, "Alarm_SetOn");
+}
+
+static int Players_Switch(int i, const char *site) {
+	int prev = g_Bound;
+	if (!Players_Net()) {
+		return prev;
+	}
+	cPlayer *n = &g_Pl[Players_Used(i) ? i : PLAYERS_NONE];
+	if (Players_Tracing()) {
+		Players_TraceLook();
+		if (site && n != &g_Pl[PLAYERS_NONE] && !Players_TraceQuiet(site)) {
+			Con_Printf("pltrace callback %s for player %d\n", site, (int)(n - g_Pl));
+		}
+		g_TraceSite = site ? site : "back";
+	}
+	g_Cur = n;
 	return prev;
 }
 
+int Players_EnterAt(int i, const char *site) {
+	return Players_Switch(i, site);
+}
+
 void Players_Leave(int prev) {
-	Players_Enter(prev);
+	Players_Switch(prev, NULL);
 }
 
-int Players_EnterEntity(cEntity *e) {
+int Players_EnterEntityAt(cEntity *e, const char *site) {
 	int i = Players_Of(e);
-	return Players_Enter(i >= 0 ? i : Players_ShipOwner(e));
+	return Players_Switch(i >= 0 ? i : Players_ShipOwner(e), site);
 }
 
-int Players_EnterOwner(cEntity *e) {
+int Players_EnterOwnerAt(cEntity *e, const char *site) {
 	int i = e ? Players_Slot(e) - PLAYERS_NET_SLOT : -1;
-	return Players_Enter(i >= 0 && i < PLAYERS_MAX ? i : Players_ShipOwner(e));
+	return Players_Switch(i >= 0 && i < PLAYERS_MAX ? i : Players_ShipOwner(e), site);
 }
 
-int Players_EnterJoined(int i, uint16_t joined) {
-	return Players_Enter(Players_Used(i) && g_Pl[i].joined == joined ? i : PLAYERS_NONE);
+int Players_EnterJoinedAt(int i, uint16_t joined, const char *site) {
+	return Players_Switch(Players_Used(i) && g_Pl[i].joined == joined ? i : PLAYERS_NONE, site);
 }
 
 cEntity *Players_Run(cEntity *e) {

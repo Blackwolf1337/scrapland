@@ -77,6 +77,8 @@ int main(void) {
 	CHECK_EQ("PARTY", ModVar_OverTagged(NC_PARTY, 0), 1);
 	CHECK_EQ("PARTY coop", ModVar_OverTagged(NC_PARTY, 1), 0);
 	CHECK_EQ("WORLD", ModVar_OverTagged(NC_WORLD, 0), 0);
+	CHECK_EQ("PLAYER_SHARED", ModVar_OverTagged(NC_PLAYER_SHARED, 0), 0);
+	CHECK_EQ("PARTY_SHARED", ModVar_OverTagged(NC_PARTY_SHARED, 0), 0);
 	CHECK_EQ("CLIENT", ModVar_OverTagged(NC_CLIENT, 0), 0);
 	CHECK_EQ("absent", ModVar_OverTagged(NC_ABSENT, 0), 0);
 
