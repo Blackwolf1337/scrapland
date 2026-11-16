@@ -336,7 +336,8 @@ def gate_sp(a):
     if 'regress' in a.checks:
         log = os.path.join(out, 'regress.log')
         rc = run([sys.executable, os.path.join(REPO, 'tools', 'test', 'regress', 'regress.py'), 'check', '--build',
-                  a.build, '--lanes', a.lanes, '--out', os.path.join(a.scratch, 'regress')], env=env, log=log)
+                  a.build, '--lanes', a.lanes, '--out', os.path.join(a.scratch, 'regress')] +
+                 [c for c in (a.regress_cases or '').split(',') if c], env=env, log=log)
         text = open(log, errors='replace').read()
         m = re.findall(r'regress: (\d+)/(\d+) pass, (\d+) fail[^\n(]*(?:\(([^)]*)\))?', text)
         if m:
@@ -534,7 +535,8 @@ def main():
     ap.add_argument('--no-coopparity', action='store_true')
     # single player
     ap.add_argument('--checks', default='regress,golden,levels')
-    ap.add_argument('--lanes', default='s04a,s04b,s04c')
+    ap.add_argument('--lanes', default='s04a,s04b,s04c', help='sp: the lanes (MCP slots) of regress.py')
+    ap.add_argument('--regress-cases', default=None, help='sp: only these regress cases (comma separated)')
     ap.add_argument('--asan-build', default=None, help='the ASan build of levels.sh (default <build>-asan)')
     ap.add_argument('--asan-device', default='1002:164e', help='levels.sh: the Vulkan device of the ASan games (the '
                     'AMD: the NVIDIA driver raises a signal in the swapchain under ASan when a game is stopped)')
