@@ -6,6 +6,7 @@
 
 #include "scrap/chartype.h"
 #include "scrap/fxelements.h"
+#include "scrap/players.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/staticinit.h"
 
@@ -86,7 +87,7 @@ static void ChType_MayorSphereHit(cAbstractFile *params) {
 	CHECK(g_MayorEnt);
 	cAbstractFile_ReadString(params, name, 0x80);
 	cEntity *e = World_FindEntity(name);
-	byte alarm = g_pWorld->alarm.on;
+	byte alarm = Players_CurAlarm()->on;
 	CHECK(g_MayorEnt);
 	CHECK(Entity_IsType(g_MayorEnt, TYEN_WALKCHAR));
 	if (!e) {

@@ -989,6 +989,9 @@ int cWorld_SetCam(cWorld *world, int i, const char *name) {
 	cEntity *cam = NULL;
 
 	CHECK(name != NULL);
+	if (i == 0) {
+		Players_NoteCam(name);
+	}
 	if (*name) {
 		cPtrItem *it = PtrTable_Find(&world->entities, name, HashTable_Slot(&world->entities, name));
 		if (it) {

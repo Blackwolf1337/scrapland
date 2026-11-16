@@ -392,7 +392,7 @@ byte Sputniks_Message(Net2Host *host, int conn, const uint8_t *data, int size) {
 	/* a rebuild costs money; the client never gives more than the player has */
 	if (money < Players_Money(i)) {
 		Players_Bind(i);
-		g_pWorld->money = money;
+		*Players_CurMoney() = money;
 		Players_BindTurn();
 	}
 	Con_Printf("sputniks: player %d closed its hangar (money %d)\n", i, Players_Money(i));
@@ -453,7 +453,7 @@ byte Sputniks_ClientMessage(const uint8_t *data, int size) {
 		return 1;
 	}
 	Coop_GetHangar(&r);
-	g_pWorld->money = money;
+	*Players_CurMoney() = money;
 	spk.clientOpen = 1;
 	if (Mode_Import("ShipEdit")) {
 		Spk_ClientDummy();
@@ -482,10 +482,10 @@ void Sputniks_ClientDone(void) {
 	NetRepBuf_Init(&w, buf, sizeof(buf));
 	NetRep_PutU8(&w, SPUTNIKS_MSG);
 	NetRep_PutU8(&w, SPUTNIKS_DONE);
-	NetRep_PutU32(&w, (uint32_t)g_pWorld->money);
+	NetRep_PutU32(&w, (uint32_t)*Players_CurMoney());
 	Coop_PutHangar(&w);
 	if (!w.bad && Watch_SendReliable(buf, w.size)) {
 		const char *cur = SaveVar_Get("Hangar.iHangarShip");
-		Con_Printf("sputniks: the hangar to the instance (hangar %s, money %d)\n", cur ? cur : "-", g_pWorld->money);
+		Con_Printf("sputniks: the hangar to the instance (hangar %s, money %d)\n", cur ? cur : "-", *Players_CurMoney());
 	}
 }

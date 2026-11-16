@@ -551,7 +551,7 @@ void Travel_Joined(int player) {
 	}
 	if (CoordKv_Get(p->state, p->len, "alarm", v, sizeof(v))) {
 		Players_Bind(player);
-		Alarm_Set(&g_pWorld->alarm, (float)crt_atof(v));
+		Alarm_Set(Players_CurAlarm(), (float)crt_atof(v));
 		Players_BindTurn();
 	}
 	cEntity *door = e && p->door[0] ? Tr_Door(p->door, &e->pos) : NULL;

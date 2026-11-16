@@ -121,7 +121,7 @@ cEntity *ChType_BankerVictim(cEntity *v) {
 		return NULL;
 	}
 	Players_BindEntity(e);
-	if (g_pWorld->money <= 0 && Players_Is(e)) {
+	if (*Players_CurMoney() <= 0 && Players_Is(e)) {
 		return NULL;
 	}
 	return e;
@@ -137,7 +137,7 @@ static byte ChType_CanRob(cEntity *thief, cEntity *v) {
 		return 0;
 	}
 	Players_BindEntity(v);
-	if (g_pWorld->money <= 0 && Players_Is(v)) {
+	if (*Players_CurMoney() <= 0 && Players_Is(v)) {
 		return 0;
 	}
 	return 1;
@@ -167,7 +167,7 @@ byte ChType_Steal(cEntity **thief, cEntity **victim, int amount, const char *sta
 			n = WChar(v)->money;
 		}
 		Players_BindEntity(*thief);
-		g_pWorld->money += n;
+		*Players_CurMoney() += n;
 		if (stat) {
 			SaveVar_Inc(stat, n);
 		}
@@ -186,12 +186,12 @@ byte ChType_Steal(cEntity **thief, cEntity **victim, int amount, const char *sta
 	cEntity *v = *victim;
 	if (Players_Is(v)) {
 		Players_BindEntity(v);
-		if (g_pWorld->money <= 0) {
+		if (*Players_CurMoney() <= 0) {
 			return 0;
 		}
-		g_pWorld->money = g_pWorld->money - amount;
-		if (g_pWorld->money < 0) {
-			g_pWorld->money = 0;
+		*Players_CurMoney() = *Players_CurMoney() - amount;
+		if (*Players_CurMoney() < 0) {
+			*Players_CurMoney() = 0;
 		}
 		WChar(*thief)->money += amount;
 		WChar(*thief)->moneyReward += amount / 10;

@@ -24,8 +24,6 @@
 #include "scrap/walkcharentity.h"
 #include "scrap/world.h"
 
-static cEntity *g_NetPlayers[PLAYERS_MAX];	/* the instance's players, found every frame like cWorld.owners */
-
 /* the variables of the scripts' modules that mean "the player's": the player's own ship (Parking) and, in the sandbox
  * and freeroam (places), Sputnik beside it (include/scrap/sputniks.h; the coop story's Sputnik is the party's) */
 #define PLAYERS_VAR_MODULE "Parking"
@@ -35,25 +33,16 @@ static const struct {
 } g_PlVars[] = { { PLAYERS_VAR_MODULE, "PlayerShip", 0 }, { PLAYERS_VAR_MODULE, "LocalShip", 0 }, { "Sputnik", "spt", 1 } };
 #define PLAYERS_VARS ((int)(sizeof(g_PlVars) / sizeof(g_PlVars[0])))
 
-/* the game state of a player while it is not bound into the world */
-typedef struct PlayerState {
-	byte used;
-	uint16_t joined;				/* joins of the slot so far */
-	int money;
-	cAlarm alarm;
-	int8_t level[PLAYERS_LEVELS];
-	nativeVal_t vars[PLAYERS_VARS];	/* of g_PlVars */
-	cEntity *ship;					/* its own ship (Players_SetShip): compared, read while World_FindEntity(shipName)
-									   is it */
-	char shipName[64];
-} PlayerState;
-
-static PlayerState g_PlState[PLAYERS_MAX + 1];	/* + the world's own (PLAYERS_NONE) */
-static int g_Bound = PLAYERS_NONE;
+static cPlayer g_Pl[PLAYERS_MAX + 1];	/* + the world's own (PLAYERS_NONE) */
+static nativeVal_t g_PlVals[PLAYERS_MAX + 1][PLAYERS_VARS];	/* of g_PlVars while the context is not current */
+static cPlayer *g_Cur = &g_Pl[PLAYERS_NONE];
 static int g_Turn;
 static modVarRef_t g_VarRef[PLAYERS_VARS];	/* the modules of g_PlVars, found once a frame (the turn) */
 static int g_VarRefTurn = -1;
 static byte g_VarRefOk[PLAYERS_VARS];
+
+#define g_Bound ((int)(g_Cur - g_Pl))
+#define g_NetPlayer(i) (g_Pl[i].ent)
 
 byte Players_Net(void) {
 	return g_Instance;
@@ -61,7 +50,7 @@ byte Players_Net(void) {
 
 cEntity *Players_Get(int i) {
 	if (Players_Net()) {
-		return i >= 0 && i < PLAYERS_MAX ? g_NetPlayers[i] : NULL;
+		return i >= 0 && i < PLAYERS_MAX ? g_NetPlayer(i) : NULL;
 	}
 	return i >= 0 && i < 4 ? cWorld_GetUsrEntity(g_pWorld, i) : NULL;
 }
@@ -100,12 +89,12 @@ static cEntity *Players_AnyOf(void) {
 	if (!Players_Net()) {
 		return cWorld_GetUsrEntity(g_pWorld, 0);
 	}
-	if (g_Bound != PLAYERS_NONE && g_NetPlayers[g_Bound]) {
-		return g_NetPlayers[g_Bound];
+	if (g_Bound != PLAYERS_NONE && g_NetPlayer(g_Bound)) {
+		return g_NetPlayer(g_Bound);
 	}
 	for (int i = 0; i < PLAYERS_MAX; i++) {
-		if (g_NetPlayers[i]) {
-			return g_NetPlayers[i];
+		if (g_NetPlayer(i)) {
+			return g_NetPlayer(i);
 		}
 	}
 	return NULL;
@@ -127,7 +116,7 @@ static cEntity *Players_NearestOf(const vec3_t *pos, byte wanted, float *dist) {
 	float bestD = FLT_MAX;
 
 	for (int i = 0; i < PLAYERS_MAX; i++) {
-		cEntity *e = g_NetPlayers[i];
+		cEntity *e = g_NetPlayer(i);
 		if (e && (!wanted || Players_Alarm(i)->on)) {
 			float d = Players_DistSq(e, pos);
 			if (d < bestD) {
@@ -170,7 +159,7 @@ byte Players_Sees(const vec3_t *p) {
 		return 0;
 	}
 	for (int i = 0; i < PLAYERS_MAX; i++) {
-		cEntity *e = g_NetPlayers[i];
+		cEntity *e = g_NetPlayer(i);
 		if (!e) {
 			continue;
 		}
@@ -207,8 +196,8 @@ float Players_MinDistSq(const vec3_t *pos) {
 
 	if (Players_Net()) {
 		for (int i = 0; i < PLAYERS_MAX; i++) {
-			if (g_NetPlayers[i]) {
-				float d = Players_DistSq(g_NetPlayers[i], pos);
+			if (g_NetPlayer(i)) {
+				float d = Players_DistSq(g_NetPlayer(i), pos);
 				best = d < best ? d : best;
 			}
 		}
@@ -236,7 +225,7 @@ void Players_Clear(void) {
 	}
 	if (Players_Net()) {
 		for (int i = 0; i < PLAYERS_MAX; i++) {
-			g_NetPlayers[i] = NULL;
+			g_NetPlayer(i) = NULL;
 		}
 		g_Turn++;
 	}
@@ -246,11 +235,19 @@ void Players_SetOwner(int slot, cEntity *e) {
 	if (slot >= 0 && slot < 4) {
 		g_pWorld->owners[slot] = e;
 	} else if (Players_Net() && slot >= PLAYERS_NET_SLOT && slot < PLAYERS_NET_SLOT + PLAYERS_MAX) {
-		g_NetPlayers[slot - PLAYERS_NET_SLOT] = e;
+		cPlayer *p = &g_Pl[slot - PLAYERS_NET_SLOT];
+		p->ent = e;
+		p->viewPos = e->pos;
+		p->viewYaw = Entity_IsType(e, TYEN_WALKCHAR) ? WChar(e)->view.y : Obj(e)->ang.y;
 	}
 }
 
 /* ---- the game state per player ---- */
+
+/* player i is a used player of the instance */
+static byte Players_Used(int i) {
+	return Players_Net() && i >= 0 && i < PLAYERS_MAX && g_Pl[i].used;
+}
 
 void Players_Join(int i, int money) {
 	if (!Players_Net() || i < 0 || i >= PLAYERS_MAX) {
@@ -259,9 +256,9 @@ void Players_Join(int i, int money) {
 	if (g_Bound == i) {
 		Players_Bind(PLAYERS_NONE);
 	}
-	PlayerState *s = &g_PlState[i];
+	cPlayer *s = &g_Pl[i];
 	/* the alarm of the level (its guaranteed characters, its lock) without the world's level and status */
-	s->alarm = g_Bound == PLAYERS_NONE ? g_pWorld->alarm : g_PlState[PLAYERS_NONE].alarm;
+	s->alarm = g_pWorld->alarm;
 	s->alarm.value = 0.0f;
 	s->alarm.on = 0;
 	s->alarm.grow = -0.1f;
@@ -274,6 +271,9 @@ void Players_Join(int i, int money) {
 	for (int k = 0; k < PLAYERS_LEVELS; k++) {
 		s->level[k] = -1;
 	}
+	s->input = NULL;
+	s->camName[0] = 0;
+	s->actionSet = -1;
 	s->used = 1;
 }
 
@@ -284,14 +284,14 @@ void Players_Part(int i) {
 	if (g_Bound == i) {
 		Players_Bind(PLAYERS_NONE);
 	}
-	g_PlState[i].used = 0;
+	g_Pl[i].used = 0;
 	for (int k = 0; k < PLAYERS_VARS; k++) {
-		Native_Free(&g_PlState[i].vars[k]);
+		Native_Free(&g_PlVals[i][k]);
 	}
 }
 
-/* the variables of g_PlVars of player o into its state, those of player n into the module */
-static void Players_SwapVars(PlayerState *o, PlayerState *n) {
+/* the variables of g_PlVars of context o into its values, those of context n into the module */
+static void Players_SwapVars(int o, int n) {
 	if (g_VarRefTurn != g_Turn) {
 		g_VarRefTurn = g_Turn;
 		for (int k = 0; k < PLAYERS_VARS; k++) {
@@ -303,11 +303,11 @@ static void Players_SwapVars(PlayerState *o, PlayerState *n) {
 		if (!g_VarRefOk[k] || !ModVar_GetVal(&g_VarRef[k], g_PlVars[k].var, &cur)) {
 			continue;
 		}
-		if (!Native_Equal(&cur, &n->vars[k])) {
-			ModVar_SetVal(&g_VarRef[k], g_PlVars[k].var, &n->vars[k]);
+		if (!Native_Equal(&cur, &g_PlVals[n][k])) {
+			ModVar_SetVal(&g_VarRef[k], g_PlVars[k].var, &g_PlVals[n][k]);
 		}
-		Native_Free(&o->vars[k]);
-		o->vars[k] = cur;
+		Native_Free(&g_PlVals[o][k]);
+		g_PlVals[o][k] = cur;
 	}
 }
 
@@ -315,27 +315,64 @@ void Players_Bind(int i) {
 	if (!Players_Net()) {
 		return;
 	}
-	if (i < 0 || i >= PLAYERS_MAX || !g_PlState[i].used) {
+	if (!Players_Used(i)) {
 		i = PLAYERS_NONE;
 	}
 	if (i == g_Bound) {
 		return;
 	}
-	PlayerState *o = &g_PlState[g_Bound], *n = &g_PlState[i];
-	o->money = g_pWorld->money;
-	o->alarm = g_pWorld->alarm;
-	g_pWorld->money = n->money;
-	g_pWorld->alarm = n->alarm;
-	Players_SwapVars(o, n);
-	g_Bound = i;
+	Players_SwapVars(g_Bound, i);
+	g_Cur = &g_Pl[i];
+}
+
+cPlayer *Players_Cur(void) {
+	return g_Cur;
+}
+
+cPlayer *Players_Ctx(int i) {
+	if (i == PLAYERS_NONE) {
+		return &g_Pl[PLAYERS_NONE];
+	}
+	return Players_Used(i) ? &g_Pl[i] : NULL;
+}
+
+int *Players_CurMoneyAt(const char *site) {
+	(void)site;
+	return g_Cur == &g_Pl[PLAYERS_NONE] ? &g_pWorld->money : &g_Cur->money;
+}
+
+cAlarm *Players_CurAlarmAt(const char *site) {
+	(void)site;
+	return g_Cur == &g_Pl[PLAYERS_NONE] ? &g_pWorld->alarm : &g_Cur->alarm;
+}
+
+int Players_OfAlarm(const cAlarm *a) {
+	for (int i = 0; Players_Net() && i < PLAYERS_MAX; i++) {
+		if (a == &g_Pl[i].alarm) {
+			return i;
+		}
+	}
+	return PLAYERS_NONE;
+}
+
+void Players_NoteCam(const char *name) {
+	if (Players_Net() && g_Cur != &g_Pl[PLAYERS_NONE]) {
+		Str_Copy(g_Cur->camName, name, sizeof(g_Cur->camName));
+	}
+}
+
+void Players_NoteActionSet(int set) {
+	if (Players_Net() && g_Cur != &g_Pl[PLAYERS_NONE]) {
+		g_Cur->actionSet = set;
+	}
 }
 
 void Players_SetShip(int i, cEntity *ship) {
-	if (!Players_Net() || i < 0 || i >= PLAYERS_MAX || !g_PlState[i].used) {
+	if (!Players_Used(i)) {
 		return;
 	}
 	int was = g_Bound;
-	PlayerState *s = &g_PlState[i];
+	cPlayer *s = &g_Pl[i];
 	s->ship = ship;
 	Str_Copy(s->shipName, ship ? ship->name : "", sizeof(s->shipName));
 	Players_Bind(i);
@@ -349,17 +386,17 @@ void Players_SetShip(int i, cEntity *ship) {
 }
 
 cEntity *Players_Ship(int i) {
-	if (!Players_Net() || i < 0 || i >= PLAYERS_MAX || !g_PlState[i].used || !g_PlState[i].ship) {
+	if (!Players_Used(i) || !g_Pl[i].ship) {
 		return NULL;
 	}
-	PlayerState *s = &g_PlState[i];
+	cPlayer *s = &g_Pl[i];
 	cEntity *e = World_FindEntity(s->shipName);
 	return e == s->ship && !e->deadNode.target ? e : NULL;
 }
 
 int Players_ShipOwner(cEntity *e) {
 	for (int i = 0; e && Players_Net() && i < PLAYERS_MAX; i++) {
-		if (g_PlState[i].ship == e && Players_Ship(i) == e) {
+		if (g_Pl[i].ship == e && Players_Ship(i) == e) {
 			return i;
 		}
 	}
@@ -367,11 +404,11 @@ int Players_ShipOwner(cEntity *e) {
 }
 
 uint16_t Players_Joined(int i) {
-	return Players_Net() && i >= 0 && i < PLAYERS_MAX ? g_PlState[i].joined : 0;
+	return Players_Net() && i >= 0 && i < PLAYERS_MAX ? g_Pl[i].joined : 0;
 }
 
 void Players_BindJoined(int i, uint16_t joined) {
-	if (Players_Net() && i >= 0 && i < PLAYERS_MAX && g_PlState[i].used && g_PlState[i].joined == joined) {
+	if (Players_Used(i) && g_Pl[i].joined == joined) {
 		Players_Bind(i);
 	}
 }
@@ -402,7 +439,7 @@ void Players_BindTurn(void) {
 	}
 	for (int k = 0; k < PLAYERS_MAX; k++) {
 		int i = (g_Turn + k) % PLAYERS_MAX;
-		if (g_PlState[i].used && g_NetPlayers[i]) {
+		if (g_Pl[i].used && g_NetPlayer(i)) {
 			Players_Bind(i);
 			return;
 		}
@@ -415,25 +452,19 @@ int Players_Bound(void) {
 }
 
 int Players_Money(int i) {
-	if (!Players_Net() || i == g_Bound || i < 0 || i >= PLAYERS_MAX) {
-		return g_pWorld->money;
-	}
-	return g_PlState[i].money;
+	return Players_Used(i) ? g_Pl[i].money : *Players_CurMoney();
 }
 
 void Players_SetMoney(int i, int money) {
-	if (!Players_Net() || i == g_Bound || i < 0 || i >= PLAYERS_MAX) {
-		g_pWorld->money = money;
+	if (Players_Used(i)) {
+		g_Pl[i].money = money;
 	} else {
-		g_PlState[i].money = money;
+		*Players_CurMoney() = money;
 	}
 }
 
 const cAlarm *Players_Alarm(int i) {
-	if (!Players_Net() || i == g_Bound || i < 0 || i >= PLAYERS_MAX) {
-		return &g_pWorld->alarm;
-	}
-	return &g_PlState[i].alarm;
+	return Players_Used(i) ? &g_Pl[i].alarm : Players_CurAlarm();
 }
 
 byte Players_MayHurt(cEntity *attacker, cEntity *victim) {
@@ -457,14 +488,14 @@ cEntity *Players_NearestWanted(const vec3_t *pos) {
 void Players_LevelReset(int source) {
 	if (Players_Net()) {
 		for (int i = 0; i <= PLAYERS_MAX; i++) {
-			g_PlState[i].level[source] = -1;
+			g_Pl[i].level[source] = -1;
 		}
 	}
 }
 
 void Players_LevelRaise(int source, int level) {
-	if (Players_Net() && g_PlState[g_Bound].level[source] < level) {
-		g_PlState[g_Bound].level[source] = (int8_t)level;
+	if (Players_Net() && g_Cur->level[source] < level) {
+		g_Cur->level[source] = (int8_t)level;
 	}
 }
 
@@ -478,9 +509,9 @@ void Players_UpdateAlarms(float dt) {
 		return;
 	}
 	for (int i = 0; i < PLAYERS_MAX; i++) {
-		if (g_PlState[i].used && g_NetPlayers[i]) {
+		if (g_Pl[i].used && g_NetPlayer(i)) {
 			Players_Bind(i);
-			Alarm_Update(&g_pWorld->alarm, dt);
+			Alarm_Update(&g_Pl[i].alarm, dt);
 		}
 	}
 	Players_BindTurn();
@@ -495,15 +526,15 @@ void Players_SetGrow(int level) {
 		return;
 	}
 	for (int i = 0; i < PLAYERS_MAX; i++) {
-		if (!g_PlState[i].used) {
+		if (!g_Pl[i].used) {
 			continue;
 		}
 		int l = -1;
 		for (int k = 0; k < PLAYERS_LEVELS; k++) {
-			l = g_PlState[i].level[k] > l ? g_PlState[i].level[k] : l;
+			l = g_Pl[i].level[k] > l ? g_Pl[i].level[k] : l;
 		}
 		Players_Bind(i);
-		Alarm_SetGrow(&g_pWorld->alarm, l);
+		Alarm_SetGrow(&g_Pl[i].alarm, l);
 	}
 	Players_BindTurn();
 }

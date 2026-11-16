@@ -226,10 +226,10 @@ static void AICtrl_UpdateGears(void *ctrl);
 static byte AICtrl_Voices(cAICtrl *self, byte *alarm, byte *chased) {
 	vec3_t t;
 
-	self->alarmOn = g_pWorld->alarm.on;
+	self->alarmOn = Players_CurAlarm()->on;
 	self->usr = Players_Any();
-	self->sameChar = self->alarmOn && !strcmp(g_pWorld->alarm.lastChars, g_pWorld->alarm.chars);
-	self->notDefChar = cString_CmpStr(g_UsrDefChar, g_pWorld->alarm.chars) != 0 && !Faction_Uniform(g_pWorld->alarm.chars);
+	self->sameChar = self->alarmOn && !strcmp(Players_CurAlarm()->lastChars, Players_CurAlarm()->chars);
+	self->notDefChar = cString_CmpStr(g_UsrDefChar, Players_CurAlarm()->chars) != 0 && !Faction_Uniform(Players_CurAlarm()->chars);
 	if (!self->usr) {
 		return 0;
 	}
@@ -509,7 +509,7 @@ byte AICtrl_SendAccuser(void *ctrl, byte check) {
 	cAICtrl *self = ctrl;
 	vec3_t t, t2, t3;
 
-	if (!g_pWorld->alarm.on) {
+	if (!Players_CurAlarm()->on) {
 		return 0;
 	}
 	cEntity *usr = Players_Any();
@@ -540,7 +540,7 @@ void AICtrl_SendSentinelToNPC(void *ctrl, cEntity *e) {
 	cAICtrl *self = ctrl;
 	vec3_t t, t2, t3;
 
-	if (!cEntityList_GetFirst((cEntityList *)self->sentinels) || self->alerted || g_pWorld->alarm.on) {
+	if (!cEntityList_GetFirst((cEntityList *)self->sentinels) || self->alerted || Players_CurAlarm()->on) {
 		return;
 	}
 	if (Entity_IsType(e, TYEN_WALKCHAR) &&
@@ -587,7 +587,7 @@ void AICtrl_Update(void *ctrl, float dt) {
 	self->timer = 0.0f;
 	AICtrl_Think(self);
 	/* the instance: no fights while some player is wanted */
-	if (!(Players_Net() ? Players_NearestWanted(&g_pWorld->camPos[0]) != NULL : g_pWorld->alarm.on)) {
+	if (!(Players_Net() ? Players_NearestWanted(&g_pWorld->camPos[0]) != NULL : Players_CurAlarm()->on)) {
 		float r = (float)(Weap_Rand01() * 99.0 + 1.0);
 		if ((float)g_PoliceLogicBelligerant > r) {
 			AICtrl_Belligerant(self);

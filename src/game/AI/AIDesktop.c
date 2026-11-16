@@ -5,6 +5,7 @@
  */
 #include "scrap/ai.h"
 #include "scrap/aichar.h"
+#include "scrap/players.h"
 #include "scrap/scrap.h"
 #include "scrap/walkcharentity.h"
 
@@ -32,7 +33,7 @@ static void cAIDesktop_UpdateAction0(cAI *base) {
 	byte act = 0;
 
 	if ((self->state == AIC_GET_AWAY ||
-			(self->state == AIC_PATROL_ZONE && self->ctrl->walk == 1.0f && g_pWorld->alarm.on)) &&
+			(self->state == AIC_PATROL_ZONE && self->ctrl->walk == 1.0f && Players_CurAlarm()->on)) &&
 		self->ctrl->strafe == 0.0f) {
 		uint32_t i;
 		for (i = 0; i < sizeof(busy) / sizeof(busy[0]); i++) {

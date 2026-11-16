@@ -131,7 +131,7 @@ static byte Messenger_Deliver(cEntity *m, cEntity *desk, cEntity *pack) {
 	}
 	if (g_MessengerTubeState) {
 		if (cWalkCharEntity_GetOwnerSlot(m) == 0) {
-			g_pWorld->money += g_MessengerDropPrice;
+			*Players_CurMoney() += g_MessengerDropPrice;
 			SaveVar_Inc("Stats.Messenger", 1);
 		}
 		if (g_MessengerTubeState && Obj(pack)->fx) {

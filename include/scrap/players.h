@@ -14,18 +14,22 @@
  * machine: HUD, camera, sounds). Outside the instance all of them are cWorld_GetUsrEntity(g_pWorld, 0) of the
  * original, so the single player game and the old network modes do what they did.
  *
- * The game state of a player (stage M4a): the world keeps one money (g_pWorld->money) and one alarm
- * (g_pWorld->alarm) that the game code and the scripts read and change wherever they act for "the player". The
- * instance keeps them per player and binds one player's into the world at a time (Players_Bind): the player whose
- * input runs (its actions, hits, pickups), the player nearest to an entity while that entity updates (the NPC that
- * sees a crime raises that player's alarm and reacts to it), each player in turn for the alarm's own update and
- * the alarm level of the logic, and between those the player of the frame's turn (a different one every frame, so
- * a script that polls "the player" every frame sees all of them in turn). Players_Any() and the scripts' player
- * (Mode_Usr, Scrap.UsrEntity(0)) are the bound player's entity there. Outside the instance nothing is bound.
+ * The player context (stage 1.1 of the second multiplayer design): the game state of one player (cPlayer below:
+ * its entity, own ship, money, alarm, the alarm levels of the logic, its viewer pose, input, camera of view 0 and
+ * action set). Code that acts for "the player" reads and changes the money and the alarm of the current context
+ * (Players_CurMoney, Players_CurAlarm). The current context is a pointer, switched (Players_Bind), never copied.
+ * Single player and the old network modes have one context, the world's own: its money and alarm are the fields of
+ * the world (g_pWorld->money, g_pWorld->alarm), so single player does what it did. The instance has one context per
+ * player with its own money and alarm, and the world's own (PLAYERS_NONE) for the rest. The instance switches to a
+ * player's context where the player acts: its input, its actions, hits and pickups, the player nearest to an entity
+ * while that entity updates, each player in turn for the alarm's own update and the alarm level of the logic, and
+ * between those the player of the frame's turn. Players_Any() and the scripts' player (Mode_Usr,
+ * Scrap.UsrEntity(0)) are the current player's entity there.
  */
 #ifndef SCRAP_PLAYERS_H
 #define SCRAP_PLAYERS_H
 
+#include "scrap/alarm.h"
 #include "scrap/mathlib.h"
 #include "scrap/shared.h"
 
@@ -43,6 +47,26 @@
 enum { PLAYERS_LV_POLICE, PLAYERS_LV_AI, PLAYERS_LV_CHARS, PLAYERS_LEVELS };
 
 struct cEntity;
+
+/* the context of a player (the instance: one per player; single player: only the world's own, whose money and alarm
+ * are the fields of the world) */
+typedef struct cPlayer {
+	byte used;
+	uint16_t joined;				/* joins of the slot so far */
+	struct cEntity *ent;			/* its character or ship, found every frame (the owner scan) */
+	struct cEntity *ship;			/* its own ship (Players_SetShip): compared, read while World_FindEntity(shipName)
+									   is it */
+	char shipName[64];
+	int money;						/* not used by the world's own context: g_pWorld->money */
+	cAlarm alarm;					/* not used by the world's own context: g_pWorld->alarm */
+	int8_t level[PLAYERS_LEVELS];	/* the alarm level of each source (Players_LevelRaise), -1 */
+	vec3_t viewPos;					/* where it looks from and the yaw it looks to: its entity's view (the client's
+									   camera pose comes with stage 2.1) */
+	float viewYaw;
+	const struct NetRepInput *input;	/* its input of the tick while that runs, NULL */
+	char camName[64];				/* the camera of view 0 the scripts set while it was current (cWorld_SetCam) */
+	int actionSet;					/* the action set the scripts selected while it was current, -1 */
+} cPlayer;
 
 /* the instance's table is in use (the headless instance) */
 byte Players_Net(void);
@@ -117,6 +141,20 @@ struct cEntity *Players_Ship(int i);
 int Players_ShipOwner(struct cEntity *e);
 /* the bound player, PLAYERS_NONE */
 int Players_Bound(void);
+/* the current context and the context of player i (PLAYERS_NONE: the world's own); NULL for an unused player */
+cPlayer *Players_Cur(void);
+cPlayer *Players_Ctx(int i);
+/* the money and the alarm of the current context (single player: the world's fields); site names the caller */
+int *Players_CurMoneyAt(const char *site);
+cAlarm *Players_CurAlarmAt(const char *site);
+#define Players_CurMoney() Players_CurMoneyAt(__func__)
+#define Players_CurAlarm() Players_CurAlarmAt(__func__)
+/* the player whose alarm a is, PLAYERS_NONE for the world's own */
+int Players_OfAlarm(const cAlarm *a);
+/* the scripts set the camera of view 0 or selected an action set: kept in the current player's context (the
+ * instance) */
+void Players_NoteCam(const char *name);
+void Players_NoteActionSet(int set);
 /* the money and the alarm of player i whether it is bound or not */
 int Players_Money(int i);
 void Players_SetMoney(int i, int money);

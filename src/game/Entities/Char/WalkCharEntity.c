@@ -331,7 +331,7 @@ static inline byte WCE_Action0Is(const cWalkCharEntity *w, const char *s, size_t
 
 /* the alarm flags of the world the alarm actions follow */
 static inline byte WCE_AlarmOn(void) {
-	return g_pWorld->alarm.hasGuaranteed || g_pWorld->alarm.on;
+	return Players_CurAlarm()->hasGuaranteed || Players_CurAlarm()->on;
 }
 
 

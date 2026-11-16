@@ -279,7 +279,7 @@ void Instance_Line(char *line) {
 	char ent[64], opt[64];
 	if (sscanf(line, "money %d %d", &player, &money) == 2) {
 		Players_Bind(player);
-		g_pWorld->money = money;
+		*Players_CurMoney() = money;
 		Players_BindTurn();
 		Con_Printf("instance %s: money of player %d %d\n", inst.id, player, Players_Money(player));
 		return;
@@ -300,9 +300,9 @@ void Instance_Line(char *line) {
 	}
 	if (sscanf(line, "alarm %d %f", &player, &level) == 2) {
 		Players_Bind(player);
-		Alarm_Set(&g_pWorld->alarm, level);
-		Con_Printf("instance %s: alarm of player %d %.2f%s\n", inst.id, player, (double)g_pWorld->alarm.value,
-			g_pWorld->alarm.on ? " on" : "");
+		Alarm_Set(Players_CurAlarm(), level);
+		Con_Printf("instance %s: alarm of player %d %.2f%s\n", inst.id, player, (double)Players_CurAlarm()->value,
+			Players_CurAlarm()->on ? " on" : "");
 		Players_BindTurn();
 		return;
 	}

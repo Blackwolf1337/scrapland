@@ -27,6 +27,7 @@
 #include "scrap/coop.h"
 #include "scrap/filepak.h"
 #include "scrap/nativeobj.h"
+#include "scrap/players.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -154,11 +155,11 @@ static byte SG_SaveMoney(void) {
 /* print Scrap.GetLockAlarm(), Scrap.GetSaveVar("Char"), Scrap.GetAlarmChars() (the script's trace of LoadAlarm) */
 static byte SG_PrintAlarm(void) {
 	nativeVal_t lock, ch, chars;
-	Native_SetInt(&lock, Alarm_IsLocked(&g_pWorld->alarm) != 0);
+	Native_SetInt(&lock, Alarm_IsLocked(Players_CurAlarm()) != 0);
 	Mode_SaveVar("Char", &ch);
 	Native_SetEmpty(&chars, NV_TUPLE);
-	Native_SetText(Native_Append(&chars), g_pWorld->alarm.chars, (int)strlen(g_pWorld->alarm.chars));
-	Native_SetText(Native_Append(&chars), g_pWorld->alarm.lastChars, (int)strlen(g_pWorld->alarm.lastChars));
+	Native_SetText(Native_Append(&chars), Players_CurAlarm()->chars, (int)strlen(Players_CurAlarm()->chars));
+	Native_SetText(Native_Append(&chars), Players_CurAlarm()->lastChars, (int)strlen(Players_CurAlarm()->lastChars));
 	const nativeVal_t *items[3] = { &lock, &ch, &chars };
 	byte ok = Mode_Print(items, 3);
 	Native_Free(&ch);
@@ -179,7 +180,7 @@ static byte SG_LoadAlarm(void) {
 	if (!Mode_EvalSave(SG, status, level) || !Mode_SetAlarm(level)) {
 		return Mode_Done(&t, 0);
 	}
-	Alarm_SetGrow(&g_pWorld->alarm, -1);
+	Alarm_SetGrow(Players_CurAlarm(), -1);
 	Mode_SaveVar("RobotsControlledByBoss", boss);
 	Mode_SaveVar("AlarmActive", active);
 	byte bossRobots = Native_IsStr(boss, "1");
@@ -191,7 +192,7 @@ static byte SG_LoadAlarm(void) {
 	if (!Native_ArgStr(ch, 1, &s)) {
 		return Mode_Done(&t, 0);
 	}
-	Alarm_SetChar(&g_pWorld->alarm, s);
+	Alarm_SetChar(Players_CurAlarm(), s);
 	return Mode_Done(&t, Mode_ActionSetV(set) && SG_PrintAlarm());
 }
 

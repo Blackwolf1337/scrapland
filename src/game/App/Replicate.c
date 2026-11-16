@@ -895,7 +895,7 @@ static cEntity *Rep_CallShip(int i, cEntity *ch, byte side) {
 	vec3_t at, p;
 
 	/* the money is the bound player's (Rep_PreFrame binds it); the coop story calls no ship indoors */
-	if ((pl->rebuild > 0 && g_pWorld->money < pl->rebuild) || Coop_NoShipCall()) {
+	if ((pl->rebuild > 0 && *Players_CurMoney() < pl->rebuild) || Coop_NoShipCall()) {
 		return NULL;
 	}
 	float yaw = WChar(ch)->view.y;
@@ -938,7 +938,7 @@ static cEntity *Rep_CallShip(int i, cEntity *ch, byte side) {
 	if (ship) {
 		pl->calls++;
 		if (pl->rebuild > 0) {
-			g_pWorld->money -= pl->rebuild;
+			*Players_CurMoney() -= pl->rebuild;
 			Con_Printf("instance: player %d paid %d for its ship\n", i, pl->rebuild);
 			pl->rebuild = 0;
 		}
@@ -1076,7 +1076,7 @@ static void Rep_Death(int i, cEntity *e) {
 	pl->deaths++;
 	pl->dead = 1;
 	Players_Bind(i);
-	Alarm_Set(&g_pWorld->alarm, 0.0f);
+	Alarm_Set(Players_CurAlarm(), 0.0f);
 	Faction_Died(i);
 	Arena_Died(i, e);
 	if (sand.rebuild && NetPl_Kind(e) == NETREP_SHIP && Rep_ShipOwner(e) == i) {
@@ -1084,7 +1084,7 @@ static void Rep_Death(int i, cEntity *e) {
 	}
 	if (sand.lives && --pl->lives <= 0) {
 		pl->lives = sand.lives;
-		g_pWorld->money = Instance_StartMoney();
+		*Players_CurMoney() = Instance_StartMoney();
 		pl->rebuild = 0;
 		Con_Printf("instance: player %d has no lives left: starts again\n", i);
 	}
@@ -1344,6 +1344,7 @@ void Rep_PreFrame(uint64_t tick) {
 		/* the money, the alarm and the scripts' player of this player while its input runs */
 		Players_Bind(i);
 		NetRepInBuf_Take(&pl->in, (uint32_t)tick, &in);
+		Players_Cur()->input = &in;
 		pl->shownNow = pl->shown[tick % NETREP_INBUF];
 		Coop_TestInput(i, &in, (double)tick / NETREP_TICK_HZ - pl->shownNow / 1000.0);
 		Faction_Input(i, e, &in);
@@ -1354,6 +1355,7 @@ void Rep_PreFrame(uint64_t tick) {
 		byte use = (in.buttons & NETREP_IN_ACT3) && !(pl->buttons & NETREP_IN_ACT3) && !Arena_On();
 		if (use && NetPl_Kind(e) == NETREP_CHAR && WChar_Victim(e) && Rep_IsParked(WChar_Victim(e), i)) {
 			pl->buttons = in.buttons;
+			Players_Cur()->input = NULL;
 			Rep_SwitchTo(i, e, WChar_Victim(e));
 			continue;
 		}
@@ -1364,12 +1366,14 @@ void Rep_PreFrame(uint64_t tick) {
 			Coop_BeforeUse(i, WChar(e)->listenOn && WChar_Listen(e) ? WChar_Listen(e) : WChar_Victim(e));
 		} else if ((in.buttons & NETREP_IN_SWITCH) && !(pl->buttons & NETREP_IN_SWITCH) && !Arena_On()) {
 			pl->buttons = in.buttons;
+			Players_Cur()->input = NULL;
 			Rep_SwitchTo(i, e, NULL);
 			continue;
 		}
 		pl->buttons = in.buttons;
 		NetPl_Step(e, &in, 0, 0);
 		NetPl_Bump(e, &in, NETPL_BUMP_REACH);
+		Players_Cur()->input = NULL;
 	}
 	Players_BindTurn();
 	Sputniks_Frame();

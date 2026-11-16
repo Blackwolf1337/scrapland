@@ -2416,7 +2416,7 @@ static int Cp_HangarBack(int i, NetRepReader *r) {
 	}
 	Players_Bind(i);
 	Cp_GetVars(r, 0);
-	g_pWorld->money = money;
+	*Players_CurMoney() = money;
 	return money;
 }
 
@@ -4386,7 +4386,7 @@ static void Cp_ClientMenu(NetRepReader *r) {
 			return;
 		}
 		Cp_GetVars(r, 1);
-		g_pWorld->money = m;
+		*Players_CurMoney() = m;
 		cp.cmenu = COOP_MENU_SPUTNIK;
 		cp.cmenuAt = Watch_ShownTime();
 		if (!Mode_Import("SputnikInterface") || !PORT_CALL(SputnikInterface, EnterSputnikInterface, NULL, "i", 0L)) {
@@ -4404,7 +4404,7 @@ static void Cp_ClientMenu(NetRepReader *r) {
 		return;
 	}
 	Cp_GetVars(r, 1);
-	g_pWorld->money = money;
+	*Players_CurMoney() = money;
 	if (cp.testEdit) {
 		/* test: the hangar's spare ship is the member's (SCRAP_COOP_SHIPEDIT) */
 		SaveVar_Set(CP_HANGAR "HangarShipAux", CP_LIFEBOAT);
@@ -4453,11 +4453,11 @@ static void Cp_ClientHangarBack(int kind) {
 	NetRep_PutU8(&w, COOP_MSG);
 	NetRep_PutU8(&w, COOP_C_ANSWER);
 	NetRep_PutU8(&w, (uint32_t)kind);
-	NetRep_PutU32(&w, (uint32_t)g_pWorld->money);
+	NetRep_PutU32(&w, (uint32_t)*Players_CurMoney());
 	Cp_PutVars(&w, 0);
 	if (!w.bad && Watch_SendReliable(buf, w.size)) {
 		Con_Printf("coop: the hangar to the instance (ship %s, money %d)\n", SaveVar_Get(CP_HANGAR "iHangarShip") ?
-			SaveVar_Get(CP_HANGAR "iHangarShip") : "-", g_pWorld->money);
+			SaveVar_Get(CP_HANGAR "iHangarShip") : "-", *Players_CurMoney());
 	}
 }
 

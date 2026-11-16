@@ -1120,7 +1120,7 @@ int Mode_AlarmOn(void) {
 	nativeHook_t hook;
 	int seam = Native_Seam("Scrap", "GetAlarm", &hook);
 	if (!seam) {
-		return g_pWorld->alarm.on != 0;
+		return Players_CurAlarm()->on != 0;
 	}
 	if (seam < 0) {
 		return -1;
@@ -1168,7 +1168,7 @@ void Mode_ScorerGet(int id, const char *item, const char *var, nativeVal_t *out)
 }
 
 int Mode_GetMoney(void) {
-	return g_pWorld->money;
+	return *Players_CurMoney();
 }
 
 byte Mode_SetMoney(const nativeVal_t *money) {
@@ -1176,7 +1176,7 @@ byte Mode_SetMoney(const nativeVal_t *money) {
 	if (!Native_ArgInt(money, &i)) {
 		return 0;
 	}
-	g_pWorld->money = i;
+	*Players_CurMoney() = i;
 	return 1;
 }
 
@@ -1609,7 +1609,7 @@ byte Mode_SetAlarm(const nativeVal_t *level) {
 	if (!Native_ArgDouble(level, &d)) {
 		return 0;
 	}
-	Alarm_Set(&g_pWorld->alarm, (float)d);
+	Alarm_Set(Players_CurAlarm(), (float)d);
 	return 1;
 }
 
@@ -1727,7 +1727,7 @@ byte Mode_SetLockAlarm(const nativeVal_t *lock) {
 	if (!Native_ArgInt(lock, &i)) {
 		return 0;
 	}
-	Alarm_SetLock(&g_pWorld->alarm, i != 0);
+	Alarm_SetLock(Players_CurAlarm(), i != 0);
 	return 1;
 }
 

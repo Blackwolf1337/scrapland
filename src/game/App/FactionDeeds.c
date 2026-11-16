@@ -361,7 +361,7 @@ static int Fd_Bribe(int i, cEntity *e) {
 	if (!p->level) {
 		int prev = Players_Bound();
 		Players_Bind(i);
-		Alarm_Set(&g_pWorld->alarm, 0.0f);
+		Alarm_Set(Players_CurAlarm(), 0.0f);
 		Players_Bind(prev);
 	}
 	Fr_Notice(i, FT_BRIBE, t->bribe, NULL, NULL);

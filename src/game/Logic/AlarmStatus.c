@@ -1,5 +1,6 @@
 /*
- * Logic/AlarmStatus.cpp of the game: the alarm of the world (cAlarm at g_pWorld->alarm, include/scrap/logic.h). It
+ * Logic/AlarmStatus.cpp of the game: the alarm of the player (cAlarm at g_pWorld->alarm; the instance keeps one per
+ * player in its context, Players_CurAlarm of include/scrap/players.h). It
  * grows or falls by its rate every frame; at 1 it goes on (the AlarmCallback, the gears and sentinels of an indoor
  * map after the player), at 0 off. Nothing changes while it is locked or the action set is not the one of the
  * game (1 or 3). The type of the player character is kept with the tests of UsrDefChar and GuaranteedChars.

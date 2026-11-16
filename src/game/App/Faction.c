@@ -653,7 +653,7 @@ int Fr_Money(int i) {
 void Fr_AddMoney(int i, int delta) {
 	int prev = Players_Bound();
 	Players_Bind(i);
-	g_pWorld->money += delta;
+	*Players_CurMoney() += delta;
 	Players_Bind(prev);
 }
 
@@ -993,7 +993,7 @@ static int Fr_Arrest(int i, cEntity *e) {
 	Fr_AddMoney(j, -fine);
 	int prev = Players_Bound();
 	Players_Bind(j);
-	Alarm_Set(&g_pWorld->alarm, 0.0f);
+	Alarm_Set(Players_CurAlarm(), 0.0f);
 	Players_Bind(prev);
 	Fr_AddMoney(i, t->reward * level);
 	FactionWanted_Init(&q->wanted);
@@ -1271,7 +1271,7 @@ static void Fr_Crimes(void) {
 		if (level > p->level) {
 			int prev = Players_Bound();
 			Players_Bind(i);
-			Alarm_Set(&g_pWorld->alarm, 1.0f);
+			Alarm_Set(Players_CurAlarm(), 1.0f);
 			Players_Bind(prev);
 			Fr_Notice(i, FT_WANTED, level, NULL, NULL);
 		}

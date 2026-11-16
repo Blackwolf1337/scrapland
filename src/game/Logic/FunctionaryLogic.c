@@ -128,7 +128,7 @@ void cFunctionaryLocalLogic_UpdateView(cLocalLogic *elem) {
 		Entity_IsType(usr, TYEN_WALKCHAR);
 	}
 	int st = b->state;
-	if (!b->busy && !g_pWorld->alarm.on && st != GENCHAR_ATTACK && st != GENCHAR_CHASE && st != GENCHAR_GET_IT) {
+	if (!b->busy && !Players_CurAlarm()->on && st != GENCHAR_ATTACK && st != GENCHAR_CHASE && st != GENCHAR_GET_IT) {
 		WChar(p)->wl.arrow.canUse = 1;
 		WLife(p)->arrow.tgType = 3;
 		return;
