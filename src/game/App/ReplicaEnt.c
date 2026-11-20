@@ -19,6 +19,8 @@
 #include "scrap/netaudit.h"
 #include "scrap/netclass.h"
 #include "scrap/netrep.h"
+#include "scrap/netscene.h"
+#include "scrap/platform.h"
 #include "scrap/play.h"
 #include "scrap/pres.h"
 #include "scrap/replicate.h"
@@ -36,6 +38,8 @@
 #define RC_NAME 128					/* an entity name with its end (cEntity_ctor takes less than 0x7c) */
 #define RC_CLASS 16
 #define RC_LINKS 64					/* LinkModel values waiting for the entity they name */
+#define RC_CLASS_WAIT_NS 5000000000ull	/* how long a replica waits for an action class the client lacks (a scene's,
+									 * whose tables load when its record comes, include/scrap/netscene.h) */
 
 typedef struct RcSlot {
 	uint32_t gen;					/* of the create message held, 0 none */
@@ -44,6 +48,7 @@ typedef struct RcSlot {
 	char name[RC_NAME];
 	byte want;						/* the snapshots created the slot and did not remove it */
 	byte made;
+	uint64_t classWait;				/* Plat_RealNs when it began to wait for its action class, 0 */
 } RcSlot;
 
 static struct {
@@ -389,6 +394,13 @@ void ReplicaEnt_Update(int slot, const NetRepState *st) {
 	}
 }
 
+/* the action class of a look O|model|action class is one the client does not have (yet) */
+static byte ReplicaEnt_ClassMissing(const char *look) {
+	const char *p = strchr(look, '|');
+	p = p ? strchr(p + 1, '|') : NULL;
+	return p && p[1] && g_pActClassList && !cActClassList_Get(g_pActClassList, p + 1);
+}
+
 /* a replica of an object, a thing with life or a plain entity: O|model|action class */
 static cEntity *ReplicaEnt_BuildOther(RcSlot *s, int kind, const char *look, const NetRepState *st) {
 	char buf[NETREP_LOOK_MAX + 1];
@@ -489,6 +501,18 @@ void ReplicaEnt_Frame(void) {
 			ReplicaEnt_Journal(slot, e);
 		} else {
 			cEntity *taken = World_FindEntity(s->name);
+			if (!taken && kind > NETREP_ITEM && ReplicaEnt_ClassMissing(look)) {
+				uint64_t now = Plat_RealNs();
+				if (!s->classWait) {
+					s->classWait = now;
+				}
+				if (now - s->classWait < RC_CLASS_WAIT_NS) {
+					rc.creating = 0;
+					rc.waits++;
+					continue;
+				}
+			}
+			s->classWait = 0;
 			if (taken) {
 				/* the name is the client's own entity's (deleted above, free after the frame) or a replica's
 				 * that is not removed yet: next frame */
@@ -618,7 +642,7 @@ void ReplicaEnt_Present(cEntity *e, int kind, const NetRepState *a, const NetRep
 			target[l] = ia && ia == ib && tb >= ta ? ta + (tb - ta) * f : ia ? ta : -1.0f;
 		}
 		w->actCtrl->walkSpeed = ReplicaEnt_Sec(a->x[REPX_WALK]);
-		cActCtrl_NetDrive(w->actCtrl, act, rates, target, 4, dt, Event_IsPresent);
+		cActCtrl_NetDrive(w->actCtrl, act, rates, target, 4, dt, NetScene_Filter(e));
 	}
 	if (kind == NETREP_CHAR) {
 		/* the head turns with the view by this lock (WCE_ViewLockBlend, Present) */
@@ -649,6 +673,7 @@ cEntity *ReplicaEnt_Find(const char *name) {
 }
 
 void ReplicaEnt_Reset(void) {
+	NetScene_ClientReset();
 	if (rc.j) {
 		for (int s = 0; s < NETREP_MAX_ENTS; s++) {
 			NetRepJ_Clear(rc.j, s);

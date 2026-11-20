@@ -17,6 +17,7 @@
 #include "scrap/instance.h"
 #include "scrap/net2.h"
 #include "scrap/netaudit.h"
+#include "scrap/netscene.h"
 #include "scrap/netrep.h"
 #include "scrap/objentity.h"
 #include "scrap/platform.h"
@@ -49,7 +50,7 @@ byte g_PresHud;
 
 static const char *const pres_opNames[PRES_O_COUNT] = { "?", "soundat", "sound3d", "sound2d", "voiceopen", "voiceplay",
 	"voicestop", "music", "shipexpl", "fxent", "msgtext", "labeltext", "speech", "speechcancel", "chat", "head", "fade",
-	"cinema", "actionset", "hudadd", "hudclear", "hudshow", "hudset", "talk", "itemsnd" };
+	"cinema", "actionset", "hudadd", "hudclear", "hudshow", "hudset", "talk", "itemsnd", "scene", "sceneend" };
 
 /* a voice of a -mp2 instance's model: nothing plays, the file's length and the time it started give what the scripts
  * read (VoiceRemain), the text what the talk voice's checks read */
@@ -170,6 +171,22 @@ static uint64_t Pres_Audience(presTo_t to, const vec3_t *pos) {
 
 byte Pres_Begin(presTo_t to, const vec3_t *pos, int op) {
 	pres.to = Pres_Audience(to, pos);
+	if (!pres.to) {
+		return 0;
+	}
+	pres.op = op;
+	NetRepBuf_Init(&pres.w, pres.rec, sizeof(pres.rec));
+	NetRep_PutU8(&pres.w, (uint32_t)op);
+	return 1;
+}
+
+byte Pres_BeginMask(uint64_t mask, int op) {
+	pres.to = 0;
+	for (int i = 0; i < PLAYERS_MAX; i++) {
+		if ((mask >> i & 1) && Pres_Online(i)) {
+			pres.to |= (uint64_t)1 << i;
+		}
+	}
 	if (!pres.to) {
 		return 0;
 	}
@@ -1134,6 +1151,21 @@ static void Pres_Play(int op, NetRepReader *r) {
 		}
 		break;
 	}
+	case PRES_O_SCENE: {
+		NetRep_GetStr(r, name, sizeof(name));
+		NetRep_GetStr(r, s2, sizeof(s2));
+		int tick = NetRep_GetSVar(r), flags = NetRep_GetSVar(r);
+		if (!r->bad) {
+			NetScene_ClientStart(name, s2, tick, flags);
+		}
+		break;
+	}
+	case PRES_O_SCENEEND:
+		NetRep_GetStr(r, name, sizeof(name));
+		if (!r->bad) {
+			NetScene_ClientEnd(name);
+		}
+		break;
 	default:
 		r->bad = 1;
 		break;
@@ -1206,6 +1238,7 @@ void Pres_Message(const uint8_t *data, int size) {
 
 void Pres_ClientFrame(void) {
 	uint64_t now = Plat_RealNs();
+	NetScene_ClientFrame();
 	for (int k = 0; k < PRES_HOLDS; k++) {
 		if (!pres.hold[k].ns) {
 			continue;

@@ -1,0 +1,9 @@
+# The rules of the coop story on a -mp2 instance (the second multiplayer design; src/game/App/NetScene.c reads
+# SceneSkip). One rule a line: its name, a space, its value. A line that starts with # is a comment.
+#
+# SceneSkip: who ends a scene for every member with Escape.
+#   all   every member who sees the scene asked (the default)
+#   any   the first member who asks
+#   host  player 0 alone
+#   none  nobody, the scene plays to its end
+SceneSkip all

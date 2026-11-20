@@ -80,6 +80,8 @@ enum {
 	PRES_O_HUDSET,					/* item, var, kind u8 (1 text, 2 number), value */
 	PRES_O_TALK,					/* file, speaker, arg: the talk voice (Sound_OpenTalk) */
 	PRES_O_ITEMSND,					/* entity, item: a sound item of a ship its simulation starts (Pres_ItemSound) */
+	PRES_O_SCENE,					/* name, entity, tick, flags: a scene starts (include/scrap/netscene.h) */
+	PRES_O_SCENEEND,				/* name: it ends */
 	PRES_O_COUNT
 };
 
@@ -139,6 +141,8 @@ void Pres_PutInt(int v);
 void Pres_PutFloat(float f);
 void Pres_PutVec(const vec3_t *v);
 void Pres_Send(void);
+/* Pres_Begin for the players of a mask (bit i: player i; those without a connection left out) */
+byte Pres_BeginMask(uint64_t mask, int op);
 /* the records of the frame to the players' connections (Rep_Tick) */
 void Pres_Flush(struct Net2Host *host);
 /* player i's own entity steps (its client steps it too: what it starts is not sent to i); -1 after */

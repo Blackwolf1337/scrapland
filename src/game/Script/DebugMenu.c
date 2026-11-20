@@ -4,9 +4,10 @@
  * Up and Down (PgUp, PgDn, Home, End, the wheel) choose, Enter opens a page or starts the entry, Backspace goes back
  * (or takes a letter off the filter), typed letters filter the page, Escape closes it.
  *
- * Videos play at once (Video_Play, as Scrap.VideoPlayer). Missions start through the mission maker (MissionMaker_Load: the save variables of a new game). A cutscene starts
- * the mission it belongs to; when that mission does not play it at its start, the scene is loaded by its own load
- * function and played once the new level has run for a second (DebugMenu_Frame, a check each frame).
+ * Videos play at once (Video_Play, as Scrap.VideoPlayer). Missions start through the mission maker (MissionMaker_Load: the save variables of a new game). A cutscene
+ * (include/scrap/scenelist.h) starts the mission it belongs to; when that mission does not play it at its start, the
+ * scene is loaded by its own load function and played once the new level has run for a second (DebugMenu_Frame, a
+ * check each frame).
  */
 #ifdef SCRAP_DEBUG_MENU
 
@@ -18,54 +19,11 @@
 #include "scrap/crt.h"
 #include "scrap/debugmenu.h"
 #include "scrap/missionmaker.h"
+#include "scrap/scenelist.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/scriptports.h"
-
-/* the cutscenes (levels/<level>/map/<scene>/<scene>anm of the packs) with the mission that plays them and their
- * actors; load NULL: the mission plays the scene at its start */
-typedef struct dmScene {
-	const char *scene, *level, *mission, *module, *load, *actors;
-} dmScene;
-
-static const dmScene dm_scenes[] = {
-	{ "Prolog0", "Press", "Mission_MeetBoss", "Mission_MeetBoss", "LoadProlog0Scene", "Dtritus, Berto" },
-	{ "Prolog1", "Press", "Mission_MeetBoss", "Mission_MeetBoss", "LoadProlog1Scene", "Dtritus, Berto, Betty, Boss" },
-	{ "Prolog2", "Press", "Mission_MeetBoss", "Mission_MeetBoss", "LoadProlog2Scene", "Dtritus, Betty, Gatekeeper" },
-	{ "Mecanic", "Junkyard", "Mission_RustyFirstContact", "Mission_RustyFirstContact", "LoadMecanicScene", "Dtritus, Berto, Rusty, Sputnik" },
-	{ "MecanicFinal", "Junkyard", "Mission_RustyFirstContact", "Mission_RustyFirstContact", "LoadMecanicFinalScene", "Dtritus, Rusty, Sputnik" },
-	{ "News1", "Press", "Mission_HumphreyArchbishopKilled", NULL, NULL, "Betty, Dtritus, Humphrey" },
-	{ "Confesion", "Press", "Mission_GoToPress", "Mission_GoToPress", "LoadScene", "Dtritus, Humphrey, Betty, Berto, Boss" },
-	{ "News2", "Press", "Mission_PressMeeting", NULL, NULL, "Betty, Dtritus, Berto, Boss" },
-	{ "News3", "Press", "Mission_IntroHuman2", NULL, NULL, "Betty" },
-	{ "HideHuman", "Press", "Mission_TalkToBoss", "Mission_TalkToBoss", "LoadScene", "Dtritus, Human" },
-	{ "HumanCD", "Press", "Mission_GoWithHuman", "Mission_GoWithHuman", "LoadScene", "Human" },
-	{ "HumanCD2", "Press", "Mission_GoWithHuman", "Mission_GoWithHuman", "LoadScene2", "Human, Dtritus" },
-	{ "DiscoverDeep", "Press", "Mission_WhoIsDeepThroat", "Mission_WhoIsDeepThroat", "LoadScene", "Dtritus, Betty, Humphrey, Boss" },
-	{ "BossDiscovered", "Press", "Mission_WhoIsTheBaddie", "Mission_WhoIsTheBaddie", "LoadScene", "Dtritus" },
-	{ "MeetHuman", "Police", "Mission_GetAuthorization", "Mission_GetAuthorization", "LoadScene", "Dtritus, Human" },
-	{ "Beating", "Police", "Mission_BeatPickus", "Mission_BeatPickus", "LoadScene", "Dtritus, PoliceJefe, Functionary, 5 thugs" },
-	{ "PoliFight", "Police", "Mission_PoliceBossCheats", "Mission_PoliceBossCheats", "LoadPoliFightScene", "Police, PoliceBoss" },
-	{ "BillArrives_A", "Orbit", "Mission_IntroHuman", NULL, NULL, "Human" },
-	{ "BillArrives_B", "Orbit", "Mission_IntroHuman", "Mission_IntroHuman", "LoadSceneB", "Human" },
-	{ "BillArrives_C", "Orbit", "Mission_IntroHuman", "Mission_IntroHuman", "LoadSceneC", "Human, 2 gears" },
-	{ "Decontamination", "Orbit", "MapDecont", "MapDecont", "LoadDecontamination", "Dtritus" },
-	{ "Bishops", "Orbit", "MapDecont", "MapDecont", "LoadBishopsScene", "Dtritus, 2 bishops" },
-	{ "Functionary", "Orbit", "MapDecont", "MapDecont", "LoadFunctionaryScene", "Dtritus, Functionary" },
-	{ "Falling", "Orbit", "MapDecont", "MapDecont", "LoadFallingScene", "Dtritus" },
-	{ "DirectorDiscovered", "Bank", "Mission_InfiltrateBank", "Mission_InfiltrateBank", "LoadScene", "Dtritus, BankMaster" },
-	{ "MeetGambler", "GamblinDen", "Mission_CrazyGamblerFirstContact", NULL, NULL, "CrazyGambler" },
-	{ "Plan", "GamblinDen", "Mission_GoToGamblinDen", NULL, NULL, "Dtritus, Human, CrazyGambler, 3 mercenaries" },
-	{ "Plan2", "GamblinDen", "Mission_BeforeFinalFight", NULL, NULL, "Dtritus, CrazyGambler" },
-	{ "Yakuzzi", "Temple", "Mission_MeetArchbishop", "Mission_MeetArchbishop", "LoadYakuzziScene", "Dtritus" },
-	{ "EnterMatrix", "GDB", "Mission_IntoTheGDB", "MapMatrix", "Load", "Bishop" },
-	{ "Fake0", "Fake", "", "Map", "LoadFake0Scene", "Dtritus, Berto, Functionary" },
-	{ "Fake1", "Fake", "", "Map", "LoadFake1Scene", "Dtritus, Berto, a crowd" },
-	{ "Fake2", "Fake", "", "Map", "LoadFake2Scene", "Dtritus, Berto" },
-	{ "TheEndA", "ABIndoor", "", "Map", "LoadSceneA", "Dtritus, CrazyGambler, Human, Betty, Berto" },
-	{ "TheEndB", "ABIndoor", "", "Map", "LoadSceneB", "Dtritus, CrazyGambler, Human, Betty, Berto" },
-};
 
 static const char *const dm_videos[][2] = {
 	{ "Video/Intro.avi", "the intro of a new game" },
@@ -102,7 +60,7 @@ static struct {
 	int n;
 	int top;			/* the first row shown */
 	/* the cutscene to play after the load */
-	const dmScene *pending;
+	const sceneInfo_t *pending;
 	double lastTime;
 	byte loaded;
 } dm;
@@ -180,10 +138,11 @@ static void DM_Build(void) {
 		}
 		break;
 	case DM_SCENES:
-		for (int i = 0; i < (int)(sizeof(dm_scenes) / sizeof(dm_scenes[0])); i++) {
+		for (int i = 0; i < SceneList_Count(); i++) {
+			const sceneInfo_t *sc = SceneList_At(i);
 			char what[0x80];
-			Str_PrintfQuiet(what, sizeof(what), "%-18s %s", dm_scenes[i].scene, dm_scenes[i].actors);
-			DM_Add(i, "%s  (%s)", what, dm_scenes[i].level);
+			Str_PrintfQuiet(what, sizeof(what), "%-18s %s", sc->scene, sc->actors);
+			DM_Add(i, "%s  (%s)", what, sc->level);
 		}
 		break;
 	case DM_VIDEOS:
@@ -267,26 +226,25 @@ static void DM_Print(const char *fmt, const char *a, const char *b) {
 }
 
 /* the mission of a cutscene, and the scene after the load when the mission does not play it at its start */
-static void DM_PlayScene(const dmScene *s) {
+static void DM_PlayScene(const sceneInfo_t *s) {
 	DM_Print("debug menu: cutscene %s (%s)\n", s->scene, s->level);
-	dm.pending = s->load ? s : NULL;
+	dm.pending = s->atStart ? NULL : s;
 	dm.loaded = 0;
 	dm.lastTime = Mode_Time();
 	MissionMaker_Load(s->level, s->mission, "", NULL);
 }
 
 byte DebugMenu_Scene(const char *name) {
-	for (int i = 0; i < (int)(sizeof(dm_scenes) / sizeof(dm_scenes[0])); i++) {
-		if (!crt_stricmp(dm_scenes[i].scene, name)) {
-			DM_PlayScene(&dm_scenes[i]);
-			return 1;
-		}
+	const sceneInfo_t *s = SceneList_Find(name);
+	if (s) {
+		DM_PlayScene(s);
 	}
-	return 0;
+	return s != NULL;
 }
 
 const char *DebugMenu_SceneName(int i) {
-	return i >= 0 && i < (int)(sizeof(dm_scenes) / sizeof(dm_scenes[0])) ? dm_scenes[i].scene : NULL;
+	const sceneInfo_t *s = SceneList_At(i);
+	return s ? s->scene : NULL;
 }
 
 /* Enter on the chosen item; 0 when the menu should close (something was started) */
@@ -314,7 +272,7 @@ static byte DM_Activate(void) {
 		return 0;
 	}
 	case DM_SCENES:
-		DM_PlayScene(&dm_scenes[i]);
+		DM_PlayScene(SceneList_At(i));
 		return 0;
 	case DM_VIDEOS:
 		DM_Print("debug menu: video %s%s\n", dm_videos[i][0], "");
@@ -432,16 +390,9 @@ void DebugMenu_Draw(float top, float bottom) {
 		"Up/Down choose  Enter start  Backspace back  type to filter  Esc close  F11 console");
 }
 
-/* the scene class of a cutscene is there (loaded by its mission or by an earlier play) */
-static byte DM_SceneLoaded(const char *scene) {
-	char name[0x60];
-	Str_PrintfQuiet(name, sizeof(name), "Scene%s", scene);
-	return cActClassList_Get(g_pActClassList, name) != NULL;
-}
-
 void DebugMenu_Frame(void) {
 	nativeVal_t path = { 0 };
-	char want[0x60], code[0x100];
+	char want[0x60];
 
 	if (!dm.pending || !g_pWorld) {
 		return;
@@ -473,20 +424,11 @@ void DebugMenu_Frame(void) {
 	if (busy) {
 		return;
 	}
-	const dmScene *s = dm.pending;
+	const sceneInfo_t *s = dm.pending;
 	dm.pending = NULL;
-	if (!DM_SceneLoaded(s->scene)) {
-		nativeVal_t text = { 0 };
-		execScope_t x = { .module = "Scene" };
-		Str_PrintfQuiet(code, sizeof(code), "import %s;%s.%s()", s->module, s->module, s->load);
-		Native_SetText(&text, code, (int)strlen(code));
-		byte ok = Exec_Text(&x, &text);
-		Native_Free(&text);
-		if (!ok) {
-			Native_ErrClear();
-			DM_Print("debug menu: %s did not load the scene%s\n", code, "");
-			return;
-		}
+	if (!SceneList_Load(s)) {
+		DM_Print("debug menu: %s.%s did not load the scene\n", s->module, s->load);
+		return;
 	}
 	if (!Mode_Import("Scene") || !PORT_CALL(Scene, Play, NULL, "s", s->scene)) {
 		Native_ErrClear();

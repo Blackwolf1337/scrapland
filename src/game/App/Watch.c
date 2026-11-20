@@ -652,12 +652,18 @@ static void Watch_Place(int slot, WatchProxy *p, double rt, float dt) {
 			rv[k] = (float)(int16_t)(uint16_t)(sb->ang[k] - sa->ang[k]) / NETREP_ANG_SCALE / (float)(b->t - a->t);
 		}
 	}
-	Entity_SetPos(e, &pos);
-	o->slotPos = pos;
-	o->renderPos = pos;
-	o->ang = ang;
-	o->slotAng = ang;
-	o->renderAng = ang;
+	if (g_Mp2 && o->mod.link.target) {
+		/* a replica linked to another model's node (a scene's actors) is placed by its link in its update; a jump
+		 * to the samples' place and back each frame would lose the model's room of an indoor level */
+		e->pos = pos;
+	} else {
+		Entity_SetPos(e, &pos);
+		o->slotPos = pos;
+		o->renderPos = pos;
+		o->ang = ang;
+		o->slotAng = ang;
+		o->renderAng = ang;
+	}
 	o->vel = vel;
 	o->rotVel = rot;
 	byte on = (sa->flags & NETREP_FL_ACTIVE) != 0;
