@@ -113,7 +113,7 @@ static struct {
 	uint32_t played[PRES_O_COUNT];
 	struct {
 		uint64_t ns;				/* 0: free */
-		int size;
+		int size, op;
 		uint8_t rec[PRES_HOLD_REC];
 	} hold[PRES_HOLDS];
 	uint32_t held;
@@ -538,8 +538,18 @@ void Pres_NoRoute(int cat, const char *prefix, const char *site) {
 
 void Pres_ItemSound(cEntity *e, int item) {
 	vec3_t pos;
-	if (!Pres_Out() || !e || !Entity_IsType(e, TYEN_VEHICLE) || !PtrArray_Get(&Obj(e)->snd, item) ||
-		!Pres_Begin(PRES_NEAR, Entity_GetPos(e, &pos), PRES_O_ITEMSND)) {
+	if (!Pres_Out() || !e || !Entity_IsType(e, TYEN_VEHICLE) || !PtrArray_Get(&Obj(e)->snd, item)) {
+		return;
+	}
+	/* the players near whose clients have the ship (one beyond a client's interest has no replica to start it on) */
+	uint64_t to = Pres_Audience(PRES_NEAR, Entity_GetPos(e, &pos));
+	int slot = RepEnt_Slot(e);
+	for (int i = 0; i < PLAYERS_MAX; i++) {
+		if ((to >> i & 1) && !Rep_PlayerHolds(i, slot)) {
+			to &= ~((uint64_t)1 << i);
+		}
+	}
+	if (!Pres_BeginTo(to, PRES_O_ITEMSND)) {
 		return;
 	}
 	Pres_PutStr(e->name);
@@ -1415,9 +1425,22 @@ static byte Pres_FxReady(NetRepReader *r) {
 	return !r->bad && (!*a || ReplicaEnt_Find(a)) && (!*b || ReplicaEnt_Find(b));
 }
 
-/* an effect record whose entity the client does not have yet (a replica made again under a new slot a moment later):
- * held, 1; 0 when no place is free */
-static byte Pres_Hold(const uint8_t *rec, int size) {
+/* the entity of a sound item record is here (a replica made a moment later than the server started the item) */
+static byte Pres_ItemReady(NetRepReader *r) {
+	char a[256];
+	NetRep_GetStr(r, a, sizeof(a));
+	NetRep_GetSVar(r);
+	return !r->bad && ReplicaEnt_Find(a);
+}
+
+/* a record of op that waits for its entities: the effects and the sound items (0 for the other records) */
+static byte Pres_Waits(int op, NetRepReader *r) {
+	return op == PRES_O_FXENT ? !Pres_FxReady(r) : op == PRES_O_ITEMSND ? !Pres_ItemReady(r) : 0;
+}
+
+/* an effect or sound item record whose entity the client does not have yet (a replica made again under a new slot,
+ * or made a moment later): held, 1; 0 when no place is free */
+static byte Pres_Hold(int op, const uint8_t *rec, int size) {
 	if (size > PRES_HOLD_REC) {
 		return 0;
 	}
@@ -1425,6 +1448,7 @@ static byte Pres_Hold(const uint8_t *rec, int size) {
 		if (!pres.hold[k].ns) {
 			memcpy(pres.hold[k].rec, rec, (size_t)size);
 			pres.hold[k].size = size;
+			pres.hold[k].op = op;
 			pres.hold[k].ns = Plat_RealNs();
 			pres.held++;
 			return 1;
@@ -1495,9 +1519,9 @@ static void Pres_Play2(const uint8_t *data, int size) {
 			Con_Warnf("pres: unknown record %d\n", op);
 			break;
 		}
-		if (op == PRES_O_FXENT) {
+		if (op == PRES_O_FXENT || op == PRES_O_ITEMSND) {
 			NetRepReader t = r;
-			if (!Pres_FxReady(&t) && !t.bad && Pres_Hold(r.p + r.pos, t.pos - r.pos)) {
+			if (Pres_Waits(op, &t) && !t.bad && Pres_Hold(op, r.p + r.pos, t.pos - r.pos)) {
 				r = t;
 				continue;
 			}
@@ -1518,12 +1542,12 @@ void Pres_ClientFrame(void) {
 		NetRepReader r, t;
 		NetRepReader_Init(&r, pres.hold[k].rec, pres.hold[k].size);
 		t = r;
-		if (!Pres_FxReady(&t) && now - pres.hold[k].ns < PRES_HOLD_NS) {
+		if (Pres_Waits(pres.hold[k].op, &t) && now - pres.hold[k].ns < PRES_HOLD_NS) {
 			continue;
 		}
 		pres.hold[k].ns = 0;
 		g_PresIn++;
-		Pres_PlayRecord(PRES_O_FXENT, &r);
+		Pres_PlayRecord(pres.hold[k].op, &r);
 		g_PresIn--;
 	}
 }

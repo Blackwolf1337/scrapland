@@ -1356,6 +1356,11 @@ int Rep_PlayerConn(int i) {
 	return i >= 0 && i < PLAYERS_MAX && rep.pl[i].used ? rep.pl[i].conn : -1;
 }
 
+byte Rep_PlayerHolds(int i, int slot) {
+	int c = Rep_PlayerConn(i);
+	return c >= 0 && c < REP_CONNS && rep.conn[c].c && slot >= 0 && NetRepSrv_Base(rep.conn[c].c, slot) != NULL;
+}
+
 int Rep_ConnPlayer(int conn) {
 	return conn >= 0 && conn < REP_CONNS && rep.conn[conn].c ? rep.conn[conn].player : -1;
 }
