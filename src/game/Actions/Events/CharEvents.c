@@ -6,6 +6,7 @@
 
 #include "scrap/actions.h"
 #include "scrap/ai.h"
+#include "scrap/play.h"
 #include "scrap/walkcharentity.h"
 #include "scrap/staticinit.h"
 
@@ -43,7 +44,11 @@ static void Event_AnmChangeRandomAnm(cAbstractFile *params) {
 	if (!(mx >= 1.0f) || !Entity_IsType(ent, TYEN_WALKCHAR) || cWalkCharEntity_GetOwnerSlot(ent) != -1) {
 		mn = 0.0f;
 	}
-	int r = crt_rand() & 0x7fff;
+	int r;
+	/* ScrapC: a -mp2 player's step draws the same on its server and client (include/scrap/play.h) */
+	if (!NetPl_StepRand(ent, &r)) {
+		r = crt_rand() & 0x7fff;
+	}
 	int n = (int)((float)((double)r * RAND_SCALE * (double)(mx - mn) + (double)mn) - 0.001f);
 	Str_PrintfQuiet(anim, sizeof(anim), "%s%d", str, n);
 	cActCtrl_Play(WithLife_GetActCtrl(ent), anim, 0, 1.0f);

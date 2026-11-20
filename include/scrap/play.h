@@ -126,8 +126,10 @@ enum {
 	NETPL_O_VIEW = NETPL_O_COMMON, NETPL_O_VIEWVEL = NETPL_O_VIEW + 3, NETPL_O_FALLVEL = NETPL_O_VIEWVEL + 3,
 	NETPL_O_SLIDE = NETPL_O_FALLVEL + 3, NETPL_O_DISPL, NETPL_O_LASTMOVE,
 	NETPL_O_LASTDISPL, NETPL_O_WALKTIME, NETPL_O_MOVE, NETPL_O_MOVED2, NETPL_O_ENERGY, NETPL_O_WALKSPEED,
+	NETPL_O_RELAX,					/* the time to the next relax action */
 	NETPL_O_ACTTIME,				/* 4: the times of the layers */
-	NETPL_O_CHAR = NETPL_O_ACTTIME + 4,
+	NETPL_O_ACTFRAME = NETPL_O_ACTTIME + 4,	/* 4: the frames of their channels (exact) */
+	NETPL_O_CHAR = NETPL_O_ACTFRAME + 4,
 	/* ships */
 	NETPL_O_SPEED = NETPL_O_COMMON, NETPL_O_THRUST, NETPL_O_TURNX, NETPL_O_TURNY, NETPL_O_ROLL, NETPL_O_BOOST, NETPL_O_PUSHTIME,
 	NETPL_O_PUSH, NETPL_O_CLOUD = NETPL_O_PUSH + 3, NETPL_O_EMI,
@@ -188,6 +190,10 @@ void NetPl_OwnOf(struct cEntity *e, uint32_t tick, uint8_t moved, NetRepOwn *o);
 int NetPl_OwnDiff(const NetRepOwn *a, const NetRepOwn *b);
 /* the server's state into e (after NetPl_Restore of the client's own state of that tick) */
 void NetPl_OwnApply(struct cEntity *e, const NetRepOwn *o);
+/* -mp2: a random draw (0 to 0x7fff) of e's actions or slot while NetPl_StepPart steps it, the same on the server and
+ * its client (from the tick and part of the step and the draws before: a random relax or idle of the own character is
+ * no correction); 0 when e is not stepped there now (the game's random then) */
+byte NetPl_StepRand(const struct cEntity *e, int *r);
 /* the client fires weapon w of its own ship itself for the effects at once (the instant-hit weapons; the hits it
  * makes stay local, the server's count): Vulcan, Laser, Tesla, ATPC, Devastator */
 byte NetPl_LocalWeapon(int w);

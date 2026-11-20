@@ -606,7 +606,28 @@ cAction *cActCtrl_ActionAt(const cActCtrl *self, uint16_t i) {
 	return a;
 }
 
-void cActCtrl_NetSet(cActCtrl *self, const uint16_t *act, const float *t, int layers, uint16_t defLoop, float tol) {
+float cActCtrl_LayerFrame(cActCtrl *self, int k) {
+	CAnimSlot *c = Ctrl_Slot(self, k);
+	return c && c->anim ? c->anim->ctrl.frame : 0.0f;
+}
+
+/* layer k's channel to the frame f and the layer's time and next event from it */
+static void Ctrl_SetFrame(cActCtrl *self, int k, float f) {
+	CAnimSlot *c = Ctrl_Slot(self, k);
+	cActLayer *l = &self->layers[k];
+	if (!c || !c->anim) {
+		return;
+	}
+	c->anim->ctrl.frame = f;
+	CGameModel_ChanTime(Ctrl_Model(self), k, &l->time);
+	l->event = l->action->events;
+	while (l->event && l->event->time < l->time) {
+		l->event = l->event->next;
+	}
+}
+
+void cActCtrl_NetSet(cActCtrl *self, const uint16_t *act, const float *t, const float *frame, int layers,
+	uint16_t defLoop, float tol) {
 	CGameModel *m = Ctrl_Model(self);
 
 	if (defLoop) {
@@ -629,6 +650,9 @@ void cActCtrl_NetSet(cActCtrl *self, const uint16_t *act, const float *t, int la
 			continue;
 		}
 		if (a == l->action && l->on && fabsf(l->time - t[k]) <= tol) {
+			if (frame) {
+				Ctrl_SetFrame(self, k, frame[k]);
+			}
 			continue;
 		}
 		l->on = 1;
@@ -653,6 +677,9 @@ void cActCtrl_NetSet(cActCtrl *self, const uint16_t *act, const float *t, int la
 		l->event = a->events;
 		while (l->event && l->event->time < l->time) {
 			l->event = l->event->next;
+		}
+		if (frame) {
+			Ctrl_SetFrame(self, k, frame[k]);
 		}
 	}
 }

@@ -126,6 +126,23 @@ void NetPl_Slot(cEntity *e, const NetRepInput *in, byte local, byte replay, int 
 	}
 }
 
+/* the entity NetPl_StepPart steps now (its actions and its slot), the slot of that step (its input's tick *
+ * PLAY_STEPS + part) and the draws of NetPl_StepRand in it */
+static cEntity *netPlStepping;
+static uint32_t netPlStepSlot, netPlStepDraws;
+
+byte NetPl_StepRand(const cEntity *e, int *r) {
+	if (!g_Mp2 || !netPlStepping || e != netPlStepping) {
+		return 0;
+	}
+	uint32_t h = netPlStepSlot * 2654435761u ^ ++netPlStepDraws * 40503u;
+	h ^= h >> 15;
+	h *= 0x2c1b3c6du;
+	h ^= h >> 12;
+	*r = (int)(h & 0x7fff);
+	return 1;
+}
+
 void NetPl_StepPart(cEntity *e, const NetRepInput *in, byte local, byte replay, int part) {
 	/* the entity's time speed: 1, slower in a bullet time of the freeroam factions (the server and the prediction) */
 	float iv = PLAY_SLOT * cTimer_GetSpeed(&Obj(e)->timer);
@@ -141,10 +158,14 @@ void NetPl_StepPart(cEntity *e, const NetRepInput *in, byte local, byte replay, 
 	}
 	/* single player's frame at 60 a second: the actions of the frame, then its slot (a -mp2 client's replay runs them
 	 * too: the layers are part of its rollback state, their presentation events stay off) */
+	netPlStepping = e;
+	netPlStepSlot = in->tick * PLAY_STEPS + (uint32_t)part;
+	netPlStepDraws = 0;
 	if (!replay || g_Mp2) {
 		NetPl_Actions(e, iv);
 	}
 	NetPl_Slot(e, in, local, replay, part, iv);
+	netPlStepping = NULL;
 }
 
 void NetPl_Step(cEntity *e, const NetRepInput *in, byte local, byte replay) {
@@ -442,6 +463,7 @@ void NetPl_OwnOf(cEntity *e, uint32_t tick, uint8_t moved, NetRepOwn *o) {
 		f[NETPL_O_MOVE] = w->move;
 		f[NETPL_O_MOVED2] = w->moved2;
 		f[NETPL_O_ENERGY] = w->energyUsed;
+		f[NETPL_O_RELAX] = w->relaxTime;
 		o->flags |= (w->falling ? NETPL_OF_FALLING : 0) | (w->walking ? NETPL_OF_WALKING : 0) |
 			(w->disableControl || w->control.disabled ? NETPL_OF_NOCTRL : 0) | (g_EnergyBarActive ? NETPL_OF_ENERGYBAR : 0);
 		cActCtrl *c = w->wl.actCtrl;
@@ -452,6 +474,7 @@ void NetPl_OwnOf(cEntity *e, uint32_t tick, uint8_t moved, NetRepOwn *o) {
 				const cActLayer *l = &c->layers[k];
 				o->act[k] = l->on && l->action ? Rep_ActIndex(c->cls, l->action) : 0;
 				f[NETPL_O_ACTTIME + k] = o->act[k] ? l->time : 0.0f;
+				f[NETPL_O_ACTFRAME + k] = o->act[k] ? cActCtrl_LayerFrame(c, k) : 0.0f;
 			}
 			o->defLoop = c->defLoop ? Rep_ActIndex(c->cls, c->defLoop) : 0;
 		}
@@ -599,6 +622,7 @@ void NetPl_OwnApply(cEntity *e, const NetRepOwn *o) {
 		w->move = f[NETPL_O_MOVE];
 		w->moved2 = f[NETPL_O_MOVED2];
 		w->energyUsed = f[NETPL_O_ENERGY];
+		w->relaxTime = f[NETPL_O_RELAX];
 		w->falling = (o->flags & NETPL_OF_FALLING) != 0;
 		w->walking = (o->flags & NETPL_OF_WALKING) != 0;
 		/* the scripts' hold of the character: its own flag (the control's goes with the next input) */
@@ -607,7 +631,8 @@ void NetPl_OwnApply(cEntity *e, const NetRepOwn *o) {
 		cActCtrl *c = w->wl.actCtrl;
 		if (c && o->layers) {
 			c->walkSpeed = f[NETPL_O_WALKSPEED];
-			cActCtrl_NetSet(c, o->act, f + NETPL_O_ACTTIME, o->layers, o->defLoop, NETPL_TOL_TIME * 2.0f);
+			cActCtrl_NetSet(c, o->act, f + NETPL_O_ACTTIME, f + NETPL_O_ACTFRAME, o->layers, o->defLoop,
+				NETPL_TOL_TIME * 2.0f);
 		}
 		n = NETPL_O_CHAR;
 	} else if (o->kind == NETREP_SHIP) {
