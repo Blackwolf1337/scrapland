@@ -9,7 +9,8 @@ difference of one moment, an action that just changed, a door on its way, is not
            life; the moving ones within --radius of the client's own entity) that the client has no replica of
   extra    a replica whose slot and generation the server does not have
   field    a field of the declared state that differs (positions, velocities, angles and the times of the actions
-           with a tolerance: the client draws the moving ones ~100 ms behind)
+           with a tolerance: the client draws the moving ones ~100 ms behind; the life of a burning thing as much
+           as or a few points more than the server's)
   journal  the journal of the slot differs (names, order, values)
   readback a journal variable reads back another value from the replica than from the server's entity
 The own entity of the client (its prediction) is left out (the rail traffic is the server's since stage 2.2 and compared).
@@ -45,6 +46,14 @@ X_TIMES = {'act2t', 'act3t', 'burn', 'boost', 'emi', 'item'}
 MOVING = (1, 2, 3)          # ship, character, missile: the grid's
 FL_PLAYER = 0x08
 FL_DERIVED = 0x08 | 0x10 | 0x20 | 0x40 | 0x80   # player, fire key, siren, slow, asleep: the server's own view
+
+
+BURN_LAG = 5               # life points a burning thing loses while the client draws it ~100 ms behind
+
+
+def lags(server, client):
+    """the life of a burning entity on the client: the server's of a moment before (as much or a little more)"""
+    return 0 <= client - server <= BURN_LAG
 
 
 def ask(game, line, inst=None, timeout=60.0):
@@ -140,7 +149,10 @@ def compare(srv, cli, radius, rates=None):
         for k in range(2):
             if s['kind'] == 2 and ang_diff(s['view'][k], c['view'][k]) > atol:
                 diffs[('field', s['slot'], 'view')] = '%s: %s / %s' % (s['name'], s['view'], c['view'])
+        burning = s['x'][X_NAMES.index('burn')] > 0
         for f in ('life', 'weapon'):
+            if f == 'life' and burning and lags(s[f], c[f]):
+                continue
             if s[f] != c[f] and not (f == 'life' and s['kind'] == 3):
                 diffs[('field', s['slot'], f)] = '%s: %r / %r' % (s['name'], s[f], c[f])
         if (s['flags'] & ~FL_DERIVED) != (c['flags'] & ~FL_DERIVED):
@@ -160,6 +172,8 @@ def compare(srv, cli, radius, rates=None):
             if n in X_TIMES:
                 if abs(a - b) > 600:
                     diffs[('field', s['slot'], n)] = '%s: %d / %d' % (s['name'], a, b)
+            elif n == 'prevlife' and burning and lags(a, b):
+                continue
             elif n == 'fxp' and s['x'][i - 1] == c['x'][i - 1] and abs(fbits(a) - fbits(b)) <= 0.25:
                 continue    # the parameter of a running effect (the fade in of a placed traffic ship), ~100 ms behind
             elif a != b:

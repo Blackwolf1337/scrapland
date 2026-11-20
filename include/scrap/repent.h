@@ -68,7 +68,8 @@ enum {
 	REPX_BOOST,						/* ship: boost left, 1/1000 */
 	REPX_CLOUD,						/* ship: the cloud counter, ms, and its switch << 30 */
 	REPX_EMI,						/* ship: EMI left, ms */
-	REPX_FIREW,						/* ship: bit w for the weapon w firing, bit 31 the weapons' lock (hook plug) */
+	REPX_FIREW,						/* ship: bit w for the weapon w firing, bit 30 the Hook firing, bit 31 the
+									 * weapons' lock (hook plug) */
 	REPX_MOVE,						/* the scripted move: on << 30 | ms done */
 	REPX_MOVET,						/* its length, ms */
 	REPX_ITEM,						/* item: taken, ms left (0 there) */
@@ -78,6 +79,10 @@ enum {
 	REPX_ARROW,						/* the arrow: can use, view, mission (bits 0..2) and the target type << 8 */
 	REPX_COUNT
 };
+
+/* journal entries of no entity variable (a name no Var function knows): the embedded effect type the scripts set
+ * (SFX.EmbeddedSet, SetFX, a character's named effect; the client applies it with Entity_SetEmbeddedFX) */
+#define REPENT_J_FX "@FX"
 
 #define REPENT_MSG 'N'
 #define REPENT_K_CREATE 'c'
@@ -107,6 +112,8 @@ void RepEnt_MirrorEnt(struct tcBuf *b, int n, int slot, uint32_t gen, struct cEn
 void RepEnt_Gather(NetRepServer *srv, uint32_t tick);
 /* the slot of an entity, -1 */
 int RepEnt_Slot(const struct cEntity *e);
+/* a journal entry of e that is no entity variable (REPENT_J_FX) set to text */
+void RepEnt_Note(struct cEntity *e, const char *name, const char *text);
 /* the destructor of an entity with a slot */
 void RepEnt_Gone(struct cEntity *e);
 /* before the snapshot messages: the changed journal entries and the events to the clients that have the entities */

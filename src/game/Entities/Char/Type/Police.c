@@ -55,14 +55,9 @@ static void ChType_FXPoliceSteal(cAbstractFile *params) {
 	FX_PoliceSteal(attacker, attacked);
 }
 
-/* the coins from attacked to attacker for 1.35 s when the attacker is in sight; a -mp2 instance sends it to the
- * players near (include/scrap/pres.h) */
-void FX_PoliceSteal(cEntity *attacker, cEntity *attacked) {
+/* the coins from attacked to attacker for 1.35 s when the attacker is in sight */
+static void FX_PoliceStealRun(cEntity *attacker, cEntity *attacked) {
 	vec3_t tmp;
-
-	if (g_Mp2 && attacker && attacked) {
-		Pres_FxEnt(PRES_FX_POLICESTEAL, attacker->name, attacked->name, 0.0f, 0, NULL);
-	}
 
 	CHECK(attacker);
 	CHECK(Entity_IsType(attacker, TYEN_WALKCHAR));
@@ -80,6 +75,16 @@ void FX_PoliceSteal(cEntity *attacker, cEntity *attacked) {
 		FXMisc_SetEntity(el, attacker);
 		FXCharActions_SetEntity8(el, attacked);
 	}
+}
+
+/* a -mp2 instance sends it to the players near and runs it inside the record (include/scrap/pres.h) */
+void FX_PoliceSteal(cEntity *attacker, cEntity *attacked) {
+	if (g_Mp2 && attacker && attacked) {
+		Pres_FxEnt(PRES_FX_POLICESTEAL, attacker->name, attacked->name, 0.0f, 0, NULL);
+	}
+	g_PresIn++;
+	FX_PoliceStealRun(attacker, attacked);
+	g_PresIn--;
 }
 
 /* the actions of a police while it talks: Action, ActionNPC, ActionInit, ActionInitNPC */

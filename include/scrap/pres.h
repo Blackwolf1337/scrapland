@@ -79,6 +79,7 @@ enum {
 	PRES_O_HUDSHOW,					/* on */
 	PRES_O_HUDSET,					/* item, var, kind u8 (1 text, 2 number), value */
 	PRES_O_TALK,					/* file, speaker, arg: the talk voice (Sound_OpenTalk) */
+	PRES_O_ITEMSND,					/* entity, item: a sound item of a ship its simulation starts (Pres_ItemSound) */
 	PRES_O_COUNT
 };
 
@@ -88,7 +89,8 @@ enum {
 	PRES_FX_CONVERSION,				/* attacker, attacked, time */
 	PRES_FX_SELLLIFE,				/* attacker ("" none), attacked */
 	PRES_FX_MONEY,					/* from, to, time */
-	PRES_FX_EMBEDDED,				/* entity, the effect's type (the embedded effect: state, Pres sends it to all) */
+	PRES_FX_EMBEDDED,				/* entity, the effect's type (the embedded effect: state, a journal entry of the
+									 * entity, REPENT_J_FX, not a record) */
 	PRES_FX_ITEMFADE,				/* item, taker ("" none), scale, mode: FX_ItemFade */
 	PRES_FX_BISHOPRAY,				/* bishop, target ("" none), the point hit: FX_BishopRay */
 	PRES_FX_STEAL,					/* thief, victim: FX_BankerSteal */
@@ -141,9 +143,11 @@ void Pres_Send(void);
 void Pres_Flush(struct Net2Host *host);
 /* player i's own entity steps (its client steps it too: what it starts is not sent to i); -1 after */
 void Pres_OwnStep(int player);
-/* a call of the scripts' module.func begins / ends (Port_Entry): the HUD skeleton modules the client makes itself */
-void Pres_ModCall(const char *module);
+/* a call of the scripts' module.func begins / ends (Port_Entry): the HUD skeleton modules the client makes itself;
+ * Pres_ModSite is the innermost call running ("module.func", "-" outside the scripts) for the audit keys */
+void Pres_ModCall(const char *module, const char *func);
 void Pres_ModLeave(const char *module);
+const char *Pres_ModSite(void);
 /* the HUD model of player i, made on its first use (i < 0: the current player's); NULL for none */
 struct cScorer *Pres_HudModel(int i);
 /* the HUD model of player i when it was made, NULL */
@@ -197,8 +201,23 @@ void Pres_HudSet(const struct cScorer *sc, const char *item, const char *var, co
 
 /* ---- client ---- */
 
+/* a -mp2 instance: the simulation of ship e starts its sound item (Vehicle_StartSnd, Weap_PlaySound: the boost, a
+ * crash, a weapon's shot or launch, the weapon change), which its replica does not step: to the players near (not the
+ * one whose own step it is); the client starts the item on its replica. Inside a derived presentation (the item
+ * plays the replica makes itself) nothing goes. */
+void Pres_ItemSound(struct cEntity *e, int item);
+
+/* the census of the network tests (audit category NA_CENSUS): "<what>.name:<name>" for every sample played and
+ * debris system dropped, on an instance also "<what>.near:<name>" when it is near a player's viewer (pos NULL: a play
+ * without a place, near); Pres_CensusSound takes the place of a positional play from its description */
+void Pres_Census(const char *what, const char *name, const vec3_t *pos);
+void Pres_CensusSound(const char *name, const struct cSoundDesc *d, const vec3_t *pos);
+
 /* a PRES_MSG message */
 void Pres_Message(const uint8_t *data, int size);
+/* each frame: the effect records held until the client has their entities (a replica made again under a new slot),
+ * played once it has them, else after a second (counted missing then) */
+void Pres_ClientFrame(void);
 /* a presentation event on a -mp2 client misses the entity name (what: the function; NULL: counted already): 1 counted
  * there ("pres.missing:<what>:<name>"; the caller returns), 0 elsewhere (the caller's CHECK stays) */
 byte Pres_ClientMissing(const char *what, const char *name);

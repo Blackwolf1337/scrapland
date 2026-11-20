@@ -50,6 +50,11 @@ sys.path.insert(0, os.path.join(REPO, 'tools', 'mcp'))
 import parity  # noqa: E402
 import scrap_mcp  # noqa: E402
 
+# the feel is measured against the real clock and the display: its games never run on SCRAP_TIMESCALE
+# (tools/test/gameclock.py)
+if os.environ.pop('SCRAP_TIMESCALE', None) not in (None, '', '1'):
+    print('feel: SCRAP_TIMESCALE ignored, the feel runs on the real clock', file=sys.stderr)
+
 FRAME_BUCKETS = (8, 12, 17.5, 20, 25, 34, 50, 1e9)
 BUMP_AHEAD = 1.5                   # s the rail traffic ship needs to the place the own ship is put
 

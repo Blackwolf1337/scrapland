@@ -21,7 +21,21 @@ FakeTraffic) and the players' own entities are left out.
 
 Gaps: the positional sets that differ (near and whole level), the items of shared entities the client lacks or has
 more than the instance, and those it differs in from single player where the instance agrees with single player.
-Exit 0 without gaps, 1 otherwise."""
+Exit 0 without gaps, 1 otherwise.
+
+The census by class (stage 4.1, --classes): every entity of every class by class and kind (the action class of a
+thing with life, else the model, else the name without digits) on the instance, the client and single player
+(test verbs entinfo and mirror json), --samples times 1 s apart; a gap is one found in every sample:
+  missing  an entity of the instance in the client's interest (the level scope: every object, item, thing with life
+           and plain entity; ships, characters and missiles within --interest of the client's own entity) that the
+           client has no entity of the same name and class of
+  state    a replica that differs from the instance's entity in active, model, action class, team or radar
+  extra    an entity of the client that is no replica (it made it itself), but for its own entity and cameras
+The table per class and kind (instance whole level, instance in the interest, client, single player whole level)
+goes into the report; kinds single player has and the instance not are listed (the moment: traffic, NPC types).
+
+  census.py --classes --client <game> --instance <game> --level <Level> [--sp <game>] [--interest 54000]
+            [--json FILE] [--samples 3]"""
 import argparse
 import json
 import os
@@ -72,16 +86,146 @@ def merge(samples):
     return ps, es
 
 
+CAMERAS = ('FCam', 'Cam', 'CamPath')
+MOVING = (1, 2, 3)      # ship, character, missile (the grid's); the other kinds are in the level scope
+
+
+def entinfo(game, level=None):
+    """entinfo lines by name: class, active, model, action class, position, team, radar, replica"""
+    out = {}
+    for line in ask(game, 'entinfo', level).splitlines():
+        f = line.split('\t')
+        if len(f) < 12:
+            continue
+        out[f[0]] = dict(name=f[0], cls=f[1], active=int(f[3]), model=f[4], act=f[5],
+                         pos=(float(f[6]), float(f[7]), float(f[8])), tg=int(f[9]), radar=int(f[10]),
+                         replica=int(f[11]))
+    return out
+
+
+def mirror_of(game, level=None):
+    for line in ask(game, 'mirror json', level).splitlines():
+        if line.startswith('{'):
+            return json.loads(line)
+    raise RuntimeError('no mirror')
+
+
+def kind_of(e):
+    if e['act']:
+        return e['act']
+    if e['model']:
+        return os.path.splitext(os.path.basename(e['model'].replace('\\', '/')))[0]
+    return re.sub(r'\d+', '', e['name'])
+
+
+def class_sample(a):
+    """one sample: the gaps (a dict key -> text) and the table rows"""
+    srv = mirror_of(a.instance, a.level)
+    cli = mirror_of(a.client)
+    sinfo = entinfo(a.instance, a.level)
+    cinfo = entinfo(a.client)
+    view = cli['view']
+    own = cli.get('own', -1)
+    own_names = {e['name'] for e in srv['ents'] if e['slot'] == own}
+    replicas = {e['name'] for e in cli['ents']}
+    gaps = {}
+    table = {}
+
+    def row(e):
+        return table.setdefault((e['cls'], kind_of(e)), [0, 0, 0, 0])
+
+    for e in sinfo.values():
+        if e['cls'] not in CAMERAS:
+            row(e)[0] += 1
+    for s in srv['ents']:
+        if s['name'] in own_names:
+            continue
+        e = sinfo.get(s['name'])
+        if not e:
+            continue
+        d = sum((p - q) ** 2 for p, q in zip(e['pos'], view)) ** 0.5
+        if s['kind'] in MOVING and d > a.interest:
+            continue
+        row(e)[1] += 1
+        c = cinfo.get(s['name'])
+        if not c or c['cls'] != e['cls']:
+            gaps[('missing', e['cls'], e['name'])] = '%s %s (%s) at %.0f%s' % (
+                e['cls'], e['name'], kind_of(e), d, ', client has class %s' % c['cls'] if c else '')
+            continue
+        for f in ('active', 'model', 'act', 'tg', 'radar'):
+            # a model by the name it was first loaded with (the packs' names are case blind)
+            if (e[f].lower() != c[f].lower()) if f == 'model' else e[f] != c[f]:
+                gaps[('state', e['cls'], e['name'] + '.' + f)] = '%s %s %s: %r / %r' % (e['cls'], e['name'], f, e[f],
+                                                                                       c[f])
+    for c in cinfo.values():
+        if c['cls'] in CAMERAS:
+            continue
+        if c['name'] in replicas or c['replica']:
+            row(c)[2] += 1
+            continue
+        if re.match(r'^Me\d', c['name']) or c['name'] in own_names:
+            continue
+        gaps[('extra', c['cls'], c['name'])] = '%s %s (%s)' % (c['cls'], c['name'], kind_of(c))
+    if a.sp:
+        for e in entinfo(a.sp).values():
+            if e['cls'] not in CAMERAS and not re.match(r'^(Player0|PlayerShip|MainChar)', e['name']):
+                row(e)[3] += 1
+    return gaps, table, len(srv['ents']), len(cli['ents'])
+
+
+def classes(a):
+    found, tables = [], []
+    for i in range(a.samples):
+        if i:
+            time.sleep(1.0)
+        g, t, ns, nc = class_sample(a)
+        found.append(g)
+        tables.append(t)
+    keep = set(found[0])
+    for f in found[1:]:
+        keep &= set(f)
+    table = tables[-1]
+    counts = {}
+    for k in keep:
+        counts[k[0]] = counts.get(k[0], 0) + 1
+    print('classes %s: %d gaps (%s); instance %d replicated entities, client %d replicas; %d classes and kinds' % (
+        a.level, len(keep), ', '.join('%s %d' % kv for kv in sorted(counts.items())) or 'none', ns, nc, len(table)))
+    for k in sorted(keep):
+        print('  %-8s %s' % (k[0], found[-1][k]))
+    sp_only = sorted('%s %s (%d)' % (k[0], k[1], v[3]) for k, v in table.items() if v[3] and not v[0])
+    if a.sp:
+        print('  kinds single player has and the instance not: %d' % len(sp_only))
+        for v in sp_only[:40]:
+            print('    %s' % v)
+    print('  %-10s %-32s %8s %8s %8s %8s' % ('class', 'kind', 'instance', 'interest', 'client', 'sp'))
+    for k in sorted(table):
+        v = table[k]
+        print('  %-10s %-32s %8d %8d %8d %8d' % (k[0], k[1][:32], v[0], v[1], v[2], v[3]))
+    if a.json:
+        with open(a.json, 'w') as f:
+            json.dump({'level': a.level, 'gaps': len(keep), 'counts': counts,
+                       'diffs': [[list(k), found[-1][k]] for k in sorted(keep)],
+                       'table': [[k[0], k[1]] + v for k, v in sorted(table.items())], 'sp_only': sp_only}, f,
+                      indent=1)
+    return 1 if keep else 0
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--client', required=True)
     ap.add_argument('--instance', required=True)
     ap.add_argument('--level', required=True)
-    ap.add_argument('--sp', required=True)
+    ap.add_argument('--sp')
     ap.add_argument('--radius', type=float, default=15000.0)
     ap.add_argument('--samples', type=int, default=3)
     ap.add_argument('--json')
+    ap.add_argument('--classes', action='store_true')
+    ap.add_argument('--interest', type=float, default=54000.0)
     a = ap.parse_args()
+    if a.classes:
+        return classes(a)
+    if not a.sp:
+        ap.error('--sp is needed for the sound census')
     m = json.loads(ask(a.client, 'mirror json').splitlines()[0])
     x, y, z = m['view']
     cs, ins, ss = [], [], []

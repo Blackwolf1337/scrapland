@@ -17,6 +17,7 @@
 #include "scrap/filesys.h"
 #include "scrap/fxweapons.h"
 #include "scrap/missileentity.h"
+#include "scrap/pres.h"
 #include "scrap/scoreritems.h"
 #include "scrap/sound.h"
 #include "scrap/vehicleattack.h"
@@ -147,6 +148,7 @@ static inline void Vehicle_StartSnd(cEntity *e, int i) {
 	if (g_PlayReplaying) {
 		return;
 	}
+	Pres_ItemSound(e, i);
 	cSndItem *it = PtrArray_Get(&Veh(e)->wl.obj.snd, i);
 	if (it) {
 		it->volume = it->vols[0];

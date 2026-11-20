@@ -243,8 +243,9 @@ void Rep_OwnMoved(struct cEntity *e);
  * player's): the other replicated entities where v's client saw them, and back */
 void Rep_RewindBegin(struct cEntity *v);
 void Rep_RewindEnd(struct cEntity *v);
-/* the damage of attacker's weapon may go to victim (outside the instance always): the server's PvP setting
- * (Players_MayHurt); a hit of a player is counted and logged ("hit by player") */
+/* the damage of attacker's weapon may go to victim (outside the instance always, on a -mp2 client never but for
+ * the own character's punch: counted "client.damage:<weapon>"): the server's PvP setting (Players_MayHurt); a hit of a
+ * player is counted and logged ("hit by player") */
 byte Rep_Hurt(struct cEntity *attacker, struct cEntity *victim, const char *weapon);
 /* the hits of a ship's weapon its cVehicleAttack hands to the weapon's OnHit (the effects): count shots of weapon
  * from the point from to the point to (at target, NULL for a point), sent to the clients that see the ship */

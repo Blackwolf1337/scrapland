@@ -1445,6 +1445,14 @@ void Rep_PreFrame(uint64_t tick) {
 		 * variables and the scripts' player are its own */
 		Players_Enter(i);
 		cEntity *e = Players_Get(i);
+		if (!e && pl->own && !pl->lost && !pl->dead) {
+			/* single player's flows let go of a ship that died in this frame before this step saw it (a crash; the
+			 * scripts' death of the player): its death all the same, else the player waits for no new character */
+			cEntity *o = World_FindEntity(pl->ownName);
+			if (o == pl->own && WLife(o)->life <= 0) {
+				e = o;
+			}
+		}
 		if (e && e == pl->own && WLife(e)->life <= 0 && !pl->lost) {
 			/* dead: the game's death runs on (the effects, the wreck) without the player */
 			Rep_Death(i, e);
@@ -1541,8 +1549,9 @@ void Rep_OwnFrame(cEntity *e, float dt) {
 			continue;
 		}
 		pl->step = 0;
-		/* its client steps its own entity too: what the step presents is not sent to it (include/scrap/pres.h) */
-		Pres_OwnStep(i);
+		/* its client steps its own entity too: what the step presents is not sent to it (include/scrap/pres.h); the
+		 * death of a dead one (its explosion, the scripts' OnDeath) is the server's alone */
+		Pres_OwnStep(WLife(e)->life > 0 ? i : -1);
 		if (pl->conn < 0 && InputTape_SoloFrames()) {
 			/* the solo instance on single player's frames: the actions of the frame, its slots (none, one or two) */
 			NetPl_Actions(e, dt);
@@ -1615,6 +1624,11 @@ void Rep_RewindEnd(cEntity *v) {
 }
 
 byte Rep_Hurt(cEntity *attacker, cEntity *victim, const char *weapon) {
+	if (g_Mp2 && g_Watch && strcmp(weapon, "Punch")) {
+		/* a -mp2 client: the damage of the weapons is the server's (its replicas take the server's life) */
+		NetAudit_Name(NA_CREATE, "client.damage:", weapon);
+		return 0;
+	}
 	if (!g_Instance) {
 		return 1;
 	}

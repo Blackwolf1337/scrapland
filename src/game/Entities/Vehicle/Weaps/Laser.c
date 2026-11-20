@@ -5,6 +5,7 @@
  */
 #include "scrap/crt.h"
 #include "scrap/play.h"
+#include "scrap/pres.h"
 #include "scrap/weaps2.h"
 #include "scrap/staticinit.h"
 
@@ -172,9 +173,27 @@ static byte Hook_Pulls(cEntity *e, byte isClient) {
 	return 1;
 }
 
+/* Present: the Hook fired at nothing (no lock, no point in range): its effect flies out of every mounted laser bay */
+static void Hook_MissFX(cEntity *v) {
+	cTargetLock *wm = &Veh(v)->weapons;
+	for (int i = 0; i < 4; i++) {
+		if (!cTargetLock_HasSlot(wm, g_LaserIDWeap, i)) {
+			continue;
+		}
+		cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_LaserHookFile);
+		cDebris *d = cDebrisSys_NewElement(sys);
+		cDebrisSys_Drop(sys, d);
+		if (Debris_Element(d)) {
+			cObjElementFXHook_StartPoint(Debris_Element(d), v, i);
+		}
+	}
+}
+
 /*
  * ship name, every frame while the Hook fires: the ammo, the lock (on an entity with life or a point), the pull of
- * the ship towards it and of the entity towards the ship by their masses, each kept under its speed
+ * the ship towards it and of the entity towards the ship by their masses, each kept under its speed (Advance); the
+ * Hook sound and the effect of a shot at nothing (Present: a -mp2 client's replica plays them from the ship's state,
+ * Hook_NetPresent)
  */
 static void Hook_StartSound(cEntity *v);
 static void Hook_StopSound(cEntity *v);
@@ -225,17 +244,9 @@ static void Hook_UpdateNative(cAbstractFile *f) {
 			if (!start) {
 				return;
 			}
-			for (int i = 0; i < 4; i++) {
-				if (!cTargetLock_HasSlot(wm, g_LaserIDWeap, i)) {
-					continue;
-				}
-				cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_LaserHookFile);
-				cDebris *d = cDebrisSys_NewElement(sys);
-				cDebrisSys_Drop(sys, d);
-				if (Debris_Element(d)) {
-					cObjElementFXHook_StartPoint(Debris_Element(d), v, i);
-				}
-			}
+			Pres_Derive();
+			Hook_MissFX(v);
+			Pres_Underive();
 			return;
 		}
 	}
@@ -313,6 +324,34 @@ static void Hook_UpdateNative(cAbstractFile *f) {
 	float sp = Hook_Speed(v);
 	if (sp > vmaxV) {
 		Hook_ScaleVel(v, vmaxV / sp);
+	}
+}
+
+byte Hook_Firing(cEntity *v) {
+	cVehicleEntity *veh = Veh(v);
+	return veh->weapons.curWeap == g_LaserIDWeap && veh->controls.cm &&
+		!(g_LaserAmmoCost > cTargetLock_GetAmmo(&veh->weapons, g_LaserIDAmmo));
+}
+
+void Hook_NetPresent(cEntity *v, byte firing, float dt) {
+	cTargetLock *wm = &Veh(v)->weapons;
+	if (!firing) {
+		/* the loop goes quiet as cWeaponManager_Update makes it when the Hook key is up */
+		Hook_Silence(v);
+		wm->cmStamp = 0.0f;
+		return;
+	}
+	/* the server calls HookFire once a Hook delay while it fires */
+	wm->cmStamp += dt;
+	if (wm->cmStamp < 0.0f) {
+		return;
+	}
+	wm->cmStamp = -0.05f;
+	cSndItem *s = PtrArray_Get(&Obj(v)->snd, SND_HOOK);
+	byte start = s ? s->playing ^ 1 : 1;
+	Hook_StartSound(v);
+	if (start && !wm->on) {
+		Hook_MissFX(v);
 	}
 }
 

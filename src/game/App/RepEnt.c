@@ -212,8 +212,13 @@ void RepEnt_State(cEntity *e, int kind, NetRepState *s) {
 		s->x[REPX_BOOST] = RepEnt_Ms(v->boost);
 		s->x[REPX_CLOUD] = (RepEnt_Ms(v->cloud) & 0x3fffffff) | (v->cloudOn ? 1 << 30 : 0);
 		s->x[REPX_EMI] = RepEnt_Ms(v->emi);
-		s->x[REPX_FIREW] = v->controls.fire && v->weapons.curWeap >= 0 && v->weapons.curWeap < 31 ?
+		s->x[REPX_FIREW] = v->controls.fire && v->weapons.curWeap >= 0 && v->weapons.curWeap < 30 ?
 			1 << v->weapons.curWeap : 0;
+		/* the Hook firing (its sound and the effect of a shot at nothing are the replica's, Hook_NetPresent; a
+		 * replica keeps the bit in its countermeasure key, which only the Advance half reads) */
+		if (g_Instance ? Hook_Firing(e) : v->controls.cm) {
+			s->x[REPX_FIREW] |= 1 << 30;
+		}
 		/* the weapons' lock (the hook plug of HookPlugFunc): its effect and sound are the replica's */
 		if (v->weapons.on) {
 			s->x[REPX_FIREW] = (int32_t)((uint32_t)s->x[REPX_FIREW] | 0x80000000u);
@@ -381,6 +386,21 @@ static void RepEnt_Tap(cEntity *e, const char *name, int type, const void *value
 		x->v = v;
 		return;
 	}
+	if (NetRepJ_Set(re.j, s, &v) > 0) {
+		RepEnt_MarkDirty(s);
+	}
+}
+
+void RepEnt_Note(cEntity *e, const char *name, const char *text) {
+	NetRepJVal v;
+	if (!re.j || !e || e->deadNode.target || RepEnt_Camera(e)) {
+		return;
+	}
+	int s = RepEnt_SlotFor(e);
+	if (s < 0) {
+		return;
+	}
+	RepEnt_Value(&v, name, 's', &text);
 	if (NetRepJ_Set(re.j, s, &v) > 0) {
 		RepEnt_MarkDirty(s);
 	}

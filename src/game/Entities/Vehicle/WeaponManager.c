@@ -596,7 +596,10 @@ void cWeaponManager_SetWeapSnd(cWeaponManager *self, int snd) {
 		it->pitch = 0.0f;
 	}
 	self->weapSnd = snd;
+	/* a loop of the firing: a -mp2 replica starts it itself (its presses, the WeapSnd variable), no item record */
+	Pres_Derive();
 	Vehicle_StartSnd(self->owner, snd);
+	Pres_Underive();
 }
 
 /* the weapon callbacks of the frame: CM and fire press and release, the ammo charge, OnFire, the weapon change */

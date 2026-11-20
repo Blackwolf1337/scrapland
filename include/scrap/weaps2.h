@@ -99,6 +99,13 @@ void FXSwarm_BeeDeath(float x, float y, float z, float vx, float vy, float vz, f
 void FXSwarm_Hit(float x, float y, float z, float vx, float vy, float vz, float size, float time, float dx, float dy,
 	float dz);
 
+/* not in the original (the replication v2, include/scrap/repent.h): whether the Hook of a ship fires now (the laser
+ * is its weapon, the countermeasure key is down, ammo for a call of HookFire), the state a -mp2 client's replica of it
+ * shows; Hook_NetPresent is that replica's Present half of HookFire, dt s after the frame before: the Hook sound, and
+ * the effect of a shot at nothing (no lock) when it starts */
+byte Hook_Firing(cEntity *v);
+void Hook_NetPresent(cEntity *v, byte firing, float dt);
+
 #define WEAP_PI 3.141592653589793
 
 /* the shared code of the weapons, inlined in the original */
@@ -133,6 +140,7 @@ static inline cEntity *Weap_Owner(cWorld *w, int i) {
 
 /* sound i of the entity from its first volume and pitch */
 static inline void Weap_PlaySound(cEntity *e, int i) {
+	Pres_ItemSound(e, i);
 	cSndItem *s = PtrArray_Get(&Obj(e)->snd, i);
 	if (s) {
 		s->volume = s->vols[0];

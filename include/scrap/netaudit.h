@@ -41,6 +41,7 @@ typedef enum {
 						   variables without a tag */
 	NA_PREDICT,			/* the own entity's prediction on a -mp2 client (include/scrap/play.h): corrections by what
 						   differed, presentation muted in a replay, events left to the server */
+	NA_CENSUS,			/* the samples played and the debris systems dropped by name (the census of the tests) */
 	NA_CATS
 } netAuditCat_t;
 

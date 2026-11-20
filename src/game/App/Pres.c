@@ -28,6 +28,7 @@
 #include "scrap/scrap.h"
 #include "scrap/sound.h"
 #include "scrap/viewers.h"
+#include "scrap/weapons.h"
 #include "scrap/world.h"
 
 #include "../Global/testchannel.h"
@@ -35,6 +36,10 @@
 #define PRES_BUF 4096				/* the records of one player before they are sent */
 #define PRES_REC 1024				/* the longest record */
 #define PRES_RECENT 32				/* one-shot sounds the client remembers for the double audit */
+#define PRES_CALLS 16				/* the scripts' calls the instance keeps the names of */
+#define PRES_HOLDS 32				/* effect records a client holds until it has their entities */
+#define PRES_HOLD_REC 640			/* the longest held record */
+#define PRES_HOLD_NS 1000000000ull	/* how long: then it plays and counts what it misses */
 
 int g_PresIn;
 int g_PresDerived;
@@ -43,7 +48,7 @@ byte g_PresHud;
 
 static const char *const pres_opNames[PRES_O_COUNT] = { "?", "soundat", "sound3d", "sound2d", "voiceopen", "voiceplay",
 	"voicestop", "music", "shipexpl", "fxent", "msgtext", "labeltext", "speech", "speechcancel", "chat", "head", "fade",
-	"cinema", "actionset", "hudadd", "hudclear", "hudshow", "hudset", "talk" };
+	"cinema", "actionset", "hudadd", "hudclear", "hudshow", "hudset", "talk", "itemsnd" };
 
 /* a voice of a -mp2 instance's model: nothing plays, the file's length and the time it started give what the scripts
  * read (VoiceRemain), the text what the talk voice's checks read */
@@ -70,6 +75,9 @@ static struct {
 	int op;
 	int own;						/* the player whose own entity steps, -1 */
 	int skel;						/* depth of the HUD skeleton modules */
+	int calls;						/* depth of the scripts' calls */
+	const char *callMod[PRES_CALLS], *callFunc[PRES_CALLS];
+	char site[96];
 	const struct cSoundDesc *posDesc;	/* the description cSoundDesc_SetPos computed last, its place and volume */
 	vec3_t pos;
 	int posVolume;
@@ -84,6 +92,12 @@ static struct {
 	char lastText[64];				/* the text of the last message, label or speech record (the test verb) */
 	int nextRecent;
 	uint32_t played[PRES_O_COUNT];
+	struct {
+		uint64_t ns;				/* 0: free */
+		int size;
+		uint8_t rec[PRES_HOLD_REC];
+	} hold[PRES_HOLDS];
+	uint32_t held;
 } pres = { .own = -1 };
 
 /* ---- both ---- */
@@ -97,8 +111,8 @@ void Pres_Status(tcBuf *b) {
 	for (int i = 0; i < PLAYERS_MAX; i++) {
 		models += pres.made[i];
 	}
-	TC_Addf(b, "pres: %s, %u bytes, %u cut, %d HUD models\n", !g_Mp2 ? "off" : g_Instance ? "instance" : "client",
-		pres.bytes, pres.cut, models);
+	TC_Addf(b, "pres: %s, %u bytes, %u cut, %d HUD models, %u effect records held\n", !g_Mp2 ? "off" : g_Instance ?
+		"instance" : "client", pres.bytes, pres.cut, models, pres.held);
 	if (pres.lastText[0]) {
 		TC_Addf(b, "last text\t%s\n", pres.lastText);
 	}
@@ -235,16 +249,39 @@ static byte Pres_Skeleton(const char *module) {
 	return !strcmp(module, "CharScorer") || !strcmp(module, "RacerScorer");
 }
 
-void Pres_ModCall(const char *module) {
+void Pres_ModCall(const char *module, const char *func) {
 	if (Pres_Skeleton(module)) {
 		pres.skel++;
 	}
+	if (pres.calls < PRES_CALLS) {
+		pres.callMod[pres.calls] = module;
+		pres.callFunc[pres.calls] = func;
+	}
+	pres.calls++;
 }
 
 void Pres_ModLeave(const char *module) {
 	if (Pres_Skeleton(module) && pres.skel > 0) {
 		pres.skel--;
 	}
+	if (pres.calls > 0) {
+		pres.calls--;
+	}
+}
+
+const char *Pres_ModSite(void) {
+	if (!pres.calls) {
+		return "-";
+	}
+	/* the innermost three, the caller first: the engine's own natives (Scrap.SetCam) say little alone */
+	int top = pres.calls > PRES_CALLS ? PRES_CALLS : pres.calls;
+	int len = 0;
+	pres.site[0] = 0;
+	for (int k = top > 3 ? top - 3 : 0; k < top && len < (int)sizeof(pres.site); k++) {
+		len += Str_PrintfQuiet(pres.site + len, sizeof(pres.site) - (size_t)len, "%s%s.%s", len ? ">" : "",
+			pres.callMod[k], pres.callFunc[k]);
+	}
+	return pres.site;
 }
 
 /* ---- instance: the HUD models ---- */
@@ -397,6 +434,29 @@ void Pres_SoundPos(const struct cSoundDesc *d, const vec3_t *pos) {
 	pres.posVolume = d->volume;
 }
 
+void Pres_Census(const char *what, const char *name, const vec3_t *pos) {
+	/* the audit keeps the prefix as it is given (no copy): literals */
+	byte snd = !strcmp(what, "snd");
+	NetAudit_Name(NA_CENSUS, snd ? "snd.name:" : "debris.name:", name);
+	if (!g_Mp2 || !g_Instance) {
+		return;
+	}
+	for (int k = Viewers_Count() - 1; k >= 0; k--) {
+		const cViewer *v = Viewers_At(k);
+		float dx = pos ? v->pos.x - pos->x : 0.0f, dy = pos ? v->pos.y - pos->y : 0.0f;
+		float dz = pos ? v->pos.z - pos->z : 0.0f;
+		if (v->id >= 0 && v->id < PLAYERS_MAX && dx * dx + dy * dy + dz * dz <= NETREP_RADIUS * NETREP_RADIUS) {
+			NetAudit_Name(NA_CENSUS, snd ? "snd.near:" : "debris.near:", name);
+			return;
+		}
+	}
+}
+
+void Pres_CensusSound(const char *name, const cSoundDesc *d, const vec3_t *pos) {
+	/* a description cSoundDesc_SetPos made last has its place (Pres_SoundPos); another one plays without a place */
+	Pres_Census("snd", name, pos ? pos : d && d == pres.posDesc ? &pres.pos : NULL);
+}
+
 static void Pres_Unforwarded(const char *prefix, const char *site) {
 	NetAudit_Func(NA_SOUND, prefix, site ? site : "?");
 }
@@ -405,6 +465,18 @@ void Pres_NoRoute(int cat, const char *prefix, const char *site) {
 	if (Pres_Out()) {
 		NetAudit_Func((netAuditCat_t)cat, prefix, site);
 	}
+}
+
+void Pres_ItemSound(cEntity *e, int item) {
+	vec3_t pos;
+	if (!Pres_Out() || !e || !Entity_IsType(e, TYEN_VEHICLE) || !PtrArray_Get(&Obj(e)->snd, item) ||
+		!Pres_Begin(PRES_NEAR, Entity_GetPos(e, &pos), PRES_O_ITEMSND)) {
+		return;
+	}
+	Pres_PutStr(e->name);
+	Pres_PutInt(item);
+	NetAudit_Func(NA_SOUND, "pres.from:", "Pres_ItemSound");
+	Pres_Send();
 }
 
 void Pres_SoundAt(const char *name, const vec3_t *pos, int volume) {
@@ -523,9 +595,13 @@ void Pres_FxEnt(int kind, const char *a, const char *b, float f, int i, const ve
 	if (!Pres_Out() || !e) {
 		return;
 	}
-	/* the embedded effect is the entity's state from now on: every player (one that comes into the interest later
-	 * gets the entity's journal, not this) */
-	if (!Pres_Begin(kind == PRES_FX_EMBEDDED ? PRES_LEVEL : PRES_NEAR, Entity_GetPos(e, &pos), PRES_O_FXENT)) {
+	/* the embedded effect is the entity's state from now on: a journal entry (a player that gets the entity later
+	 * gets it with the entity) */
+	if (kind == PRES_FX_EMBEDDED) {
+		RepEnt_Note(e, REPENT_J_FX, b ? b : "");
+		return;
+	}
+	if (!Pres_Begin(PRES_NEAR, Entity_GetPos(e, &pos), PRES_O_FXENT)) {
 		return;
 	}
 	Pres_PutInt(kind);
@@ -905,6 +981,17 @@ static void Pres_Play(int op, NetRepReader *r) {
 		SoundSys_PlaySound(g_pSound, name, &d, NULL);
 		break;
 	}
+	case PRES_O_ITEMSND: {
+		NetRep_GetStr(r, name, sizeof(name));
+		int item = NetRep_GetSVar(r);
+		cEntity *e = r->bad ? NULL : Pres_EventEnt(name);
+		if (e && Entity_IsType(e, TYEN_VEHICLE)) {
+			Vehicle_StartSnd(e, item);
+		} else if (!r->bad) {
+			Pres_ClientMissing("itemsnd", name);
+		}
+		break;
+	}
 	case PRES_O_SOUND2D: {
 		NetRep_GetStr(r, name, sizeof(name));
 		int vol = NetRep_GetSVar(r), pan = NetRep_GetSVar(r);
@@ -1050,6 +1137,48 @@ static void Pres_Play(int op, NetRepReader *r) {
 	}
 }
 
+/* the effect record at r: 1 when the client has the entities it names; r moves past it */
+static byte Pres_FxReady(NetRepReader *r) {
+	char a[256], b[256];
+	vec3_t v;
+	NetRep_GetSVar(r);
+	NetRep_GetStr(r, a, sizeof(a));
+	NetRep_GetStr(r, b, sizeof(b));
+	Pres_GetFloat(r);
+	NetRep_GetSVar(r);
+	Pres_GetVec(r, &v);
+	return !r->bad && (!*a || ReplicaEnt_Find(a)) && (!*b || ReplicaEnt_Find(b));
+}
+
+/* an effect record whose entity the client does not have yet (a replica made again under a new slot a moment later):
+ * held, 1; 0 when no place is free */
+static byte Pres_Hold(const uint8_t *rec, int size) {
+	if (size > PRES_HOLD_REC) {
+		return 0;
+	}
+	for (int k = 0; k < PRES_HOLDS; k++) {
+		if (!pres.hold[k].ns) {
+			memcpy(pres.hold[k].rec, rec, (size_t)size);
+			pres.hold[k].size = size;
+			pres.hold[k].ns = Plat_RealNs();
+			pres.held++;
+			return 1;
+		}
+	}
+	return 0;
+}
+
+static void Pres_PlayRecord(int op, NetRepReader *r) {
+	pres.played[op]++;
+	pres.recOp = op;
+	if (op == PRES_O_MSGTEXT || op == PRES_O_LABELTEXT || op == PRES_O_SPEECH) {
+		NetRepReader t = *r;
+		NetRep_GetStr(&t, pres.lastText, sizeof(pres.lastText));
+	}
+	NetAudit_Func(NA_SOUND, "pres.play:", pres_opNames[op]);
+	Pres_Play(op, r);
+}
+
 void Pres_Message(const uint8_t *data, int size) {
 	NetRepReader r;
 	NetRepReader_Init(&r, data + 1, size - 1);
@@ -1060,14 +1189,33 @@ void Pres_Message(const uint8_t *data, int size) {
 			Con_Warnf("pres: unknown record %d\n", op);
 			break;
 		}
-		pres.played[op]++;
-		pres.recOp = op;
-		if (op == PRES_O_MSGTEXT || op == PRES_O_LABELTEXT || op == PRES_O_SPEECH) {
+		if (op == PRES_O_FXENT) {
 			NetRepReader t = r;
-			NetRep_GetStr(&t, pres.lastText, sizeof(pres.lastText));
+			if (!Pres_FxReady(&t) && !t.bad && Pres_Hold(r.p + r.pos, t.pos - r.pos)) {
+				r = t;
+				continue;
+			}
 		}
-		NetAudit_Func(NA_SOUND, "pres.play:", pres_opNames[op]);
-		Pres_Play(op, &r);
+		Pres_PlayRecord(op, &r);
 	}
 	g_PresIn--;
+}
+
+void Pres_ClientFrame(void) {
+	uint64_t now = Plat_RealNs();
+	for (int k = 0; k < PRES_HOLDS; k++) {
+		if (!pres.hold[k].ns) {
+			continue;
+		}
+		NetRepReader r, t;
+		NetRepReader_Init(&r, pres.hold[k].rec, pres.hold[k].size);
+		t = r;
+		if (!Pres_FxReady(&t) && now - pres.hold[k].ns < PRES_HOLD_NS) {
+			continue;
+		}
+		pres.hold[k].ns = 0;
+		g_PresIn++;
+		Pres_PlayRecord(PRES_O_FXENT, &r);
+		g_PresIn--;
+	}
 }

@@ -1060,6 +1060,14 @@ static const char str_Back[];
 static const char str_Go[];
 static const char *g_PilotAnimNames[6] = { (void *)str_Left, (void *)str_Right, (void *)str_Go, (void *)str_Back, (void *)str_Relax };
 
+byte cVehicleEntity_PilotAnimFile(cVehicleEntity *self, int anim, char *out, int size) {
+	if (anim < 0 || anim >= VEH_PILOT_ANIMS || !CGameModel_IsLoaded(Veh_PilotModel(self, 0))) {
+		return 0;
+	}
+	Str_PrintfQuiet(out, size, g_VeCharsPathFmt, Veh_PilotName(self, 0), g_PilotAnimNames[anim]);
+	return 1;
+}
+
 static byte cVehicleEntity_SetPilotAnim(cVehicleEntity *self, int slot, int anim) {
 	char path[0x200];
 

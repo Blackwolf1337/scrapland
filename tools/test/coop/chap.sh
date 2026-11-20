@@ -69,7 +69,8 @@ while IFS='|' read -r lg line pat secs what; do
 	mark=$(wc -l < "$f" 2>/dev/null || echo 0)
 	[[ $what == *"(any time)"* ]] && mark=0
 	if [[ $line == wait\ * ]]; then
-		timeout "${line#wait }" tail -f /dev/null
+		# seconds of game time (SCRAP_TIMESCALE, tools/test/gameclock.py)
+		timeout "$(awk -v s="${line#wait }" -v n="${SCRAP_TIMESCALE:-1}" 'BEGIN { n = int(n); if (n < 1) n = 1; if (n > 16) n = 16; printf "%.2f", s / n }')" tail -f /dev/null
 	elif [[ $line == save\ * ]]; then
 		# a story point: the world's data now (the coordinator saves first; its logs left out) as <name>-data
 		m0=$(wc -l < $L); "$T/send.sh" $tag save; waitnew $L "coordinator: saved" 10 "$m0"

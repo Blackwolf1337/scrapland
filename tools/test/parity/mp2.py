@@ -31,6 +31,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
 sys.path.insert(0, HERE)
 import parity  # noqa: E402
+import gameclock  # noqa: E402
 
 COOP = os.path.join(REPO, 'tools', 'test', 'coop')
 FRAME_MS = 1000.0 / 60.0
@@ -68,10 +69,12 @@ def write_gate(a, gate, data, table):
     return data
 
 
-def run(cmd, env=None, log=None, timeout=None):
-    """a tool; its exit code (its output into log, or through)"""
+def run(cmd, env=None, log=None, timeout=None, real=False):
+    """a tool; its exit code (its output into log, or through). real: without SCRAP_TIMESCALE (tools/test/gameclock.py)"""
     e = dict(os.environ)
     e.update(env or {})
+    if real:
+        e = gameclock.real_env(e)
     out = open(log, 'w') if log else None
     try:
         return subprocess.run(cmd, env=e, stdout=out, stderr=subprocess.STDOUT if out else None,
@@ -81,6 +84,12 @@ def run(cmd, env=None, log=None, timeout=None):
     finally:
         if out:
             out.close()
+
+
+def run_real(cmd, **kw):
+    """the gates that measure against the real clock (feel) or the baselines of single player (regress, golden,
+    levels) run on the real clock"""
+    return run(cmd, real=True, **kw)
 
 
 # ---- parity ----
@@ -196,7 +205,7 @@ def gate_feel(a):
         path = os.path.join(out, side + ('' if side == 'sp' else '-' + cell) + '.json')
         for k in range(1 if a.report_only else 1 + FEEL_RETRIES):
             if not a.report_only:
-                run(base + ['--sides', side] + extra, log=os.path.join(out, 'feel-%s-%s.log' % (cell, side)),
+                run_real(base + ['--sides', side] + extra, log=os.path.join(out, 'feel-%s-%s.log' % (cell, side)),
                     timeout=1800)
             try:
                 r = json.load(open(path))
@@ -367,7 +376,7 @@ def gate_sp(a):
         a.checks = []
     if 'regress' in a.checks:
         log = os.path.join(out, 'regress.log')
-        rc = run([sys.executable, os.path.join(REPO, 'tools', 'test', 'regress', 'regress.py'), 'check', '--build',
+        rc = run_real([sys.executable, os.path.join(REPO, 'tools', 'test', 'regress', 'regress.py'), 'check', '--build',
                   a.build, '--lanes', a.lanes, '--out', os.path.join(a.scratch, 'regress')] +
                  [c for c in (a.regress_cases or '').split(',') if c], env=env, log=log)
         text = open(log, errors='replace').read()
@@ -380,7 +389,7 @@ def gate_sp(a):
             rows.append({'check': 'regress', 'result': 'no summary (exit %d)' % rc, 'pass': False, 'error': True})
     if 'golden' in a.checks:
         log = os.path.join(out, 'golden.log')
-        rc = run([os.path.join(REPO, 'tools', 'test', 'golden.sh')], env=env, log=log)
+        rc = run_real([os.path.join(REPO, 'tools', 'test', 'golden.sh')], env=env, log=log)
         tail = [x for x in open(log, errors='replace').read().splitlines() if x.startswith('golden')]
         rows.append({'check': 'golden', 'result': (tail[-1] if tail else 'exit %d' % rc)[:160], 'pass': rc == 0})
     if 'levels' in a.checks:
@@ -389,7 +398,7 @@ def gate_sp(a):
             rows.append({'check': 'levels', 'result': 'n/a (no ASan build %s)' % asan, 'pass': True, 'skipped': True})
         else:
             log = os.path.join(out, 'levels.log')
-            rc = run([os.path.join(REPO, 'tools', 'test', 'levels.sh')],
+            rc = run_real([os.path.join(REPO, 'tools', 'test', 'levels.sh')],
                      env=dict(env, SCRAP_BUILD=asan, SCRAP_VK_DEVICE=a.asan_device, LEVELS_TIME=str(a.levels_time),
                               LEVELS_JOBS=str(a.levels_jobs),
                               SCRAP_GAME_DIR=os.path.join(a.scratch, 'levels-game')), log=log)

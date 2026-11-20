@@ -829,11 +829,15 @@ void Travel_TestGoto(int player, const char *entity, float dx, float dz) {
 	vec3_t p = { at.x + dx, at.y + 100.0f, at.z + dz };
 	e->pos = p;
 	Rep_Placed(player);
-	/* facing it (yaw 0 looks to -z): its use arrow selected */
+	/* facing it (yaw 0 looks to -z): its use arrow selected; a ship level and standing (the weapon tests) */
 	float yaw = atan2f(-(at.x - p.x), -(at.z - p.z));
 	Obj(e)->ang.y = yaw;
 	if (NetPl_Kind(e) == NETREP_CHAR) {
 		WChar(e)->view.y = yaw;
+	} else if (NetPl_Kind(e) == NETREP_SHIP) {
+		Obj(e)->ang.x = Obj(e)->ang.z = 0.0f;
+		Obj(e)->vel = (vec3_t){ 0.0f, 0.0f, 0.0f };
+		Obj(e)->rotVel = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	}
 	Con_Printf("instance: player %d next to %s (%.0f %.0f %.0f)\n", player, entity, (double)p.x, (double)p.y,
 		(double)p.z);
