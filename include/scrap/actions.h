@@ -244,7 +244,32 @@ void cActCtrl_NetDrive(cActCtrl *self, const uint16_t *act, const float *rate, c
 	float dt, actEventFilter_t fire);
 /* the layers of a replica at exactly the times of the network (a scene's entities, include/scrap/netscene.h): the
  * model set to each target time and standing there, the events up to it fired (the passing ones) */
-void cActCtrl_NetSet(cActCtrl *self, const uint16_t *act, const float *target, int layers, actEventFilter_t fire);
+void cActCtrl_NetExact(cActCtrl *self, const uint16_t *act, const float *target, int layers, actEventFilter_t fire);
+/* ScrapC (stage 3.5, -mp2): the state of a controller a rollback of the client's own entity goes back to: the
+ * layers, the default loop, the root motion and the model's channels (the time of an action is its channel's). The
+ * head turn and the blends between two animations are presentation and are not kept. */
+typedef struct cActCtrlState {
+	cAction *defLoop;
+	cActLayer layers[ACT_LAYERS];
+	vec3_t rootSum, rootMove;
+	float rootTime, walkSpeed;
+	CAnimGroup *anim[ACT_LAYERS];	/* of the model's channels */
+	CAnimCtrl ctrl[ACT_LAYERS];
+} cActCtrlState;
+void cActCtrl_Save(cActCtrl *self, cActCtrlState *s);
+void cActCtrl_Restore(cActCtrl *self, const cActCtrlState *s);
+/* the action of index i + 1 of the class (0: none) */
+cAction *cActCtrl_ActionAt(const cActCtrl *self, uint16_t i);
+/* the frame of the model's channel of layer k (the layer's time is read from it), 0 without one */
+float cActCtrl_LayerFrame(cActCtrl *self, int k);
+/* the layers to the server's: the actions act (index + 1, 0 off) at the times t, the default loop defLoop (index + 1,
+ * 0 keeps it). A layer whose action differs or whose time is off by more than tol starts its action again at that
+ * time; no event fires (the ones before the time count as fired). frame (NULL: none): the channels' exact frames of
+ * the server, every layer of an action takes it (the ends and events of the layers then come on the same step) */
+void cActCtrl_NetSet(cActCtrl *self, const uint16_t *act, const float *t, const float *frame, int layers,
+	uint16_t defLoop, float tol);
+/* the client's own entity (-mp2): which events of its layers fire (play.h: Play_OwnEvent) */
+extern byte (*g_ActOwnFilter)(cEntity *owner, const cActEvent *ev);
 /* layer i (> 0) stopped */
 void cActCtrl_StopChan(cActCtrl *self, int i);
 byte cActCtrl_IsActive(void *ctrl, const char *action);

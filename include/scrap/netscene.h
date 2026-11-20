@@ -55,7 +55,7 @@
 #include "scrap/mathlib.h"
 #include "scrap/shared.h"
 
-#define NETSCENE_MSG 'R'
+#define NETSCENE_MSG 'u'
 #define NETSCENE_C_SKIP 1
 
 #define NETSCENE_PATH_POINTS 12		/* the points of a camera path a record carries */
@@ -129,7 +129,7 @@ byte NetScene_ClientSkip(void);
  * scene that plays here also the scene's own texts and streams, on that of another player's scene none */
 actEventFilter_t NetScene_Filter(struct cEntity *e);
 /* replica e is the scene entity of the scene that plays here or an entity linked to it (an actor): its layers are
- * set to the server's times exactly (cActCtrl_NetSet) */
+ * set to the server's times exactly (cActCtrl_NetExact) */
 byte NetScene_Exact(struct cEntity *e);
 /* the connection is gone */
 void NetScene_ClientReset(void);

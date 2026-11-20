@@ -9,6 +9,7 @@
 #include "scrap/console.h"
 #include "scrap/filepak.h"
 #include "scrap/netaudit.h"
+#include "scrap/play.h"
 #include "scrap/pres.h"
 #include "scrap/repent.h"
 #include "scrap/scrapfont.h"
@@ -306,6 +307,9 @@ static void CSoundXBox_Audit(const char *site, const char *name, const cSoundDes
 
 static int CSoundXBox_PlaySound(CSoundSys *base, const char *name, const cSoundDesc *d, int *handle) {
 	CSoundXBox *self = (CSoundXBox *)base;
+	if (g_PlayReplaying && Play_Mute("sound", g_SndSite)) {
+		return 0;
+	}
 	CSoundXBox_Audit("snd.playsound", name, d, NULL);
 	if (g_Mp2) {
 		Pres_Sound3D(name, d);
@@ -321,6 +325,9 @@ static int CSoundXBox_PlaySound(CSoundSys *base, const char *name, const cSoundD
 
 static int CSoundXBox_PlayName(CSoundSys *base, const char *name) {
 	CSoundXBox *self = (CSoundXBox *)base;
+	if (g_PlayReplaying && Play_Mute("sound", g_SndSite)) {
+		return 0;
+	}
 	CSoundXBox_Audit("snd.playname", name, NULL, NULL);
 	if (g_Mp2) {
 		Pres_Sound2D(name, 0, 0);
@@ -331,6 +338,9 @@ static int CSoundXBox_PlayName(CSoundSys *base, const char *name) {
 
 static int CSoundXBox_Play(CSoundSys *base, const char *name, int volume, int pan) {
 	CSoundXBox *self = (CSoundXBox *)base;
+	if (g_PlayReplaying && Play_Mute("sound", g_SndSite)) {
+		return 0;
+	}
 	CSoundXBox_Audit("snd.play", name, NULL, NULL);
 	if (g_Mp2) {
 		Pres_Sound2D(name, volume, pan);
@@ -343,6 +353,9 @@ static int CSoundXBox_PlayAt(CSoundSys *base, const char *name, const vec3_t *po
 	CSoundXBox *self = (CSoundXBox *)base;
 	cSoundDesc d;
 
+	if (g_PlayReplaying && Play_Mute("sound", g_SndSite)) {
+		return 0;
+	}
 	CSoundXBox_Audit("snd.playat", name, NULL, pos);
 	if (g_Mp2) {
 		Pres_SoundAt(name, pos, volume);

@@ -115,6 +115,8 @@ typedef struct RepPlayer {
 	NetRepInBuf last;				/* the counters at the last status line */
 	NetRepInput stepIn;				/* the input its entity steps with in this frame (Rep_OwnFrame) */
 	byte step;						/* that step is due */
+	uint64_t stepTick;				/* the tick of its entity's last step */
+	uint8_t moved;					/* the scripts' moves of its entity (-mp2: its rollback state says so) */
 } RepPlayer;
 
 typedef struct RepRewind {
@@ -1371,6 +1373,8 @@ void Rep_Respawn(int i) {
 void Rep_Placed(int i) {
 	if (i >= 0 && i < PLAYERS_MAX) {
 		rep.pl[i].spawnAt = -1;
+		/* -mp2: its client takes the next rollback state as a jump, not a correction */
+		rep.pl[i].moved++;
 	}
 }
 
@@ -1558,6 +1562,7 @@ void Rep_OwnFrame(cEntity *e, float dt) {
 			NetPl_Step(e, &pl->stepIn, 0, 0);
 		}
 		Pres_OwnStep(-1);
+		pl->stepTick = rep.tick;
 		return;
 	}
 	/* a player's entity without a step in this frame (the scripts gave it to the player a moment ago, the input step
@@ -1674,6 +1679,27 @@ static void Rep_SendStatus(Net2Host *host, int i, cEntity *e) {
 	}
 }
 
+/* -mp2: the rollback state of the player's entity after its step of this tick and the rest of the frame (stage
+ * 3.5): its client compares its prediction of the tick with it */
+static void Rep_SendOwn(Net2Host *host, RepPlayer *pl, cEntity *e) {
+	NetRepOwn o;
+	uint8_t buf[NETREP_OWN_MAX];
+
+	NetPl_OwnOf(e, (uint32_t)rep.tick, pl->moved, &o);
+	int n = NetRep_WriteOwn(buf, sizeof(buf), &o);
+	if (n > 0) {
+		Net2_Send(host, pl->conn, REP_CH_UNRELIABLE, buf, n);
+	}
+}
+
+void Rep_OwnMoved(cEntity *e) {
+	for (int i = 0; i < PLAYERS_MAX; i++) {
+		if (rep.pl[i].used && rep.pl[i].own == e) {
+			rep.pl[i].moved++;
+		}
+	}
+}
+
 /* the players' entities in their slots after a snapshot: a slot that changed goes to the client */
 static void Rep_TellSlots(Net2Host *host) {
 	uint8_t buf[16 + 4 * NETREP_PHYS_MAX];
@@ -1691,6 +1717,9 @@ static void Rep_TellSlots(Net2Host *host) {
 			NetRepSrv_SetView(rep.conn[pl->conn].c, e->pos.x, e->pos.y, e->pos.z, 0.0f);
 		}
 		Rep_SendStatus(host, i, e);
+		if (g_Mp2 && e && slot == pl->told && pl->stepTick == rep.tick) {
+			Rep_SendOwn(host, pl, e);
+		}
 		if (slot == pl->told) {
 			continue;
 		}

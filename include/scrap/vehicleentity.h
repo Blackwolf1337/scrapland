@@ -192,6 +192,9 @@ extern cGVar GVar_TopLimit;
 void *cVehicleMotors_ctor(void *motors);
 void cVehicleMotors_dtor(void *motors);
 void cVehicleControls_Tick(cVehicleControls *c, cEntity *v, float dt);
+/* ScrapC: the fire and boost buttons of slot's Racer action set as the input has them now, before the frame's
+ * controls read them (a -mp2 client's step at the start of the frame, include/scrap/play.h) */
+void cVehicleControls_Held(int slot, byte *fire, byte *boost);
 
 /*
  * The target selection of a player ship (o648 at 0x648 and the "Target" after it; src/game/Entities/Vehicle/

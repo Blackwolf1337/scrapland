@@ -24,11 +24,13 @@
 #include "scrap/faction.h"
 #include "scrap/global.h"
 #include "scrap/input.h"
+#include "scrap/netaudit.h"
 #include "scrap/netscene.h"
 #include "scrap/platform.h"
 #include "scrap/play.h"
 #include "scrap/players.h"
 #include "scrap/replicate.h"
+#include "scrap/repent.h"
 #include "scrap/scorer.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/scriptmodes.h"
@@ -119,12 +121,30 @@ static struct {
 	byte bot;							/* 1, PLAY_BOT_NPC, PLAY_BOT_TARGET, PLAY_BOT_WALK, PLAY_BOT_IDLE, PLAY_BOT_USE */
 	byte botCycle;
 	byte botCm;							/* SCRAP_PLAYBOT_CM=1: also the countermeasure of the weapon now and then */
+	byte botBoost;						/* SCRAP_PLAYBOT_BOOST=1: in a ship also the boost for 0.4 s every 12 s, from 3 s on */
 	byte ahead;							/* SCRAP_PLAYAHEAD: PLAY_AHEAD_ */
 	double botNear;						/* s the bot aimed at its target from close by (the weapon turns) */
 	double botStart;					/* local time the own entity of now came */
 	uint32_t hintFor;					/* the own entity (made) whose hint showed */
 	byte hints[2];						/* hints shown on foot, in a ship */
+	/* -mp2 (stage 3.5): the rollback state of each tick as the server sends it, its moves outside the step */
+	NetRepOwn own[NETREP_PRED];
+	uint8_t moved;
+	byte haveMoved;						/* 0 for a new own entity: its first state hands it over (smoothed, no correction) */
+	uint32_t jumps;						/* the server's moves taken as jumps */
+	uint32_t handovers;
+	uint32_t corrBy[NETPL_D_BITS];		/* corrections by NETPL_D_ bit */
 } play = { .slot = -1, .player = -1 };
+
+byte Play_Mute(const char *what, const char *site) {
+	char key[96];
+	if (!g_PlayReplaying || !g_Mp2) {
+		return 0;
+	}
+	Str_PrintfQuiet(key, sizeof(key), "%s:%s", what, site ? site : "?");
+	NetAudit_Name(NA_PREDICT, "pred.muted:", key);
+	return 1;
+}
 
 byte Play_HeadlessDue(void) {
 	static uint64_t next;
@@ -378,11 +398,50 @@ void Play_OwnCreate(int kind, const char *look, uint32_t tick, const NetRepState
 	play.half = 0;
 	play.catchup = 1;
 	play.botStart = 0.0;
+	play.haveMoved = 0;
 	Con_Printf("play: own %s %s at %.0f %.0f %.0f (tick %u)\n", kind == NETREP_SHIP ? "ship" : "character", name,
 		(double)e->pos.x, (double)e->pos.y, (double)e->pos.z, tick);
 	if (play.started) {
 		Play_Camera();
 	}
+}
+
+/* -mp2 (stage 3.5): the events of the own entity's layers on the client. Its presentation plays at the prediction
+ * and never in a replay; the events that change only its layers run in both; the rest (script calls, the logic of
+ * the classes, the voices) is the server's, its results come replicated. Other entities fire all. */
+static byte Play_LayerEvent(const cActEvent *ev) {
+	static const char *const names[] = { "AnmSetAction", "AnmSetDefaultLoop", "AnmStopChan", "AnmChangeRandomAnm",
+		"AnmSetDisplAng" };
+	if (!(ev->func.flags & PYF_NATIVE)) {
+		return 0;
+	}
+	const char *name = cPy_NativeFunc_Name((nativefunc_t)ev->func.func);
+	for (size_t i = 0; name && i < sizeof(names) / sizeof(names[0]); i++) {
+		if (!strcmp(name, names[i])) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+static byte Play_OwnEvent(cEntity *owner, const cActEvent *ev) {
+	if (!owner || owner != play.e) {
+		return 1;
+	}
+	if (Event_IsPresent(ev)) {
+		if (g_PlayReplaying) {
+			NetAudit_Name(NA_PREDICT, "pred.muted:event:", ev->name);
+			return 0;
+		}
+		return 1;
+	}
+	if (Play_LayerEvent(ev)) {
+		return 1;
+	}
+	if (!g_PlayReplaying) {
+		NetAudit_Name(NA_PREDICT, "pred.server:", ev->name);
+	}
+	return 0;
 }
 
 void Play_Start(void) {
@@ -391,6 +450,9 @@ void Play_Start(void) {
 		NetRepFollow_Init(&play.clock, PLAY_CLOCK_JUMP);
 	}
 	play.started = 1;
+	if (g_Mp2) {
+		g_ActOwnFilter = Play_OwnEvent;
+	}
 	if (path && *path && !play.log) {
 		play.log = fopen(path, "w");
 		if (play.log) {
@@ -408,6 +470,8 @@ void Play_Start(void) {
 	play.botCycle = cycle && *cycle && *cycle != '0';
 	const char *cm = getenv("SCRAP_PLAYBOT_CM");
 	play.botCm = cm && *cm == '1';
+	const char *boost = getenv("SCRAP_PLAYBOT_BOOST");
+	play.botBoost = boost && *boost == '1';
 	/* the missile weapons fire as the client of the game's network mode: the launch effects, no missile */
 	if (g_SwarmIDWeap >= 0 && g_SwarmIDWeap < g_pWorld->weapons.count) {
 		cPy_Function_SetFunc(&TABLE_AT(g_pWorld->weapons, g_SwarmIDWeap)->onFire, "!SwarmClientFire");
@@ -438,6 +502,9 @@ static void Play_Record(uint32_t tick) {
 	p.ang[2] = a->z;
 	NetRepPredHist_Put(&play.hist, &p, &play.input);
 	NetPl_Save(e, &play.motion[tick % NETREP_PRED]);
+	if (g_Mp2) {
+		NetPl_OwnOf(e, tick, 0, &play.own[tick % NETREP_PRED]);
+	}
 }
 
 /* the entity drawn from where it was to the true position plus the offset over the next tick */
@@ -479,6 +546,7 @@ static void Play_StepPart(uint32_t tick, int part) {
 	}
 	if (part && play.live) {
 		NetPl_InputSlot(&play.acc, &play.input);
+		play.input.buttons &= (uint16_t)~NetRep_InLate(play.held);
 	}
 	NetPl_StepPart(e, &play.input, 1, 0, part);
 	Watch_ProxiesBack();
@@ -656,7 +724,8 @@ static void Play_Bot(double now) {
 		return;
 	}
 	float dy = best->pos.y - e->pos.y;
-	float dyaw = NetPl_Aim(e, &best->pos, play.acc.rot, 0);
+	/* the pitch against the ship's own (an absolute one turned it on over the top) */
+	float dyaw = NetPl_Aim(e, &best->pos, play.acc.rot, 1);
 	play.acc.move[0] = bestD > 8000.0f * 8000.0f ? 0.8f : 0.1f;
 	/* trying the weapons: stops about 4000 units away and fires in bursts of 1.5 s (the missiles fly at a release) */
 	if (play.botCycle) {
@@ -686,6 +755,13 @@ void Play_PreFrame(double now, double rtt, double rttVar, float loss) {
 	if (!play.e || !Watch_ClockReady()) {
 		return;
 	}
+	/* -mp2: the ship's fire and boost as the input has them now, not only from the controls of the last frame (they
+	 * are read after this step in the frame: a press would wait a frame more than in single player) */
+	if (g_Mp2 && !play.bot && play.kind == NETREP_SHIP) {
+		byte fire, boost;
+		cVehicleControls_Held(cVehicleEntity_GetOwnerSlot(play.e), &fire, &boost);
+		play.acc.buttons |= (uint16_t)((fire ? NETREP_IN_ACT : 0) | (boost ? NETREP_IN_BOOST : 0));
+	}
 	double want = Watch_InputTime(now, rtt, PLAY_LEAD + rttVar + (loss > 0.01f ? PLAY_LOSS_LEAD : 0.0));
 	double tt = NetRepFollow_Step(&play.clock, want, play.clock.have ? now - play.clockNow : 0.0);
 	play.clockNow = now;
@@ -704,6 +780,10 @@ void Play_PreFrame(double now, double rtt, double rttVar, float loss) {
 		}
 		if (play.bot) {
 			Play_Bot(now);
+			if (play.botBoost && play.kind == NETREP_SHIP && fmod(now - play.botStart, 12.0) >= 3.0 &&
+				fmod(now - play.botStart, 12.0) < 3.4) {
+				play.acc.buttons |= NETREP_IN_BOOST;
+			}
 		}
 		Play_Step(play.tick + 1, play.catchup && play.tick + 1 < target);
 		play.tickLocal = now;
@@ -796,7 +876,70 @@ static void Play_KeepWeapons(cEntity *e, PlayWeapKeep *k, byte restore) {
 	c->firePrev = c->cmPrev = 0;
 }
 
-/* a server state of the own entity: the error of the prediction of its tick, and the correction */
+/* back to the state of tick with the server's (st: the snapshot's record of the first replication, own: the
+ * rollback state of -mp2), then the inputs after it run again: actions and slots, the presentation off
+ * (g_PlayReplaying), no weapon fires. A jump (the server moved the entity itself) is not smoothed. The size of the
+ * correction of the present position */
+static float Play_Rollback(uint32_t tick, const NetRepState *st, const NetRepOwn *own, byte jump, uint32_t *replayed) {
+	cEntity *e = play.e;
+	vec3_t before = play.truePos;
+	NetRepInput part = play.input;
+	PlayWeapKeep keep = { 0 };
+
+	*replayed = 0;
+	Play_KeepWeapons(e, &keep, 0);
+	g_PlayReplaying = 1;
+	NetPl_Restore(e, &play.motion[tick % NETREP_PRED]);
+	if (own) {
+		NetPl_OwnApply(e, own);
+		play.own[tick % NETREP_PRED] = *own;
+	} else {
+		Play_SetState(e, st);
+	}
+	NetPl_Save(e, &play.motion[tick % NETREP_PRED]);
+	for (uint32_t t = tick + 1; t <= play.tick; t++) {
+		const NetRepInput *in = NetRepPredHist_Input(&play.hist, t);
+		if (!in) {
+			break;
+		}
+		NetRepInput x = *in;
+		if (play.ahead != PLAY_AHEAD_NONE) {
+			Watch_ProxiesAt((double)t / NETREP_TICK_HZ, play.ahead == PLAY_AHEAD_PLAYERS);
+		}
+		NetPl_Step(e, &x, 1, 1);
+		Watch_ProxiesBack();
+		play.input = x;
+		Play_Record(t);
+		(*replayed)++;
+	}
+	/* and the first slot of the tick under way */
+	if (play.half) {
+		if (play.ahead != PLAY_AHEAD_NONE) {
+			Watch_ProxiesAt(((double)play.tick + 0.5) / NETREP_TICK_HZ, play.ahead == PLAY_AHEAD_PLAYERS);
+		}
+		NetPl_StepPart(e, &part, 1, 1, 0);
+		Watch_ProxiesBack();
+		play.input = part;
+	} else {
+		play.input.tick = play.tick;
+	}
+	g_PlayReplaying = 0;
+	Play_KeepWeapons(e, &keep, 1);
+	play.truePos = e->pos;
+	if (jump) {
+		memset(play.smooth.off, 0, sizeof(play.smooth.off));
+		play.drawn = play.prevDrawn = play.truePos;
+	} else {
+		NetRepSmooth_Correct(&play.smooth, &before.x, &play.truePos.x);
+	}
+	float dx = before.x - play.truePos.x, dy = before.y - play.truePos.y, dz = before.z - play.truePos.z;
+	e->pos = (vec3_t){ play.truePos.x + play.smooth.off[0], play.truePos.y + play.smooth.off[1],
+		play.truePos.z + play.smooth.off[2] };
+	return sqrtf(dx * dx + dy * dy + dz * dz);
+}
+
+/* a server state of the own entity: the error of the prediction of its tick, and the correction (-mp2: only the
+ * error, the rollback state corrects, Play_OwnState) */
 void Play_OwnUpdate(uint32_t tick, const NetRepState *st) {
 	cEntity *e = play.e;
 	float sp[3];
@@ -817,62 +960,87 @@ void Play_OwnUpdate(uint32_t tick, const NetRepState *st) {
 		return;
 	}
 	play.st.err[play.st.n++ % PLAY_ERRS] = err;
+	if (g_Mp2) {
+		return;
+	}
 	float corr = 0.0f;
 	uint32_t replayed = 0;
 	if (err > PLAY_CORRECT_MIN) {
-		vec3_t before = play.truePos;
-		NetRepInput part = play.input;
-		/* the state of that tick with the server's position, velocity and angles, then the inputs after it */
-		PlayWeapKeep keep = { 0 };
-		Play_KeepWeapons(e, &keep, 0);
-		g_PlayReplaying = 1;
-		NetPl_Restore(e, &play.motion[tick % NETREP_PRED]);
-		Play_SetState(e, st);
-		NetPl_Save(e, &play.motion[tick % NETREP_PRED]);
-		for (uint32_t t = tick + 1; t <= play.tick; t++) {
-			const NetRepInput *in = NetRepPredHist_Input(&play.hist, t);
-			if (!in) {
-				break;
-			}
-			NetRepInput x = *in;
-			if (play.ahead != PLAY_AHEAD_NONE) {
-				Watch_ProxiesAt((double)t / NETREP_TICK_HZ, play.ahead == PLAY_AHEAD_PLAYERS);
-			}
-			NetPl_Step(e, &x, 1, 1);
-			Watch_ProxiesBack();
-			play.input = x;
-			Play_Record(t);
-			replayed++;
-		}
-		/* and the first slot of the tick under way */
-		if (play.half) {
-			if (play.ahead != PLAY_AHEAD_NONE) {
-				Watch_ProxiesAt(((double)play.tick + 0.5) / NETREP_TICK_HZ, play.ahead == PLAY_AHEAD_PLAYERS);
-			}
-			NetPl_StepPart(e, &part, 1, 1, 0);
-			Watch_ProxiesBack();
-			play.input = part;
-		} else {
-			play.input.tick = play.tick;
-		}
-		g_PlayReplaying = 0;
-		Play_KeepWeapons(e, &keep, 1);
-		play.truePos = e->pos;
-		NetRepSmooth_Correct(&play.smooth, &before.x, &play.truePos.x);
-		float dx = before.x - play.truePos.x, dy = before.y - play.truePos.y, dz = before.z - play.truePos.z;
-		corr = sqrtf(dx * dx + dy * dy + dz * dz);
+		corr = Play_Rollback(tick, st, NULL, 0, &replayed);
 		play.st.corr[play.st.nc++ % PLAY_ERRS] = corr;
 		play.st.corrections++;
 		play.corrTotal++;
 		play.st.replayed += replayed;
-		e->pos = (vec3_t){ play.truePos.x + play.smooth.off[0], play.truePos.y + play.smooth.off[1],
-			play.truePos.z + play.smooth.off[2] };
 	}
 	if (play.log) {
 		const NetRepPred *p = NetRepPredHist_Get(&play.hist, tick);
 		fprintf(play.log, "%u,%d,%.2f,%.2f,%u,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f\n", tick, play.kind, (double)err,
 			(double)corr, replayed, (double)sp[0], (double)sp[1], (double)sp[2], p ? (double)p->pos[0] : 0.0,
 			p ? (double)p->pos[1] : 0.0, p ? (double)p->pos[2] : 0.0);
+	}
+}
+
+void Play_OwnState(const uint8_t *data, int size) {
+	static const char *const why[NETPL_D_BITS] = { "pos", "vel", "ang", "act", "state", "move", "life" };
+	NetRepOwn o;
+	cEntity *e = play.e;
+
+	if (!g_Mp2 || !e || !NetRep_ReadOwn(data, size, &o) || o.kind != NetPl_Kind(e)) {
+		return;
+	}
+	const NetRepPred *p = NetRepPredHist_Get(&play.hist, o.tick);
+	if (!p || o.tick > play.tick || play.own[o.tick % NETREP_PRED].tick != o.tick) {
+		return;
+	}
+	/* the server moved the entity itself since the last state (a script, a test line): a jump, no correction; the
+	 * first state of a new own entity hands it over from the snapshot it was made of (the flows of the scripts: a
+	 * boarding, a possession, an arrival) */
+	byte jump = play.haveMoved && o.moved != play.moved;
+	byte handover = !play.haveMoved;
+	play.moved = o.moved;
+	play.haveMoved = 1;
+	NetRepOwn mine = play.own[o.tick % NETREP_PRED];
+	int d = jump ? 0 : NetPl_OwnDiff(&mine, &o);
+	if (!jump && !d) {
+		return;
+	}
+	uint32_t replayed;
+	float corr = Play_Rollback(o.tick, NULL, &o, jump, &replayed);
+	play.st.replayed += replayed;
+	if (jump) {
+		play.jumps++;
+		NetAudit_Name(NA_PREDICT, "pred.jump:", play.kind == NETREP_SHIP ? "ship" : "char");
+	} else if (handover) {
+		play.handovers++;
+		NetAudit_Name(NA_PREDICT, "pred.handover:", play.kind == NETREP_SHIP ? "ship" : "char");
+	} else {
+		/* the server's damage alone is taken as it is (a hit the client could not know), not a correction */
+		if (d & ~NETPL_D_LIFE) {
+			play.st.corr[play.st.nc++ % PLAY_ERRS] = corr;
+			play.st.corrections++;
+			play.corrTotal++;
+		}
+		for (int k = 0; k < NETPL_D_BITS; k++) {
+			if (d & (1 << k)) {
+				play.corrBy[k]++;
+				NetAudit_Name(NA_PREDICT, k == 6 ? "pred.took:" : "pred.corr:", why[k]);
+			}
+		}
+	}
+	if (play.log) {
+		fprintf(play.log, "%u,%d,%d,%.2f,%u,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f\n", o.tick, play.kind, jump ? -1 : d,
+			(double)corr, replayed, (double)o.f[0], (double)o.f[1], (double)o.f[2], (double)p->pos[0],
+			(double)p->pos[1], (double)p->pos[2]);
+		/* the values that differ: index server/client, the flags and layers */
+		fprintf(play.log, "#");
+		for (int k = 0; k < o.nf && k < mine.nf; k++) {
+			if (o.f[k] != mine.f[k]) {
+				fprintf(play.log, " %d:%g/%g", k, (double)o.f[k], (double)mine.f[k]);
+			}
+		}
+		fprintf(play.log, " flags %x/%x act %u.%u.%u.%u/%u.%u.%u.%u def %u/%u\n", o.flags, mine.flags, o.act[0], o.act[1],
+			o.act[2], o.act[3], mine.act[0], mine.act[1], mine.act[2], mine.act[3], o.defLoop, mine.defLoop);
+		fflush(play.log);
 	}
 }
 
@@ -914,6 +1082,11 @@ void Play_Status(void) {
 		"max %.1f, %u corrections p50 %.2f p95 %.2f p99 %.2f max %.1f, %u ticks run again\n", play.slot, play.kind,
 		play.tick, play.st.states, play.st.unknown, (double)e[0], (double)e[1], (double)e[2], (double)e[3],
 		play.st.corrections, (double)c[0], (double)c[1], (double)c[2], (double)c[3], play.st.replayed);
+	if (g_Mp2) {
+		Con_Printf("play: -mp2 corrections by pos %u vel %u ang %u act %u state %u move %u, life taken %u, %u jumps, "
+			"%u handovers\n", play.corrBy[0], play.corrBy[1], play.corrBy[2], play.corrBy[3], play.corrBy[4],
+			play.corrBy[5], play.corrBy[6], play.jumps, play.handovers);
+	}
 }
 
 void Play_Reset(void) {
