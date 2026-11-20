@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """scenecmp.py <ref dir> <dir> [<dir> ...] [--mad M] [--bad B] [--sheet out.png]: the scene screenshots
-<scene>-<k>.pcx of each dir against those of the reference dir (single player) at the same scene time. Per shot: the
+<scene>-<k>.pcx (or .png) of each dir against those of the reference dir (single player) at the same scene time. Per shot: the
 mean absolute difference of the RGB values at 320x180 (0..255) and the share of pixels differing by more than 48 in
 one channel. A shot passes when mad <= M and bad <= B; a shot of the reference missing in a dir fails. Exit 1 on a
 failure. --sheet writes the shots side by side (reference first)."""
@@ -25,7 +25,7 @@ def main():
     ap.add_argument('--bad', type=float, default=0.12)
     ap.add_argument('--sheet')
     a = ap.parse_args()
-    refs = sorted(glob.glob(os.path.join(a.ref, '*.pcx')))
+    refs = sorted(glob.glob(os.path.join(a.ref, '*.pcx')) + glob.glob(os.path.join(a.ref, '*.png')))
     fails = 0
     rows = []
     for r in refs:
@@ -35,6 +35,8 @@ def main():
         cells = []
         for d in a.dirs:
             p = os.path.join(d, name)
+            if not os.path.exists(p):
+                p = os.path.splitext(p)[0] + ('.png' if p.endswith('.pcx') else '.pcx')
             if not os.path.exists(p):
                 cells.append('missing')
                 fails += 1
@@ -47,7 +49,7 @@ def main():
             fails += not ok
             cells.append('%s mad %.1f bad %.3f' % ('ok' if ok else 'FAIL', mad, bad))
         rows.append(row)
-        print('%-28s %s' % (name[:-4], '  |  '.join(cells)))
+        print('%-28s %s' % (os.path.splitext(name)[0], '  |  '.join(cells)))
     if not refs:
         print('no reference shots in %s' % a.ref)
         fails += 1
