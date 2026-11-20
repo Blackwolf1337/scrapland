@@ -22,10 +22,13 @@
 #include "scrap/play.h"
 #include "scrap/players.h"
 #include "scrap/pres.h"
+#include "scrap/replicate.h"
+#include "scrap/repent.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/scrapmodel.h"
 #include "scrap/scriptmodes.h"
+#include "scrap/uichan.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
 #include "scrap/world.h"
@@ -246,8 +249,12 @@ void Players_Join(int i, int money) {
 	s->camName[0] = 0;
 	s->actionSet = -1;
 	s->timeSpeed = 0.0f;
+	s->machine = NULL;
+	s->machineName[0] = 0;
 	s->used = 1;
 	ModVar_OverClearPlayer(i);
+	SaveVar_OverClear(i);
+	Ui_PlayerGone(i);
 }
 
 void Players_Part(int i) {
@@ -259,7 +266,10 @@ void Players_Part(int i) {
 		Players_Enter(PLAYERS_NONE);
 	}
 	g_Pl[i].used = 0;
+	g_Pl[i].machine = NULL;
 	ModVar_OverClearPlayer(i);
+	SaveVar_OverClear(i);
+	Ui_PlayerGone(i);
 }
 
 /* ---- the trace of the tests (SCRAP_PLAYER_TRACE=1 on an instance): each change of a player's money and alarm with
@@ -360,7 +370,30 @@ int Players_EnterEntityAt(cEntity *e, const char *site) {
 	if (i < 0) {
 		i = Players_OfCam(e);
 	}
+	if (i < 0) {
+		i = Players_OfMachine(e);
+	}
 	return Players_Switch(i, site);
+}
+
+void Players_SetMachine(int i, cEntity *e) {
+	if (!Players_Used(i)) {
+		return;
+	}
+	g_Pl[i].machine = e;
+	Str_Copy(g_Pl[i].machineName, e && e->name ? e->name : "", sizeof(g_Pl[i].machineName));
+}
+
+int Players_OfMachine(const cEntity *e) {
+	if (!Players_Net() || !e || !e->name) {
+		return -1;
+	}
+	for (int i = 0; i < PLAYERS_MAX; i++) {
+		if (g_Pl[i].used && g_Pl[i].machine == e && !strcmp(g_Pl[i].machineName, e->name)) {
+			return i;
+		}
+	}
+	return -1;
 }
 
 int Players_EnterOwnerAt(cEntity *e, const char *site) {
@@ -651,6 +684,10 @@ void Players_UpdateAlarms(float dt) {
 }
 
 void Players_SetTimeSpeed(float speed) {
+	/* a -mp2 client: the world's clock is the instance's, a menu of its own does not stop it (include/scrap/uichan.h) */
+	if (g_Mp2 && g_Watch) {
+		return;
+	}
 	if (!Players_Net()) {
 		Timer_SetSpeed(&g_pWorld->timer, speed);
 		return;

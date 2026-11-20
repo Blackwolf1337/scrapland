@@ -793,6 +793,51 @@ static byte Ht_OwnTotalCost(const nativeVal_t *cad, nativeVal_t *out) {
 	return PORT_OWN(HangarTab, ComputeShipTotalCost, out, "v", cad);
 }
 
+byte HangarTab_TextCost(const char *text, int *cost) {
+	static int serial;
+	nativeVal_t cad, posd, pos, name, ship, prev, price, k;
+	char nm[32];
+	*cost = 0;
+	if (!Mode_Import(SE) || !Mode_Import(HT)) {
+		return 0;
+	}
+	Native_SetNone(&posd);
+	Native_SetNone(&pos);
+	Native_SetNone(&ship);
+	Native_SetNone(&prev);
+	Native_SetNone(&price);
+	Str_PrintfQuiet(nm, sizeof(nm), "UiPriceShip%d", ++serial);
+	Native_SetStr(&cad, text);
+	Native_SetStr(&name, nm);
+	/* the ship made where the editor makes the hangar's ships (hidden), priced as prevShip, removed */
+	byte ok = LvN_ModGet(SE, "editShipPosDummy", &posd) && posd.type != NV_NONE && LvN_Item(&posd, 1, &pos) &&
+		PORT_CALL(ShipEdit, CreateShipFromSaveVar, &ship, "vvv", &cad, &pos, &name);
+	if (ok && ship.type != NV_NONE) {
+		Native_SetStr(&k, "prevShip");
+		ok = LvN_ModGet(HT, "prevShip", &prev) && Mode_SetModVar(HT, "prevShip", &ship);
+		ok = ok && Ht_OwnTotalCost(&k, &price) && (price.type == NV_INT || price.type == NV_LONG);
+		if (ok) {
+			*cost = (int)price.i;
+		}
+		if (!Mode_SetModVar(HT, "prevShip", &prev)) {
+			ok = 0;
+		}
+		Mode_VDel(&ship);
+		Native_Free(&k);
+	} else if (ok && text[0] && strncmp(text, "<-", 2)) {
+		/* a model the editor does not make */
+		ok = 0;
+	}
+	Native_Free(&cad);
+	Native_Free(&name);
+	Native_Free(&posd);
+	Native_Free(&pos);
+	Native_Free(&ship);
+	Native_Free(&prev);
+	Native_Free(&price);
+	return ok;
+}
+
 /* "ShipEdit.editedShips[" + `n` + "]" */
 static byte Ht_ShipText(const nativeVal_t *n, nativeVal_t *out) {
 	nativeVal_t r = { 0 };

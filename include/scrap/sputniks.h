@@ -60,5 +60,8 @@ byte Sputniks_Message(struct Net2Host *host, int conn, const uint8_t *data, int 
 byte Sputniks_ClientMessage(const uint8_t *data, int size);
 /* the hangar screen closed (SputnikInterface.ExitSputnikInterface): the hangar and the money to the instance */
 void Sputniks_ClientDone(void);
+/* the place of the hangar's ships of a client's screen (ShipEdit.editShipPosDummy): the own entity's, when the
+ * client's level start set none (also the hangar screen of include/scrap/uichan.h) */
+void Sputniks_ClientDummy(void);
 
 #endif

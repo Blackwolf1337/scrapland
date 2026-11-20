@@ -26,6 +26,7 @@
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/timer.h"
+#include "scrap/uichan.h"
 
 #include "game/Script/levels/Levels.h"
 
@@ -508,8 +509,9 @@ static byte Base_TextBox(int id, const nativeVal_t *desc, const char *accept, co
  * 2 when the player does not play yet (the entry schedules the call again)
  */
 static int Base_ShowWarning(int id, const nativeVal_t *desc) {
-	/* not in the original: on a coop instance the box opens on the client of the member the scripts act for */
-	if (desc->type == NV_STR && Coop_Warning(Native_Text(desc))) {
+	/* not in the original: on a -mp2 instance the box opens on the client of the player in whose context it runs
+	 * (include/scrap/uichan.h), on a coop instance on the client of the member the scripts act for */
+	if (desc->type == NV_STR && (Ui_TextBox(Native_Text(desc)) || Coop_Warning(Native_Text(desc)))) {
 		return 1;
 	}
 	cActionSet *set = TABLE_AT(g_ActionSets, Input_GetActionSet());
@@ -676,8 +678,10 @@ static byte Menu_YesNoMenu_E(const nativeVal_t *a, int n, nativeVal_t *out) {
 	if (!Mode_Parse(a, n, "iOss", &id, &title, &yes, &no)) {
 		return 0;
 	}
-	/* not in the original: a question of the coop story's scripts goes to the member (include/scrap/coop.h) */
-	if (Coop_MenuYesNo(title->type == NV_STR ? Native_Text(title) : "", yes, no)) {
+	/* not in the original: on a -mp2 instance the question goes to the client of the player in whose context it runs
+	 * (include/scrap/uichan.h), a question of the coop story's scripts to the member (include/scrap/coop.h) */
+	const char *ask = title->type == NV_STR ? Native_Text(title) : "";
+	if (Ui_YesNo(ask, yes, no) || Coop_MenuYesNo(ask, yes, no)) {
 		return 1;
 	}
 	Base_NewMenu(id);
