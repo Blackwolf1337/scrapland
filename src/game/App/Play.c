@@ -35,6 +35,7 @@
 #include "scrap/scriptmodes.h"
 #include "scrap/scriptnative.h"
 #include "scrap/texts.h"
+#include "scrap/uichan.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
 #include "scrap/weapons.h"
@@ -320,7 +321,10 @@ void Play_OwnStatus(const NetRepStatus *st) {
 	}
 	play.status = *st;
 	play.haveStatus = 1;
-	*Players_CurMoney() = st->money;
+	/* the money an interface of the instance spends here stays until its transaction (include/scrap/uichan.h) */
+	if (!Ui_ClientMoney()) {
+		*Players_CurMoney() = st->money;
+	}
 	/* the level held where the server has it: the client's alarm does not grow or fall by itself */
 	Players_CurAlarm()->value = st->alarm / 255.0f;
 	Players_CurAlarm()->on = (st->flags & NETREP_ST_ALARM) != 0;

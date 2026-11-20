@@ -23,6 +23,7 @@
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
+#include "scrap/uichan.h"
 #include "game/Script/levels/Levels.h"
 
 /* ---- Alarm ---- */
@@ -291,6 +292,8 @@ static byte Np_UseNewsPanel(const nativeVal_t *charName, const nativeVal_t *opt)
 	if (!Native_True(r)) {
 		return Mode_Done(&t, 1);
 	}
+	/* not in the original: the head of the monitor on the HUD of a -mp2 instance's player (include/scrap/uichan.h) */
+	Ui_NewsHead(1);
 	return Mode_Done(&t, LvN_PutI("NewsPanel", "ShowingNews", 1) && Mode_GVarSetI("NewsPanelShowHead", 1) &&
 		Mode_EntitySeam(charName, ch) && Mode_VObj(ch, "ArriOpt", cur) && Mode_Arith('+', cur, Mode_I(&t, 1), next) &&
 		Mode_VObj(ch, "ArrnOpt", num) && Mode_Arith('%', next, num, iopt) && Np_Panels("ArriOpt", iopt));
@@ -298,6 +301,7 @@ static byte Np_UseNewsPanel(const nativeVal_t *charName, const nativeVal_t *opt)
 
 /* EndOfNews(): the end of the news on the monitor */
 static byte Np_EndOfNews(void) {
+	Ui_NewsHead(0);
 	return LvN_PutI("NewsPanel", "ShowingNews", 0) && Mode_GVarSetI("NewsPanelShowHead", 0);
 }
 

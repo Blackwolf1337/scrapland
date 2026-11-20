@@ -31,6 +31,7 @@
 #include "game/Script/levels/Levels.h"
 #include "ShipEdit.h"
 #include "scrap/travel.h"
+#include "scrap/uichan.h"
 
 static const char shipedit_def[] = {
 #embed "../../../data/menus/shipedit.def"
@@ -401,6 +402,12 @@ static byte Se_AtI(const char *var, long i, nativeVal_t *out) {
 /* IsEditingMultiplayer(): the editor of a network game (or of the ShipEdit level): Init.isShipEdit, else
  * Scrap.GetNetFlags() != (0, 0, 0) */
 static byte Se_IsEditingMultiplayer(nativeVal_t *out) {
+	/* not in the original: the editor of a -mp2 instance on its player's client prices as single player's (the
+	 * instance checks the prices: include/scrap/uichan.h) */
+	if (Ui_ClientIn(UI_K_SHIPEDIT)) {
+		Native_SetInt(out, 0);
+		return 1;
+	}
 	if (!Mode_Import("Init") || !LvN_ModGet("Init", "isShipEdit", out)) {
 		return 0;
 	}
@@ -437,7 +444,9 @@ static byte Se_RustyOnPlatform(const nativeVal_t *rusty, nativeVal_t *out) {
 
 /* rusty and RustyOnPlatform(rusty): 1, 0, -1 */
 static int Se_RustyOn(const nativeVal_t *rusty) {
-	if (!Native_True(rusty)) {
+	/* not in the original: the editor of a -mp2 instance on its player's client leaves Rusty to the instance (he is
+	 * its character, include/scrap/uichan.h) */
+	if (!Native_True(rusty) || Ui_ClientIn(UI_K_SHIPEDIT)) {
 		return 0;
 	}
 	nativeVal_t v = { 0 };
@@ -1699,8 +1708,9 @@ static byte Se_NextPrev(int id, byte on) {
 /* EnterEditShipMenu(id, control): the editor opens (from the main menu it loads the ShipEdit level first) */
 static byte Se_EnterEditShipMenu(int id) {
 	static const char *const mods[] = { "Menu", HT, "EnginesTab", "WeaponsTab", "HullTab" };
-	/* not in the original: the coop story's editor opens on the member's client (include/scrap/coop.h) */
-	if (Coop_ShipEditOpen()) {
+	/* not in the original: on a -mp2 instance the editor opens on the player's client (include/scrap/uichan.h), the
+	 * coop story's editor on the member's client (include/scrap/coop.h) */
+	if (Ui_ShipEdit() || Coop_ShipEditOpen()) {
 		return 1;
 	}
 	static const char *const tabNames[] = { "Hangar", "Engines", "Weapons", "Hull" };
@@ -1799,6 +1809,29 @@ static byte Se_EnterEditShipMenu(int id) {
 	return Mode_Done(&t, c == 0 || (c > 0 && Se_StartRotate()));
 }
 
+/* the way point of the editor's end */
+static byte Se_WayPoint(void) {
+	return PORT_CALL(SaveGame, MarkWayPoint, NULL, "ss", "Levels/Junkyard", "DM_Player_Spawn_");
+}
+
+byte ShipEdit_ClientEnded(void) {
+	nativeVal_t cb, ca[2];
+	if (!Mode_Import("SaveGame") || !Se_WayPoint() || !Junkyard_PlatformShip()) {
+		return 0;
+	}
+	int c = LvN_GTrue(SE, "EndShipEditCallBack");
+	if (c <= 0) {
+		return c == 0;
+	}
+	Native_SetNone(&cb);
+	Native_SetInt(&ca[0], 0);
+	Native_SetStr(&ca[1], "");
+	byte ok = Se_G("EndShipEditCallBack", &cb) && Mode_CallArgs(&cb, NULL, ca, 2);
+	Native_Free(&cb);
+	Native_Free(&ca[1]);
+	return ok;
+}
+
 /* ExitEditShipMenu(id, control): the editor closes: Rusty and the maintenance robot step back, the ships are saved,
  * the camera comes back, the callback (or the multiplayer menu) follows */
 static byte Se_ExitEditShipMenu(int id, const nativeVal_t *control) {
@@ -1842,8 +1875,7 @@ static byte Se_ExitEditShipMenu(int id, const nativeVal_t *control) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	byte ok = PORT_CALL(SaveGame, MarkWayPoint, NULL, "ss", "Levels/Junkyard", "DM_Player_Spawn_") &&
-		Se_G("destroyedShips", lost);
+	byte ok = Se_WayPoint() && Se_G("destroyedShips", lost);
 	if (ok) {
 		Mode_Repr(lost, rep);
 		ok = Mode_SetSaveVar("Hangar.DestroyedShips", rep) && Mode_SetModVar(HT, "holograms", Mode_IntVal(k, 0)) &&
@@ -1863,7 +1895,11 @@ static byte Se_ExitEditShipMenu(int id, const nativeVal_t *control) {
 	if (!ok) {
 		return Mode_Done(&t, 0);
 	}
-	/* not in the original: the hangar of a coop client's editor to its instance (include/scrap/coop.h) */
+	/* not in the original: the hangar of a -mp2 client's editor to its instance, which runs the editor's end there
+	 * (include/scrap/uichan.h); the hangar of a coop client's editor to its instance (include/scrap/coop.h) */
+	if (Ui_ClientHangar(UI_K_SHIPEDIT)) {
+		return Mode_Done(&t, PORT_CALL(Menu, BackToGame, NULL, "iv", (long)id, control));
+	}
 	Coop_ClientShipEdited();
 	c = LvN_GTrue(SE, "EndShipEditCallBack");
 	if (c > 0) {

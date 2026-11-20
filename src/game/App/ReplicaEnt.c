@@ -23,6 +23,7 @@
 #include "scrap/pres.h"
 #include "scrap/replicate.h"
 #include "scrap/repent.h"
+#include "scrap/uichan.h"
 #include "scrap/scrap.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
@@ -290,6 +291,17 @@ static void ReplicaEnt_Apply(cEntity *e, const NetRepJVal *v) {
 				ReplicaEnt_LinkWait(ReplicaEnt_SlotOf(e) >= 0 ? ReplicaEnt_SlotOf(e) : Play_OwnSlot(), v->u.s);
 				break;
 			}
+			byte linked = Entity_IsType(e, TYEN_OBJECT) && Obj(e)->mod.link.target;
+			if (buf[0] == ',' && Entity_IsType(e, TYEN_OBJECT) && !linked) {
+				/* the unlink of a link the replica does not have (it waited for its entity) */
+				break;
+			}
+			if (buf[0] != ',' && linked) {
+				/* a new link of a linked replica: the scripts' unlink before it is not in the journal (the editor's
+				 * end links the platform's ship again, include/scrap/uichan.h) */
+				char *un = ",";
+				Entity_VarS(e, name, &un, 1);
+			}
 		} else {
 			Str_Copy(buf, v->u.s, sizeof(buf));
 		}
@@ -474,7 +486,9 @@ void ReplicaEnt_Frame(void) {
 	char lk[NETREP_LOOK_MAX + 1];
 
 	/* a level whose start runs the client's steps only (include/scrap/initsteps.h) makes nothing to delete */
-	if (!InitSteps_Client()) {
+	/* nor while an interface of the instance is shown: the ships of the hangar screen are its own
+	 * (include/scrap/uichan.h) */
+	if (!InitSteps_Client() && !Ui_ClientIn(0)) {
 		ReplicaEnt_Purge();
 	}
 	ReplicaEnt_Links();

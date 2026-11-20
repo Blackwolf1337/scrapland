@@ -27,6 +27,7 @@
 #include "scrap/scorer.h"
 #include "scrap/scrap.h"
 #include "scrap/sound.h"
+#include "scrap/uichan.h"
 #include "scrap/viewers.h"
 #include "scrap/weapons.h"
 #include "scrap/world.h"
@@ -1114,6 +1115,8 @@ static void Pres_Play(int op, NetRepReader *r) {
 		NetRep_GetStr(r, name, sizeof(name));
 		if (!r->bad && !Input_SelectActionSetNamed(name)) {
 			Pres_Missing(op, name);
+		} else if (!r->bad) {
+			Ui_ClientControls(name);
 		}
 		break;
 	case PRES_O_HUDADD:

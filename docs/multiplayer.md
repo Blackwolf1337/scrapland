@@ -143,7 +143,7 @@ In Sandbox and Free roam (not in the PvP modes and not in Coop story, where they
 | QF, FZ, OM, CA | the "Deals" gate in GamblinDen | traffic and police ships |
 | MCA, MCB, MDA, MDB, MOA, MOB, MSA, MSB | the "Deals2" gate in GamblinDen | traffic and police ships |
 
-A gate is a use point with one option per target ("To <station name>"). Each place has a gate back. The small arenas have no AI graph of their own, so the server makes one from the level geometry when the level starts. Orbit's own elevator and the teleporters of GamblinDen, AB and ABIndoor do not work outside the story, so gates stand at them. The ship editor keypad of the Junkyard does not work in a world, but its platform rides to Outskirts.
+A gate is a use point with one option per target ("To <station name>"). Each place has a gate back. The small arenas have no AI graph of their own, so the server makes one from the level geometry when the level starts. Orbit's own elevator and the teleporters of GamblinDen, AB and ABIndoor do not work outside the story, so gates stand at them. The ship editor keypad of the Junkyard does not work in a world, but its platform rides to Outskirts. In a world of the `-mp2` server the keypad works: the editor opens on the client of the player who used it, and the server checks the hangar and money it sends back.
 
 ## Dedicated server
 

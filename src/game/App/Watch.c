@@ -30,6 +30,7 @@
 #include "scrap/repent.h"
 #include "scrap/coord.h"
 #include "scrap/travel.h"
+#include "scrap/uichan.h"
 #include "scrap/scrap.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/scriptnative.h"
@@ -613,6 +614,10 @@ static void Watch_Place(int slot, WatchProxy *p, double rt, float dt) {
 	uint16_t act[NETREP_LAYERS];
 	const WatchSample *a, *b;
 
+	if (Ui_ClientKeeps(e)) {
+		/* the platform of the ship editor shown here plays the editor's animations (include/scrap/uichan.h) */
+		return;
+	}
 	Watch_Pick(p, rt, &a, &b, &f, &ext);
 	const NetRepState *sa = &a->st, *sb = &b->st;
 	float span = (float)(b->t - a->t);
@@ -964,6 +969,14 @@ static void Watch_Metro(const uint8_t *data, int size) {
 	if (r.bad || !Play_Entity()) {
 		return;
 	}
+	/* the station of the player's mission the map marks (Metro.CalculateMissionMap reads Mission.Map) */
+	if (r.pos < r.size) {
+		char mission[COORD_LEVEL + 1];
+		NetRep_GetStr(&r, mission, sizeof(mission));
+		if (!r.bad) {
+			SaveVar_Set("Mission.Map", mission);
+		}
+	}
 	Con_Printf("watch: metro map of %s (%d stations)\n", door, n);
 	if (want && *want) {
 		/* the first of the comma list that the map offers */
@@ -978,7 +991,8 @@ static void Watch_Metro(const uint8_t *data, int size) {
 		}
 		return;
 	}
-	if (!g_HeadlessPlay && !PORT_CALL(Metro, OnUse, NULL, "ssss", Play_Entity()->name, door, "Travel", "")) {
+	/* a -mp2 client shows it headless too (its tests pick a station of the map: include/scrap/uichan.h) */
+	if ((g_Mp2 || !g_HeadlessPlay) && !PORT_CALL(Metro, OnUse, NULL, "ssss", Play_Entity()->name, door, "Travel", "")) {
 		Native_ErrPrint();
 	}
 }
@@ -1148,6 +1162,8 @@ void Watch_PreFrame(void) {
 				Pres_Message(ev.data, ev.size);
 			} else if (ev.channel == REP_CH_RELIABLE && ev.data[0] == SPUTNIKS_MSG) {
 				Sputniks_ClientMessage(ev.data, ev.size);
+			} else if (ev.channel == REP_CH_RELIABLE && ev.data[0] == UI_MSG && g_Mp2) {
+				Ui_ClientMessage(ev.data, ev.size);
 			} else if (ev.channel == REP_CH_RELIABLE && ev.data[0] == REP_MSG_STATICS && watch.phase == WATCH_RUN) {
 				Watch_Records(ev.data, ev.size);
 			} else if (ev.channel == REP_CH_RELIABLE && ev.data[0] == REP_MSG_STATICSET && watch.phase == WATCH_RUN) {

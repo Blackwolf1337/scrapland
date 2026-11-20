@@ -46,8 +46,8 @@ Challenge.groups	WORLD	one value for the world (SIM module)
 Challenge.numChallengeEnemies	WORLD	one value for the world (SIM module)
 Challenge.playerWinsRevenge	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
 Challenge.raceRewards	WORLD	one value for the world (SIM module)
-CharAct.TakenPhoto	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
-CharAct.TakenPhotoMap	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
+CharAct.TakenPhoto	PARTY	the mission's hook of a photo: the party's in coop, a player's own photo elsewhere (stage 4.4)
+CharAct.TakenPhotoMap	PARTY	the mission's hook of a photo: the party's in coop, a player's own photo elsewhere (stage 4.4)
 CharAct.onNPCDeath	WORLD	one value for the world (SIM module)
 CharConversor.AvailableChars	WORLD	table or constant of the interface
 CharConversor.CheckConversor	WORLD	table or constant of the interface
@@ -55,14 +55,14 @@ CharConversor.ConversionChars	WORLD	table or constant of the interface
 CharConversor.ConversionPoints	WORLD	table or constant of the interface
 CharConversor.OnPossession	WORLD	table or constant of the interface
 CharConversor.PossessionTime	WORLD	table or constant of the interface
-CharConversor.PrevConv	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
-CharConversor._charName	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
+CharConversor.PrevConv	PLAYER	the conversor of one player: its use, the machine's events (they run in the machine's player's context) and the pick (stage 4.4)
+CharConversor._charName	PLAYER	the conversor of one player: its use, the machine's events (they run in the machine's player's context) and the pick (stage 4.4)
 CharConversor._fullOption	CLIENT	menu or interface state of the client
 CharConversor._optId	CLIENT	menu or interface state of the client
-CharConversor._usrName	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
-CharConversor.afterExitConversor	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
-CharConversor.newChar	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
-CharConversor.prevChar	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
+CharConversor._usrName	PLAYER	the conversor of one player: its use, the machine's events (they run in the machine's player's context) and the pick (stage 4.4)
+CharConversor.afterExitConversor	PLAYER	the conversor of one player: its use, the machine's events (they run in the machine's player's context) and the pick (stage 4.4)
+CharConversor.newChar	PLAYER	the conversor of one player: its use, the machine's events (they run in the machine's player's context) and the pick (stage 4.4)
+CharConversor.prevChar	PLAYER	the conversor of one player: its use, the machine's events (they run in the machine's player's context) and the pick (stage 4.4)
 CharScorer.BackMenuFunc	CLIENT	menu or interface state of the client
 Chars.CanDriveList	WORLD	one value for the world (DEF module)
 Chars.CharRes	WORLD	one value for the world (DEF module)
@@ -563,8 +563,8 @@ Messenger.FXMessengerTakeDataPackFile	WORLD	one value for the world (DEF module)
 Messenger.MDP	WORLD	one value for the world (DEF module)
 Messenger.MakeMDP	WORLD	one value for the world (DEF module)
 MessengerSound.isPC	WORLD	one value for the world (DEF module)
-Metro.MissionMap	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
-Metro.OutOfMetro	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
+Metro.MissionMap	PLAYER	the metro map of one player (its client computes it; stage 4.4)
+Metro.OutOfMetro	PLAYER	the metro map of one player (its client computes it; stage 4.4)
 Metro.WalkCharSpeed	CLIENT	menu or interface state of the client
 MisItems.COIN_RADIUS_INDOOR	WORLD	one value for the world (SIM module)
 MisItems.COIN_RADIUS_OUTDOOR	WORLD	one value for the world (SIM module)
@@ -1064,8 +1064,8 @@ NewsPanel.MissionUse	CLIENT	menu or interface state of the client
 NewsPanel.NewsOnMem	CLIENT	menu or interface state of the client
 NewsPanel.NewsPanelModel	CLIENT	menu or interface state of the client
 NewsPanel.Panels	CLIENT	menu or interface state of the client
-NewsPanel.ShowingNews	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
-NewsPanel.act	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
+NewsPanel.ShowingNews	PLAYER	the news one player reads (its use and its end run in its context; stage 4.4)
+NewsPanel.act	PLAYER	the news one player reads (its use and its end run in its context; stage 4.4)
 Nurse.HitFile	WORLD	one value for the world (DEF module)
 OutMap.StartPos	WORLD	one value for the world (SIM module)
 OutMap.iStartPos	WORLD	one value for the world (SIM module)
@@ -1134,7 +1134,7 @@ Parking.SwitchCharMissionCallback	WORLD	one value for the world (SIM module)
 Parking.SwitchCharMissionCallbackAux	WORLD	one value for the world (SIM module)
 Parking.SwitchVehicleMissionCallback	WORLD	one value for the world (SIM module)
 Parking.SwitchVehicleMissionCallbackAux	WORLD	one value for the world (SIM module)
-PhoneCab.audioComEntity	PLAYER_SHARED	state of one player (its conversation, ship, machine or race); one shared value until its flow runs in a player's context (stage 1.2)
+PhoneCab.audioComEntity	PLAYER	the communicator one player uses (its use runs in its context; stage 4.4)
 Police.FXPoliceGearConversionFile	WORLD	one value for the world (DEF module)
 Police.FXPoliceStealFile	WORLD	one value for the world (DEF module)
 Police.ResState	WORLD	one value for the world (DEF module)
