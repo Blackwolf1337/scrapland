@@ -105,11 +105,18 @@ uint32_t Plat_LastError(void);
 byte Plat_DebuggerPresent(void);
 void Plat_DebugBreak(void);
 
+/* SCRAP_TIMESCALE=<n> (test tools only, not in the original): every clock below runs n times as fast as the real one
+ * (1 to PLAT_TIMESCALE_MAX; 1 without the variable and in the deterministic test mode), and so do the waits of
+ * Plat_WaitEvent and the mixer (it runs by the clock, the sound device stays stopped). A network test with all its
+ * processes on the same n plays its game time in 1/n of the real time, as long as each process keeps up (an
+ * instance that cannot drops ticks: its status line counts them) */
+#define PLAT_TIMESCALE_MAX 16
+int Plat_TimeScale(void);
 /* ms since the start (timeGetTime), the performance counter and its frequency (QueryPerformanceCounter/Frequency) */
 uint32_t Plat_Ticks(void);
 /* the real ms also in the deterministic test mode, for the loops that draw until a time has passed */
 uint32_t Plat_RealTicks(void);
-/* the real time in ns since the start, never the clock of the deterministic test mode */
+/* the real time in ns since the start (times SCRAP_TIMESCALE), never the clock of the deterministic test mode */
 uint64_t Plat_RealNs(void);
 int Plat_Counter(int64_t *out);
 int Plat_Frequency(int64_t *out);
