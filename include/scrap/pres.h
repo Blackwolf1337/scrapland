@@ -181,6 +181,9 @@ void Pres_Talk(const char *file, const char *speaker, int arg);
 void Pres_VoicePlay(int voice);
 void Pres_VoiceStop(int voice);
 void Pres_Music(const char *name, const char *cmd, float volume);
+/* player i joined: the world's music (its volume and the last file played outside a player's context, the level's
+ * own music of its Map.Init) as records to that player */
+void Pres_Joined(int i);
 void Pres_ShipExplosion(const vec3_t *pos, const vec3_t *vel, float scale, float time, int flames, int collision);
 void Pres_FxEnt(int kind, const char *a, const char *b, float f, int i, const vec3_t *v);
 void Pres_MsgText(const char *text, float time, const char *font);

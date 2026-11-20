@@ -79,7 +79,6 @@ static byte ThMap_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 		long n;
 	} repos[] = { { NULL, "Sentinel", 3 }, { NULL, "Police", 3 }, { NULL, "Nurse", 3 }, { NULL, "Desktop", 3 }, { NULL, "Messenger", 2 },
 		{ "_BankDirector", "BankDirector", 3 }, { "_Bishop", "Bishop", 3 }, { "_Functionary", "Functionary", 5 } };
-	nativeVal_t zero = { 0 };
 	(void)a;
 	(void)out;
 	for (int i = 0; i < 4; i++) {
@@ -87,8 +86,7 @@ static byte ThMap_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 			return 0;
 		}
 	}
-	Native_SetInt(&zero, 0);
-	if (!Mode_SetModVar("Init", "Outdoor", &zero)) {
+	if (!Lv_Flags(0, NULL)) {
 		return 0;
 	}
 	for (int i = 0; i < 5; i++) {
@@ -176,6 +174,12 @@ static byte ThMap_OrbitLockMsg(const nativeVal_t *a, nativeVal_t *out) {
 	byte ok = Th_SpeechEnd(&cad, 6, &t) && Mode_MsgText(&cad, t);
 	Native_Free(&cad);
 	return ok;
+}
+
+/* the client part (Levels.h): an indoor map */
+byte Townhall_ClientStatus(const nativeVal_t *path) {
+	(void)path;
+	return Lv_Flags(0, NULL);
 }
 
 LV_FN(TownhallMap, InitStatus, 1, ThMap_InitStatus)

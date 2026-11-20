@@ -8,6 +8,7 @@
 
 #include "scrap/console.h"
 #include "scrap/coop.h"
+#include "scrap/crt.h"
 #include "scrap/fx.h"
 #include "scrap/fxmisc.h"
 #include "scrap/game.h"
@@ -84,6 +85,9 @@ static struct {
 	cScorer models[PLAYERS_MAX];
 	byte made[PLAYERS_MAX];
 	PresVoice voices[PLAYERS_MAX + 1][MUSIC_MAX_VOICES];	/* each player's, the last the world's */
+	char music[64];					/* the world's music (the last play outside a player's context), "" none */
+	float musicVolume;
+	byte haveMusicVolume;
 	uint32_t sent[PRES_O_COUNT], bytes, cut;
 	/* client */
 	PresRecent recent[PRES_RECENT];
@@ -167,8 +171,8 @@ static uint64_t Pres_Audience(presTo_t to, const vec3_t *pos) {
 	return m;
 }
 
-byte Pres_Begin(presTo_t to, const vec3_t *pos, int op) {
-	pres.to = Pres_Audience(to, pos);
+static byte Pres_BeginTo(uint64_t to, int op) {
+	pres.to = to;
 	if (!pres.to) {
 		return 0;
 	}
@@ -176,6 +180,10 @@ byte Pres_Begin(presTo_t to, const vec3_t *pos, int op) {
 	NetRepBuf_Init(&pres.w, pres.rec, sizeof(pres.rec));
 	NetRep_PutU8(&pres.w, (uint32_t)op);
 	return 1;
+}
+
+byte Pres_Begin(presTo_t to, const vec3_t *pos, int op) {
+	return Pres_BeginTo(Pres_Audience(to, pos), op);
 }
 
 void Pres_PutStr(const char *s) {
@@ -566,13 +574,45 @@ void Pres_VoiceStop(int voice) {
 }
 
 void Pres_Music(const char *name, const char *cmd, float volume) {
-	if (!Pres_Out() || !Pres_Begin(PRES_PARTY, NULL, PRES_O_MUSIC)) {
+	if (!Pres_Out()) {
+		return;
+	}
+	/* the world's music, for the players that join later (Pres_Joined) */
+	if (Players_Current() == PLAYERS_NONE || Coop_On()) {
+		if (!crt_stricmp(cmd, "play")) {
+			Str_Copy(pres.music, name ? name : "", sizeof(pres.music));
+		} else if (!crt_stricmp(cmd, "stop")) {
+			pres.music[0] = 0;
+		} else if (!crt_stricmp(cmd, "volume")) {
+			pres.musicVolume = volume;
+			pres.haveMusicVolume = 1;
+		}
+	}
+	if (!Pres_Begin(PRES_PARTY, NULL, PRES_O_MUSIC)) {
 		return;
 	}
 	Pres_PutStr(name);
 	Pres_PutStr(cmd);
 	Pres_PutFloat(volume);
 	Pres_Send();
+}
+
+void Pres_Joined(int i) {
+	if (!Pres_Out() || i < 0 || i >= PLAYERS_MAX || !Pres_Online(i)) {
+		return;
+	}
+	if (pres.haveMusicVolume && Pres_BeginTo((uint64_t)1 << i, PRES_O_MUSIC)) {
+		Pres_PutStr(NULL);
+		Pres_PutStr("volume");
+		Pres_PutFloat(pres.musicVolume);
+		Pres_Send();
+	}
+	if (pres.music[0] && Pres_BeginTo((uint64_t)1 << i, PRES_O_MUSIC)) {
+		Pres_PutStr(pres.music);
+		Pres_PutStr("play");
+		Pres_PutFloat(0.0f);
+		Pres_Send();
+	}
 }
 
 void Pres_ShipExplosion(const vec3_t *pos, const vec3_t *vel, float scale, float time, int flames, int collision) {

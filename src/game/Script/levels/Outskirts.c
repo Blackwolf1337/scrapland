@@ -134,7 +134,7 @@ static byte OsMap_InitStatus(void) {
 	for (int i = 0; ok && mods[i]; i++) {
 		ok = Mode_Import(mods[i]);
 	}
-	ok = ok && LvN_ModSetI("Init", "Outdoor", 1);
+	ok = ok && Lv_Flags(1, NULL);
 	if (ok && LvN_SaveIs("RobotsControlledByBoss", "1")) {
 		ok = Mode_BossTraffic(1);
 	} else if (ok) {
@@ -159,10 +159,20 @@ static byte OsMap_InitStatus(void) {
 
 /* Init(LevelPath): the colour of the clouds, the elevators to Bank, GamblinDen and Police, the metro */
 static byte OsMap_Init(void) {
-	return Mode_Import("Elevator") && Mode_Import("Metro") && Mode_Import("Init") && Mode_GVarSetI("CameraCloudRed", 120) &&
-		Mode_GVarSetI("CameraCloudGreen", 60) && Mode_GVarSetI("CameraCloudBlue", 0) && Mode_Connect("DM_Door_Elevator_Bank", "Bank", 0) &&
+	return Mode_Import("Elevator") && Mode_Import("Metro") && Mode_Import("Init") && Lv_Clouds(120, 60, 0) && Mode_Connect("DM_Door_Elevator_Bank", "Bank", 0) &&
 		Mode_Connect("DM_Door_Elevator_GamblinDen", "GamblinDen", 0) && Mode_Connect("DM_Door_Elevator_Police", "Police", 0) &&
 		PORT_CALL(Metro, SetAsMetro, NULL, "s", "DM_Door_MetroExt_");
+}
+
+/* the client part (Levels.h): outdoors, the colour of the clouds */
+byte Outskirts_ClientStatus(const nativeVal_t *path) {
+	(void)path;
+	return Lv_Flags(1, NULL);
+}
+
+byte Outskirts_ClientInit(const nativeVal_t *path) {
+	(void)path;
+	return Lv_Clouds(120, 60, 0);
 }
 
 LV_CORE0(OsMap_InitStatus)

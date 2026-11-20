@@ -14,6 +14,7 @@
 #include "scrap/mathlib.h"
 #include "scrap/missileentity.h"
 #include "scrap/net.h"
+#include "scrap/netaudit.h"
 #include "scrap/faction.h"
 #include "scrap/play.h"
 #include "scrap/players.h"
@@ -484,6 +485,10 @@ void cWithLifeEntity_SetActCtrl(cEntity *self, const char *cls) {
 	cActClass *c = cActClassList_Get(g_pActClassList, cls);
 	if (!c) {
 		Con_Warnf(WL_NOCTRL_WARN, cls);
+		/* not in the original: a class a -mp2 client's level start did not define (include/scrap/repent.h) */
+		if (g_Mp2 && (Obj(self)->replica || ReplicaEnt_Busy())) {
+			NetAudit_Name(NA_CREATE, "client.noclass:", cls);
+		}
 	} else {
 		cActCtrl *mem = operator_new(sizeof(cActCtrl));
 		w->actCtrl = mem ? cActCtrl_ctor(mem, self, c) : NULL;

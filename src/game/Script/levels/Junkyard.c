@@ -154,17 +154,22 @@ static byte Jy_At(const nativeVal_t *time, double d, nativeVal_t *out) {
 
 /* ---- Map ---- */
 
+/* an indoor map, the junkyard (the flags of Init) */
+static byte Jy_Flags(void) {
+	return Lv_Flags(0, NULL) && LvN_ModSetI("Init", "isJunkYard", 1);
+}
+
+/* no energy bar and no special action on the HUD */
+static byte Jy_Hud(void) {
+	return Mode_GVarSetI("EnergyBarActive", 0) && Mode_GVarSetI("SpecialActionActive", 0);
+}
+
 /* InitStatus(LevelPath): an indoor map, the junkyard; the editor elevator, the atmosphere, no traffic ships, the junk
  * points the scrap collector goes to */
 static byte JunkyardMap_InitStatus(void) {
 	static const char *const lists[] = { "AcNormalShips", "AcMediumShips", "AcHeavyShips" };
 	nativeVal_t v = { 0 }, list = { 0 };
-	Native_SetInt(&v, 0);
-	if (!Mode_Import("Init") || !Mode_SetModVar("Init", "Outdoor", &v)) {
-		return 0;
-	}
-	Native_SetInt(&v, 1);
-	if (!Mode_SetModVar("Init", "isJunkYard", &v) || !Mode_Import("Elevator") ||
+	if (!Mode_Import("Init") || !Jy_Flags() || !Mode_Import("Elevator") ||
 		!PORT_CALL(Elevator, SetDef, NULL, "ss", "EditShip", "DM_Door_EditShip_00") || !Mode_Import("OutMap") ||
 		!PORT_CALL(OutMap, BrowseAtmospherePos, NULL, "") || !Mode_Import("Traffic")) {
 		return 0;
@@ -240,7 +245,19 @@ static byte JunkyardMap_Init(void) {
 	}
 	Native_Free(&save);
 	Native_Free(&prev);
-	return ok && Mode_GVarSetI("EnergyBarActive", 0) && Mode_GVarSetI("SpecialActionActive", 0) && LvN_SetMusic("Music/Track1.ogg", 1.0);
+	return ok && Jy_Hud() && LvN_SetMusic("Music/Track1.ogg", 1.0);
+}
+
+/* the client part (Levels.h): the flags, the atmosphere; no energy bar and no special action on the HUD (the music
+ * comes with the server's, include/scrap/pres.h) */
+byte Junkyard_ClientStatus(const nativeVal_t *path) {
+	(void)path;
+	return Jy_Flags() && Mode_Import("OutMap") && PORT_CALL(OutMap, BrowseAtmospherePos, NULL, "");
+}
+
+byte Junkyard_ClientInit(const nativeVal_t *path) {
+	(void)path;
+	return Jy_Hud();
 }
 
 LV_CORE0(JunkyardMap_InitStatus)

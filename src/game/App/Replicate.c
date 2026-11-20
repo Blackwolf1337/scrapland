@@ -1236,6 +1236,7 @@ static int Rep_Join(int conn) {
 		Con_Printf("instance: player %d on connection %d (%s)\n", i, conn, pl->ownName);
 		Travel_Joined(i);
 		Coop_Joined(i);
+		Pres_Joined(i);
 		/* single player's own ship and Sputnik at the parking; the old path: the sandbox and freeroam's player who
 		 * arrives on foot in an outdoor level finds its own ship beside it (include/scrap/sputniks.h) */
 		if (Rep_SpFlows()) {

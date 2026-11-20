@@ -447,6 +447,15 @@ static byte Pr_NotAvailable(const char *name) {
 	return ok;
 }
 
+/* Bureaucracy.BureaucracyTableFile: the model table of the desks of the press */
+static byte Pr_BureauTable(void) {
+	nativeVal_t v;
+	LvN_Str(&v, "DesktopFunctionaryPress");
+	byte ok = Mode_SetModVar("Bureaucracy", "BureaucracyTableFile", &v);
+	Native_Free(&v);
+	return ok;
+}
+
 /* InitStatus(LevelPath): an indoor map; the NPCs that come back (fewer in the demo), the elevators, the bureaucracy,
  * the boss' place, the characters the demo cannot convert into */
 static byte PressMap_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
@@ -463,8 +472,7 @@ static byte PressMap_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 			return 0;
 		}
 	}
-	Native_SetInt(&v, 0);
-	if (!Mode_SetModVar("Init", "Outdoor", &v) || !LvN_ModGet("Init", "isDemo", &v)) {
+	if (!Lv_Flags(0, NULL) || !LvN_ModGet("Init", "isDemo", &v)) {
 		return 0;
 	}
 	byte isDemo = Native_True(&v);
@@ -493,10 +501,7 @@ static byte PressMap_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 			return 0;
 		}
 	}
-	LvN_Str(&v, "DesktopFunctionaryPress");
-	byte ok = Mode_SetModVar("Bureaucracy", "BureaucracyTableFile", &v);
-	Native_Free(&v);
-	if (!ok || !Mode_GVarSetS("BossWorkPlace", "DM_NPC_Spawn_Boss_00") || !LvN_ModGet("Init", "isDemo", &v)) {
+	if (!Pr_BureauTable() || !Mode_GVarSetS("BossWorkPlace", "DM_NPC_Spawn_Boss_00") || !LvN_ModGet("Init", "isDemo", &v)) {
 		return 0;
 	}
 	isDemo = Native_True(&v);
@@ -560,6 +565,12 @@ LV_FN(PressMap, CreateActivatorsA, 0, PressMap_CreateActivators)
 LV_FN(PressMap, CreateDeactivatorsA, 0, PressMap_CreateDeactivators)
 LV_FN(PressMap, DeactivateAlarmA, 2, PressMap_DeactivateAlarm)
 LV_FN(PressMap, BrowseAlarmLaunchersA, 0, PressMap_BrowseAlarmLaunchers)
+/* the client part (Levels.h): an indoor map, the model table of the functionaries' desks (their classes) */
+byte Press_ClientStatus(const nativeVal_t *path) {
+	(void)path;
+	return Lv_Flags(0, NULL) && Mode_Import("Bureaucracy") && Pr_BureauTable();
+}
+
 LV_FN(PressMap, InitStatusA, 1, PressMap_InitStatus)
 LV_FN(PressMap, InitA, 1, PressMap_Init)
 LV_FN(PressMap, HideBureauA, 0, PressMap_HideBureau)
