@@ -82,7 +82,7 @@ byte Ui_TextBox(const char *text);
 byte Ui_Conv(void);
 byte Ui_Metro(const char *usr, const char *door);
 byte Ui_Sputnik(void);
-byte Ui_ShipEdit(const char *via);
+byte Ui_ShipEdit(void);
 /* the news head of the monitor on the current player's HUD (NewsPanel.UseNewsPanel, EndOfNews) */
 void Ui_NewsHead(int on);
 /* a use of the machine named by the current player on a -mp2 instance: 1 when another player holds it (the use is

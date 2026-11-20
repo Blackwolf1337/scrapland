@@ -29,6 +29,7 @@
 #include "scrap/world.h"
 
 #include "../Global/testchannel.h"
+#include "game/Script/levels/Levels.h"
 
 #define UI_NAME 96					/* a function "Module.Func", a machine's name */
 #define UI_MSGMAX 8192				/* an open or a transaction with the hangar's ships */
@@ -58,6 +59,7 @@ static struct {
 	uint16_t seq;
 	uint32_t opens[UI_K_COUNT], dones[UI_K_COUNT], refusals[UI_K_COUNT];
 	char lastRefusal[UI_NAME];
+	char via[UI_NAME];				/* the function of the answer that runs (an editor it opens replays it) */
 	/* client */
 	byte cui;						/* the interface of the instance shown here, 0 */
 	uint16_t cseq;
@@ -280,7 +282,7 @@ byte Ui_Sputnik(void) {
 	return Ui_Send(&w, i, UI_K_SPUTNIK);
 }
 
-byte Ui_ShipEdit(const char *via) {
+byte Ui_ShipEdit(void) {
 	static uint8_t buf[UI_MSGMAX];
 	NetRepBuf w;
 	int i = Ui_For(UI_K_SHIPEDIT);
@@ -288,7 +290,7 @@ byte Ui_ShipEdit(const char *via) {
 		return i != -1;
 	}
 	Ui_Begin(&w, buf, sizeof(buf), i, UI_K_SHIPEDIT);
-	NetRep_PutStr(&w, via ? via : "");
+	NetRep_PutStr(&w, ui.via);
 	NetRep_PutU32(&w, (uint32_t)Players_Money(i));
 	int was = Players_Enter(i);
 	Ui_PutVars(&w, ui_hangarVars);
@@ -364,9 +366,11 @@ static void Ui_CallAnswer(const char *fn) {
 		return;
 	}
 	Str_PrintfQuiet(mod, sizeof(mod), "%.*s", (int)(dot - fn), fn);
+	Str_Copy(ui.via, fn, sizeof(ui.via));
 	if (!Mode_Import(mod) || !Native_CallMod(mod, dot + 1, NULL, "is", 0L, "")) {
 		Native_ErrPrint();
 	}
+	ui.via[0] = 0;
 }
 
 /* ShipEdit.destroyedShips as the save variable keeps it ("[0, 1, ...]"): the UI_HANGARS values, 0 when it is not
@@ -387,14 +391,19 @@ static byte Ui_Destroyed(const char *text, int out[UI_HANGARS]) {
 	return 1;
 }
 
+/* the save variable of hangar k ("Hangar.HangarShip<k+1>", 9 the spare ship) */
+static void Ui_HangarVar(int k, char *var, int cap) {
+	if (k == 9) {
+		Str_Copy(var, "Hangar.HangarShipAux", cap);
+	} else {
+		Str_PrintfQuiet(var, cap, "Hangar.HangarShip%d", k + 1);
+	}
+}
+
 /* the ship text of hangar k of the current context ("" none) */
 static const char *Ui_HangarShip(int k) {
 	char var[32];
-	if (k == 9) {
-		Str_Copy(var, "Hangar.HangarShipAux", sizeof(var));
-	} else {
-		Str_PrintfQuiet(var, sizeof(var), "Hangar.HangarShip%d", k + 1);
-	}
+	Ui_HangarVar(k, var, sizeof(var));
 	const char *v = SaveVar_Get(var);
 	return v ? v : "";
 }
@@ -469,6 +478,12 @@ static void Ui_DoneSputnik(int i, NetRepReader *r) {
 	if (!why && money != ui.pl[i].money - (rebuilt ? rebuild : 0)) {
 		why = "money";
 	}
+	/* the money changed in the world meanwhile stays (the transaction is the screen's change) */
+	long long now = (long long)Players_Money(i) + money - ui.pl[i].money;
+	if (!why && now < 0) {
+		why = "money";
+		msg = "HINT_NoMoney";
+	}
 	if (why) {
 		Players_Leave(was);
 		Ui_Refuse(i, UI_K_SPUTNIK, why, msg);
@@ -476,7 +491,7 @@ static void Ui_DoneSputnik(int i, NetRepReader *r) {
 	}
 	char fly[16];
 	Str_PrintfQuiet(fly, sizeof(fly), "%d", k);
-	*Players_CurMoney() = money;
+	*Players_CurMoney() = (int)now;
 	SaveVar_Set("Hangar.iHangarShip", fly);
 	if (b.haveLost) {
 		SaveVar_Set("Hangar.DestroyedShips", b.lost);
@@ -492,19 +507,123 @@ static void Ui_DoneSputnik(int i, NetRepReader *r) {
 	}
 	Native_Free(&cb);
 	Players_Leave(was);
-	Con_Printf("ui: player %d flies hangar %d%s, money %d\n", i, k, rebuilt ? " (rebuilt)" : "", money);
+	Con_Printf("ui: player %d flies hangar %d%s, money %d\n", i, k, rebuilt ? " (rebuilt)" : "", (int)now);
 }
 
-/* the ship editor closed on player i's client: its hangar and money, checked (every ship a ship single player's editor
- * can make, the money not more than the player had plus what the hangar's ships were worth), then the editor's end */
-static void Ui_DoneShipEdit(int i, NetRepReader *r) {
-	int money = (int)NetRep_GetU32(r);
-	if (!Ui_GetVars(r, ui_hangarVars, 0, NULL, NULL)) {
+typedef struct {
+	char ship[UI_HANGARS][UI_TEXT + 1];
+	char fly[16], lost[UI_TEXT + 1];
+	byte have[UI_HANGARS], haveFly, haveLost;
+} UiHangarBack;
+
+static void Ui_HangarBackVar(const char *name, const char *value, void *u) {
+	UiHangarBack *b = u;
+	char var[32];
+	if (!strcmp(name, "Hangar.iHangarShip")) {
+		Str_Copy(b->fly, value, sizeof(b->fly));
+		b->haveFly = 1;
 		return;
 	}
-	/* the hangar's own rules of the editor are not built yet (include/scrap/uichan.h): refused */
-	(void)money;
-	Ui_Refuse(i, UI_K_SHIPEDIT, "shipedit", "");
+	if (!strcmp(name, "Hangar.DestroyedShips")) {
+		Str_Copy(b->lost, value, sizeof(b->lost));
+		b->haveLost = 1;
+		return;
+	}
+	for (int k = 0; k < UI_HANGARS; k++) {
+		Ui_HangarVar(k, var, sizeof(var));
+		if (!strcmp(name, var)) {
+			Str_Copy(b->ship[k], value, sizeof(b->ship[k]));
+			b->have[k] = 1;
+		}
+	}
+}
+
+/* the worth of a hangar: each intact ship as single player's editor prices it (HangarTab.ComputeShipTotalCost: its sale
+ * gives that, its parts cost their share), a destroyed one nothing (its rebuild costs its whole price); 0 when a ship is
+ * not one the editor makes */
+static byte Ui_HangarWorth(const char *const ships[UI_HANGARS], const int lost[UI_HANGARS], long long *worth) {
+	*worth = 0;
+	for (int k = 0; k < UI_HANGARS; k++) {
+		int cost;
+		if (!HangarTab_TextCost(ships[k], &cost)) {
+			Native_ErrPrint();
+			return 0;
+		}
+		*worth += lost[k] ? 0 : cost;
+	}
+	return 1;
+}
+
+/* the ship editor closed on player i's client: its hangar and money, checked against single player's prices (the money
+ * it has plus the worth of its hangar stay what they were at the open: each part, ship and rebuild paid at the price
+ * of single player's editor, every ship one the editor makes, the money not below 0), then applied with the editor's
+ * end in the world (its way point, the ship on the platform, its callback) in the player's context */
+static void Ui_DoneShipEdit(int i, NetRepReader *r) {
+	static UiHangarBack b;
+	const char *before[UI_HANGARS], *after[UI_HANGARS];
+	int lost0[UI_HANGARS], lost1[UI_HANGARS];
+	char var[32];
+	memset(&b, 0, sizeof(b));
+	int money = (int)NetRep_GetU32(r);
+	if (!Ui_GetVars(r, ui_hangarVars, 0, Ui_HangarBackVar, &b)) {
+		return;
+	}
+	int was = Players_Enter(i);
+	for (int k = 0; k < UI_HANGARS; k++) {
+		before[k] = Ui_HangarShip(k);
+		after[k] = b.have[k] ? b.ship[k] : before[k];
+	}
+	if (!Ui_Destroyed(SaveVar_Get("Hangar.DestroyedShips"), lost0)) {
+		memset(lost0, 0, sizeof(lost0));
+	}
+	const char *why = NULL, *msg = "";
+	if (!b.haveLost) {
+		memcpy(lost1, lost0, sizeof(lost1));
+	} else if (!Ui_Destroyed(b.lost, lost1)) {
+		why = "hangar";
+	}
+	int fly = b.haveFly ? crt_atoi(b.fly) : 0;
+	if (!why && b.haveFly && (fly < 0 || fly >= UI_HANGARS)) {
+		why = "hangar";
+	}
+	long long worth0 = 0, worth1 = 0;
+	if (!why && (!Ui_HangarWorth(before, lost0, &worth0) || !Ui_HangarWorth(after, lost1, &worth1))) {
+		why = "ship";
+	}
+	/* the money changed in the world meanwhile stays (the transaction is the editor's change) */
+	long long now = (long long)Players_Money(i) + money - ui.pl[i].money;
+	if (!why && (long long)money + worth1 != (long long)ui.pl[i].money + worth0) {
+		why = "price";
+	}
+	if (!why && (money < 0 || now < 0)) {
+		why = "money";
+		msg = "HINT_NoMoney";
+	}
+	if (why) {
+		Con_Printf("ui: the ship editor of player %d: money %d -> %d, hangar worth %lld -> %lld\n", i, ui.pl[i].money, money,
+			worth0, worth1);
+		Players_Leave(was);
+		Ui_Refuse(i, UI_K_SHIPEDIT, why, msg);
+		return;
+	}
+	*Players_CurMoney() = (int)now;
+	for (int k = 0; k < UI_HANGARS; k++) {
+		if (b.have[k] && strcmp(before[k], b.ship[k])) {
+			Ui_HangarVar(k, var, sizeof(var));
+			SaveVar_Set(var, b.ship[k]);
+		}
+	}
+	if (b.haveFly) {
+		SaveVar_Set("Hangar.iHangarShip", b.fly);
+	}
+	if (b.haveLost) {
+		SaveVar_Set("Hangar.DestroyedShips", b.lost);
+	}
+	if (!ShipEdit_ClientEnded()) {
+		Native_ErrPrint();
+	}
+	Players_Leave(was);
+	Con_Printf("ui: player %d closed the ship editor (hangar %d, money %d, worth %lld)\n", i, fly, (int)now, worth1);
 }
 
 byte Ui_Message(Net2Host *host, int conn, const uint8_t *data, int size) {
@@ -648,6 +767,37 @@ static void Ui_GetText(NetRepReader *r, char *out) {
 	out[n] = 0;
 }
 
+/* the ship editor of the instance's hangar on the client: the ship on the platform again (the one of the client's own
+ * level start goes), then the function of the answer that opened it there (a tutorial), else the editor as the keypad
+ * opens it (MapShipEdit.EnterEditShip without its world part: the keypad and the player are the instance's) */
+static void Ui_ClientEditor(const char *via) {
+	char mod[UI_NAME];
+	nativeVal_t none, plt;
+	Native_SetNone(&none);
+	const char *dot = strchr(via, '.');
+	byte ok = Mode_Import("HangarTab") && Mode_SetModVar("HangarTab", "prevShip", &none) && Mode_Import("ShipEdit"), done = 0;
+	/* the platform the client's level start made went with the purge (include/scrap/repent.h): the editor takes its
+	 * replica */
+	if (ok && Native_SetEnt(&plt, "DM_Door_EditShip_00")) {
+		ok = Mode_SetModVar("ShipEdit", "editPlatform", &plt);
+		Native_Free(&plt);
+	}
+	ok = ok && Junkyard_PlatformShip();
+	if (ok && dot && dot - via < UI_NAME) {
+		Str_PrintfQuiet(mod, sizeof(mod), "%.*s", (int)(dot - via), via);
+		done = Mode_Import(mod) && Native_CallMod(mod, dot + 1, NULL, "is", 0L, "");
+		Native_ErrPrint();
+	}
+	if (ok && !done) {
+		ok = Mode_Import("Menu") && PORT_CALL(Menu, InitMenuSys, NULL, "i", 0L) &&
+			PORT_CALL(ShipEdit, EnterEditShipMenu, NULL, "is", 0L, "");
+		Script_SetNum(0, "Cursor", "Visible", 0);
+	}
+	if (!ok) {
+		Native_ErrPrint();
+	}
+}
+
 static void Ui_ClientOpen(int k, NetRepReader *r) {
 	static cPy_NativeFunc natives[2];
 	static char text[UI_TEXT + 1];
@@ -729,6 +879,7 @@ static void Ui_ClientOpen(int k, NetRepReader *r) {
 		}
 		*Players_CurMoney() = money;
 		ui.cui = UI_K_SHIPEDIT;
+		Ui_ClientEditor(via);
 		Con_Printf("ui: the ship editor of the instance%s%s, money %d\n", via[0] ? " with " : "", via, money);
 		return;
 	}
