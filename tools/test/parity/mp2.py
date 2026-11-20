@@ -184,7 +184,7 @@ def gate_feel(a):
     os.makedirs(out, exist_ok=True)
     base = [sys.executable, os.path.join(HERE, 'feel.py'), '--out', out, '--scratch', os.path.join(a.scratch, 'feel'),
             '--port', str(a.port), '--build', a.build, '--device', a.device, '--level', a.level,
-            '--walks', str(a.walks), '--bumps', str(a.bumps)] + (['--mp2'] if a.mp2 else [])
+            '--walks', str(a.walks), '--bumps', str(a.bumps), '--playlog'] + (['--mp2'] if a.mp2 else [])
     jobs = [('sp', 'sp', [])]
     for cell in [c for c in a.cells.split(',') if c]:
         d, j, l = CELLS[cell]

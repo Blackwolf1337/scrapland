@@ -246,7 +246,7 @@ def run_side(a, side):
         os.remove(log)
     env = dict(a.net if side != 'sp' else {}, SCRAP_FEELLOG=log)
     if a.playlog and side != 'sp':
-        env['SCRAP_PLAYLOG'] = os.path.join(a.scratch, 'play-%s.csv' % side)
+        env['SCRAP_PLAYLOG'] = os.path.join(a.scratch, 'play-%s%s.csv' % (side, '-' + a.cell if a.cell else ''))
     port = a.port
     hostg = None
     v2 = ['-mp2'] if a.mp2 else []
@@ -326,7 +326,8 @@ def run_side(a, side):
         else:
             # the sandbox's switch (the mission info key, F1): the nearest parked ship or a called one
             press(g, 'F1', 0.12)
-        ok = parity.wait_for(lambda: own_kind(read_log(log), time.monotonic_ns()) == 'S', 15, 0.5)
+        # -mp2: single player's boarding (the character goes to the ship, the camera path, then the ship) takes longer
+        ok = parity.wait_for(lambda: own_kind(read_log(log), time.monotonic_ns()) == 'S', 45 if a.mp2 else 15, 0.5)
         res['boarded'] = bool(ok)
         flights = []
         boosts = []
@@ -402,18 +403,23 @@ def player_car(ents, near):
 
 
 def board_mp2(a, g, inst_dir, side):
-    """-mp2: the player uses the arrow of its own ship (PlayerShip, the nearest of that name to its character) as
-    single player's use button does"""
+    """-mp2: the player uses the arrow of its own ship (PlayerShip<n>, the nearest of that name to its character
+    anywhere in the level: a joined player's spawn can be far from it; the instance puts the player beside it first)
+    as single player's use button does"""
     rows = read_log(os.path.join(a.scratch, 'feel-%s%s.csv' % (side, '-' + a.cell if a.cell else '')))
     if not rows:
         return
     p = rows[-1]['pos']
     _, player = player_char(a, inst_dir, p)
-    ents = parity.parse_ents(inst_dir.try_ask('entinfo %.0f %.0f %.0f 60000' % p, inst=a.level, timeout=10))
+    ents = parity.parse_ents(inst_dir.try_ask('entinfo', inst=a.level, timeout=20))
     ships = sorted((e for e in ents if e['cls'] == 'Car' and e['name'].startswith('PlayerShip')),
                    key=lambda e: dist(e['pos'], p))
     if player is None or not ships:
+        print('feel %s: no player character or no PlayerShip to board' % side, flush=True)
         return
+    if dist(ships[0]['pos'], p) > 1500.0:
+        inst_dir.ask('iline goto %d %s' % (player, ships[0]['name']), inst=a.level)
+        time.sleep(3.0)
     inst_dir.ask('iline use %d %s' % (player, ships[0]['name']), inst=a.level)
 
 

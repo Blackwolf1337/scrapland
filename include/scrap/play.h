@@ -34,6 +34,26 @@
  * drawn position fades out (NetRepSmooth). The action buttons are not run on the client (the server's hits and
  * projectiles come back replicated).
  *
+ * -mp2 (stage 3.5 of the second design, prediction v2): the client runs the buttons of its own entity too but the
+ * flows of the scripts (use, possession: the server starts them, the client sees them start when the server's state
+ * comes) and the countermeasure: walking, jumping, a character's action, the boost, the full thrust, the lock, the
+ * fire of the instant-hit and missile weapons (NETPL_MP2_LOCAL). With each snapshot the server sends the rollback
+ * state of the player's entity after its step of the tick (NETREP_MSG_OWN, NetPl_OwnOf: position, velocity, angles,
+ * life, a character's view, fall, walk, energy, its action layers and default loop with their times, a ship's
+ * speed, thrust, turns, boost, push, cloud and EMI, the scripted move; NETPL_O_*). The client compares it with its own
+ * state of that tick (NetPl_OwnDiff, NETPL_TOL_*); on a difference it goes back to its saved state of that tick
+ * (NetPl_Save keeps the layers, the animation channels, the timed states and the move, NetPlMotion), takes the
+ * server's (NetPl_OwnApply) and runs the inputs after it again, actions and slots alike, the presentation off
+ * (g_PlayReplaying: the sound sinks, the presenting events of the layers, the boost and crash sounds and shakes are
+ * muted, Play_Mute; the audit counts pred.muted:<what>, and pred.twice:<site> for a presentation sink a replay
+ * reached all the same). The events of the own entity's layers: the presenting ones play at the prediction, the ones
+ * that only set its layers run in both, the rest (script calls, the classes' logic, voices) is the server's
+ * (Play_OwnEvent, pred.server:<event>). A move of the entity by the scripts (Pos, Ang, ViewAng or MoveTime set:
+ * Rep_OwnMoved) counts in the state's moved: the client takes the next state as a jump, not smoothed and not a
+ * correction (the hand-over of a flow: boarding, parking, possession, an elevator). The first state of a new own
+ * entity hands it over. A difference of the life alone is taken, not counted as a correction. Corrections by what
+ * differed: pred.corr:<pos|vel|ang|act|state|move>.
+ *
  * Controls: those of single player. The switch: Use (Walk set) on foot, Mission info (Racer set) in a ship.
  * SCRAP_PLAYLOG=<file>: a CSV line per server state of the own entity (tick, error, correction, ...). SCRAP_PLAYBOT=1:
  * the client plays itself (walks, takes a ship, flies, fires at the nearest other player) for tests; =npc: it fires

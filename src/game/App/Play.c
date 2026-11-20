@@ -1010,6 +1010,7 @@ void Play_OwnState(const uint8_t *data, int size) {
 		}
 		fprintf(play.log, " flags %x/%x act %u.%u.%u.%u/%u.%u.%u.%u def %u/%u\n", o.flags, mine.flags, o.act[0], o.act[1],
 			o.act[2], o.act[3], mine.act[0], mine.act[1], mine.act[2], mine.act[3], o.defLoop, mine.defLoop);
+		fflush(play.log);
 	}
 }
 
