@@ -18,6 +18,8 @@
 #include "scrap/world.h"
 
 #include "scrap/netaudit.h"
+#include "scrap/play.h"
+#include "scrap/repent.h"
 
 #define NA_SLOTS 4096			/* a power of 2 */
 #define NA_FILL (NA_SLOTS * 3 / 4)	/* entries at most, the rest keeps the probes short */
@@ -41,7 +43,7 @@ static double na_resetTime;		/* App_GetTime at the last reset */
 
 static const char *const na_catNames[NA_CATS] = {
 	"sound", "soundsrc", "voice", "music", "sfx", "debris", "animevent", "hud", "fade", "cinema", "camera",
-	"actionset", "timespeed", "entvar", "player", "visible", "create", "census",
+	"actionset", "timespeed", "entvar", "player", "visible", "create", "predict", "census",
 };
 
 const char *NetAudit_CatName(netAuditCat_t cat) {
@@ -98,6 +100,11 @@ static naEntry *NA_Find(netAuditCat_t cat, const char *prefix, const char *name,
 }
 
 static void NA_Count(netAuditCat_t cat, const char *prefix, const char *name, byte byText) {
+	/* a presentation sink a replay of a -mp2 client's own entity reached: played a second time (the replay's sinks
+	 * are muted before they count, include/scrap/play.h) */
+	if (g_PlayReplaying && g_Mp2 && cat <= NA_CAMERA && cat != NA_SOUNDSRC) {
+		NA_Count(NA_PREDICT, "pred.twice:", prefix, 0);
+	}
 	naEntry *e = NA_Find(cat, prefix, name, byText);
 
 	if (!e && name) {

@@ -182,6 +182,70 @@ float NetRepPredHist_Error(const NetRepPredHist *h, uint32_t tick, const float *
 	return sqrtf(dx * dx + dy * dy + dz * dz);
 }
 
+/* ---- the rollback state of the own entity ---- */
+
+static uint32_t Own_Bits(float f) {
+	uint32_t u;
+	memcpy(&u, &f, sizeof(u));
+	return u;
+}
+
+int NetRep_WriteOwn(uint8_t *buf, int cap, const NetRepOwn *o) {
+	NetRepBuf w;
+	int nf = o->nf > NETREP_OWN_F ? NETREP_OWN_F : o->nf;
+	int nl = o->layers > NETREP_OWN_LAYERS ? NETREP_OWN_LAYERS : o->layers;
+
+	NetRepBuf_Init(&w, buf, cap);
+	NetRep_PutU8(&w, NETREP_MSG_OWN);
+	NetRep_PutU32(&w, o->tick);
+	NetRep_PutU8(&w, o->kind);
+	NetRep_PutU8(&w, o->moved);
+	NetRep_PutU8(&w, o->flags);
+	NetRep_PutU8(&w, (uint32_t)nf);
+	for (int i = 0; i < nf; i++) {
+		NetRep_PutU32(&w, Own_Bits(o->f[i]));
+	}
+	NetRep_PutU8(&w, (uint32_t)nl);
+	for (int i = 0; i < nl; i++) {
+		NetRep_PutU16(&w, o->act[i]);
+	}
+	NetRep_PutU16(&w, o->defLoop);
+	return w.bad ? 0 : w.size;
+}
+
+int NetRep_ReadOwn(const uint8_t *data, int size, NetRepOwn *o) {
+	NetRepReader r;
+
+	NetRepReader_Init(&r, data, size);
+	memset(o, 0, sizeof(*o));
+	if (NetRep_GetU8(&r) != NETREP_MSG_OWN) {
+		return 0;
+	}
+	o->tick = NetRep_GetU32(&r);
+	o->kind = (uint8_t)NetRep_GetU8(&r);
+	o->moved = (uint8_t)NetRep_GetU8(&r);
+	o->flags = (uint8_t)NetRep_GetU8(&r);
+	uint32_t nf = NetRep_GetU8(&r);
+	if (nf > NETREP_OWN_F) {
+		return 0;
+	}
+	o->nf = (uint8_t)nf;
+	for (uint32_t i = 0; i < nf; i++) {
+		uint32_t u = NetRep_GetU32(&r);
+		memcpy(&o->f[i], &u, sizeof(u));
+	}
+	uint32_t nl = NetRep_GetU8(&r);
+	if (nl > NETREP_OWN_LAYERS) {
+		return 0;
+	}
+	o->layers = (uint8_t)nl;
+	for (uint32_t i = 0; i < nl; i++) {
+		o->act[i] = (uint16_t)NetRep_GetU16(&r);
+	}
+	o->defLoop = (uint16_t)NetRep_GetU16(&r);
+	return !r.bad && r.pos == size;
+}
+
 /* ---- the smoothing of corrections ---- */
 
 void NetRepSmooth_Init(NetRepSmooth *s, float halfLife, float snap) {

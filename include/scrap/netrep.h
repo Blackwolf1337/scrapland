@@ -370,6 +370,30 @@ int NetRep_ReadAck(const uint8_t *data, int size, uint16_t *newest, uint32_t *bi
 #define NETREP_IN_OPTNEXT_SHIFT 7
 #define NETREP_IN_OPTPREV_SHIFT 9
 #define NETREP_IN_OPTS 0x0780
+/* -mp2: the buttons a client runs itself (action or fire, lock, boost, full thrust) first pressed after the tick's
+ * first slot was taken, one bit each: the tick's second slot takes them too (as single player's slot takes the
+ * controls of its frame) */
+#define NETREP_IN_LATE_ACT 0x0800
+#define NETREP_IN_LATE_LOCK 0x1000
+#define NETREP_IN_LATE_BOOST 0x2000
+#define NETREP_IN_LATE_FULL 0x4000
+#define NETREP_IN_LATES 0x7800
+
+/* the late bits of the presses p */
+static inline uint16_t NetRep_InLate(uint16_t p) {
+	return (uint16_t)((p & NETREP_IN_ACT ? NETREP_IN_LATE_ACT : 0) | (p & NETREP_IN_LOCK ? NETREP_IN_LATE_LOCK : 0) |
+		(p & NETREP_IN_BOOST ? NETREP_IN_LATE_BOOST : 0) | (p & NETREP_IN_FULL ? NETREP_IN_LATE_FULL : 0));
+}
+
+/* the buttons slot part of a tick takes from its input's buttons b */
+static inline uint16_t NetRep_InSlot(uint16_t b, int part) {
+	uint16_t s = (uint16_t)(b & ~NETREP_IN_LATES);
+	if (part) {
+		s |= (uint16_t)((b & NETREP_IN_LATE_ACT ? NETREP_IN_ACT : 0) | (b & NETREP_IN_LATE_LOCK ? NETREP_IN_LOCK : 0) |
+			(b & NETREP_IN_LATE_BOOST ? NETREP_IN_BOOST : 0) | (b & NETREP_IN_LATE_FULL ? NETREP_IN_FULL : 0));
+	}
+	return s;
+}
 
 /* the input of one tick: the controls of a character (walk, strafe, jump; the view turn) or a ship (acceleration,
  * strafe, vertical strafe; the turn) */
@@ -490,6 +514,34 @@ const NetRepPred *NetRepPredHist_Get(const NetRepPredHist *h, uint32_t tick);
 const NetRepInput *NetRepPredHist_Input(const NetRepPredHist *h, uint32_t tick);
 /* the distance between the server's position of tick and the predicted one; -1 when that tick is not kept */
 float NetRepPredHist_Error(const NetRepPredHist *h, uint32_t tick, const float *serverPos);
+
+/* The rollback state of a player's own entity (stage 3.5 of the second design, -mp2): the server's state after its
+ * step with the input of tick, sent to the player's client with each snapshot ('R', unreliable). The values are the
+ * game's (include/scrap/play.h NETPL_O_*): f the floats of the kind, act the action layers (the action's index + 1,
+ * 0 off) and the default loop. moved counts the moves of the entity outside its step (the scripts set its place:
+ * the client takes them as a jump, not as a correction of its prediction).
+ * Wire: 'R', tick u32, kind u8, moved u8, flags u8, count u8, the floats (u32 bits), layers u8, each act u16,
+ * defLoop u16 */
+#define NETREP_MSG_OWN 'R'
+#define NETREP_OWN_F 64				/* floats at most */
+#define NETREP_OWN_LAYERS 4
+#define NETREP_OWN_MAX (10 + NETREP_OWN_F * 4 + 1 + NETREP_OWN_LAYERS * 2 + 2)	/* bytes of a message */
+
+typedef struct NetRepOwn {
+	uint32_t tick;
+	uint8_t kind;					/* NETREP_CHAR, NETREP_SHIP */
+	uint8_t moved;
+	uint8_t flags;					/* the game's (NETPL_OF_*) */
+	uint8_t nf;						/* floats in f */
+	float f[NETREP_OWN_F];
+	uint8_t layers;					/* in act */
+	uint16_t act[NETREP_OWN_LAYERS];
+	uint16_t defLoop;
+} NetRepOwn;
+
+int NetRep_WriteOwn(uint8_t *buf, int cap, const NetRepOwn *o);
+/* 0 for a bad message */
+int NetRep_ReadOwn(const uint8_t *data, int size, NetRepOwn *o);
 
 /* the visual offset after a correction: added to the drawn position, it fades by half every halfLife s (an offset
  * above NETREP_SMOOTH_KNEE units slower, up to NETREP_SMOOTH_SLOW times); jumps larger than snap are not smoothed */
