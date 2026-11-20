@@ -329,6 +329,29 @@ void Pres_SoundPos(const struct cSoundDesc *d, const vec3_t *pos) {
 	pres.posVolume = d->volume;
 }
 
+void Pres_Census(const char *what, const char *name, const vec3_t *pos) {
+	/* the audit keeps the prefix as it is given (no copy): literals */
+	byte snd = !strcmp(what, "snd");
+	NetAudit_Name(NA_CENSUS, snd ? "snd.name:" : "debris.name:", name);
+	if (!g_Mp2 || !g_Instance) {
+		return;
+	}
+	for (int k = Viewers_Count() - 1; k >= 0; k--) {
+		const cViewer *v = Viewers_At(k);
+		float dx = pos ? v->pos.x - pos->x : 0.0f, dy = pos ? v->pos.y - pos->y : 0.0f;
+		float dz = pos ? v->pos.z - pos->z : 0.0f;
+		if (v->id >= 0 && v->id < PLAYERS_MAX && dx * dx + dy * dy + dz * dz <= NETREP_RADIUS * NETREP_RADIUS) {
+			NetAudit_Name(NA_CENSUS, snd ? "snd.near:" : "debris.near:", name);
+			return;
+		}
+	}
+}
+
+void Pres_CensusSound(const char *name, const cSoundDesc *d, const vec3_t *pos) {
+	/* a description cSoundDesc_SetPos made last has its place (Pres_SoundPos); another one plays without a place */
+	Pres_Census("snd", name, pos ? pos : d && d == pres.posDesc ? &pres.pos : NULL);
+}
+
 static void Pres_Unforwarded(const char *prefix, const char *site) {
 	NetAudit_Func(NA_SOUND, prefix, site ? site : "?");
 }

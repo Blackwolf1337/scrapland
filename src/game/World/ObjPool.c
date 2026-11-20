@@ -213,7 +213,7 @@ const char *g_DebrisSite;
 
 void cDebrisSys_Drop_(cDebrisSys *sys, cDebris *d) {
 	NetAudit_Site(NA_DEBRIS, "debris.drop");
-	NetAudit_Name(NA_CENSUS, "debris.name:", sys->name);
+	Pres_Census("debris", sys->name, &d->drop[0]);
 	if (g_Mp2) {
 		Pres_NoRoute(NA_DEBRIS, "pres.unforwarded:debris:", g_DebrisSite ? g_DebrisSite : "?");
 		if (g_Watch && !g_PresIn && !g_PresDerived) {

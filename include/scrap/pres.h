@@ -192,6 +192,12 @@ void Pres_HudSet(const struct cScorer *sc, const char *item, const char *var, co
 
 /* ---- client ---- */
 
+/* the census of the network tests (audit category NA_CENSUS): "<what>.name:<name>" for every sample played and
+ * debris system dropped, on an instance also "<what>.near:<name>" when it is near a player's viewer (pos NULL: a play
+ * without a place, near); Pres_CensusSound takes the place of a positional play from its description */
+void Pres_Census(const char *what, const char *name, const vec3_t *pos);
+void Pres_CensusSound(const char *name, const struct cSoundDesc *d, const vec3_t *pos);
+
 /* a PRES_MSG message */
 void Pres_Message(const uint8_t *data, int size);
 /* each frame: the effect records held until the client has their entities (a replica made again under a new slot),
