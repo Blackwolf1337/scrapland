@@ -1542,6 +1542,32 @@ static void TC_SaveVar(const char *name, const char *value, void *u) {
 	TC_Addf((tcBuf *)u, "save %s=%s\n", name, value);
 }
 
+/* "talk follow": a player kept next to an entity that walks (placed again when it moved away from the place it had) */
+static struct {
+	char ent[64];
+	float dx, dz;
+	vec3_t at;
+	byte on;
+} tc_follow[PLAYERS_MAX];
+
+static void TC_Follow(void) {
+	for (int i = 0; i < PLAYERS_MAX; i++) {
+		if (!tc_follow[i].on) {
+			continue;
+		}
+		cEntity *t = World_FindEntity(tc_follow[i].ent);
+		if (!t || !Players_Get(i)) {
+			tc_follow[i].on = 0;
+			continue;
+		}
+		vec3_t d = { t->pos.x - tc_follow[i].at.x, t->pos.y - tc_follow[i].at.y, t->pos.z - tc_follow[i].at.z };
+		if (d.x * d.x + d.y * d.y + d.z * d.z > 40.0f * 40.0f) {
+			Travel_TestGoto(i, tc_follow[i].ent, tc_follow[i].dx, tc_follow[i].dz);
+			tc_follow[i].at = t->pos;
+		}
+	}
+}
+
 static void TC_Talk(tcBuf *b, const char *arg) {
 	char ent[64], opt[64];
 	float dx = 300.0f, dz = 0.0f;
@@ -1558,6 +1584,14 @@ static void TC_Talk(tcBuf *b, const char *arg) {
 		TC_Add(b, "ok\n", -1);
 	} else if (g_Play) {
 		TC_Add(b, "error: talk is single player's (a client uses through its input)\n", -1);
+	} else if (sscanf(arg, "follow %d %63s %f %f", &pl, ent, &dx, &dz) >= 2 && pl >= 0 && pl < PLAYERS_MAX) {
+		tc_follow[pl].on = strcmp(ent, "-") != 0;
+		Str_Copy(tc_follow[pl].ent, ent, sizeof(tc_follow[pl].ent));
+		tc_follow[pl].dx = dx;
+		tc_follow[pl].dz = dz;
+		tc_follow[pl].at.x = 1e9f;
+		TC_Follow();
+		TC_Add(b, "ok\n", -1);
 	} else if (sscanf(arg, "goto %63s %f %f", ent, &dx, &dz) >= 1) {
 		Travel_TestGoto(0, ent, dx, dz);
 		TC_Add(b, "ok\n", -1);
@@ -1565,7 +1599,7 @@ static void TC_Talk(tcBuf *b, const char *arg) {
 		Travel_TestUse(0, ent, opt);
 		TC_Add(b, "ok\n", -1);
 	} else {
-		TC_Add(b, "error: talk goto <entity> [<dx> <dz>] | talk use <entity> [<option>]\n", -1);
+		TC_Add(b, "error: talk goto <entity> [<dx> <dz>] | talk use <entity> [<option>] | talk follow <player> <entity>|- [<dx> <dz>]\n", -1);
 	}
 }
 
@@ -1602,7 +1636,9 @@ static void TC_Line(tcBuf *b, const char *line) {
 	/* "talk goto <entity> [<dx> <dz>]", "talk use <entity> [<option>]": single player's player put next to an entity
 	 * or using it, as the instance's lines goto and use do for a network player (include/scrap/travel.h); not on a
 	 * client, whose use goes to the server as its input. "talk mark <text>": a line of the talk trace (netaudit.h).
-	 * "talk state [<player>]": the money (of an instance's player) and the save variables */
+	 * "talk state [<player>]": the money (of an instance's player) and the save variables. "talk follow <player>
+	 * <entity> [<dx> <dz>]": the player (0 in single player) put next to the entity again whenever it walked away, "talk
+	 * follow <player> -" ends it */
 	if (TC_Verb(line, "talk", &arg)) {
 		TC_Talk(b, arg);
 		return;
@@ -2002,5 +2038,6 @@ void TestChannel_WorldFrame(void) {
 		return;
 	}
 	tc_worldRan = 1;
+	TC_Follow();
 	TC_Poll();
 }
