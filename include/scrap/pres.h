@@ -80,6 +80,10 @@ enum {
 	PRES_O_HUDSET,					/* item, var, kind u8 (1 text, 2 number), value */
 	PRES_O_TALK,					/* file, speaker, arg: the talk voice (Sound_OpenTalk) */
 	PRES_O_ITEMSND,					/* entity, item: a sound item of a ship its simulation starts (Pres_ItemSound) */
+	PRES_O_SCENE,					/* name, entity, tick, flags: a scene starts (include/scrap/netscene.h) */
+	PRES_O_SCENEEND,				/* name: it ends */
+	PRES_O_CAMPATH,					/* a camera path of the scripts for the player (include/scrap/netscene.h) */
+	PRES_O_FXCALL,					/* name, the parameter bytes: a C effect function the scripts call (Scrap.Execute) */
 	PRES_O_GVAR,					/* name, kind u8 (1 text, 2 number), value: an engine variable (Pres_GVar) */
 	PRES_O_CHARRES,					/* name: a character class the server's scripts loaded (Pres_CharRes) */
 	PRES_O_COUNT
@@ -141,6 +145,8 @@ void Pres_PutInt(int v);
 void Pres_PutFloat(float f);
 void Pres_PutVec(const vec3_t *v);
 void Pres_Send(void);
+/* Pres_Begin for the players of a mask (bit i: player i; those without a connection left out) */
+byte Pres_BeginMask(uint64_t mask, int op);
 /* the records of the frame to the players' connections (Rep_Tick) */
 void Pres_Flush(struct Net2Host *host);
 /* player i's own entity steps (its client steps it too: what it starts is not sent to i); -1 after */
@@ -226,6 +232,12 @@ void Pres_HudSet(const struct cScorer *sc, const char *item, const char *var, co
  * one whose own step it is); the client starts the item on its replica. Inside a derived presentation (the item
  * plays the replica makes itself) nothing goes. */
 void Pres_ItemSound(struct cEntity *e, int item);
+
+/* Scrap.Execute of the scripts' function f: on a -mp2 instance a C effect function (a name "FX...", as the
+ * presentation events of include/scrap/actions.h) goes to the current context's players as a record (their client
+ * calls it with the same parameters); 1 then, and the caller runs it inside Pres_Derive */
+struct cPy_Function;
+byte Pres_NativeCall(struct cPy_Function *f);
 
 /* the census of the network tests (audit category NA_CENSUS): "<what>.name:<name>" for every sample played and
  * debris system dropped, on an instance also "<what>.near:<name>" when it is near a player's viewer (pos NULL: a play

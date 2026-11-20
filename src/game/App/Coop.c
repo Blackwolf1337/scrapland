@@ -27,6 +27,7 @@
 #include "scrap/itementity.h"
 #include "scrap/missionmaker.h"
 #include "scrap/netrep.h"
+#include "scrap/netscene.h"
 #include "scrap/nodesworld.h"
 #include "scrap/nodesworld2d.h"
 #include "scrap/places.h"
@@ -1684,7 +1685,10 @@ void Coop_ScenePlay(const char *cls) {
 		cp.scene = -1;
 		size = Cp_SceneMsg(buf, sizeof(buf));
 	}
-	Cp_ToAll(buf, size);
+	/* a -mp2 instance: the scene record of include/scrap/netscene.h instead */
+	if (!g_Mp2) {
+		Cp_ToAll(buf, size);
+	}
 	if (cp.scene < 0) {
 		/* a scene of the level's own data (map.def): the clients have its class from their level's start */
 		Con_Printf("coop: scene %s plays (no table: the clients play the class they have)\n", cls);
@@ -1932,10 +1936,11 @@ void Coop_Joined(int i) {
 		Native_ErrPrint();
 	}
 	Native_Free(&h);
-	int size = Cp_SceneMsg(buf, sizeof(buf));
+	int size = g_Mp2 ? 0 : Cp_SceneMsg(buf, sizeof(buf));
 	if (size) {
 		Cp_ToClient(i, buf, size);
 	}
+	NetScene_Joined(i);
 	Con_Printf("coop: player %d came in during scene %s: it plays on its client too\n", i, cp.sceneCls);
 }
 
@@ -2049,7 +2054,7 @@ void Coop_SceneEnd(void) {
 	if (!Coop_On() || !cp.inScene || cp.endingSerial == 0) {
 		return;
 	}
-	if (cp.endingTable >= 0) {
+	if (cp.endingTable >= 0 && !g_Mp2) {
 		NetRepBuf_Init(&w, buf, sizeof(buf));
 		NetRep_PutU8(&w, COOP_MSG);
 		NetRep_PutU8(&w, COOP_Y_SCENEEND);

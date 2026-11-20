@@ -13,6 +13,7 @@
 #include "scrap/netaudit.h"
 #include "scrap/scorer.h"
 #include "scrap/players.h"
+#include "scrap/pres.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/scriptapi.h"
@@ -250,7 +251,15 @@ API_FN(Scrap, Execute) {
 	if (!Mode_Parse(a, n, "")) {
 		return 0;
 	}
+	/* not in the original: a -mp2 instance sends a C effect function to the players (include/scrap/pres.h) */
+	byte sent = Pres_NativeCall(&g_CallFunc);
+	if (sent) {
+		Pres_Derive();
+	}
 	cPy_Function_Execute((&g_CallFunc), 0);
+	if (sent) {
+		Pres_Underive();
+	}
 	return 1;
 }
 

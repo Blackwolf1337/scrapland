@@ -284,6 +284,9 @@ byte Play_DeathCamOn(void);
 void Play_Start(void);
 /* the player's camera of view 0, made when missing (at x y z) */
 struct cEntity *Play_ViewCamera(float x, float y, float z);
+/* a scene of the server ended here (include/scrap/netscene.h): the camera, the HUD and the input of the own entity
+ * again */
+void Play_SceneEnd(void);
 void Play_PreFrame(double now, double rtt, double rttVar, float loss);
 /* 1 when an ack with the inputs is due now: its inputs (newest first) and the shown server time */
 int Play_TakeInputs(NetRepInput *in, int *n, uint32_t *shownMs);

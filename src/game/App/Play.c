@@ -25,6 +25,7 @@
 #include "scrap/global.h"
 #include "scrap/input.h"
 #include "scrap/netaudit.h"
+#include "scrap/netscene.h"
 #include "scrap/platform.h"
 #include "scrap/play.h"
 #include "scrap/players.h"
@@ -217,7 +218,8 @@ cEntity *Play_ViewCamera(float x, float y, float z) {
 	if (!c) {
 		c = cWorld_CreateEntity(g_pWorld, PLAY_CAM, x, y, z, TYEN_FCAM);
 	}
-	if (c) {
+	/* a camera path of the server keeps view 0 until its end (include/scrap/netscene.h) */
+	if (c && !NetScene_ClientPathHolds()) {
 		cWorld_SetCam(g_pWorld, 0, PLAY_CAM);
 	}
 	return c;
@@ -243,6 +245,10 @@ static void Play_Camera(void) {
 	/* the ship's camera switches views with its button; a character's has nothing to switch */
 	s = play.kind == NETREP_SHIP ? "Vehicles.SwitchView" : "";
 	Entity_VarS(play.cam, "OnSwitch", &s, 1);
+	/* a scene or a camera path of the server keeps its input and HUD until its end (Play_SceneEnd) */
+	if (NetScene_ClientHolds() || NetScene_ClientPathHolds()) {
+		return;
+	}
 	Input_SelectActionSetNamed(play.kind == NETREP_SHIP ? "Racer" : "Walk");
 	/* the HUD of single player for the walker or the racer of view 0 */
 	if (play.kind == NETREP_SHIP) {
@@ -252,6 +258,10 @@ static void Play_Camera(void) {
 	} else if (Mode_Import("CharScorer")) {
 		PORT_CALL(CharScorer, Create, NULL, "i", 0L);
 	}
+}
+
+void Play_SceneEnd(void) {
+	Play_Camera();
 }
 
 void Play_OwnRemove(void) {
