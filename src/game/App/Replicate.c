@@ -1372,6 +1372,8 @@ void Rep_Respawn(int i) {
 void Rep_Placed(int i) {
 	if (i >= 0 && i < PLAYERS_MAX) {
 		rep.pl[i].spawnAt = -1;
+		/* -mp2: its client takes the next rollback state as a jump, not a correction */
+		rep.pl[i].moved++;
 	}
 }
 

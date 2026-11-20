@@ -403,24 +403,17 @@ def player_car(ents, near):
 
 
 def board_mp2(a, g, inst_dir, side):
-    """-mp2: the player uses the arrow of its own ship (PlayerShip<n>, the nearest of that name to its character
-    anywhere in the level: a joined player's spawn can be far from it; the instance puts the player beside it first)
-    as single player's use button does"""
+    """-mp2: the player's switch through the instance's test line "switch <player>" (the nearest parked ship, or a
+    called one, with single player's boarding flow). The use of its own PlayerShip<n> ("use <player> <ship>") hangs for
+    a joined player (player 1): the boarding never ends (stage 3.5 hand-back)"""
     rows = read_log(os.path.join(a.scratch, 'feel-%s%s.csv' % (side, '-' + a.cell if a.cell else '')))
     if not rows:
         return
-    p = rows[-1]['pos']
-    _, player = player_char(a, inst_dir, p)
-    ents = parity.parse_ents(inst_dir.try_ask('entinfo', inst=a.level, timeout=20))
-    ships = sorted((e for e in ents if e['cls'] == 'Car' and e['name'].startswith('PlayerShip')),
-                   key=lambda e: dist(e['pos'], p))
-    if player is None or not ships:
-        print('feel %s: no player character or no PlayerShip to board' % side, flush=True)
+    _, player = player_char(a, inst_dir, rows[-1]['pos'])
+    if player is None:
+        print('feel %s: no player character to board with' % side, flush=True)
         return
-    if dist(ships[0]['pos'], p) > 1500.0:
-        inst_dir.ask('iline goto %d %s' % (player, ships[0]['name']), inst=a.level)
-        time.sleep(3.0)
-    inst_dir.ask('iline use %d %s' % (player, ships[0]['name']), inst=a.level)
+    inst_dir.ask('iline switch %d' % player, inst=a.level)
 
 
 def lift(a, g, inst_dir, side):
