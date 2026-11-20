@@ -16,6 +16,7 @@
 #include "scrap/itementity.h"
 #include "scrap/material.h"
 #include "scrap/netaudit.h"
+#include "scrap/netscene.h"
 #include "scrap/play.h"
 #include "scrap/initsteps.h"
 #include "scrap/players.h"
@@ -1013,6 +1014,8 @@ int cWorld_SetCam(cWorld *world, int i, const char *name) {
 		if (g_Mp2 && !InitSteps_Entering()) {
 			byte path = cam && Entity_IsType(cam, TYEN_CAMPATH);
 			Pres_NoRoute(NA_CAMERA, path ? "pres.scene:camera:" : "pres.unforwarded:camera:", Pres_ModSite());
+			/* the path goes to the player as a scene (include/scrap/netscene.h) */
+			NetScene_CamSet(cam);
 		}
 	}
 	if (*name && (!cam || !Entity_IsType(cam, "Cam"))) {

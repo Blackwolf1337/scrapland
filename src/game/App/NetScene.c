@@ -54,7 +54,9 @@ static struct {
 	uint64_t mask, skips;
 	int flags;
 	int rule;						/* NS_SKIP_, -1 before the rules were read */
+	char path[PLAYERS_MAX][NS_NAME];	/* the camera path each player's view 0 shows now, to send */
 	/* client */
+	byte pathOn;
 	byte cOn, linked, seen;
 	char cCls[NS_NAME], cEnt[NS_NAME];
 	int cFlags, cTick;
@@ -232,7 +234,118 @@ byte NetScene_Message(Net2Host *host, int conn, const uint8_t *data, int size) {
 	return 1;
 }
 
+void NetScene_CamSet(cEntity *cam) {
+	int i = Players_Current();
+	if (!NetScene_Derives() || i < 0 || i >= PLAYERS_MAX || !cam || !Entity_IsType(cam, TYEN_CAMPATH)) {
+		return;
+	}
+	Str_Copy(ns.path[i], cam->name, sizeof(ns.path[i]));
+}
+
+void NetScene_Flush(void) {
+	for (int i = 0; NetScene_Derives() && i < PLAYERS_MAX; i++) {
+		cEntity *e = ns.path[i][0] ? World_FindEntity(ns.path[i]) : NULL;
+		if (!ns.path[i][0]) {
+			continue;
+		}
+		ns.path[i][0] = 0;
+		if (!e || !Entity_IsType(e, TYEN_CAMPATH)) {
+			continue;
+		}
+		cCamPathEntity *p = (cCamPathEntity *)e;
+		int n = p->numPoints < NETSCENE_PATH_POINTS ? p->numPoints : NETSCENE_PATH_POINTS;
+		if (n < p->numPoints) {
+			NetAudit_Site(NA_CAMERA, "scene.path.cut");
+		}
+		if (!Pres_BeginMask((uint64_t)1 << i, PRES_O_CAMPATH)) {
+			continue;
+		}
+		Pres_PutStr(e->name);
+		Pres_PutInt(n);
+		Pres_PutFloat(p->time);
+		for (int k = 0; k < n; k++) {
+			const cCamPathPoint *pt = &p->points[k];
+			cEntity *c = pt->cam[0] ? World_FindEntity(pt->cam) : NULL;
+			/* a player's own camera (the follow camera of the server's context) is the client's own */
+			Pres_PutStr(c && Entity_IsType(c, TYEN_FCAM) ? "@own" : pt->cam);
+			Pres_PutVec(&pt->pos);
+			Pres_PutVec(&pt->ang);
+			Pres_PutFloat(pt->zNear);
+			Pres_PutFloat(pt->zFar);
+			Pres_PutFloat(pt->fov);
+			Pres_PutFloat(pt->time);
+			Pres_PutFloat(pt->quake);
+			Pres_PutInt(pt->fadeIn);
+			Pres_PutInt(pt->fadeOut);
+		}
+		Pres_Send();
+		NetAudit_Site(NA_CAMERA, "scene.path");
+	}
+}
+
 /* ---- client ---- */
+
+#define NS_PATH "PlayPath"
+#define NS_OWNCAM "PlayCam"			/* the client's own camera (Play.c) */
+
+/* the length of a path: the times of its points up to the last */
+static float NetScene_PathLength(const cCamPathEntity *p) {
+	float t = 0.0f;
+	for (int k = 0; k < p->numPoints - 1; k++) {
+		t += p->points[k].time > 0.0f ? p->points[k].time : 0.0f;
+	}
+	return t;
+}
+
+void NetScene_ClientPath(const char *name, const netScenePath_t *path) {
+	cEntity *e = World_FindEntity(NS_PATH);
+	if (!e) {
+		e = cWorld_CreateEntity(g_pWorld, NS_PATH, 0.0f, 0.0f, 0.0f, TYEN_CAMPATH);
+	}
+	if (!e || !Entity_IsType(e, TYEN_CAMPATH) || path->n < 1) {
+		return;
+	}
+	cCamPathEntity *p = (cCamPathEntity *)e;
+	p->numPoints = path->n;
+	p->time = path->time;
+	for (int k = 0; k < path->n; k++) {
+		cCamPathPoint *pt = &p->points[k];
+		Str_Copy(pt->cam, !strcmp(path->p[k].cam, "@own") ? NS_OWNCAM : path->p[k].cam, sizeof(pt->cam));
+		pt->pos = path->p[k].pos;
+		pt->ang = path->p[k].ang;
+		pt->zNear = path->p[k].zNear;
+		pt->zFar = path->p[k].zFar;
+		pt->fov = path->p[k].fov;
+		pt->time = path->p[k].time;
+		pt->quake = path->p[k].quake;
+		pt->fadeIn = (byte)path->p[k].fadeIn;
+		pt->fadeOut = (byte)path->p[k].fadeOut;
+	}
+	cWorld_SetCam(g_pWorld, 0, NS_PATH);
+	ns.pathOn = 1;
+	NetAudit_Name(NA_CAMERA, "scene.client.path:", name);
+	Con_Printf("scene: the camera path %s of the server (%d points, %.2f s) plays here\n", name, path->n,
+		(double)NetScene_PathLength(p));
+}
+
+byte NetScene_ClientPathHolds(void) {
+	return ns.pathOn;
+}
+
+/* each frame: the end of the path, the own camera again */
+static void NetScene_PathFrame(void) {
+	cEntity *e = ns.pathOn ? World_FindEntity(NS_PATH) : NULL;
+	if (!ns.pathOn) {
+		return;
+	}
+	if (!e || ((cCamPathEntity *)e)->time >= NetScene_PathLength((cCamPathEntity *)e)) {
+		ns.pathOn = 0;
+		if (World_FindEntity(NS_OWNCAM)) {
+			cWorld_SetCam(g_pWorld, 0, NS_OWNCAM);
+		}
+		Con_Printf("scene: the camera path ends here\n");
+	}
+}
 
 static cEntity *NetScene_ViewCam(void) {
 	const char *name = g_pWorld ? cWorld_GetCamName(g_pWorld, 0) : NULL;
@@ -320,6 +433,7 @@ void NetScene_ClientEnd(const char *cls) {
 }
 
 void NetScene_ClientFrame(void) {
+	NetScene_PathFrame();
 	if (!ns.cOn) {
 		return;
 	}
@@ -394,10 +508,29 @@ actEventFilter_t NetScene_Filter(cEntity *e) {
 
 void NetScene_ClientReset(void) {
 	ns.cOn = 0;
+	ns.pathOn = 0;
 	ns.nhid = 0;
 }
 
-/* ---- both: the screenshots of the tests ---- */
+/* ---- both: the tests ---- */
+
+void NetScene_TestVars(void) {
+	const char *v = getenv("SCRAP_TEST_SAVEVARS");
+	char item[256];
+	for (const char *p = v; p && *p;) {
+		const char *end = strchr(p, ';');
+		int len = end ? (int)(end - p) : (int)strlen(p);
+		Str_PrintfQuiet(item, sizeof(item), "%.*s", len < 255 ? len : 255, p);
+		char *eq = strchr(item, '=');
+		if (eq) {
+			*eq = 0;
+			SaveVar_Set(item, eq + 1);
+			Con_Printf("scene: test save variable %s = %s\n", item, eq + 1);
+		}
+		p = end ? end + 1 : NULL;
+	}
+}
+
 
 static void NetScene_ShotsRead(void) {
 	const char *v = getenv("SCRAP_SCENE_SHOTS");

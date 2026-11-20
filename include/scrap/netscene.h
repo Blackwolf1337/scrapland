@@ -38,20 +38,42 @@
  * Audit (NA_HUD): "scene.start:<name>", "scene.end:<name>", "scene.skip:<name>" on the instance; on the client
  * "scene.client:<name>", "scene.load:<name>", "pres.missing:scene:<name>" (no tables of the scene here).
  *
- * Wire: PRES_O_SCENE name, entity, tick (svarint), flags (svarint); PRES_O_SCENEEND name. Client to instance
+ * Camera paths of the scripts (a CamPath entity on view 0 of a player's context: the boarding and parking of a ship,
+ * a race's start) are scenes of that player: the path's points go to its client (PRES_O_CAMPATH), which plays them
+ * with a camera path of its own (its own camera in place of the server's camera of the player) and goes back to its
+ * own camera at the path's end. The server's paths are not replicated (cameras have no slot).
+ *
+ * Wire: PRES_O_SCENE name, entity, tick (svarint), flags (svarint); PRES_O_SCENEEND name; PRES_O_CAMPATH name, count
+ * (svarint), time (f32), per point: camera, pos, ang (3 f32 each), near, far, fov, time, quake (f32), fade in, fade
+ * out (svarint). Client to instance
  * (reliable): NETSCENE_MSG, kind u8 (NETSCENE_C_SKIP), name.
  */
 #ifndef SCRAP_NETSCENE_H
 #define SCRAP_NETSCENE_H
 
 #include "scrap/actions.h"
+#include "scrap/mathlib.h"
 #include "scrap/shared.h"
 
 #define NETSCENE_MSG 'R'
 #define NETSCENE_C_SKIP 1
 
+#define NETSCENE_PATH_POINTS 12		/* the points of a camera path a record carries */
+
 #define NETSCENE_F_LOCALHIDE 1		/* the client hides the walking characters itself (sandbox) */
 #define NETSCENE_F_OUTDOOR 2		/* an outdoor level: the ships too */
+
+/* a camera path of the scripts (PRES_O_CAMPATH) */
+typedef struct netScenePath {
+	int n;
+	float time;						/* "Time" of the path when it was sent */
+	struct {
+		char cam[64];				/* the camera the point copies: "" none, "@own" the player's own camera */
+		vec3_t pos, ang;
+		float zNear, zFar, fov, time, quake;
+		int fadeIn, fadeOut;
+	} p[NETSCENE_PATH_POINTS];
+} netScenePath_t;
 
 struct Net2Host;
 struct tcBuf;
@@ -71,6 +93,11 @@ int NetScene_Player(void);
 void NetScene_Started(const char *cls, const char *ent);
 /* EndOfScene of the scene begins (before its callback): the end record */
 void NetScene_Ending(void);
+/* view 0 of the current player's context shows camera cam (cWorld_SetCam): a camera path of the scripts (boarding,
+ * parking, a race's start) is sent to that player with the records of the frame (NetScene_Flush) */
+void NetScene_CamSet(struct cEntity *cam);
+/* before the records of the frame go out (Pres_Flush) */
+void NetScene_Flush(void);
 /* player i joined the instance */
 void NetScene_Joined(int i);
 /* a client's message (NETSCENE_MSG): 1 when taken */
@@ -83,6 +110,11 @@ void NetScene_Skip(int i);
 /* the records */
 void NetScene_ClientStart(const char *cls, const char *ent, int tick, int flags);
 void NetScene_ClientEnd(const char *cls);
+/* a camera path of the server for the own player: played by a camera path of the client's own, its own camera
+ * after its end */
+void NetScene_ClientPath(const char *name, const netScenePath_t *path);
+/* the own camera stays off view 0 while a path plays (Play_ViewCamera) */
+byte NetScene_ClientPathHolds(void);
 /* each frame: the camera link once the replica is there, the end when the replica went without an end */
 void NetScene_ClientFrame(void);
 /* a scene of the server plays here */
@@ -101,6 +133,10 @@ byte Scene_ClientEnd(void);
 
 /* ---- both ---- */
 
+/* the start of a level (Init.Init): SCRAP_TEST_SAVEVARS=<name>=<value>[;...] sets those save variables first, for a
+ * test that plays a scene whose level state depends on the story (HumanCD needs the mental controller of the press of
+ * GameAct 1stMurder to 3rdMurder) on every side alike */
+void NetScene_TestVars(void);
 /* each frame: the screenshots of SCRAP_SCENE_SHOTS */
 void NetScene_ShotFrame(void);
 /* the test verb "scene" */

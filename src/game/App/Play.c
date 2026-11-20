@@ -198,7 +198,8 @@ cEntity *Play_ViewCamera(float x, float y, float z) {
 	if (!c) {
 		c = cWorld_CreateEntity(g_pWorld, PLAY_CAM, x, y, z, TYEN_FCAM);
 	}
-	if (c) {
+	/* a camera path of the server keeps view 0 until its end (include/scrap/netscene.h) */
+	if (c && !NetScene_ClientPathHolds()) {
 		cWorld_SetCam(g_pWorld, 0, PLAY_CAM);
 	}
 	return c;

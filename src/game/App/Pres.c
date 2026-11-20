@@ -8,6 +8,7 @@
 
 #include "scrap/console.h"
 #include "scrap/coop.h"
+#include "scrap/coord.h"
 #include "scrap/fx.h"
 #include "scrap/fxmisc.h"
 #include "scrap/game.h"
@@ -23,6 +24,7 @@
 #include "scrap/platform.h"
 #include "scrap/players.h"
 #include "scrap/pres.h"
+#include "scrap/pyfunction.h"
 #include "scrap/replicate.h"
 #include "scrap/repent.h"
 #include "scrap/scorer.h"
@@ -50,7 +52,7 @@ byte g_PresHud;
 
 static const char *const pres_opNames[PRES_O_COUNT] = { "?", "soundat", "sound3d", "sound2d", "voiceopen", "voiceplay",
 	"voicestop", "music", "shipexpl", "fxent", "msgtext", "labeltext", "speech", "speechcancel", "chat", "head", "fade",
-	"cinema", "actionset", "hudadd", "hudclear", "hudshow", "hudset", "talk", "itemsnd", "scene", "sceneend" };
+	"cinema", "actionset", "hudadd", "hudclear", "hudshow", "hudset", "talk", "itemsnd", "scene", "sceneend", "campath", "fxcall" };
 
 /* a voice of a -mp2 instance's model: nothing plays, the file's length and the time it started give what the scripts
  * read (VoiceRemain), the text what the talk voice's checks read */
@@ -252,6 +254,7 @@ void Pres_Send(void) {
 }
 
 void Pres_Flush(Net2Host *host) {
+	NetScene_Flush();
 	for (int i = 0; i < PLAYERS_MAX; i++) {
 		if (pres.size[i]) {
 			Pres_FlushPlayer(host, i);
@@ -300,6 +303,25 @@ const char *Pres_ModSite(void) {
 			pres.callMod[k], pres.callFunc[k]);
 	}
 	return pres.site;
+}
+
+byte Pres_NativeCall(cPy_Function *f) {
+	const void *data;
+	if (!Pres_Out() || !(f->flags & PYF_NATIVE)) {
+		return 0;
+	}
+	const char *name = cPy_NativeFunc_Name((nativefunc_t)f->func);
+	int n = cPy_Function_NativeBytes(f, &data);
+	if (!name || strncmp(name, "FX", 2) || n > PRES_REC - 300) {
+		return 0;
+	}
+	if (Pres_Begin(PRES_PLAYER, NULL, PRES_O_FXCALL)) {
+		Pres_PutStr(name);
+		NetRep_PutU16(&pres.w, (uint32_t)n);
+		CoordMsg_PutBytes(&pres.w, data, n);
+		Pres_Send();
+	}
+	return 1;
 }
 
 /* ---- instance: the HUD models ---- */
@@ -1166,6 +1188,48 @@ static void Pres_Play(int op, NetRepReader *r) {
 			NetScene_ClientEnd(name);
 		}
 		break;
+	case PRES_O_FXCALL: {
+		static cPy_Function call;
+		static uint8_t bytes[PRES_REC];
+		NetRep_GetStr(r, name, sizeof(name));
+		int n = (int)NetRep_GetU16(r);
+		if (n > (int)sizeof(bytes)) {
+			r->bad = 1;
+			break;
+		}
+		CoordMsg_GetBytes(r, bytes, n);
+		Str_PrintfQuiet(s2, sizeof(s2), "!%s", name);
+		if (!r->bad && cPy_Function_SetFunc(&call, s2)) {
+			cPy_Function_SetNativeBytes(&call, bytes, n);
+			cPy_Function_Execute(&call, 0);
+		} else if (!r->bad) {
+			Pres_Missing(op, name);
+		}
+		break;
+	}
+	case PRES_O_CAMPATH: {
+		static netScenePath_t path;
+		NetRep_GetStr(r, name, sizeof(name));
+		int n = NetRep_GetSVar(r);
+		path.time = Pres_GetFloat(r);
+		path.n = n < 0 ? 0 : n > NETSCENE_PATH_POINTS ? NETSCENE_PATH_POINTS : n;
+		for (int k = 0; k < path.n && !r->bad; k++) {
+			NetRep_GetStr(r, path.p[k].cam, sizeof(path.p[k].cam));
+			Pres_GetVec(r, &path.p[k].pos);
+			Pres_GetVec(r, &path.p[k].ang);
+			path.p[k].zNear = Pres_GetFloat(r);
+			path.p[k].zFar = Pres_GetFloat(r);
+			path.p[k].fov = Pres_GetFloat(r);
+			path.p[k].time = Pres_GetFloat(r);
+			path.p[k].quake = Pres_GetFloat(r);
+			path.p[k].fadeIn = NetRep_GetSVar(r);
+			path.p[k].fadeOut = NetRep_GetSVar(r);
+		}
+		if (!r->bad && n == path.n) {
+			NetScene_ClientPath(name, &path);
+		}
+		break;
+	}
 	default:
 		r->bad = 1;
 		break;
