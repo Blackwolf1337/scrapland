@@ -140,6 +140,7 @@ static inline cEntity *Weap_Owner(cWorld *w, int i) {
 
 /* sound i of the entity from its first volume and pitch */
 static inline void Weap_PlaySound(cEntity *e, int i) {
+	Pres_ItemSound(e, i);
 	cSndItem *s = PtrArray_Get(&Obj(e)->snd, i);
 	if (s) {
 		s->volume = s->vols[0];

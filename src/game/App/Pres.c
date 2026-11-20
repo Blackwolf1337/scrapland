@@ -27,6 +27,7 @@
 #include "scrap/scrap.h"
 #include "scrap/sound.h"
 #include "scrap/viewers.h"
+#include "scrap/weapons.h"
 #include "scrap/world.h"
 
 #include "../Global/testchannel.h"
@@ -46,7 +47,7 @@ byte g_PresHud;
 
 static const char *const pres_opNames[PRES_O_COUNT] = { "?", "soundat", "sound3d", "sound2d", "voiceopen", "voiceplay",
 	"voicestop", "music", "shipexpl", "fxent", "msgtext", "labeltext", "speech", "speechcancel", "chat", "head", "fade",
-	"cinema", "actionset", "hudadd", "hudclear", "hudshow", "hudset", "talk" };
+	"cinema", "actionset", "hudadd", "hudclear", "hudshow", "hudset", "talk", "itemsnd" };
 
 typedef struct PresRecent {
 	uint32_t hash;
@@ -360,6 +361,18 @@ void Pres_NoRoute(int cat, const char *prefix, const char *site) {
 	if (Pres_Out()) {
 		NetAudit_Func((netAuditCat_t)cat, prefix, site);
 	}
+}
+
+void Pres_ItemSound(cEntity *e, int item) {
+	vec3_t pos;
+	if (!Pres_Out() || !e || !Entity_IsType(e, TYEN_VEHICLE) || !PtrArray_Get(&Obj(e)->snd, item) ||
+		!Pres_Begin(PRES_NEAR, Entity_GetPos(e, &pos), PRES_O_ITEMSND)) {
+		return;
+	}
+	Pres_PutStr(e->name);
+	Pres_PutInt(item);
+	NetAudit_Func(NA_SOUND, "pres.from:", "Pres_ItemSound");
+	Pres_Send();
 }
 
 void Pres_SoundAt(const char *name, const vec3_t *pos, int volume) {
@@ -874,6 +887,17 @@ static void Pres_Play(int op, NetRepReader *r) {
 		d.volume += vol;
 		d.freq = freq;
 		SoundSys_PlaySound(g_pSound, name, &d, NULL);
+		break;
+	}
+	case PRES_O_ITEMSND: {
+		NetRep_GetStr(r, name, sizeof(name));
+		int item = NetRep_GetSVar(r);
+		cEntity *e = r->bad ? NULL : Pres_EventEnt(name);
+		if (e && Entity_IsType(e, TYEN_VEHICLE)) {
+			Vehicle_StartSnd(e, item);
+		} else if (!r->bad) {
+			Pres_ClientMissing("itemsnd", name);
+		}
 		break;
 	}
 	case PRES_O_SOUND2D: {

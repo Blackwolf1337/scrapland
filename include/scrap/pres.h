@@ -79,6 +79,7 @@ enum {
 	PRES_O_HUDSHOW,					/* on */
 	PRES_O_HUDSET,					/* item, var, kind u8 (1 text, 2 number), value */
 	PRES_O_TALK,					/* file, speaker, arg: the talk voice (Sound_OpenTalk) */
+	PRES_O_ITEMSND,					/* entity, item: a sound item of a ship its simulation starts (Pres_ItemSound) */
 	PRES_O_COUNT
 };
 
@@ -191,6 +192,12 @@ void Pres_HudShow(const struct cScorer *sc, byte on);
 void Pres_HudSet(const struct cScorer *sc, const char *item, const char *var, const char *s, double d);
 
 /* ---- client ---- */
+
+/* a -mp2 instance: the simulation of ship e starts its sound item (Vehicle_StartSnd, Weap_PlaySound: the boost, a
+ * crash, a weapon's shot or launch, the weapon change), which its replica does not step: to the players near (not the
+ * one whose own step it is); the client starts the item on its replica. Inside a derived presentation (the item
+ * plays the replica makes itself) nothing goes. */
+void Pres_ItemSound(struct cEntity *e, int item);
 
 /* the census of the network tests (audit category NA_CENSUS): "<what>.name:<name>" for every sample played and
  * debris system dropped, on an instance also "<what>.near:<name>" when it is near a player's viewer (pos NULL: a play
