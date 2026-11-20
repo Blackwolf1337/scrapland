@@ -3742,7 +3742,12 @@ byte Mode_Cam0(nativeVal_t *out) {
 byte Mode_CamLink(const nativeVal_t *link) {
 	nativeVal_t cam, e = { 0 };
 	Mode_CamName(0, &cam);
-	byte ok = Mode_EntitySeam(&cam, &e) && Mode_VSet(&e, "EntityLink", link);
+	byte ok = Mode_EntitySeam(&cam, &e);
+	/* not in the original: a player of an instance has no camera there (its client's own camera follows it: the
+	 * metro's elevator ride of a -mp2 player, include/scrap/uichan.h) */
+	if (ok && !(g_Instance && e.type == NV_NONE)) {
+		ok = Mode_VSet(&e, "EntityLink", link);
+	}
 	Native_Free(&cam);
 	Native_Free(&e);
 	return ok;

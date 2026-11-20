@@ -167,6 +167,12 @@ static void ReplicaEnt_Apply(cEntity *e, const NetRepJVal *v) {
 		char buf[NETREP_JSTR];
 		char *s = buf;
 		Str_Copy(buf, v->u.s, sizeof(buf));
+		if (!strcmp(name, "LinkModel") && buf[0] != ',' && Entity_IsType(e, TYEN_OBJECT) && Obj(e)->mod.link.target) {
+			/* a new link of a linked replica: the scripts' unlink before it is not in the journal (the editor's end
+			 * links the platform's ship again, include/scrap/uichan.h) */
+			char *un = ",";
+			Entity_VarS(e, name, &un, 1);
+		}
 		Entity_VarS(e, name, &s, 1);
 		break;
 	}
