@@ -199,16 +199,17 @@ def feel_row(r, cell):
     def lat(k):
         x = r.get(k) or {}
         return x.get('latency_mean'), x.get('latency_p95'), x.get('samples', 0), x.get('misses', 0)
-    w, f, b = lat('walk'), lat('fly'), lat('boost')
+    w, f, b, x = lat('walk'), lat('fly'), lat('boost'), lat('fire')
     jw = ((r.get('walk') or {}).get('jitter_entity') or {}).get('rms')
     jf = ((r.get('fly') or {}).get('jitter_entity') or {}).get('rms')
     return {'cell': cell, 'side': r.get('side'), 'error': r.get('error'),
             'walk_mean': w[0], 'walk_p95': w[1], 'walk_n': w[2], 'fly_mean': f[0], 'fly_p95': f[1], 'fly_n': f[2],
-            'boost_mean': b[0], 'boost_p95': b[1], 'boost_n': b[2], 'boost_misses': b[3], 'jitter_walk': jw,
+            'boost_mean': b[0], 'boost_p95': b[1], 'boost_n': b[2], 'boost_misses': b[3], 'fire_mean': x[0],
+            'fire_p95': x[1], 'fire_n': x[2], 'fire_misses': x[3], 'jitter_walk': jw,
             'jitter_fly': jf,
             'corr_per_min': r.get('corr_per_min'), 'corrections': r.get('corrections'), 'minutes': r.get('minutes'),
             'start_on_foot': r.get('start_on_foot'), 'boarded': r.get('boarded'),
-            'frame_p95': (r.get('frames') or {}).get('p95')}
+            'frame_p95': (r.get('frames') or {}).get('p95'), 'bump': r.get('bump')}
 
 
 def feel_marks(rows):
@@ -220,12 +221,13 @@ def feel_marks(rows):
             r['over'].append('slow frames (p95 %.1f ms)' % r['frame_p95'])
         if r['side'] == 'sp' or r.get('error'):
             continue
-        for k in ('walk', 'fly', 'boost'):
+        for k in ('walk', 'fly', 'boost', 'fire'):
             v, ref = r.get(k + '_mean'), sp and sp.get(k + '_mean')
             if v is not None and ref is not None and v > ref + FRAME_MS:
                 r['over'].append(k)
-        if r.get('boost_misses'):
-            r['over'].append('boost missed %d' % r['boost_misses'])
+        for k in ('boost', 'fire'):
+            if r.get(k + '_misses'):
+                r['over'].append('%s missed %d' % (k, r[k + '_misses']))
         lim = CORR_LIMIT.get(r['cell'])
         if lim is not None and r.get('corr_per_min') is not None and r['corr_per_min'] > lim:
             r['over'].append('corrections')
@@ -236,18 +238,23 @@ def feel_table(rows):
     def n(v, fmt='%.1f'):
         return '-' if v is None else fmt % v
     lines = ['| cell (delay/jitter/loss) | side | walk ms mean/p95 | fly ms mean/p95 | boost ms mean/p95 | '
-             'jitter walk/fly | corr/min | frame p95 ms | over the limit |', '|---|---|---|---|---|---|---|---|---|']
+             'fire ms mean/p95 | jitter walk/fly | corr/min | bump hits/tries, corr | frame p95 ms | over the limit |',
+             '|---|---|---|---|---|---|---|---|---|---|---|']
     for r in rows:
         c = CELLS.get(r['cell'])
         cell = '-' if r['side'] == 'sp' else '%s ms (%d/%d/%g)' % (r['cell'], c[0], c[1], c[2]) if c else r['cell']
         if r.get('error'):
-            lines.append('| %s | %s | error: %s | | | | | | |' % (cell, r['side'], r['error']))
+            lines.append('| %s | %s | error: %s | | | | | | | | |' % (cell, r['side'], r['error']))
             continue
-        lines.append('| %s | %s | %s/%s | %s/%s | %s/%s | %s/%s | %s | %s | %s |' % (
+        b = r.get('bump') or {}
+        lines.append('| %s | %s | %s/%s | %s/%s | %s/%s | %s/%s | %s/%s | %s | %s | %s | %s |' % (
             cell, r['side'], n(r['walk_mean']), n(r['walk_p95']), n(r['fly_mean']), n(r['fly_p95']),
             n(r['boost_mean']) + (' (%d missed)' % r['boost_misses'] if r.get('boost_misses') else ''), n(r['boost_p95']),
-            n(r['jitter_walk'], '%.2f'), n(r['jitter_fly'], '%.2f'),
-            n(r['corr_per_min'], '%.2f'), n(r.get('frame_p95')), ', '.join(r.get('over', [])) or '-'))
+            n(r.get('fire_mean')) + (' (%d missed)' % r['fire_misses'] if r.get('fire_misses') else ''),
+            n(r.get('fire_p95')), n(r['jitter_walk'], '%.2f'), n(r['jitter_fly'], '%.2f'),
+            n(r['corr_per_min'], '%.2f'),
+            '%s/%s, %s' % (b.get('hits'), b.get('tries'), b.get('corrections')) if b.get('tries') else '-',
+            n(r.get('frame_p95')), ', '.join(r.get('over', [])) or '-'))
     return lines
 
 
@@ -256,7 +263,7 @@ def gate_feel(a):
     os.makedirs(out, exist_ok=True)
     base = [sys.executable, os.path.join(HERE, 'feel.py'), '--out', out, '--scratch', os.path.join(a.scratch, 'feel'),
             '--port', str(a.port), '--build', a.build, '--device', a.device, '--level', a.level,
-            '--walks', str(a.walks), '--bumps', '0'] + (['--mp2'] if a.mp2 else [])
+            '--walks', str(a.walks), '--bumps', str(a.bumps), '--playlog'] + (['--mp2'] if a.mp2 else [])
     jobs = [('sp', 'sp', [])]
     for cell in [c for c in a.cells.split(',') if c]:
         d, j, l = CELLS[cell]
@@ -284,9 +291,11 @@ def gate_feel(a):
     errors = [r for r in rows if r.get('error')]
     over = [r for r in rows if r.get('over')]
     status = 'error' if errors else 'fail' if over else 'pass'
-    table = ['# Feel (%s, %d walks, flights with the boost)' % (a.level, a.walks), '',
+    table = ['# Feel (%s, %d walks, flights with the boost%s)' % (
+             a.level, a.walks, ', %d flights into rail traffic' % a.bumps if a.bumps else ''), '',
              'Key to frame latency (ms from the real key press to the first drawn frame off the path), the boost as '
-             'the action button (right mouse button in the ship), drawn jitter (RMS of the drawn own entity from a '
+             'the action button (right mouse button in the ship), the fire button (left mouse button in the ship: '
+             'to the first frame after the own ship\'s weapon fired), drawn jitter (RMS of the drawn own entity from a '
              'local fit, units), prediction corrections per minute. Limits: latency within one frame (%.1f ms) of '
              'single player, corrections per minute at most %s.' % (
                  FRAME_MS, ', '.join('%s at %s ms' % (v, k) for k, v in CORR_LIMIT.items())), ''] + feel_table(rows)
@@ -594,7 +603,8 @@ def gate_diff(a):
                 if not p:
                     continue
                 for c, key in (('walk_mean', 'feel.latency'), ('fly_mean', 'feel.latency'), ('walk_p95', 'feel.p95'),
-                               ('boost_mean', 'feel.boost'), ('boost_p95', 'feel.boost')):
+                               ('boost_mean', 'feel.boost'), ('boost_p95', 'feel.boost'),
+                               ('fire_mean', 'feel.boost'), ('fire_p95', 'feel.boost')):
                     add('feel %s %s %s' % (r['cell'], r['side'], c), key, p.get(c), r.get(c))
                 for c in ('jitter_walk', 'jitter_fly'):
                     add('feel %s %s %s' % (r['cell'], r['side'], c), 'feel.jitter', p.get(c), r.get(c))
@@ -661,6 +671,7 @@ def main():
     ap.add_argument('--sides', default='join,host', help='feel: the multiplayer sides of each cell (join, host)')
     ap.add_argument('--level', default='DownTown')
     ap.add_argument('--walks', type=int, default=12)
+    ap.add_argument('--bumps', type=int, default=0, help='feel: flights into the path of rail traffic per side')
     # coop
     ap.add_argument('--points-dir', dest='points_dir', default=os.environ.get('MP2_COOP_POINTS', ''),
                     help='coop: the story points (<name>-data folders and keys/pa.key, keys/pb.key; MP2_COOP_POINTS)')

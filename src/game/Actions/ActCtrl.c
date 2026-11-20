@@ -183,7 +183,10 @@ static void cActCtrl_FireEvents(cActCtrl *self, int chan, float t, byte silent) 
 		}
 		cAction *a = l->action;
 		l->event = ev->next;
-		cActEvent_Fire(ev, self->owner->name);
+		/* ScrapC: the client's own entity fires what its prediction may (include/scrap/play.h) */
+		if (!g_ActOwnFilter || g_ActOwnFilter(self->owner, ev)) {
+			cActEvent_Fire(ev, self->owner->name);
+		}
 		if (g_LogActEvents) {
 			if (silent) {
 				Con_Verbosef("Event \"%s\" (%i,%s)\n", self->owner->name, chan, ev->name);
@@ -554,6 +557,142 @@ void cActCtrl_NetDrive(cActCtrl *self, const uint16_t *act, const float *rate, c
 			l->event = l->action->events;
 		}
 		cActCtrl_NetEvents(self, k, l->time, fire);
+	}
+}
+
+/* ---- ScrapC: the rollback of the client's own entity (stage 3.5, -mp2) ---- */
+
+byte (*g_ActOwnFilter)(cEntity *owner, const cActEvent *ev);
+
+/* channel k of the model of the controller, NULL past its channels */
+static CAnimSlot *Ctrl_Slot(cActCtrl *self, int k) {
+	CModel *m = Ctrl_Model(self)->Model;
+	return m && k < (int)m->slots.n ? &((CAnimSlot *)m->slots.p)[k] : NULL;
+}
+
+void cActCtrl_Save(cActCtrl *self, cActCtrlState *s) {
+	s->defLoop = self->defLoop;
+	memcpy(s->layers, self->layers, sizeof(s->layers));
+	s->rootSum = self->rootSum;
+	s->rootMove = self->rootMove;
+	s->rootTime = self->rootTime;
+	s->walkSpeed = self->walkSpeed;
+	for (int k = 0; k < ACT_LAYERS; k++) {
+		CAnimSlot *c = Ctrl_Slot(self, k);
+		s->anim[k] = c ? c->anim : NULL;
+		if (s->anim[k]) {
+			s->ctrl[k] = s->anim[k]->ctrl;
+		}
+	}
+}
+
+void cActCtrl_Restore(cActCtrl *self, const cActCtrlState *s) {
+	self->defLoop = s->defLoop;
+	memcpy(self->layers, s->layers, sizeof(self->layers));
+	self->rootSum = s->rootSum;
+	self->rootMove = s->rootMove;
+	self->rootTime = s->rootTime;
+	self->walkSpeed = s->walkSpeed;
+	for (int k = 0; k < ACT_LAYERS; k++) {
+		CAnimSlot *c = Ctrl_Slot(self, k);
+		if (!c) {
+			continue;
+		}
+		if (c->anim != s->anim[k]) {
+			/* the blend from the animation drawn now */
+			c->prev = c->anim;
+			c->blend = c->anim ? 1.0f : 0.0f;
+			c->anim = s->anim[k];
+		}
+		if (s->anim[k]) {
+			s->anim[k]->ctrl = s->ctrl[k];
+		}
+	}
+}
+
+cAction *cActCtrl_ActionAt(const cActCtrl *self, uint16_t i) {
+	cAction *a = i ? self->cls->first : NULL;
+	for (uint16_t k = 1; a && k < i; k++) {
+		a = a->next;
+	}
+	return a;
+}
+
+float cActCtrl_LayerFrame(cActCtrl *self, int k) {
+	CAnimSlot *c = Ctrl_Slot(self, k);
+	return c && c->anim ? c->anim->ctrl.frame : 0.0f;
+}
+
+/* layer k's channel to the frame f and the layer's time and next event from it */
+static void Ctrl_SetFrame(cActCtrl *self, int k, float f) {
+	CAnimSlot *c = Ctrl_Slot(self, k);
+	cActLayer *l = &self->layers[k];
+	if (!c || !c->anim) {
+		return;
+	}
+	c->anim->ctrl.frame = f;
+	CGameModel_ChanTime(Ctrl_Model(self), k, &l->time);
+	l->event = l->action->events;
+	while (l->event && l->event->time < l->time) {
+		l->event = l->event->next;
+	}
+}
+
+void cActCtrl_NetSet(cActCtrl *self, const uint16_t *act, const float *t, const float *frame, int layers,
+	uint16_t defLoop, float tol) {
+	CGameModel *m = Ctrl_Model(self);
+
+	if (defLoop) {
+		cAction *d = cActCtrl_ActionAt(self, defLoop);
+		if (d) {
+			self->defLoop = d;
+		}
+	}
+	for (int k = 0; k < layers && k < ACT_LAYERS; k++) {
+		cActLayer *l = &self->layers[k];
+		cAction *a = cActCtrl_ActionAt(self, act[k]);
+		if (!a) {
+			if (k > 0 && l->on) {
+				CGameModel_StopAnim(m, k);
+				l->on = 0;
+				l->action = NULL;
+				l->event = NULL;
+				l->time = 0.0f;
+			}
+			continue;
+		}
+		if (a == l->action && l->on && fabsf(l->time - t[k]) <= tol) {
+			if (frame) {
+				Ctrl_SetFrame(self, k, frame[k]);
+			}
+			continue;
+		}
+		l->on = 1;
+		l->action = a;
+		CGameModel_SetAnimLoop(m, Action_Anim(a), a->isLoop);
+		CGameModel_SetAnim(m, Action_Anim(a), k, 0);
+		CAnimSlot *c = Ctrl_Slot(self, k);
+		if (c && c->anim) {
+			/* from its start to the time at the factor 1: the animation's own jumps run, the root motion of it is
+			 * dropped */
+			CAnimCtrl_Start(&c->anim->ctrl);
+			float f = c->anim->ctrl.factor;
+			c->anim->ctrl.factor = 1.0f;
+			if (t[k] > 0.0f) {
+				CAnimCtrl_Update(&c->anim->ctrl, NULL, t[k]);
+			}
+			c->anim->ctrl.factor = f;
+			c->anim->ctrl.move = (vec3_t){ 0.0f, 0.0f, 0.0f };
+			c->anim->ctrl.jumps = 0;
+		}
+		CGameModel_ChanTime(m, k, &l->time);
+		l->event = a->events;
+		while (l->event && l->event->time < l->time) {
+			l->event = l->event->next;
+		}
+		if (frame) {
+			Ctrl_SetFrame(self, k, frame[k]);
+		}
 	}
 }
 

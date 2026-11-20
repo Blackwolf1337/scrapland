@@ -22,7 +22,19 @@ static struct {
 	byte tried;
 	FILE *f;
 	uint64_t last;
+	uint32_t fires;
 } feel;
+
+/* the own entity: the client's, single player's of slot 0 */
+static cEntity *Feel_Own(void) {
+	return g_Play ? Play_Entity() : cWorld_GetUsrEntity(g_pWorld, 0);
+}
+
+void FeelLog_Fire(cEntity *e) {
+	if (feel.f && e && e == Feel_Own()) {
+		feel.fires++;
+	}
+}
 
 static uint64_t Feel_Monotonic(void) {
 #if defined(_WIN32)
@@ -40,7 +52,7 @@ void FeelLog_Frame(void) {
 		feel.tried = 1;
 		feel.f = path && *path ? fopen(path, "w") : NULL;
 		if (feel.f) {
-			fputs("mono_ns,dt_ms,kind,x,y,z,cx,cy,cz,cyaw,input,corrections\n", feel.f);
+			fputs("mono_ns,dt_ms,kind,x,y,z,cx,cy,cz,cyaw,input,corrections,fires\n", feel.f);
 		}
 	}
 	if (!feel.f || !g_pWorld) {
@@ -49,7 +61,7 @@ void FeelLog_Frame(void) {
 	uint64_t now = Feel_Monotonic();
 	double dt = feel.last ? (double)(now - feel.last) / 1e6 : 0.0;
 	feel.last = now;
-	cEntity *e = g_Play ? Play_Entity() : cWorld_GetUsrEntity(g_pWorld, 0);
+	cEntity *e = Feel_Own();
 	char kind = '-';
 	float in = 0.0f;
 	vec3_t p = { 0.0f, 0.0f, 0.0f };
@@ -70,7 +82,7 @@ void FeelLog_Frame(void) {
 		c = ((cCamControl *)cam)->cam.pos;
 		yaw = ((cCamControl *)cam)->cam.rot.y;
 	}
-	fprintf(feel.f, "%llu,%.3f,%c,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.4f,%.3f,%u\n", (unsigned long long)now, dt, kind,
+	fprintf(feel.f, "%llu,%.3f,%c,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.4f,%.3f,%u,%u\n", (unsigned long long)now, dt, kind,
 		(double)p.x, (double)p.y, (double)p.z, (double)c.x, (double)c.y, (double)c.z, (double)yaw, (double)in,
-		g_Play ? Play_Corrections() : 0u);
+		g_Play ? Play_Corrections() : 0u, feel.fires);
 }

@@ -158,7 +158,7 @@ OffModPosAsPos	STATE	what a client shows of the entity
 UseLinkAng	STATE	what a client shows of the entity
 LinkModel	STATE	what a client shows of the entity
 OffModPos	STATE	what a client shows of the entity
-VRadius	SIM	simulation value of the server
+VRadius	STATE	the collision radius others meet (a parked ship's is larger): the prediction of the own entity collides with it
 MoveTime	EVENT	a one-shot change of the entity
 TimeSpeed	STATE	what a client shows of the entity
 EndTimeSpeed	STATE	what a client shows of the entity
@@ -205,7 +205,7 @@ TrustTime	SIM	simulation value of the server
 StrTrust	SIM	simulation value of the server
 BackTrust	SIM	simulation value of the server
 FrwTrust	SIM	simulation value of the server
-WRadius	SIM	simulation value of the server
+WRadius	STATE	the wall radius of a ship (swapped with VRadius while parked): part of the collision a prediction meets
 AcMass	SIM	simulation value of the server
 Style	STATE	what a client shows of the entity
 Engine	STATE	what a client shows of the entity

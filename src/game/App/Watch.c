@@ -1172,6 +1172,8 @@ void Watch_PreFrame(void) {
 				Watch_Snapshot(ev.data, ev.size);
 			} else if (ev.channel == REP_CH_UNRELIABLE && ev.data[0] == NETREP_MSG_SHOTS && watch.phase == WATCH_RUN) {
 				Watch_Shots(ev.data, ev.size);
+			} else if (ev.channel == REP_CH_UNRELIABLE && ev.data[0] == NETREP_MSG_OWN && watch.phase == WATCH_RUN) {
+				Play_OwnState(ev.data, ev.size);
 			} else if (ev.channel == REP_CH_UNRELIABLE && ev.data[0] == NETREP_MSG_STATUS && watch.phase == WATCH_RUN) {
 				NetRepStatus st;
 				if (NetRep_ReadStatus(ev.data, ev.size, &st)) {

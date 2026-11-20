@@ -143,8 +143,13 @@ void cWeaponManager_dtor(cWeaponManager *self);
 void cWeaponManager_ClearAmmo(cWeaponManager *self);
 void cWeaponManager_ClearWeaps(cWeaponManager *self);
 
-/* the start sound of the weapon sound i of the vehicle (inlined in the original) */
+/* ScrapC: a -mp2 client runs its own entity's ticks again for a correction (include/scrap/play.h) */
+extern byte g_PlayReplaying;
+/* the start sound of the weapon sound i of the vehicle (inlined in the original; not again in such a replay) */
 static inline void Vehicle_StartSnd(cEntity *e, int i) {
+	if (g_PlayReplaying) {
+		return;
+	}
 	Pres_ItemSound(e, i);
 	cSndItem *it = PtrArray_Get(&Veh(e)->wl.obj.snd, i);
 	if (it) {

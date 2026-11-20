@@ -79,8 +79,8 @@ int Rep_PlayerConn(int i);
 byte Rep_PlayerDead(int i);
 int Rep_ConnPlayer(int conn);
 void Rep_Respawn(int i);
-/* player i's character was put somewhere else (the test line goto): a drop from there is no fall from its spawn point
- * (REP_SPAWN_FALL) */
+/* player i's character was put somewhere else (the test line goto, coop's placements): a drop from there is no fall
+ * from its spawn point (REP_SPAWN_FALL); a -mp2 client takes it as a jump of its prediction */
 void Rep_Placed(int i);
 /* player i's entity gone without a death (a ship of the PvP modes is deleted, include/scrap/arena.h): no new one
  * before the mode or the respawn time gives it */

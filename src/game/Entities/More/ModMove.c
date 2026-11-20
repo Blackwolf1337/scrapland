@@ -6,6 +6,7 @@
 #include "scrap/crt.h"
 #include "scrap/hashtable.h"
 #include "scrap/objentity.h"
+#include "scrap/pres.h"
 #include "scrap/walkcharentity.h"
 
 
@@ -89,7 +90,15 @@ void cModMove_Link(cModMove *self, const char *name, const char *node) {
 	cPtrItem *it = PtrTable_Find(t, name, HashTable_Slot(t, name));
 	cEntity *link = NULL;
 	if (!it || !(link = it->value)) {
-		CHECK(!"Link");
+		/* not in the original: a -mp2 client links to the replica of the instance's name, and lacks the entities
+		 * outside its interest (counted, include/scrap/pres.h) */
+		link = Pres_EventEnt(name);
+		if (!link && Pres_ClientMissing("LinkModel", name)) {
+			return;
+		}
+		if (!link) {
+			CHECK(!"Link");
+		}
 	}
 	if (!Entity_IsType(link, TYEN_OBJECT)) {
 		CHECK(!"Link->IsType(TYEN_OBJECT)");

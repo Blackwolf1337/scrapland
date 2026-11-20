@@ -215,6 +215,21 @@ static void ReplicaEnt_Links(void) {
 	}
 }
 
+/* the variables of the client's own entity its prediction runs (stage 3.5): the rollback state brings the server's at
+ * the tick they were set (a journal entry would set them again when it comes: a boost of the client started again).
+ * Vel stays: a velocity the scripts set again and again (the brake of a parking box, Parking.OnPark) keeps the
+ * prediction nearer to the server when it comes than without it (fewer corrections in the stage 3.5 tests) */
+static byte ReplicaEnt_Predicted(const char *name) {
+	static const char *const names[] = { "Pos", "Ang", "ViewAng", "isBoost", "Life", "Energy", "MoveTime", "MovePos",
+		"MoveAng" };
+	for (size_t k = 0; k < sizeof(names) / sizeof(names[0]); k++) {
+		if (!strcmp(name, names[k])) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
 /* a journal value into the entity through its Var functions (an entry "name#n" of the values that add up is the
  * variable name) */
 static void ReplicaEnt_Apply(cEntity *e, const NetRepJVal *v) {
@@ -237,6 +252,11 @@ static void ReplicaEnt_Apply(cEntity *e, const NetRepJVal *v) {
 	char *hash = strchr(name, '#');
 	if (hash) {
 		*hash = 0;
+	}
+	if (e == Play_Entity() && ReplicaEnt_Predicted(name)) {
+		NetAudit_Name(NA_PREDICT, "pred.journal:", name);
+		rc.applying--;
+		return;
 	}
 	char file[0x200];
 	if (v->type == NETREP_JI && !strcmp(name, "AnmP0") && Entity_IsType(e, TYEN_CAR) &&

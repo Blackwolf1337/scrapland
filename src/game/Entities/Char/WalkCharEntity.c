@@ -13,6 +13,7 @@
 #include "scrap/repent.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/viewers.h"
+#include "scrap/play.h"
 #include "scrap/walkcharentity.h"
 #include "scrap/staticinit.h"
 
@@ -1122,9 +1123,15 @@ static void cWalkCharEntity_UnlinkListen(cEntity *self) {
 	w->abortTime = 0.0f;
 }
 
+/* the game's random; ScrapC: the draw of a -mp2 player's step, the same on its server and client (play.h) */
+static inline int WCE_Rand(cWalkCharEntity *w) {
+	int r;
+	return NetPl_StepRand(&w->wl.obj.base, &r) ? r : crt_rand();
+}
+
 /* the relax time again: lo .. hi at random */
 static inline void WCE_RelaxTime(cWalkCharEntity *w, float lo, float hi) {
-	int r = crt_rand();
+	int r = WCE_Rand(w);
 
 	w->relaxTime = (float)((double)(r & 0x7fff) * 3.051850947599719e-05 * (double)(hi - lo) + (double)lo);
 }
@@ -1209,7 +1216,7 @@ static void cWalkCharEntity_Idle(cEntity *self, float dt) {
 			cActCtrl_Play(w->wl.actCtrl, WCE_Alarm(self) ? "TurnAlarm" : "Turn", 0, 1.0f);
 		} else {
 			do {
-				name[5] = (char)(crt_rand() % 5 + '0');
+				name[5] = (char)(WCE_Rand(w) % 5 + '0');
 			} while (!cActCtrl_Play(w->wl.actCtrl, name, 0, 1.0f) && name[5] > '0');
 		}
 		WCE_RelaxTime(w, WCE_Class(w)->minTimeToExtraRelax, WCE_Class(w)->maxTimeToExtraRelax);

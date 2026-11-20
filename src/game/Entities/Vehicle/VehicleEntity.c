@@ -376,11 +376,14 @@ byte cVehicleEntity_GetLaunchTaunts(cVehicleEntity *self) {
 	return self->launchTaunts;
 }
 
-/* the boost sound and the speed history restarted */
+/* the boost sound and the speed history restarted (the sound and the camera's shake not in a replay of a -mp2
+ * client: they played at its prediction) */
 static void cVehicleEntity_StartBoost(cVehicleEntity *self) {
 	Vehicle_StartSnd(Veh_Ent(self), 4);
 	Veh_ResetHistory(self);
-	self->shake = 1.0f;
+	if (!g_PlayReplaying) {
+		self->shake = 1.0f;
+	}
 }
 
 static void cVehicleEntity_NoFireTick(cVehicleEntity *self, float dt) {
@@ -471,6 +474,9 @@ static void cVehicleEntity_Crash(cVehicleEntity *self, const vec3_t *acc, float 
 	int snd;
 	float shake;
 
+	if (g_PlayReplaying) {
+		return;
+	}
 	if (cam) {
 		cam->quakeTime = 0.2f;
 	}

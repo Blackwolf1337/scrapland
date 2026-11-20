@@ -856,6 +856,32 @@ static void Test_Follow(void) {
 	CHECK(NetRepFollow_Step(&f, t, dt) == t);
 }
 
+static void Test_Own(void) {
+	NetRepOwn o, r;
+	uint8_t buf[NETREP_OWN_MAX];
+	memset(&o, 0, sizeof(o));
+	o.tick = 123456;
+	o.kind = NETREP_SHIP;
+	o.moved = 7;
+	o.flags = 5;
+	o.nf = NETREP_OWN_F;
+	for (int i = 0; i < NETREP_OWN_F; i++) {
+		o.f[i] = (float)i * -1.25f + 0.1f;
+	}
+	o.layers = NETREP_OWN_LAYERS;
+	o.act[0] = 3;
+	o.act[3] = 65000;
+	o.defLoop = 2;
+	int n = NetRep_WriteOwn(buf, sizeof(buf), &o);
+	CHECK(n > 0 && n <= NETREP_OWN_MAX);
+	CHECK(NetRep_ReadOwn(buf, n, &r) && !memcmp(&o, &r, sizeof(o)));
+	CHECK(!NetRep_ReadOwn(buf, n - 1, &r));
+	o.nf = 2;
+	o.layers = 0;
+	n = NetRep_WriteOwn(buf, sizeof(buf), &o);
+	CHECK(NetRep_ReadOwn(buf, n, &r) && r.nf == 2 && r.f[1] == o.f[1] && r.layers == 0 && r.defLoop == 2);
+}
+
 static void Test_Predict(void) {
 	NetRepPredHist h;
 	NetRepPred p;
@@ -1163,6 +1189,7 @@ int main(void) {
 	Test_Follow();
 	Test_Delay();
 	Test_Predict();
+	Test_Own();
 	Test_PosAt();
 	printf("netrep_test: %d checks, %d failed\n", g_checks, g_fails);
 	return g_fails ? 1 : 0;
