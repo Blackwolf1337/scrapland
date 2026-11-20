@@ -29,7 +29,7 @@ against the joined client) and the positional sound census (census.py, joined cl
 instance) at the last point, as the columns mirror and census. The moment of a point is the server's then (stage
 4.2): single player runs its own simulation, so its traffic, police and NPCs near a point, its fights and passing
 ships are of its own moment. With --mp2 the kinds of the moment (LOOSE) are compared against the instance's count
-and the other kinds against the smaller of single player's and the instance's (the free world leaves the story's
+(within four fifths of the radius: a ship at the edge moves out by the time a client is asked) and the other kinds against the smaller of single player's and the instance's (the free world leaves the story's
 things of a place out on purpose), a sound single player plays counts when the instance played it near a player (census
 snd.near; its sources near the point are the census column's), a particle system when the instance dropped it near a
 player (census debris.near), a HUD item when the instance's world scorer or the other client has it; a positional set
@@ -613,7 +613,10 @@ def run_level(a, spec, routes=None):
             def inst_now():
                 return parse_ents(host.ask('entinfo %.0f %.0f %.0f %.0f' % (pos[0], pos[1], pos[2], a.radius * 1.2),
                                            inst=level, timeout=30))
-            pt['instance'] = {'kinds': count(inst_now(), pos, a.radius)}
+            iel_now = inst_now()
+            # the moving things of the moment within four fifths of the radius (-mp2: a ship at the edge may be out
+            # of a client's count by the time it is asked)
+            pt['instance'] = {'kinds': count(iel_now, pos, a.radius), 'kinds_inner': count(iel_now, pos, a.radius * 0.8)}
             sides = [('sp', sp, None), ('host', host, inst_now)] + ([('join', join, inst_now)] if join else [])
             pt.update(collect_all(sides, pos, a.radius))
             if a.mp2:
@@ -729,6 +732,7 @@ def gaps(res):
     sides = [s for s in ('host', 'join') if s in res]
     sk = {s: norm_kinds(res[s]['kinds']) for s in sides}
     ik = norm_kinds(res.get('instance', {}).get('kinds', {}))
+    inner = norm_kinds(res.get('instance', {}).get('kinds_inner', res.get('instance', {}).get('kinds', {})))
     kinds = set(sp)
     for s in sides:
         kinds |= set(sk[s])
@@ -738,9 +742,12 @@ def gaps(res):
         cnt = [sk[s].get(k, {}).get('active', 0) for s in sides]
         loose = any(k.startswith(x) for x in LOOSE)
         worst = min(cnt) if cnt else 0
-        if k in TIMED or (res.get('mp2') and loose):
-            # what the instance has there now; single player's count is of its own moment (-mp2: every kind of the
-            # moment, the traffic, the police, the NPCs, against the server the clients replicate)
+        if res.get('mp2') and loose:
+            # -mp2: every kind of the moment, the traffic, the police, the NPCs, against the server the clients
+            # replicate (what it has well inside the radius)
+            a_sp = inner.get(k, {}).get('active', 0)
+        elif k in TIMED:
+            # what the instance has there now; single player's count is of its own moment
             a_sp = ik.get(k, {}).get('active', 0)
         elif res.get('mp2'):
             # -mp2: what the free world leaves out on purpose (the story's things of a place, data/places/places.def)

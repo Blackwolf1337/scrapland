@@ -35,7 +35,8 @@
 /* ScrapC: cMissileEntity.fx, the embedded effect it was given (SetEmbeddedFX), and .weap, the weapon whose network
  * copy it is (Swarm_NetCreate, Inferno_NetCreate): what a watcher of the instance builds its proxy with */
 enum { MISSILE_FX_NONE, MISSILE_FX_DUMBMOTOR, MISSILE_FX_GEARMISSILE, MISSILE_FX_CLOUD, MISSILE_FX_EMI, MISSILE_FXS };
-enum { MISSILE_WEAP_NONE, MISSILE_WEAP_SWARM, MISSILE_WEAP_INFERNO };
+/* MISSILE_WEAP_COUNTER: the countermeasures Cloud, EMI and Sonic (their hits are the replicas' own, MissileEntity.c) */
+enum { MISSILE_WEAP_NONE, MISSILE_WEAP_SWARM, MISSILE_WEAP_INFERNO, MISSILE_WEAP_COUNTER };
 
 /* the names of the MISSILE_FX_ effects ("" for none) */
 extern const char *const g_MissileFXNames[MISSILE_FXS];

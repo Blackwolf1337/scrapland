@@ -295,9 +295,10 @@ static byte RepEnt_Carried(const char *name) {
 	return 0;
 }
 
-/* the events a replica gets from its state already (its actions, its moves, its forces): not sent */
+/* the events a replica gets from its state already (its actions, its moves, its forces): not sent; ForceDefLoop is
+ * journaled (RepEnt_Tap) */
 static byte RepEnt_StateEvent(const char *name) {
-	static const char *const names[] = { "Action", "ForceAction", "ForceDefLoop", "StopSecondary", "MoveTime",
+	static const char *const names[] = { "Action", "ForceAction", "StopSecondary", "MoveTime",
 		"MovePos", "MoveAng", "MoveViewAng", "MoveFade", "ForceVel", "ForceAll", "ActionPress", "UsePress" };
 	for (size_t i = 0; i < sizeof(names) / sizeof(names[0]); i++) {
 		if (!strcmp(name, names[i])) {
@@ -359,6 +360,11 @@ static void RepEnt_Tap(cEntity *e, const char *name, int type, const void *value
 	}
 	if (tag == NC_STATE ? RepEnt_Carried(name) : RepEnt_StateEvent(name)) {
 		return;
+	}
+	/* the default loop a script forces is state the actions do not carry (a replica's next loop, the DefLoop it reads
+	 * back): kept in the journal like a set */
+	if (!strcmp(name, "ForceDefLoop")) {
+		tag = NC_STATE;
 	}
 	int s = RepEnt_SlotFor(e);
 	if (s < 0) {

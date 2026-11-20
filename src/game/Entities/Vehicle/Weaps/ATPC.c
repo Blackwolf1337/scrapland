@@ -577,6 +577,7 @@ static void Cloud_Fire(cAbstractFile *params) {
 	cPy_Function_Execute(g_SetUpCloudFunc, 0);
 	cMissileEntity_SetLifeTime((cMissileEntity *)cloud, g_CloudLifeTime - 0.2f);
 	cPy_Function_SetFunc(&Missile(cloud)->onHit, "!CloudOnHit");
+	Missile(cloud)->weap = MISSILE_WEAP_COUNTER;
 	cWeaponManager_SetAmmo(&Veh(v)->weapons, g_CloudIDAmmo, (float)(ammo - Missile(cloud)->swarmCount));
 }
 

@@ -48,6 +48,9 @@ FL_PLAYER = 0x08
 FL_DERIVED = 0x08 | 0x10 | 0x20 | 0x40 | 0x80   # player, fire key, siren, slow, asleep: the server's own view
 
 
+# journal numbers the server's simulation changes every frame without a set (a gear's energy recharging): the resync
+# of RepEnt.c reads them back every few seconds, so a replica's value may be that far behind
+READBACK_LAG = {'Energy': 0.05}
 BURN_LAG = 5               # life points a burning thing loses while the client draws it ~100 ms behind
 
 
@@ -188,6 +191,10 @@ def compare(srv, cli, radius, rates=None):
                 cj[first] if first < len(cj) else '-')
         else:
             for x, y in zip(sj, cj):
+                lag = READBACK_LAG.get(x[0])
+                if lag is not None and isinstance(x[2], (int, float)) and isinstance(y[2], (int, float)) and \
+                        abs(x[2] - y[2]) <= lag:
+                    continue
                 if not jval_eq(x[2], y[2]):
                     diffs[('readback', s['slot'], x[0])] = '%s.%s: %r / %r' % (s['name'], x[0], x[2], y[2])
     for key, c in cents.items():
