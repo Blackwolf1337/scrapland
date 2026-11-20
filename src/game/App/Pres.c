@@ -1278,7 +1278,48 @@ static void Pres_PlayRecord(int op, NetRepReader *r) {
 	Pres_Play(op, r);
 }
 
+/* the messages that came while a scene of the server plays here, held for the interpolation delay: the scene's
+ * entities are drawn that long behind the server, so what its lines present (a fade, an effect) plays at the scene's
+ * time it played at on the server (include/scrap/netscene.h) */
+#define PRES_LATE 32
+static struct {
+	uint64_t due;					/* Plat_RealNs when it plays, 0 free */
+	int size;
+	uint8_t data[PRES_BUF];
+} pres_late[PRES_LATE];
+static int pres_lateFirst, pres_lateN;
+
+static void Pres_Play2(const uint8_t *data, int size);
+
+/* the held messages that are due (all with force) */
+static void Pres_LateFlush(byte force) {
+	uint64_t now = Plat_RealNs();
+	while (pres_lateN && (force || now >= pres_late[pres_lateFirst].due)) {
+		int k = pres_lateFirst;
+		pres_lateFirst = (pres_lateFirst + 1) % PRES_LATE;
+		pres_lateN--;
+		Pres_Play2(pres_late[k].data, pres_late[k].size);
+	}
+}
+
 void Pres_Message(const uint8_t *data, int size) {
+	/* while some are held every message waits behind them (the order of the records stays) */
+	if ((NetScene_ClientHolds() || pres_lateN) && size <= PRES_BUF) {
+		if (pres_lateN == PRES_LATE) {
+			Pres_LateFlush(1);
+		}
+		int k = (pres_lateFirst + pres_lateN) % PRES_LATE;
+		double d = NetScene_ClientHolds() ? Watch_Delay() : 0.0;
+		pres_late[k].due = Plat_RealNs() + (uint64_t)(d > 0.0 ? d * 1e9 : 0.0);
+		pres_late[k].size = size;
+		memcpy(pres_late[k].data, data, (size_t)size);
+		pres_lateN++;
+		return;
+	}
+	Pres_Play2(data, size);
+}
+
+static void Pres_Play2(const uint8_t *data, int size) {
 	NetRepReader r;
 	NetRepReader_Init(&r, data + 1, size - 1);
 	g_PresIn++;
@@ -1302,6 +1343,7 @@ void Pres_Message(const uint8_t *data, int size) {
 
 void Pres_ClientFrame(void) {
 	uint64_t now = Plat_RealNs();
+	Pres_LateFlush(0);
 	NetScene_ClientFrame();
 	for (int k = 0; k < PRES_HOLDS; k++) {
 		if (!pres.hold[k].ns) {

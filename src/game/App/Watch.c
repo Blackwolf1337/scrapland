@@ -23,6 +23,7 @@
 #include "scrap/instance.h"
 #include "scrap/misc.h"
 #include "scrap/netrep.h"
+#include "scrap/netscene.h"
 #include "scrap/platform.h"
 #include "scrap/play.h"
 #include "scrap/replicate.h"
@@ -137,6 +138,8 @@ static void Watch_Free(int slot) {
 			cPy_Function_SetNative(&Missile(p->e)->onHit, NULL);
 			cPy_Function_SetNative(&Missile(p->e)->onBeeDeath, NULL);
 		}
+		/* the scene entity of a scene that plays here: the camera off its model first (include/scrap/netscene.h) */
+		NetScene_ClientGone(p->e);
 		cEntity_Del(p->e);
 		watch.proxies--;
 	}
@@ -1097,6 +1100,10 @@ byte Watch_ClockReady(void) {
 
 double Watch_InputTime(double now, double rtt, double lead) {
 	return NetRepClock_Server(&watch.clock, now) + rtt * 0.5 + lead;
+}
+
+double Watch_Delay(void) {
+	return watch.delay.delay;
 }
 
 double Watch_ShownTime(void) {

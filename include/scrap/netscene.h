@@ -117,6 +117,10 @@ void NetScene_ClientPath(const char *name, const netScenePath_t *path);
 byte NetScene_ClientPathHolds(void);
 /* each frame: the camera link once the replica is there, the end when the replica went without an end */
 void NetScene_ClientFrame(void);
+/* the replication deletes replica e: when it is the scene entity of the scene that plays here, the scene ends here
+ * (the camera must not keep the model of a deleted entity; the end record comes after the deletion while the records
+ * of a scene wait for the interpolation delay) */
+void NetScene_ClientGone(struct cEntity *e);
 /* a scene of the server plays here */
 byte NetScene_ClientHolds(void);
 /* Escape in a scene of the server: the skip asked; 1 when it was the server's scene */

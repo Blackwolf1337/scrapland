@@ -225,8 +225,8 @@ static void Play_Camera(void) {
 	/* the ship's camera switches views with its button; a character's has nothing to switch */
 	s = play.kind == NETREP_SHIP ? "Vehicles.SwitchView" : "";
 	Entity_VarS(play.cam, "OnSwitch", &s, 1);
-	/* a scene of the server keeps its input and HUD until its end (Play_SceneEnd) */
-	if (NetScene_ClientHolds()) {
+	/* a scene or a camera path of the server keeps its input and HUD until its end (Play_SceneEnd) */
+	if (NetScene_ClientHolds() || NetScene_ClientPathHolds()) {
 		return;
 	}
 	Input_SelectActionSetNamed(play.kind == NETREP_SHIP ? "Racer" : "Walk");

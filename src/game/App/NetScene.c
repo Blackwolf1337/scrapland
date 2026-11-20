@@ -343,6 +343,10 @@ static void NetScene_PathFrame(void) {
 		if (World_FindEntity(NS_OWNCAM)) {
 			cWorld_SetCam(g_pWorld, 0, NS_OWNCAM);
 		}
+		/* the HUD and input of the own entity it may have become during the path (a ship boarded) */
+		if (!ns.cOn) {
+			Play_SceneEnd();
+		}
 		Con_Printf("scene: the camera path ends here\n");
 	}
 }
@@ -462,6 +466,12 @@ void NetScene_ClientFrame(void) {
 	}
 }
 
+void NetScene_ClientGone(cEntity *e) {
+	if (ns.cOn && e && e->name && !strcmp(e->name, ns.cEnt)) {
+		NetScene_ClientEnd(ns.cCls);
+	}
+}
+
 byte NetScene_ClientHolds(void) {
 	return ns.cOn;
 }
@@ -572,30 +582,51 @@ static cEntity *NetScene_Playing(void) {
 }
 
 void NetScene_ShotFrame(void) {
-	char name[512];
+	static cEntity *lastPath;
+	static int paths;
+	char name[512], label[NS_NAME];
+	float t, len;
 	if (!ns.shotsRead) {
 		NetScene_ShotsRead();
 	}
-	if (!ns.nshots || !g_pWorld) {
+	if (!ns.nshots || !g_pWorld || g_Instance) {
 		return;
 	}
+	/* a scene by its entity's action, else a camera path on view 0 by its time ("Path<n>": the n-th of the run) */
 	cEntity *e = NetScene_Playing();
 	cActCtrl *ctrl = e && Entity_IsType(e, TYEN_WITH_LIFE) ? WLife(e)->actCtrl : NULL;
-	if (!ctrl || !ctrl->layers[0].on) {
+	cEntity *cam = NetScene_ViewCam();
+	if (ctrl && ctrl->layers[0].on) {
+		Str_Copy(label, e->name + 9, sizeof(label));
+		t = ctrl->layers[0].time;
+		len = ctrl->layers[0].action ? ctrl->layers[0].action->anmTotalTime : 0.0f;
+	} else if (cam && Entity_IsType(cam, TYEN_CAMPATH)) {
+		cCamPathEntity *p = (cCamPathEntity *)cam;
+		if (cam != lastPath || p->time < 0.05f) {
+			if (cam != lastPath || ns.shotsDone) {
+				paths++;
+			}
+			lastPath = cam;
+		}
+		Str_PrintfQuiet(label, sizeof(label), "Path%d", paths);
+		t = p->time;
+		len = NetScene_PathLength(p);
+	} else {
+		lastPath = NULL;
 		return;
 	}
-	if (strcmp(ns.shotScene, e->name)) {
-		Str_Copy(ns.shotScene, e->name, sizeof(ns.shotScene));
+	if (strcmp(ns.shotScene, label)) {
+		Str_Copy(ns.shotScene, label, sizeof(ns.shotScene));
 		ns.shotsDone = 0;
 	}
-	float t = ctrl->layers[0].time, at = ns.shotsDone < ns.nshots ? ns.shotT[ns.shotsDone] : 0.0f;
+	float at = ns.shotsDone < ns.nshots ? ns.shotT[ns.shotsDone] : 0.0f;
 	if (at < 0.0f) {
-		at = ctrl->layers[0].action ? -at * ctrl->layers[0].action->anmTotalTime : 0.0f;
+		at = -at * len;
 	}
 	if (ns.shotsDone < ns.nshots && t >= at) {
-		Str_PrintfQuiet(name, sizeof(name), "%s/%s-%d", ns.shotDir, e->name + 9, ns.shotsDone);
+		Str_PrintfQuiet(name, sizeof(name), "%s/%s-%d", ns.shotDir, label, ns.shotsDone);
 		Screenshot_Take(name);
-		Con_Printf("scene: shot %s %d at %.3f\n", e->name + 9, ns.shotsDone, (double)t);
+		Con_Printf("scene: shot %s %d at %.3f\n", label, ns.shotsDone, (double)t);
 		ns.shotsDone++;
 	}
 }

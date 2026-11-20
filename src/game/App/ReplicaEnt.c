@@ -135,10 +135,29 @@ void ReplicaEnt_ModLeave(const char *module) {
 	}
 }
 
+static void ReplicaEnt_Apply(cEntity *e, const NetRepJVal *v);
+
+/* the replicas linked to the server's entity of slot own (their LinkModel names it) linked again: the own entity made
+ * from that slot is another entity of the client (a ship the player boarded: the plate on it) */
+static void ReplicaEnt_Relink(int own) {
+	size_t n = strlen(rc.s[own].name);
+	for (int slot = 0; n && rc.j && slot < NETREP_MAX_ENTS; slot++) {
+		cEntity *e = slot != own && rc.s[slot].made ? Watch_SlotEntity(slot) : NULL;
+		for (int k = e ? NetRepJ_First(rc.j, slot) : -1; k >= 0; k = NetRepJ_Next(rc.j, k)) {
+			const NetRepJVal *v = NetRepJ_Get(rc.j, k);
+			if (v->type == NETREP_JS && !strcmp(v->name, "LinkModel") && !strncmp(v->u.s, rc.s[own].name, n) &&
+				v->u.s[n] == ',') {
+				ReplicaEnt_Apply(e, v);
+			}
+		}
+	}
+}
+
 void ReplicaEnt_OwnCreate(int slot, int kind, const char *look, uint32_t tick, const NetRepState *st) {
 	rc.creating = 1;
 	Play_OwnCreate(kind, look, tick, st);
 	ReplicaEnt_Journal(slot, Play_Entity());
+	ReplicaEnt_Relink(slot);
 	rc.creating = 0;
 }
 
@@ -170,7 +189,6 @@ static byte ReplicaEnt_LinkValue(const char *value, char *out, int size) {
 	return 1;
 }
 
-static void ReplicaEnt_Apply(cEntity *e, const NetRepJVal *v);
 
 /* a LinkModel of slot that names an entity the client lacks: applied by ReplicaEnt_Links once it is there */
 static void ReplicaEnt_LinkWait(int slot, const char *value) {
@@ -499,6 +517,7 @@ void ReplicaEnt_Frame(void) {
 			Play_OwnCreate(kind, look, tick, st);
 			e = Play_Entity();
 			ReplicaEnt_Journal(slot, e);
+			ReplicaEnt_Relink(slot);
 		} else {
 			cEntity *taken = World_FindEntity(s->name);
 			if (!taken && kind > NETREP_ITEM && ReplicaEnt_ClassMissing(look)) {
