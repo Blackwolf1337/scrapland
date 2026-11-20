@@ -44,7 +44,7 @@ float NetPl_Aim(cEntity *e, const vec3_t *at, float rot[2], byte rel) {
 	float dx = at->x - e->pos.x, dy = at->y - e->pos.y, dz = at->z - e->pos.z;
 	float want = atan2f(-dx, -dz);
 	float dyaw = remainderf(want - (NetPl_Kind(e) == NETREP_CHAR ? WChar(e)->view.y : Obj(e)->ang.y), M_2PI_F);
-	float pitch = atan2f(dy, sqrtf(dx * dx + dz * dz)) - (rel ? Obj(e)->ang.x : 0.0f);
+	float pitch = remainderf(atan2f(dy, sqrtf(dx * dx + dz * dz)) - (rel ? Obj(e)->ang.x : 0.0f), M_2PI_F);
 	rot[0] = dyaw > 0.6f ? 1.0f : dyaw < -0.6f ? -1.0f : dyaw / 0.6f;
 	rot[1] = pitch > 0.3f ? 0.6f : pitch < -0.3f ? -0.6f : pitch * 2.0f;
 	return dyaw;

@@ -710,7 +710,8 @@ static void Play_Bot(double now) {
 		return;
 	}
 	float dy = best->pos.y - e->pos.y;
-	float dyaw = NetPl_Aim(e, &best->pos, play.acc.rot, 0);
+	/* the pitch against the ship's own (an absolute one turned it on over the top) */
+	float dyaw = NetPl_Aim(e, &best->pos, play.acc.rot, 1);
 	play.acc.move[0] = bestD > 8000.0f * 8000.0f ? 0.8f : 0.1f;
 	/* trying the weapons: stops about 4000 units away and fires in bursts of 1.5 s (the missiles fly at a release) */
 	if (play.botCycle) {
