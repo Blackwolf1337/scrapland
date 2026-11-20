@@ -7,8 +7,11 @@
 Per character: the player is kept next to it (test verb "talk follow" of single player or of the instance) until its
 arrow selects it, then for each entry of the list (default "0,0,0": three uses) it presses the next option that many times
 and then use, each through the input (test verb "tape key Walk.<action> 1": single player's input, or a client's input
-that goes to the server), WAIT seconds apart (env, default 12). Each use is marked in the games' talk traces ("talk
-... mark <npc> use <k>", SCRAP_TALK_TRACE=1), so talkcmp.py splits the traces per character and use. A player that is
+that goes to the server), WAIT seconds apart (env, default 12). With TALKLOG (env: the log of the game that has the
+player's talk trace, single player's or the client's) a use that started no talk but only a message (a busy cop, a
+crazy character) is marked "<npc> retry <k>: <message>" and made again RETRY_WAIT seconds later, up to RETRY times
+(default 2; the last try counts). Each use is marked in the games' talk traces ("talk ... mark <npc> use <k>",
+SCRAP_TALK_TRACE=1), so talkcmp.py splits the traces per character and use. A player that is
 not selected by the character's arrow after about ten seconds gets "mark <npc> use <k>: not selected (<selected>)".
 """
 import os
@@ -19,6 +22,35 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'
 import channel  # noqa: E402
 
 WAIT = float(os.environ.get('WAIT', '12'))
+TALKLOG = os.environ.get('TALKLOG')
+RETRY = int(os.environ.get('RETRY', '2'))
+RETRY_WAIT = float(os.environ.get('RETRY_WAIT', '6'))
+
+
+def refused(npc, use):
+    """with TALKLOG (the game's log with the talk trace): the message of a use that started no talk (only a message
+    since its mark: a busy cop, a crazy character), else None"""
+    if not TALKLOG:
+        return None
+    try:
+        with open(TALKLOG, errors='replace') as f:
+            lines = [ln.rstrip('\n') for ln in f if ln.startswith('talk ')]
+    except OSError:
+        return None
+    mark = ' mark %s use %d' % (npc, use)
+    k = max((i for i, ln in enumerate(lines) if ln.endswith(mark)), default=-1)
+    if k < 0:
+        return None
+    msg = None
+    for ln in lines[k + 1:]:
+        f = ln.split(' ', 4)
+        if len(f) < 4:
+            continue
+        if f[3] in ('speech', 'voiceopen') and not (f[3] == 'speech' and len(f) > 4 and f[4].startswith('0.00')):
+            return None
+        if f[3] == 'msg' and len(f) > 4 and f[4] != '""':
+            msg = f[4]
+    return msg
 
 
 def ask(game, lines, inst=None, timeout=20.0):
@@ -97,9 +129,17 @@ def main():
             for _ in range(nx):
                 s.key('NextAction', 0.15)
                 time.sleep(0.3)
-            s.mark('%s use %d' % (npc, u))
-            s.key('Use')
-            time.sleep(WAIT)
+            for attempt in range(RETRY + 1):
+                s.mark('%s use %d' % (npc, u))
+                s.key('Use')
+                time.sleep(2.0)
+                why = refused(npc, u)
+                if not why or attempt == RETRY:
+                    break
+                # the character could not talk just now (a busy cop, a crazy one): the same use again a while later
+                s.mark('%s retry %d: %s' % (npc, u, why))
+                time.sleep(RETRY_WAIT)
+            time.sleep(WAIT - 2.0)
         s.follow('-')
         s.mark('%s done' % npc)
 

@@ -8,12 +8,16 @@ and its instance, per character and use as talkbot.py marked them (stage 4.3 gat
 The first form, per use "<npc> use <k>":
   - texts and voices: the conversation lines of single player (speech texts and times, the voices 0 and 1 of the talk:
     open, play, stop; the messages; the heads; the talk voices of the character talked to) against the client's, in
-    order. A voice name that differs only in its last number (the answer variant the game draws at random, InitAns2
+    order. The voices of the character's animations (Sounds/Stream/Anm_*, which its idle animations play at random)
+    are only counted (anim_voices in the JSON). A voice name that differs only in its last number (the answer variant the game draws at random, InitAns2
     against InitAns3) counts as a variant, and the text spoken with that voice may differ then.
   - callbacks: single player's against the instance's lines of the player's context (p<player>).
   Lines of another player's context in the instance's segment are counted ("foreign").
 The second form counts the client's conversation lines that match the forbidden regex (another player's talk) and,
 with an instance log, the instance's lines matching the player's regex in another context than p<player>.
+  talkcmp.py pair <client log> <instance log> <player>
+the client's conversation lines (texts, the voices 0 and 1, messages) against the instance's lines of the player's
+context: equal in order, so nothing of another player's talk reached it and nothing of its own is missing.
 Exit 0 when everything is equal (variants allowed), 1 otherwise.
 """
 import json
@@ -22,6 +26,7 @@ import sys
 
 LINE = re.compile(r'^talk (\S+) (\S+) (\S+) ?(.*)$')
 MARK = re.compile(r'^(\S+) use (\d+)(: not selected.*)?$')
+ANIM = re.compile(r'/Anm_')  # the voices of a character's animations (a desktop's laugh): played at random, counted apart
 TALK_OPS = ('speech', 'voiceopen', 'voiceplay', 'voicestop', 'msg', 'head', 'talkvoice', 'cancel')
 
 
@@ -63,12 +68,16 @@ def talk_lines(seg, npc, ctx=None):
             continue
         if op in ('voiceopen', 'voiceplay', 'voicestop') and f.split(' ')[0] not in ('0', '1'):
             continue
-        if op == 'talkvoice' and f.split(' ')[0] != npc:
+        if op == 'talkvoice' and (f.split(' ')[0] != npc or ANIM.search(f)):
             continue
         if op == 'msg' and out and out[-1] == (op, f):
             continue
         out.append((op, f))
     return out
+
+
+def anims(seg, npc):
+    return sum(1 for _, _, op, f in seg if op == 'talkvoice' and f.split(' ')[0] == npc and ANIM.search(f))
 
 
 def callbacks(seg, ctx=None):
@@ -131,6 +140,7 @@ def main_cmp(argv):
         cba, cbi = callbacks(sps[key]), callbacks(ins[key], ctx)
         foreign = sum(1 for _, c, op, _ in ins[key] if c.startswith('p') and c != ctx and op != 'mark')
         r.update(lines=len(a), client_lines=len(b), equal=eq, variants=var, diff=diff,
+                 anim_voices=(anims(sps[key], npc), anims(cls[key], npc)),
                  callbacks=len(cba), callbacks_equal=cba == cbi, foreign=foreign,
                  speech=[f for op, f in a if op == 'speech' and not f.startswith('0.00')])
         if not cba == cbi:
@@ -175,9 +185,52 @@ def main_cross(argv):
     return 1 if bad else 0
 
 
+def own_lines(lines, ctx=None):
+    """the conversation lines a player sees: speech texts, the voices 0 and 1 of the talk (open, play, stop), the
+    messages (without repeats); with ctx only the instance's lines of that context"""
+    out = []
+    for _, c, op, f in lines:
+        if ctx and c != ctx:
+            continue
+        if op not in ('speech', 'voiceopen', 'voiceplay', 'voicestop', 'msg'):
+            continue
+        if op.startswith('voice') and f.split(' ')[0] not in ('0', '1'):
+            continue
+        if op == 'msg' and (f == '""' or (out and out[-1] == (op, f))):
+            continue
+        out.append((op, f))
+    return out
+
+
+def after_mark(lines):
+    """the lines from the first mark of the bot on (the client's own hints before it are no talk)"""
+    k = next((i for i, ln in enumerate(lines) if ln[2] == 'mark'), len(lines))
+    return lines[k:]
+
+
+def main_pair(argv):
+    """pair <client log> <instance log> <player>: the client shows exactly the conversation lines the instance made in
+    the player's context, in the same order (no line of another player's talk, none of its own missing)"""
+    cl, il, ctx = argv[0], argv[1], 'p%d' % int(argv[2])
+    a = own_lines(after_mark(parse(cl)))
+    b = own_lines(after_mark(parse(il)), ctx)
+    n = 0
+    while n < min(len(a), len(b)) and a[n] == b[n]:
+        n += 1
+    ok = len(a) == len(b) == n
+    print('client %s against instance %s %s: %d and %d lines, %s' % (cl, il, ctx, len(a), len(b),
+                                                                    'equal' if ok else 'first difference at %d' % n))
+    if not ok:
+        print('   client:  ', a[n:n + 3])
+        print('   instance:', b[n:n + 3])
+    return 0 if ok else 1
+
+
 if __name__ == '__main__':
     if len(sys.argv) > 1 and sys.argv[1] == 'cross':
         sys.exit(main_cross(sys.argv[2:]))
+    if len(sys.argv) > 1 and sys.argv[1] == 'pair':
+        sys.exit(main_pair(sys.argv[2:]))
     if len(sys.argv) < 5:
         print(__doc__)
         sys.exit(2)
