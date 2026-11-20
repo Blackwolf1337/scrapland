@@ -34,6 +34,7 @@
 #define PRES_BUF 4096				/* the records of one player before they are sent */
 #define PRES_REC 1024				/* the longest record */
 #define PRES_RECENT 32				/* one-shot sounds the client remembers for the double audit */
+#define PRES_CALLS 16				/* the scripts' calls the instance keeps the names of */
 #define PRES_HOLDS 32				/* effect records a client holds until it has their entities */
 #define PRES_HOLD_REC 640			/* the longest held record */
 #define PRES_HOLD_NS 1000000000ull	/* how long: then it plays and counts what it misses */
@@ -63,6 +64,9 @@ static struct {
 	int op;
 	int own;						/* the player whose own entity steps, -1 */
 	int skel;						/* depth of the HUD skeleton modules */
+	int calls;						/* depth of the scripts' calls */
+	const char *callMod[PRES_CALLS], *callFunc[PRES_CALLS];
+	char site[96];
 	vec3_t voiceFrom;
 	byte haveVoiceFrom;
 	const struct cSoundDesc *posDesc;	/* the description cSoundDesc_SetPos computed last, its place and volume */
@@ -232,16 +236,33 @@ static byte Pres_Skeleton(const char *module) {
 	return !strcmp(module, "CharScorer") || !strcmp(module, "RacerScorer");
 }
 
-void Pres_ModCall(const char *module) {
+void Pres_ModCall(const char *module, const char *func) {
 	if (Pres_Skeleton(module)) {
 		pres.skel++;
 	}
+	if (pres.calls < PRES_CALLS) {
+		pres.callMod[pres.calls] = module;
+		pres.callFunc[pres.calls] = func;
+	}
+	pres.calls++;
 }
 
 void Pres_ModLeave(const char *module) {
 	if (Pres_Skeleton(module) && pres.skel > 0) {
 		pres.skel--;
 	}
+	if (pres.calls > 0) {
+		pres.calls--;
+	}
+}
+
+const char *Pres_ModSite(void) {
+	if (!pres.calls) {
+		return "-";
+	}
+	int k = pres.calls > PRES_CALLS ? PRES_CALLS - 1 : pres.calls - 1;
+	Str_PrintfQuiet(pres.site, sizeof(pres.site), "%s.%s", pres.callMod[k], pres.callFunc[k]);
+	return pres.site;
 }
 
 /* ---- instance: the HUD models ---- */

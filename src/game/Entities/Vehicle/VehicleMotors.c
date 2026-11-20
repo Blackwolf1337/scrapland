@@ -856,7 +856,10 @@ void cVehicleMotorsEffects_Stop(cVehicleMotorsEffects *self) {
 			cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXVehicleDeathTrailFile);
 			cDebris *d = cDebrisSys_NewElement(sys);
 			d->life = 1.0f;
+			/* the death trail: a -mp2 client's replica of the ship drops its own when it goes off dead (Watch.c) */
+			Pres_Derive();
 			cDebrisSys_Drop(sys, d);
+			Pres_Underive();
 			cObjElementFXDevastatorShoot *fx = Debris_Element(d);
 			if (fx) {
 				if (!fx->on) {

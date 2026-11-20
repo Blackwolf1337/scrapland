@@ -486,7 +486,7 @@ byte Port_Entry(const portRef_t *ref, const nativeVal_t *a, int n, nativeVal_t *
 	if (g_Mp2 && g_Watch) {
 		ReplicaEnt_ModCall(ref->module, ref->name);
 	} else if (g_Mp2 && g_Instance) {
-		Pres_ModCall(ref->module);
+		Pres_ModCall(ref->module, ref->name);
 	}
 	/* the frame address, as Script_CallObject takes it */
 	if (Script_Enter((uintptr_t)__builtin_frame_address(0))) {

@@ -1004,7 +1004,7 @@ int cWorld_SetCam(cWorld *world, int i, const char *name) {
 		Players_NoteCam(name);
 		/* the client's camera is its own (Play.c); the scripts' cameras of a player are stage 4.5's scenes */
 		if (g_Mp2 && !InitSteps_Entering()) {
-			Pres_NoRoute(NA_CAMERA, "pres.unforwarded:camera:", __func__);
+			Pres_NoRoute(NA_CAMERA, "pres.unforwarded:camera:", Pres_ModSite());
 		}
 	}
 	if (*name) {
