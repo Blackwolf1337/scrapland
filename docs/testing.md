@@ -169,6 +169,8 @@ The instance test line `goto <player> <entity> [<dx> <dz>]` levels a ship it pla
 
 Instances read test lines on their standard input (or through `iline`): `status`, `money`, `use`, `goto`, `switch`, `call`, `alarm`, `life`, `faction ...`, `arena ...`, `story ...`, and a few more for the coop story. A client plays by itself with `SCRAP_PLAYBOT` (modes such as `idle`, `use`, `face`, or `1` to fight) and sends faction requests with `SCRAP_PLAYBOT_FACTION=<s>:<ability>,...`. `SCRAP_NET2_LOSS`, `SCRAP_NET2_DELAY` and `SCRAP_NET2_JITTER` add packet loss, delay and jitter to the sends of the process.
 
+`SCRAP_TIMESCALE=<n>` (1 to 16) makes every clock of a game and of ScrapCoord run n times as fast as the real one: the game time, the instance's ticks, the frames of a headless client, the net timers (the delay of `SCRAP_NET2_DELAY` too), the waits between passes and the mixer (the sound device stays stopped). Rendered games present without waiting for the display. Give all processes of a network test the same n and they play their game time in 1/n of the real time, as long as each keeps up: the instance's status line counts dropped ticks, which must stay 0. DownTown with one fight bot keeps up at 16. The tools wait game time through `tools/test/gameclock.py` (parity.py, coopparity.py, the `wait` lines of coop/chap.sh). feel.py and the single player gates of mp2.py (regress, golden, levels) always run on the real clock, and the deterministic test mode ignores the variable.
+
 What the multiplayer tests did not cover is listed in [multiplayer.md](multiplayer.md).
 
 ## Retired difftest

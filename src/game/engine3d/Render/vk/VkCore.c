@@ -317,8 +317,8 @@ int Vk_ResizeSwapchain(uint32_t width, uint32_t height, byte vsync) {
 	uint32_t nm = 8;
 	vkGetPhysicalDeviceSurfacePresentModesKHR(vk.gpu, vk.surface, &nm, modes);
 	VkPresentModeKHR mode = VK_PRESENT_MODE_FIFO_KHR;
-	/* the deterministic test mode has its own clock: its frames need not wait for the display */
-	for (uint32_t i = 0; (!vsync || TestDet_On()) && i < nm; i++) {
+	/* the deterministic test mode and SCRAP_TIMESCALE have their own clock: their frames need not wait for the display */
+	for (uint32_t i = 0; (!vsync || TestDet_On() || Plat_TimeScale() > 1) && i < nm; i++) {
 		if (modes[i] == VK_PRESENT_MODE_IMMEDIATE_KHR || modes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
 			mode = modes[i];
 		}

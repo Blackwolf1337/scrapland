@@ -45,6 +45,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
 sys.path.insert(0, os.path.join(REPO, 'tools', 'test'))
 import channel  # noqa: E402
+import gameclock  # noqa: E402
 
 try:
     import resource
@@ -333,7 +334,7 @@ def collect_all(sides, at, radius):
     # traffic are there only for a moment; *_seen tells the steady ones)
     for i in range(SOUND_SAMPLES):
         if i:
-            time.sleep(1.0)
+            gameclock.sleep(1.0)
         for key, g, _ in sides:
             out = outs[key]
             for what, h in (('radar', hist(g.ask('radar'), lambda f: 'icon %s%s' % (
@@ -565,7 +566,7 @@ def run_level(a, spec, routes=None):
         # where it stays (a fall from a bad spawn point respawns it elsewhere, Replicate.c)
         still, end = 0, time.time() + 40
         while still < 4 and time.time() < end:
-            time.sleep(1.0)
+            gameclock.sleep(1.0)
             now = own(host) or me
             still = still + 1 if dist(now['pos'], me['pos']) < 50.0 else 0
             me = now
@@ -578,7 +579,7 @@ def run_level(a, spec, routes=None):
             join.start()
             jme = wait_for(lambda: own(join), 240, 2)
             # (a drop in the first seconds after a spawn counts as a fall from a bad spawn point, Replicate.c)
-            time.sleep(6)
+            gameclock.sleep(6)
             jme = own(join) or jme
             res['join_own'] = bool(jme)
         wait_for(lambda: sp.try_ask('Scrap.GetLevelPath()', timeout=5), 180, 2)
@@ -599,7 +600,7 @@ def run_level(a, spec, routes=None):
                 put(host, pents['host'], pos, ang, inst=level)
             if 'join' in pents:
                 put(host, pents['join'], (pos[0] + 400.0, pos[1], pos[2]), ang, inst=level)
-            time.sleep(a.settle if k == 0 else a.settle_point)
+            gameclock.sleep(a.settle if k == 0 else a.settle_point)
 
             def inst_now():
                 return parse_ents(host.ask('entinfo %.0f %.0f %.0f %.0f' % (pos[0], pos[1], pos[2], a.radius * 1.2),

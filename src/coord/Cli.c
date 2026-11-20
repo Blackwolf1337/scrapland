@@ -9,23 +9,39 @@
 #include <time.h>
 #include <unistd.h>
 #endif
+#include <stdlib.h>
 #include <string.h>
 
 #include "scrap/coord.h"
 
+/* SCRAP_TIMESCALE=<n>, as the game's (include/scrap/platform.h): the clock runs n times as fast, for the tests */
+static uint64_t CoordCli_Scale(void) {
+	static uint64_t scale;
+
+	if (!scale) {
+		const char *e = getenv("SCRAP_TIMESCALE");
+		int n = e ? atoi(e) : 1;
+
+		scale = n < 1 ? 1 : n > 16 ? 16 : (uint64_t)n;
+	}
+	return scale;
+}
+
 uint64_t CoordCli_Ms(void) {
 #ifdef _WIN32
-	return GetTickCount64();
+	return GetTickCount64() * CoordCli_Scale();
 #else
 	struct timespec ts;
 	clock_gettime(CLOCK_MONOTONIC, &ts);
-	return (uint64_t)ts.tv_sec * 1000u + (uint64_t)ts.tv_nsec / 1000000u;
+	return ((uint64_t)ts.tv_sec * 1000u + (uint64_t)ts.tv_nsec / 1000000u) * CoordCli_Scale();
 #endif
 }
 
 int CoordCli_Line(char *line, int cap, int ms) {
 	static char buf[512];
 	static int len, eof;
+	/* ms of the clock */
+	ms = ms > 0 ? (int)(((uint64_t)ms + CoordCli_Scale() - 1) / CoordCli_Scale()) : ms;
 	for (;;) {
 		char *nl = memchr(buf, '\n', (size_t)len);
 		if (nl) {
@@ -88,6 +104,8 @@ const char *CoordCli_Arg(const char *a, const char *name) {
 }
 
 void CoordCli_Wait(int ms) {
+	/* ms of the clock */
+	ms = ms > 0 ? (int)(((uint64_t)ms + CoordCli_Scale() - 1) / CoordCli_Scale()) : ms;
 #ifdef _WIN32
 	Sleep((DWORD)ms);
 #else

@@ -8,6 +8,7 @@
 #ifndef _WIN32
 #define _GNU_SOURCE	/* pthread_getattr_np */
 #endif
+#include <stdlib.h>
 #include <string.h>
 #ifdef _WIN32
 #include <windows.h>
@@ -735,7 +736,10 @@ void Plat_Quit(void) {
 }
 
 void Plat_WaitEvent(int ms) {
-	SDL_WaitEventTimeout(NULL, ms);
+	int scale = Plat_TimeScale();
+
+	/* ms of the game's clock */
+	SDL_WaitEventTimeout(NULL, ms > 0 ? (ms + scale - 1) / scale : ms);
 }
 
 int Plat_ReadStdin(char *buf, int size) {
@@ -975,26 +979,43 @@ void Plat_DebugBreak(void) {
 
 /* ---- the timers ---- */
 
+int Plat_TimeScale(void) {
+	static int scale;
+
+	if (!scale) {
+		const char *e = getenv("SCRAP_TIMESCALE");
+		int n = e ? atoi(e) : 1;
+
+		scale = TestDet_On() || n < 1 ? 1 : n > PLAT_TIMESCALE_MAX ? PLAT_TIMESCALE_MAX : n;
+	}
+	return scale;
+}
+
+/* SDL's ns since the start, times SCRAP_TIMESCALE */
+static uint64_t Plat_Ns(void) {
+	return SDL_GetTicksNS() * (uint64_t)Plat_TimeScale();
+}
+
 /* in the deterministic test mode both clocks are the clock of the mode (scrap/testdet.h) */
 uint32_t Plat_Ticks(void) {
 	if (TestDet_On()) {
 		return (uint32_t)(TestDet_Counter() / 10000);
 	}
-	return (uint32_t)SDL_GetTicks();
+	return (uint32_t)(Plat_Ns() / 1000000);
 }
 
 uint32_t Plat_RealTicks(void) {
-	return (uint32_t)SDL_GetTicks();
+	return (uint32_t)(Plat_Ns() / 1000000);
 }
 
 uint64_t Plat_RealNs(void) {
-	return SDL_GetTicksNS();
+	return Plat_Ns();
 }
 
 /* the counter in 100 ns ticks (10 MHz) on every system, as QueryPerformanceCounter on Windows: the game's integer
  * time math was made for that frequency (SDL's counter on Linux counts nanoseconds) */
 int Plat_Counter(int64_t *out) {
-	*out = TestDet_On() ? TestDet_Counter() : (int64_t)(SDL_GetTicksNS() / 100);
+	*out = TestDet_On() ? TestDet_Counter() : (int64_t)(Plat_Ns() / 100);
 	return 1;
 }
 
