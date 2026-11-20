@@ -62,8 +62,9 @@
  * prediction collides with the ships of no player near it where they are at the predicted tick (position and
  * velocity of their samples; the fights), the players' as before. The use pressed with the arrow on a parked ship
  * starts the boarding's camera path at once (Play_FlowStart: Parking.SetCameraStart's path to the camera behind the
- * ship, pred.flow:board); the server's hand-over (the own ship of the player message) ends it, without one in
- * PLAY_FLOW_SECS the client gives it up (pred.flow:cancel). The controls of the own entity are read after the frame's
+ * ship, pred.flow:board) on the path entity of the server's camera paths (include/scrap/netscene.h), whose path of the
+ * boarding goes on from there when it comes; the camera stays on the ship until the server's hand-over (the own ship
+ * of the player message), without one in PLAY_FLOW_SECS the client gives it up (pred.flow:cancel). The controls of the own entity are read after the frame's
  * input update, before its step (Watch_FrameInput, Play_PreFrame), not in the entity's frame after the step: a press
  * steps in the frame that saw it, the frame after it draws it (single player draws it a frame later).
  *
@@ -303,6 +304,9 @@ byte Play_DeathCamOn(void);
 void Play_Start(void);
 /* the player's camera of view 0, made when missing (at x y z) */
 struct cEntity *Play_ViewCamera(float x, float y, float z);
+/* a scene of the server ended here (include/scrap/netscene.h): the camera, the HUD and the input of the own entity
+ * again */
+void Play_SceneEnd(void);
 /* the own player's step of the frame after its input update (Watch_FrameInput): its controls read, the ticks the
  * clock passed stepped, the drawn place set */
 void Play_PreFrame(double now, double rtt, double rttVar, float loss);

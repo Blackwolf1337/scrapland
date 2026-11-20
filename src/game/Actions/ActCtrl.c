@@ -548,6 +548,52 @@ void cActCtrl_NetDrive(cActCtrl *self, const uint16_t *act, const float *rate, c
 	}
 }
 
+void cActCtrl_NetExact(cActCtrl *self, const uint16_t *act, const float *target, int layers, actEventFilter_t fire) {
+	CGameModel *m = Ctrl_Model(self);
+
+	for (int k = 0; k < layers && k < ACT_LAYERS; k++) {
+		cActLayer *l = &self->layers[k];
+		cAction *a = act[k] ? self->cls->first : NULL;
+		for (int i = 1; a && i < act[k]; i++) {
+			a = a->next;
+		}
+		float t = target[k];
+		if (a != l->action || (a && !a->isLoop && t + NETDRIVE_RESTART < l->time)) {
+			if (!a) {
+				if (k > 0) {
+					CGameModel_StopAnim(m, k);
+					l->on = 0;
+					l->action = NULL;
+				}
+				continue;
+			}
+			l->on = 1;
+			l->action = a;
+			l->event = a->events;
+			l->time = 0.0f;
+			CGameModel_SetAnimLoop(m, Action_Anim(a), a->isLoop);
+			CGameModel_SetAnim(m, Action_Anim(a), k, 0);
+		}
+		if (!l->on || t < 0.0f) {
+			continue;
+		}
+		float end = Layer_End(l);
+		if (end > 0.0f) {
+			t = a->isLoop ? fmodf(t, end) : t > end ? end : t;
+		}
+		float before = l->time;
+		/* the model stands at the time set, it does not run on by itself */
+		CGameModel_SetAnimFactor(m, Action_Anim(l->action), 0.0f);
+		CGameModel_AnimDelta(m, k, t, NULL);
+		l->time = t;
+		if (t < before && l->action->isLoop) {
+			cActCtrl_NetEvents(self, k, FLT_MAX, fire);
+			l->event = l->action->events;
+		}
+		cActCtrl_NetEvents(self, k, t, fire);
+	}
+}
+
 /* ---- ScrapC: the rollback of the client's own entity (stage 3.5, -mp2) ---- */
 
 byte (*g_ActOwnFilter)(cEntity *owner, const cActEvent *ev);

@@ -26,6 +26,7 @@
 #include "scrap/global.h"
 #include "scrap/input.h"
 #include "scrap/netaudit.h"
+#include "scrap/netscene.h"
 #include "scrap/platform.h"
 #include "scrap/play.h"
 #include "scrap/players.h"
@@ -44,7 +45,6 @@
 #include "scrap/world.h"
 
 #define PLAY_CAM "PlayCam"
-#define PLAY_FLOW_CAM "PlayFlowCam"		/* the camera path of a flow the client started for the eye */
 #define PLAY_FLOW_SECS 12.0				/* s it waits for the server's hand-over of such a flow, then gives it up */
 #define PLAY_DEATH_CAM "PlayDeathCam"
 #define PLAY_DEATH_DIST 1800.0f			/* units of the death camera from the place of the death */
@@ -228,17 +228,17 @@ cEntity *Play_ViewCamera(float x, float y, float z) {
 	if (!c) {
 		c = cWorld_CreateEntity(g_pWorld, PLAY_CAM, x, y, z, TYEN_FCAM);
 	}
-	if (c) {
+	/* a camera path of the server keeps view 0 until its end (include/scrap/netscene.h) */
+	if (c && !NetScene_ClientPathHolds()) {
 		cWorld_SetCam(g_pWorld, 0, PLAY_CAM);
 	}
 	return c;
 }
 
-/* the camera path of a started flow away */
+/* a started flow handed over or given up */
 static void Play_FlowEnd(void) {
-	cEntity *path = World_FindEntity(PLAY_FLOW_CAM);
-	if (path) {
-		cEntity_Del(path);
+	if (play.flowMade) {
+		NetScene_ClientOwnPathDone();
 	}
 	play.flowMade = 0;
 }
@@ -249,6 +249,10 @@ static void Play_Camera(void) {
 	int zero = 0;
 
 	if (!e) {
+		return;
+	}
+	/* a boarding started for the eye keeps the camera on the ship until the server hands it over or it is given up */
+	if (play.flowMade && play.flowMade == play.made) {
 		return;
 	}
 	Play_FlowEnd();
@@ -264,6 +268,10 @@ static void Play_Camera(void) {
 	/* the ship's camera switches views with its button; a character's has nothing to switch */
 	s = play.kind == NETREP_SHIP ? "Vehicles.SwitchView" : "";
 	Entity_VarS(play.cam, "OnSwitch", &s, 1);
+	/* a scene or a camera path of the server keeps its input and HUD until its end (Play_SceneEnd) */
+	if (NetScene_ClientHolds() || NetScene_ClientPathHolds()) {
+		return;
+	}
 	Input_SelectActionSetNamed(play.kind == NETREP_SHIP ? "Racer" : "Walk");
 	/* the HUD of single player for the walker or the racer of view 0 */
 	if (play.kind == NETREP_SHIP) {
@@ -273,6 +281,10 @@ static void Play_Camera(void) {
 	} else if (Mode_Import("CharScorer")) {
 		PORT_CALL(CharScorer, Create, NULL, "i", 0L);
 	}
+}
+
+void Play_SceneEnd(void) {
+	Play_Camera();
 }
 
 void Play_OwnRemove(void) {
@@ -605,16 +617,17 @@ static cEntity *Play_FlowShip(void) {
 
 /* -mp2: the boarding's visible part at once (plan's Own character: a flow of the scripts starts on the client for the
  * eye, the server hands over at a named tick): the camera path of Parking.UseShip from beside the ship to the camera
- * behind it, as the server's script makes it for single player; the server's boarding runs as before and its hand-over
- * (the own ship from the player message's tick, Play_OwnCreate) ends the path; without one in PLAY_FLOW_SECS the
- * client gives it up (the server did not board: the camera back on the own character) */
+ * behind it, as the server's script makes it for single player, on the path entity of the server's camera paths
+ * (NetScene_ClientOwnPath): the server's path of the boarding (PRES_O_CAMPATH), when it comes a round trip later, goes
+ * on from where this one is; the camera stays on the ship until the server's hand-over (the own ship from the player
+ * message's tick, Play_OwnCreate); without one in PLAY_FLOW_SECS the client gives it up (the server did not board: the
+ * camera back on the own character) */
 static void Play_FlowStart(cEntity *ship, double now) {
 	nativeVal_t cp = { 0 }, v = { 0 }, pos = { 0 }, dist = { 0 };
 	char *s = ship->name;
 
-	Play_FlowEnd();
-	cEntity *path = cWorld_CreateEntity(g_pWorld, PLAY_FLOW_CAM, ship->pos.x, ship->pos.y, ship->pos.z, TYEN_CAMPATH);
-	if (!path || !play.cam) {
+	cEntity *path = play.cam ? NetScene_ClientOwnPath() : NULL;
+	if (!path) {
 		return;
 	}
 	int two = 2, one = 1, zero = 0;
@@ -625,7 +638,7 @@ static void Play_FlowStart(cEntity *ship, double now) {
 	Entity_VarF(path, "Time00", &t, 1);
 	Entity_VarI(path, "FadeIn00", &one, 1);
 	Entity_VarI(path, "FadeOut00", &zero, 1);
-	byte ok = Mode_Import("Parking") && Native_SetEnt(&cp, PLAY_FLOW_CAM) && Native_SetEnt(&v, ship->name) &&
+	byte ok = Mode_Import("Parking") && Native_SetEnt(&cp, path->name) && Native_SetEnt(&v, ship->name) &&
 		Mode_VObjRead(&v, "Pos", &pos) && PORT_CALL(Parking, SetCameraStart, NULL, "vvvii", &cp, &v, &pos, 1L, 1L);
 	if (ok) {
 		Entity_VarS(play.cam, "MainTarget", &s, 1);
@@ -634,12 +647,15 @@ static void Play_FlowStart(cEntity *ship, double now) {
 			double d = dist.f;
 			Entity_VarF(play.cam, "CamDist", &d, 1);
 		}
-		cWorld_SetCam(g_pWorld, 0, PLAY_FLOW_CAM);
+		cWorld_SetCam(g_pWorld, 0, path->name);
 		play.flowMade = play.made;
 		play.flowAt = now;
 		NetAudit_Name(NA_PREDICT, "pred.flow:", "board");
 	} else {
-		Play_FlowEnd();
+		/* the path ends at once (its length 0), the own camera again */
+		int none = 0;
+		Entity_VarI(path, "nWayPoint", &none, 1);
+		NetScene_ClientOwnPathDone();
 	}
 	Native_Free(&cp);
 	Native_Free(&v);

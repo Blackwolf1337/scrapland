@@ -20,6 +20,7 @@
 #include "scrap/instance.h"
 #include "scrap/logic.h"
 #include "scrap/net2.h"
+#include "scrap/netscene.h"
 #include "scrap/places.h"
 #include "scrap/platform.h"
 #include "scrap/players.h"
@@ -241,7 +242,8 @@ static void Instance_NetIn(uint64_t ms) {
 				Coop_Message(inst.host, ev.conn, ev.data, ev.size) ||
 				Arena_Message(inst.host, ev.conn, ev.data, ev.size) ||
 				Sputniks_Message(inst.host, ev.conn, ev.data, ev.size) ||
-				Ui_Message(inst.host, ev.conn, ev.data, ev.size))) {
+				Ui_Message(inst.host, ev.conn, ev.data, ev.size) ||
+				NetScene_Message(inst.host, ev.conn, ev.data, ev.size))) {
 				break;
 			}
 			if (ev.channel == REP_CH_RELIABLE && ev.size > 0 && ev.data[0] == NETREP_MSG_HELLO &&

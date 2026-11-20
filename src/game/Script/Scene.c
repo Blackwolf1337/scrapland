@@ -25,13 +25,81 @@
 
 #include "scrap/coop.h"
 #include "scrap/game.h"
+#include "scrap/netscene.h"
 #include "scrap/play.h"
 #include "scrap/players.h"
+#include "scrap/pres.h"
+#include "scrap/repent.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
 #include "game/Script/levels/Levels.h"
 
 #define SC "Scene"
+
+/* ---- the second multiplayer design (not in the original, include/scrap/netscene.h) ---- */
+
+#define SC_DEPTH 64
+static int sc_was[SC_DEPTH];
+static int sc_depth;
+
+/* an entry begins: in the world's context of a sandbox instance the player of the scene that plays */
+static void Sc_Push(void) {
+	int cur = Players_Current(), in = cur == PLAYERS_NONE ? NetScene_Player() : cur;
+	if (sc_depth < SC_DEPTH) {
+		sc_was[sc_depth] = cur;
+	}
+	sc_depth++;
+	if (in != cur) {
+		Players_Enter(in);
+	}
+}
+
+/* the entry ends with r: the context it began in */
+static byte Sc_Pop(byte r) {
+	sc_depth--;
+	if (sc_depth < SC_DEPTH && Players_Current() != sc_was[sc_depth]) {
+		Players_Leave(sc_was[sc_depth]);
+	}
+	return r;
+}
+
+/* the entries of the module as scriptmodes.h makes them, each inside Sc_Push and Sc_Pop */
+#undef MODE_FN
+#define MODE_FN(pre, name, nargs, call) \
+	static byte pre##_##name##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
+		(void)a; \
+		(void)out; \
+		return n == (nargs) ? (Sc_Push(), Sc_Pop(call)) : Port_Arity(n, nargs); \
+	}
+#undef MODE_KW
+#define MODE_KW(pre, name, fmt, ...) \
+	static char *pre##_##name##_N[] = { __VA_ARGS__, NULL }; \
+	[[maybe_unused]] static const char pre##_##name##_F[] = fmt; \
+	static byte pre##_##name##_K([[maybe_unused]] nativeVal_t *v, [[maybe_unused]] const byte *given, \
+		[[maybe_unused]] nativeVal_t *out); \
+	static byte pre##_##name##_E(const nativeVal_t *a, int n, nativeVal_t *out) { \
+		nativeVal_t v[8]; \
+		byte given[8]; \
+		return Mode_KwSlots(a, n, fmt, v, given) && (Sc_Push(), Sc_Pop(pre##_##name##_K(v, given, out))); \
+	} \
+	static byte pre##_##name##_K([[maybe_unused]] nativeVal_t *v, [[maybe_unused]] const byte *given, \
+		[[maybe_unused]] nativeVal_t *out)
+
+/* a presentation of the scene the clients of its audience make themselves begins (the server's scene plays): 1 when
+ * it is derived, for Sc_Underive */
+static byte Sc_Derive(byte on) {
+	if (on) {
+		Pres_Derive();
+	}
+	return on;
+}
+
+static byte Sc_Underive(byte on, byte r) {
+	if (on) {
+		Pres_Underive();
+	}
+	return r;
+}
 
 /* a global of the module as its functions read it */
 static byte Sc_G(const char *name, nativeVal_t *out) {
@@ -401,7 +469,11 @@ static byte Sc_AddText(const nativeVal_t *frame, const nativeVal_t *text, const 
 static byte Sc_AbortScene(void) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *scene = Mode_V(&t);
-	/* not in the original: a coop client's Escape (include/scrap/coop.h) */
+	/* not in the original: a -mp2 client asks its server (include/scrap/netscene.h); a coop client's Escape
+	 * (include/scrap/coop.h) */
+	if (g_Mp2 && !g_Instance && NetScene_ClientSkip()) {
+		return Mode_Done(&t, 1);
+	}
 	if (g_Play) {
 		Coop_ClientSceneAbort();
 	}
@@ -427,45 +499,61 @@ static byte Sc_Ended(byte ok) {
 	return ok;
 }
 
-/* EndOfScene(EntityName, EventName, Time): the scene and its actors go, the characters come back, the camera, the
- * HUD and the input of the player return; EndOfSceneCallback(usr) runs last */
-static byte Sc_EndOfScene(const nativeVal_t *ename) {
-	modeVals_t t = { .n = 0 };
+/* EndOfScene up to its callback: the scene and its actors go, the characters come back, the camera, the HUD and the
+ * input of the player return; cb gets EndOfSceneCallback (the values in t, freed on a failure) */
+static byte Sc_EndPart(modeVals_t *t, const nativeVal_t *ename, nativeVal_t *cb) {
 	if (g_Instance) {
 		Coop_SceneEnding();
 	}
-	nativeVal_t *none = Mode_V(&t), *cam = Mode_V(&t), *sname = Mode_V(&t), *actors = Mode_V(&t), *list = Mode_V(&t);
-	nativeVal_t *actr = Mode_V(&t), *name = Mode_V(&t), *v = Mode_V(&t), *time = Mode_V(&t), *cb = Mode_V(&t);
+	nativeVal_t *none = Mode_V(t), *cam = Mode_V(t), *sname = Mode_V(t), *actors = Mode_V(t), *list = Mode_V(t);
+	nativeVal_t *actr = Mode_V(t), *name = Mode_V(t), *v = Mode_V(t), *time = Mode_V(t);
 	Native_SetNone(none);
 	if (!Mode_Put(SC, "SceneName", NULL, none) || !Mode_StopAllSounds() || !Mode_GVarSetI("ForceNoActionMusic", 0) ||
-		!Mode_StopVoice(Mode_I(&t, 0)) || !Mode_StopVoice(Mode_I(&t, 1)) || !Mode_StopVoice(Mode_I(&t, 2)) || !Mode_Cam0(cam) ||
+		!Mode_StopVoice(Mode_I(t, 0)) || !Mode_StopVoice(Mode_I(t, 1)) || !Mode_StopVoice(Mode_I(t, 2)) || !Mode_Cam0(cam) ||
 		!LvN_SetS(cam, "EntityLink", "") || !PORT_OWN(Scene, UnhideChars, NULL, "") || !Sc_Del(ename) ||
 		!Native_Slice(ename, 9, INT_MAX, sname) || !Sc_G("Actors", actors) || !Mode_Sub(actors, sname, list)) {
-		return Mode_Done(&t, 0);
+		return Mode_Done(t, 0);
 	}
 	int n = Mode_Loop(list);
 	for (int i = 0; i < n; i++) {
 		Native_Free(actr);
 		Native_Free(name);
 		if (!Native_SeqItem(list, i, actr) || !LvN_Item(actr, 1, name) || !Sc_Del(name)) {
-			return Mode_Done(&t, 0);
+			return Mode_Done(t, 0);
 		}
 	}
 	if (n < 0 || !Mode_Import("CharScorer") || !PORT_CALL(CharScorer, Create, NULL, "i", 0L) || !Sc_NoText() ||
 		!Sc_G("AcActionSet", v) || !Mode_ActionSetV(v) || !Mode_GVarSetS("EscapeEvent", "Menu.Init") ||
 		!Mode_Read(SC, "LastDopplerLevel", v) || !Mode_GVarSet("SoundDopplerLevel", v)) {
-		return Mode_Done(&t, 0);
+		return Mode_Done(t, 0);
 	}
 	Native_SetFloat(time, Mode_Time() + 0.2);
-	nativeVal_t *fn = Mode_V(&t);
+	nativeVal_t *fn = Mode_V(t);
 	byte ok = Mode_RefG(SC, "DelClass", fn) && Mode_ScheduleV(time, fn, sname, 1, NULL);
-	if (!ok || !Mode_GVarSetI("DisableSkipSlot", 0) || !Mode_GVarSetI("PauseInactivityTime", 0) ||
-		!Mode_GVarSetI("CameraScene", 0) || !Sc_G("EndOfSceneCallback", cb)) {
+	ok = ok && Mode_GVarSetI("DisableSkipSlot", 0) && Mode_GVarSetI("PauseInactivityTime", 0) &&
+		Mode_GVarSetI("CameraScene", 0) && Sc_G("EndOfSceneCallback", cb);
+	return ok;
+}
+
+/* EndOfScene(EntityName, EventName, Time): Sc_EndPart, then EndOfSceneCallback(usr) runs last. On a -mp2 instance
+ * the end goes to the scene's audience first, whose clients present it themselves (not sent again) */
+static byte Sc_EndOfScene(const nativeVal_t *ename) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *cb = Mode_V(&t);
+	byte drv = NetScene_Derives();
+	if (drv) {
+		NetScene_Ending();
+	}
+	Sc_Derive(drv);
+	byte ok = Sc_Underive(drv, Sc_EndPart(&t, ename, cb));
+	if (!ok) {
 		return Mode_Done(&t, 0);
 	}
 	if (cb->type == NV_NONE) {
 		return Mode_Done(&t, Sc_Ended(1));
 	}
+	nativeVal_t *none = Mode_V(&t), *v = Mode_V(&t);
+	Native_SetNone(none);
 	return Mode_Done(&t, Sc_Ended(Mode_Put(SC, "EndOfSceneCallback", NULL, none) && Mode_Read(SC, "usr", v) &&
 		Mode_CallArgs(cb, NULL, v, 1)));
 }
@@ -620,7 +708,9 @@ static byte Sc_HideChars(void) {
 	if (walk > 0) {
 		walk = Mode_VIsType(&e, "WalkChar");
 	}
-	byte ok = walk >= 0 && (!walk || LvN_SetS(&e, "SelectedEntity", "")) && Sc_HideType("WalkChar");
+	/* not in the original: a sandbox instance hides nothing, the scene player's client hides the characters for
+	 * itself (include/scrap/netscene.h) */
+	byte ok = walk >= 0 && (!walk || LvN_SetS(&e, "SelectedEntity", "")) && (NetScene_LocalHide() || Sc_HideType("WalkChar"));
 	Native_Free(&empty);
 	Native_Free(&e);
 	return ok;
@@ -647,14 +737,23 @@ static byte Sc_Started(const nativeVal_t *cls, byte ok) {
 	if (ok && g_Instance && Native_Text(cls)) {
 		Coop_ScenePlay(Native_Text(cls));
 	}
+	/* a -mp2 instance: the scene's record to its audience (include/scrap/netscene.h) */
+	if (ok && NetScene_Derives() && Native_Text(cls)) {
+		nativeVal_t name = { 0 };
+		if (Sc_G("SceneName", &name) && Native_Text(&name)) {
+			NetScene_Started(Native_Text(cls), Native_Text(&name));
+		}
+		Native_Free(&name);
+	}
 	return ok;
 }
 
 /* Play(SceneClass): loads the scene, creates its actors and the scene entity at the dummy DM_Scene_<name>, links
  * the camera, hides the characters (and outdoors the ships), the cinema HUD, no input, no doppler, no music */
-static byte Sc_Play(const nativeVal_t *cls) {
-	/* not in the original: a coop client plays the scenes of its instance only (include/scrap/coop.h) */
-	if (Coop_ClientNoScene()) {
+static byte Sc_PlayAll(const nativeVal_t *cls) {
+	/* not in the original: a coop client plays the scenes of its instance only (include/scrap/coop.h), a -mp2 client
+	 * the scenes its server starts (include/scrap/netscene.h; its own level start must not make them) */
+	if (Coop_ClientNoScene() || (g_Mp2 && !g_Instance)) {
 		return 1;
 	}
 	modeVals_t t = { .n = 0 };
@@ -733,6 +832,12 @@ static byte Sc_Play(const nativeVal_t *cls) {
 		}
 	}
 	return Mode_Done(&t, Sc_Started(cls, n >= 0));
+}
+
+/* Play on a -mp2 instance: the clients of the scene's audience present it themselves (not sent again) */
+static byte Sc_Play(const nativeVal_t *cls) {
+	byte drv = Sc_Derive(NetScene_Derives());
+	return Sc_Underive(drv, Sc_PlayAll(cls));
 }
 
 /* HideThis(o) of the global of the module, the value read before the global as the script reads it */
@@ -841,6 +946,53 @@ static byte Sc_EndOutDoorScene(void) {
 		PORT_CALL(Menu, DrawScorer, NULL, "iv", 0L, prev));
 }
 
+/* the presentation half of Play on a -mp2 client (include/scrap/netscene.h): the scene's entities are the server's,
+ * the camera the caller links */
+byte Scene_ClientBegin(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *v = Mode_V(&t);
+	if (!Mode_Import("Menu") || !Sc_NoBlur() || !Mode_GVarSetI("DrawNextFrame", 0) || !Mode_GVarSetI("PauseInactivityTime", 1) ||
+		!Mode_GVarSetI("CameraScene", 1) || !PORT_CALL(Menu, MovieScorer, NULL, "i", 0L) || !Sc_NoText()) {
+		return Mode_Done(&t, 0);
+	}
+	Mode_ActionSetName(v);
+	if (!Mode_Put(SC, "AcActionSet", NULL, v) || !Mode_ActionSet("Inactive") || !Mode_GVarSetS("EscapeEvent", "Scene.AbortScene")) {
+		return Mode_Done(&t, 0);
+	}
+	Native_Free(v);
+	return Mode_Done(&t, Native_GVarGet("SoundDopplerLevel", v) && Mode_Put(SC, "LastDopplerLevel", NULL, v) &&
+		Mode_GVarSetN("SoundDopplerLevel", 0.0) && Mode_StopAllSounds() && Mode_GVarSetI("ForceNoActionMusic", 1) &&
+		Mode_GVarSetI("DisableSkipSlot", 1));
+}
+
+/* the presentation half of EndOfScene on a -mp2 client: the camera, the HUD and the input of the own entity are the
+ * caller's (Play.c) */
+byte Scene_ClientEnd(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *v = Mode_V(&t);
+	return Mode_Done(&t, Mode_StopAllSounds() && Mode_GVarSetI("ForceNoActionMusic", 0) && Mode_StopVoice(Mode_I(&t, 0)) &&
+		Mode_StopVoice(Mode_I(&t, 1)) && Mode_StopVoice(Mode_I(&t, 2)) && Sc_NoText() && Mode_GVarSetS("EscapeEvent", "Menu.Init") &&
+		Mode_Read(SC, "LastDopplerLevel", v) && Mode_GVarSet("SoundDopplerLevel", v) && Mode_GVarSetI("DisableSkipSlot", 0) &&
+		Mode_GVarSetI("PauseInactivityTime", 0) && Mode_GVarSetI("CameraScene", 0));
+}
+
+/* the scene's own presentation events and what they schedule: on a -mp2 instance whose scene plays the clients of its
+ * audience play them from their replica of the scene entity (not sent) */
+static byte Sc_PlayStreamD(const nativeVal_t *event) {
+	byte drv = Sc_Derive(NetScene_On());
+	return Sc_Underive(drv, Sc_PlayStream(event));
+}
+
+static byte Sc_PlayVoiceVolD(const nativeVal_t *voice, const nativeVal_t *vol) {
+	byte drv = Sc_Derive(NetScene_On());
+	return Sc_Underive(drv, Mode_PlayVoice(voice, NULL) && Mode_VoiceVolume(voice, vol));
+}
+
+static byte Sc_PlayTextD(const nativeVal_t *event) {
+	byte drv = Sc_Derive(NetScene_On());
+	return Sc_Underive(drv, Sc_PlayText(event));
+}
+
 /* ---- entries ---- */
 
 MODE_FN(Scene, BaseAddActor, 3, Sc_BaseAddActor(&a[0], &a[1], &a[2]))
@@ -852,9 +1004,9 @@ MODE_FN(Scene, ActorActBreakChanne, 3, Sc_ActorActBreakChanne(&a[0], &a[1]))
 MODE_FN(Scene, ObjActEvent, 3, Sc_ActEvent(&a[0], &a[1], 0))
 MODE_FN(Scene, SetDefSounds, 2, Sc_SetDefSounds(&a[0], &a[1]))
 MODE_FN(Scene, ExecGeneric, 3, Sc_ExecGeneric(&a[0], &a[1], &a[2]))
-MODE_FN(Scene, PlayStream, 3, Sc_PlayStream(&a[1]))
-MODE_FN(Scene, PlayVoiceVol, 2, Mode_PlayVoice(&a[0], NULL) && Mode_VoiceVolume(&a[0], &a[1]))
-MODE_FN(Scene, PlayText, 3, Sc_PlayText(&a[1]))
+MODE_FN(Scene, PlayStream, 3, Sc_PlayStreamD(&a[1]))
+MODE_FN(Scene, PlayVoiceVol, 2, Sc_PlayVoiceVolD(&a[0], &a[1]))
+MODE_FN(Scene, PlayText, 3, Sc_PlayTextD(&a[1]))
 MODE_FN(Scene, SetText, 2, Sc_SetText(&a[0], &a[1]))
 MODE_FN(Scene, AbortScene, 1, Sc_AbortScene())
 MODE_FN(Scene, EndOfScene, 3, Sc_EndOfScene(&a[0]))
@@ -863,7 +1015,7 @@ MODE_FN(Scene, Load, 1, Sc_Load(&a[0]))
 MODE_FN(Scene, UnhideChars, 0, Sc_UnhideChars())
 MODE_FN(Scene, HideThis, 1, Sc_HideThis(&a[0]))
 MODE_FN(Scene, HideChars, 0, Sc_HideChars())
-MODE_FN(Scene, HideVehiclesToo, 0, Sc_HideType("Car"))
+MODE_FN(Scene, HideVehiclesToo, 0, NetScene_LocalHide() || Sc_HideType("Car"))
 MODE_FN(Scene, Play, 1, Sc_Play(&a[0]))
 MODE_FN(Scene, EndOutDoorScene, 0, Sc_EndOutDoorScene())
 
@@ -896,7 +1048,8 @@ MODE_KW(Scene, AddStream, "OO|O", "frame", "filename", "vol") {
 }
 
 MODE_KW(Scene, StopSpeech, "|O", "id") {
-	return Sc_StopSpeech();
+	byte drv = Sc_Derive(NetScene_On());
+	return Sc_Underive(drv, Sc_StopSpeech());
 }
 
 MODE_KW(Scene, AddText, "OO|O", "frame", "lngtext", "time") {

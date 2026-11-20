@@ -8,6 +8,7 @@
 
 #include "scrap/console.h"
 #include "scrap/coop.h"
+#include "scrap/coord.h"
 #include "scrap/fx.h"
 #include "scrap/fxmisc.h"
 #include "scrap/game.h"
@@ -17,11 +18,13 @@
 #include "scrap/instance.h"
 #include "scrap/net2.h"
 #include "scrap/netaudit.h"
+#include "scrap/netscene.h"
 #include "scrap/netrep.h"
 #include "scrap/objentity.h"
 #include "scrap/platform.h"
 #include "scrap/players.h"
 #include "scrap/pres.h"
+#include "scrap/pyfunction.h"
 #include "scrap/replicate.h"
 #include "scrap/repent.h"
 #include "scrap/scorer.h"
@@ -49,7 +52,7 @@ byte g_PresHud;
 
 static const char *const pres_opNames[PRES_O_COUNT] = { "?", "soundat", "sound3d", "sound2d", "voiceopen", "voiceplay",
 	"voicestop", "music", "shipexpl", "fxent", "msgtext", "labeltext", "speech", "speechcancel", "chat", "head", "fade",
-	"cinema", "actionset", "hudadd", "hudclear", "hudshow", "hudset", "talk", "itemsnd" };
+	"cinema", "actionset", "hudadd", "hudclear", "hudshow", "hudset", "talk", "itemsnd", "scene", "sceneend", "campath", "fxcall" };
 
 /* a voice of a -mp2 instance's model: nothing plays, the file's length and the time it started give what the scripts
  * read (VoiceRemain), the text what the talk voice's checks read */
@@ -179,6 +182,22 @@ byte Pres_Begin(presTo_t to, const vec3_t *pos, int op) {
 	return 1;
 }
 
+byte Pres_BeginMask(uint64_t mask, int op) {
+	pres.to = 0;
+	for (int i = 0; i < PLAYERS_MAX; i++) {
+		if ((mask >> i & 1) && Pres_Online(i)) {
+			pres.to |= (uint64_t)1 << i;
+		}
+	}
+	if (!pres.to) {
+		return 0;
+	}
+	pres.op = op;
+	NetRepBuf_Init(&pres.w, pres.rec, sizeof(pres.rec));
+	NetRep_PutU8(&pres.w, (uint32_t)op);
+	return 1;
+}
+
 void Pres_PutStr(const char *s) {
 	if (s && strlen(s) > 255) {
 		pres.cut++;
@@ -235,6 +254,7 @@ void Pres_Send(void) {
 }
 
 void Pres_Flush(Net2Host *host) {
+	NetScene_Flush();
 	for (int i = 0; i < PLAYERS_MAX; i++) {
 		if (pres.size[i]) {
 			Pres_FlushPlayer(host, i);
@@ -283,6 +303,25 @@ const char *Pres_ModSite(void) {
 			pres.callMod[k], pres.callFunc[k]);
 	}
 	return pres.site;
+}
+
+byte Pres_NativeCall(cPy_Function *f) {
+	const void *data;
+	if (!Pres_Out() || !(f->flags & PYF_NATIVE)) {
+		return 0;
+	}
+	const char *name = cPy_NativeFunc_Name((nativefunc_t)f->func);
+	int n = cPy_Function_NativeBytes(f, &data);
+	if (!name || strncmp(name, "FX", 2) || n > PRES_REC - 300) {
+		return 0;
+	}
+	if (Pres_Begin(PRES_PLAYER, NULL, PRES_O_FXCALL)) {
+		Pres_PutStr(name);
+		NetRep_PutU16(&pres.w, (uint32_t)n);
+		CoordMsg_PutBytes(&pres.w, data, n);
+		Pres_Send();
+	}
+	return 1;
 }
 
 /* ---- instance: the HUD models ---- */
@@ -1134,6 +1173,63 @@ static void Pres_Play(int op, NetRepReader *r) {
 		}
 		break;
 	}
+	case PRES_O_SCENE: {
+		NetRep_GetStr(r, name, sizeof(name));
+		NetRep_GetStr(r, s2, sizeof(s2));
+		int tick = NetRep_GetSVar(r), flags = NetRep_GetSVar(r);
+		if (!r->bad) {
+			NetScene_ClientStart(name, s2, tick, flags);
+		}
+		break;
+	}
+	case PRES_O_SCENEEND:
+		NetRep_GetStr(r, name, sizeof(name));
+		if (!r->bad) {
+			NetScene_ClientEnd(name);
+		}
+		break;
+	case PRES_O_FXCALL: {
+		static cPy_Function call;
+		static uint8_t bytes[PRES_REC];
+		NetRep_GetStr(r, name, sizeof(name));
+		int n = (int)NetRep_GetU16(r);
+		if (n > (int)sizeof(bytes)) {
+			r->bad = 1;
+			break;
+		}
+		CoordMsg_GetBytes(r, bytes, n);
+		Str_PrintfQuiet(s2, sizeof(s2), "!%s", name);
+		if (!r->bad && cPy_Function_SetFunc(&call, s2)) {
+			cPy_Function_SetNativeBytes(&call, bytes, n);
+			cPy_Function_Execute(&call, 0);
+		} else if (!r->bad) {
+			Pres_Missing(op, name);
+		}
+		break;
+	}
+	case PRES_O_CAMPATH: {
+		static netScenePath_t path;
+		NetRep_GetStr(r, name, sizeof(name));
+		int n = NetRep_GetSVar(r);
+		path.time = Pres_GetFloat(r);
+		path.n = n < 0 ? 0 : n > NETSCENE_PATH_POINTS ? NETSCENE_PATH_POINTS : n;
+		for (int k = 0; k < path.n && !r->bad; k++) {
+			NetRep_GetStr(r, path.p[k].cam, sizeof(path.p[k].cam));
+			Pres_GetVec(r, &path.p[k].pos);
+			Pres_GetVec(r, &path.p[k].ang);
+			path.p[k].zNear = Pres_GetFloat(r);
+			path.p[k].zFar = Pres_GetFloat(r);
+			path.p[k].fov = Pres_GetFloat(r);
+			path.p[k].time = Pres_GetFloat(r);
+			path.p[k].quake = Pres_GetFloat(r);
+			path.p[k].fadeIn = NetRep_GetSVar(r);
+			path.p[k].fadeOut = NetRep_GetSVar(r);
+		}
+		if (!r->bad && n == path.n) {
+			NetScene_ClientPath(name, &path);
+		}
+		break;
+	}
 	default:
 		r->bad = 1;
 		break;
@@ -1182,7 +1278,48 @@ static void Pres_PlayRecord(int op, NetRepReader *r) {
 	Pres_Play(op, r);
 }
 
+/* the messages that came while a scene of the server plays here, held for the interpolation delay: the scene's
+ * entities are drawn that long behind the server, so what its lines present (a fade, an effect) plays at the scene's
+ * time it played at on the server (include/scrap/netscene.h) */
+#define PRES_LATE 32
+static struct {
+	uint64_t due;					/* Plat_RealNs when it plays, 0 free */
+	int size;
+	uint8_t data[PRES_BUF];
+} pres_late[PRES_LATE];
+static int pres_lateFirst, pres_lateN;
+
+static void Pres_Play2(const uint8_t *data, int size);
+
+/* the held messages that are due (all with force) */
+static void Pres_LateFlush(byte force) {
+	uint64_t now = Plat_RealNs();
+	while (pres_lateN && (force || now >= pres_late[pres_lateFirst].due)) {
+		int k = pres_lateFirst;
+		pres_lateFirst = (pres_lateFirst + 1) % PRES_LATE;
+		pres_lateN--;
+		Pres_Play2(pres_late[k].data, pres_late[k].size);
+	}
+}
+
 void Pres_Message(const uint8_t *data, int size) {
+	/* while some are held every message waits behind them (the order of the records stays) */
+	if ((NetScene_ClientHolds() || pres_lateN) && size <= PRES_BUF) {
+		if (pres_lateN == PRES_LATE) {
+			Pres_LateFlush(1);
+		}
+		int k = (pres_lateFirst + pres_lateN) % PRES_LATE;
+		double d = NetScene_ClientHolds() ? Watch_Delay() : 0.0;
+		pres_late[k].due = Plat_RealNs() + (uint64_t)(d > 0.0 ? d * 1e9 : 0.0);
+		pres_late[k].size = size;
+		memcpy(pres_late[k].data, data, (size_t)size);
+		pres_lateN++;
+		return;
+	}
+	Pres_Play2(data, size);
+}
+
+static void Pres_Play2(const uint8_t *data, int size) {
 	NetRepReader r;
 	NetRepReader_Init(&r, data + 1, size - 1);
 	g_PresIn++;
@@ -1206,6 +1343,8 @@ void Pres_Message(const uint8_t *data, int size) {
 
 void Pres_ClientFrame(void) {
 	uint64_t now = Plat_RealNs();
+	Pres_LateFlush(0);
+	NetScene_ClientFrame();
 	for (int k = 0; k < PRES_HOLDS; k++) {
 		if (!pres.hold[k].ns) {
 			continue;
