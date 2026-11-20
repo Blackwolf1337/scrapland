@@ -10,7 +10,7 @@ and then use, each through the input (test verb "tape key Walk.<action> 1": sing
 that goes to the server), WAIT seconds apart (env, default 12). With TALKLOG (env: the log of the game that has the
 player's talk trace, single player's or the client's) a use that started no talk but only a message (a busy cop, a
 crazy character) is marked "<npc> retry <k>: <message>" and made again RETRY_WAIT seconds later, up to RETRY times
-(default 2; the last try counts). Each use is marked in the games' talk traces ("talk ... mark <npc> use <k>",
+(default 2; the last try counts). After each use the money it changed is marked ("<npc> money <k> <change>"). Each use is marked in the games' talk traces ("talk ... mark <npc> use <k>",
 SCRAP_TALK_TRACE=1), so talkcmp.py splits the traces per character and use. A player that is
 not selected by the character's arrow after about ten seconds gets "mark <npc> use <k>: not selected (<selected>)".
 """
@@ -28,8 +28,8 @@ RETRY_WAIT = float(os.environ.get('RETRY_WAIT', '6'))
 
 
 def refused(npc, use):
-    """with TALKLOG (the game's log with the talk trace): the message of a use that started no talk (only a message
-    since its mark: a busy cop, a crazy character), else None"""
+    """with TALKLOG (the game's log with the talk trace, written a line at a time): why a use started no talk (the
+    message since its mark: a busy cop, a crazy character; "no answer" without one), None when it started one"""
     if not TALKLOG:
         return None
     try:
@@ -50,7 +50,7 @@ def refused(npc, use):
             return None
         if f[3] == 'msg' and len(f) > 4 and f[4] != '""':
             msg = f[4]
-    return msg
+    return msg or 'no answer'
 
 
 def ask(game, lines, inst=None, timeout=20.0):
@@ -101,6 +101,13 @@ class Side:
         time.sleep(hold)
         ask(self.client, 'tape key Walk.%s 0' % action)
 
+    def money(self):
+        r = ask(self.game, 'talk state' if self.mode == 'sp' else 'talk state %d' % self.player, self.inst)
+        for ln in r.splitlines():
+            if ln.startswith('money '):
+                return int(ln.split()[1])
+        return 0
+
     def mark(self, text):
         print('talkbot: %.3f %s' % (time.time(), text), flush=True)
         ask(self.client, 'talk mark ' + text)
@@ -129,6 +136,7 @@ def main():
             for _ in range(nx):
                 s.key('NextAction', 0.15)
                 time.sleep(0.3)
+            m0 = s.money()
             for attempt in range(RETRY + 1):
                 s.mark('%s use %d' % (npc, u))
                 s.key('Use')
@@ -140,6 +148,7 @@ def main():
                 s.mark('%s retry %d: %s' % (npc, u, why))
                 time.sleep(RETRY_WAIT)
             time.sleep(WAIT - 2.0)
+            s.mark('%s money %d %d' % (npc, u, s.money() - m0))
         s.follow('-')
         s.mark('%s done' % npc)
 

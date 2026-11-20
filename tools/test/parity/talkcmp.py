@@ -12,6 +12,7 @@ The first form, per use "<npc> use <k>":
     are only counted (anim_voices in the JSON). A voice name that differs only in its last number (the answer variant the game draws at random, InitAns2
     against InitAns3) counts as a variant, and the text spoken with that voice may differ then.
   - callbacks: single player's against the instance's lines of the player's context (p<player>).
+  - money: the change of the use as talkbot.py marked it in single player and on the client.
   Lines of another player's context in the instance's segment are counted ("foreign").
 The second form counts the client's conversation lines that match the forbidden regex (another player's talk) and,
 with an instance log, the instance's lines matching the player's regex in another context than p<player>.
@@ -37,6 +38,19 @@ def parse(path):
             m = LINE.match(raw.rstrip('\n'))
             if m:
                 out.append((float(m.group(1)), m.group(2), m.group(3), m.group(4)))
+    return out
+
+
+MONEY = re.compile(r'^(\S+) money (\d+) (-?\d+)$')
+
+
+def moneys(lines):
+    """{(npc, use): the money a use changed} from talkbot.py's marks"""
+    out = {}
+    for ln in lines:
+        m = MONEY.match(ln[3]) if ln[2] == 'mark' else None
+        if m:
+            out[(m.group(1), int(m.group(2)))] = int(m.group(3))
     return out
 
 
@@ -125,7 +139,9 @@ def main_cmp(argv):
     sp_log, cl_log, in_log, player = argv[0], argv[1], argv[2], int(argv[3])
     jout = argv[argv.index('--json') + 1] if '--json' in argv else None
     ctx = 'p%d' % player
-    sps, cls, ins = segments(parse(sp_log)), segments(parse(cl_log)), segments(parse(in_log))
+    spl, cll = parse(sp_log), parse(cl_log)
+    sps, cls, ins = segments(spl), segments(cll), segments(parse(in_log))
+    spm, clm = moneys(spl), moneys(cll)
     rows, bad = [], 0
     for key in sorted(set(sps) | set(cls), key=lambda k: (list(sps).index(k) if k in sps else 999, k[1])):
         npc, use = key
@@ -145,7 +161,10 @@ def main_cmp(argv):
                  speech=[f for op, f in a if op == 'speech' and not f.startswith('0.00')])
         if not cba == cbi:
             r['callbacks_diff'] = '%s against %s' % (cba, cbi)
-        r['state'] = 'ok' if eq and cba == cbi and not foreign else 'DIFF'
+        r['money'] = (spm.get(key), clm.get(key))
+        if r['money'][0] != r['money'][1]:
+            r['callbacks_diff'] = r.get('callbacks_diff', '') + ' money %s against %s' % r['money']
+        r['state'] = 'ok' if eq and cba == cbi and not foreign and r['money'][0] == r['money'][1] else 'DIFF'
         bad += r['state'] != 'ok'
         rows.append(r)
     for r in rows:

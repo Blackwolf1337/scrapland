@@ -1571,7 +1571,7 @@ static void TC_Follow(void) {
 static void TC_Talk(tcBuf *b, const char *arg) {
 	char ent[64], opt[64];
 	float dx = 300.0f, dz = 0.0f;
-	int pl = 0;
+	int pl = 0, money = 0;
 
 	opt[0] = 0;
 	if (!strncmp(arg, "state", 5)) {
@@ -1579,6 +1579,14 @@ static void TC_Talk(tcBuf *b, const char *arg) {
 		sscanf(arg + 5, "%d", &pl);
 		TC_Addf(b, "money %d\n", Players_Net() ? Players_Money(pl) : g_pWorld ? g_pWorld->money : 0);
 		SaveVars_Each(TC_SaveVar, b);
+	} else if (sscanf(arg, "money %d %d", &money, &pl) >= 1) {
+		/* the money of single player or of an instance's player (a gate starts both games with the same) */
+		if (Players_Net()) {
+			Players_SetMoney(pl, money);
+		} else if (g_pWorld) {
+			g_pWorld->money = money;
+		}
+		TC_Add(b, "ok\n", -1);
 	} else if (!strncmp(arg, "mark ", 5)) {
 		NetAudit_Talk("mark", "%s", arg + 5);
 		TC_Add(b, "ok\n", -1);
@@ -1599,7 +1607,8 @@ static void TC_Talk(tcBuf *b, const char *arg) {
 		Travel_TestUse(0, ent, opt);
 		TC_Add(b, "ok\n", -1);
 	} else {
-		TC_Add(b, "error: talk goto <entity> [<dx> <dz>] | talk use <entity> [<option>] | talk follow <player> <entity>|- [<dx> <dz>]\n", -1);
+		TC_Add(b, "error: talk goto <entity> [<dx> <dz>] | talk use <entity> [<option>] | talk follow <player> <entity>|- "
+			"[<dx> <dz>] | talk state [<player>] | talk money <n> [<player>] | talk mark <text>\n", -1);
 	}
 }
 
@@ -1636,7 +1645,8 @@ static void TC_Line(tcBuf *b, const char *line) {
 	/* "talk goto <entity> [<dx> <dz>]", "talk use <entity> [<option>]": single player's player put next to an entity
 	 * or using it, as the instance's lines goto and use do for a network player (include/scrap/travel.h); not on a
 	 * client, whose use goes to the server as its input. "talk mark <text>": a line of the talk trace (netaudit.h).
-	 * "talk state [<player>]": the money (of an instance's player) and the save variables. "talk follow <player>
+	 * "talk state [<player>]": the money (of an instance's player) and the save variables, "talk money <n> [<player>]"
+	 * sets that money. "talk follow <player>
 	 * <entity> [<dx> <dz>]": the player (0 in single player) put next to the entity again whenever it walked away, "talk
 	 * follow <player> -" ends it */
 	if (TC_Verb(line, "talk", &arg)) {
