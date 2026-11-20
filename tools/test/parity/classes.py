@@ -96,6 +96,8 @@ def run_level(a, w, level):
         end = time.time() + 120
         while time.time() < end and not ask(gi, ['audit reset'], level, 5).strip():
             time.sleep(1)
+        if 'Net2 server on' not in open(ilog, errors='replace').read():
+            raise RuntimeError('the instance has no server on port %d (taken?)' % port)
         cli = subprocess.Popen(['timeout', '-k', '3', '1100', './ScrapC', '-play:127.0.0.1', '-port:%d' % port,
                                 '-imap:Levels/' + level, '-headless', '-name:bot', '-mp2'], cwd=os.path.join(gc, 'Bin'),
                                env=dict(env, XDG_DATA_HOME=os.path.join(gc, 'xdg-data'), SCRAP_GAME_DIR=gc,

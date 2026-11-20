@@ -497,6 +497,9 @@ void cActCtrl_NetDrive(cActCtrl *self, const uint16_t *act, const float *rate, c
 					CGameModel_StopAnim(m, k);
 					l->on = 0;
 					l->action = NULL;
+				} else if (target && l->on && l->action) {
+					/* the base layer of a replica the network has no action for yet stands (see below) */
+					CGameModel_SetAnimFactor(m, Action_Anim(l->action), 0.0f);
 				}
 				continue;
 			}
@@ -524,6 +527,11 @@ void cActCtrl_NetDrive(cActCtrl *self, const uint16_t *act, const float *rate, c
 				r = base + (err + end) / NETDRIVE_CATCHUP;
 			}
 			r = r < 0.0f ? 0.0f : r > NETDRIVE_MAX_RATE ? NETDRIVE_MAX_RATE : r;
+		}
+		if (target && l->on && target[k] < 0.0f) {
+			/* the network has no time for the layer yet (the sample before had no action): it stands until it has
+			 * one, so a replica made with its default action does not run ahead of the server */
+			r = 0.0f;
 		}
 		if (l->on && (r > 0.0f || (target && r == 0.0f))) {
 			CGameModel_SetAnimFactor(m, Action_Anim(l->action), r);
