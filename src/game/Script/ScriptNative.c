@@ -2642,10 +2642,13 @@ byte Native_LangEntries(const nativeVal_t *name, int n, nativeVal_t *out) {
 int Native_GVarStore(const char *name, const nativeVal_t *v) {
 	/* Scrap.Set: "ss", else "sd" */
 	double d;
-	if (v->type == NV_STR && strlen(Native_Text(v)) == (size_t)v->n) {
-		return GVar_SetStr(name, Native_Text(v));
+	int r = v->type == NV_STR && strlen(Native_Text(v)) == (size_t)v->n ? GVar_SetStr(name, Native_Text(v)) :
+		Native_ArgDouble(v, &d) ? GVar_SetNum(name, d) : -2;
+	/* not in the original: the presentation state a -mp2 instance's players keep (include/scrap/pres.h) */
+	if (r >= 0 && g_Mp2) {
+		Pres_GVar(name);
 	}
-	return Native_ArgDouble(v, &d) ? GVar_SetNum(name, d) : -2;
+	return r;
 }
 
 byte Native_GVarSet(const char *name, const nativeVal_t *v) {

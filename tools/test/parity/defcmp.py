@@ -23,10 +23,12 @@ GVARS = os.path.join(REPO, 'tools', 'script', 'netclass', 'gvar.tsv')
 TAGS = ('WORLD_SETTING', 'STATE', 'CLIENT_ONLY')
 MODULES = ('Init',)
 # differ by design: the window, the camera and the client's own view, the screen, the input, the clocks; the HUD of
-# the own player (the instance's world HUD has no player: EnergyBarActive); the autoplay volume the original resets
-# to -48 on every channel it sets (Fmod_SetChannel: the instance plays none); the module variables of the start that
-# name the side
-SKIP = re.compile(r'^(EnergyBarActive$|SoundAutoplayVolume$|R_|Cam|Camera(?!Cloud)|FOV|Fov|Screen|Video|Input|Mouse|Joy|Pad|Time|Frame|Fps|Show|Console|Debug|'
+# the own player (the instance's world HUD has no player: EnergyBarActive) and its talk times; the autoplay volume
+# the original resets to -48 on every channel it sets (Fmod_SetChannel: the instance plays none) and the dynamic music
+# the sound system's start sets; the talk line width of the screen size; the module variables of the start that name
+# the side, and the map libraries a client imports without running them (their functions are WORLD steps)
+SKIP = re.compile(r'^(EnergyBarActive$|FullTalkTime$|RemainTalkTime$|SoundAutoplayVolume$|useDynamicMusic$|'
+                  r'MaxTalkLineSizePix$|Init\.MapLibs$|R_|Cam|Camera(?!Cloud)|FOV|Fov|Screen|Video|Input|Mouse|Joy|Pad|Time|Frame|Fps|Show|Console|Debug|'
                   r'Init\.(MultiPlayer|OffLineGame|Path|inMainMenu|isDemo|NetGame|Server|Client)$)')
 
 

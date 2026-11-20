@@ -80,6 +80,8 @@ enum {
 	PRES_O_HUDSET,					/* item, var, kind u8 (1 text, 2 number), value */
 	PRES_O_TALK,					/* file, speaker, arg: the talk voice (Sound_OpenTalk) */
 	PRES_O_ITEMSND,					/* entity, item: a sound item of a ship its simulation starts (Pres_ItemSound) */
+	PRES_O_GVAR,					/* name, kind u8 (1 text, 2 number), value: an engine variable (Pres_GVar) */
+	PRES_O_CHARRES,					/* name: a character class the server's scripts loaded (Pres_CharRes) */
 	PRES_O_COUNT
 };
 
@@ -184,6 +186,13 @@ void Pres_Music(const char *name, const char *cmd, float volume);
 /* player i joined: the world's music (its volume and the last file played outside a player's context, the level's
  * own music of its Map.Init) as records to that player */
 void Pres_Joined(int i);
+/* the scripts set the engine variable name (Native_GVarStore): one the gvar table tags STATE or WORLD_SETTING goes to
+ * the players as a record, in the world's context to every player and kept for those that join later, in a player's
+ * context to that player */
+void Pres_GVar(const char *name);
+/* the server's scripts loaded the character class name (Chars.LocalLoadRes: the class, its sounds and their engine
+ * variables): every player and those that join later load it too (Chars.LoadRes) */
+void Pres_CharRes(const char *name);
 void Pres_ShipExplosion(const vec3_t *pos, const vec3_t *vel, float scale, float time, int flames, int collision);
 void Pres_FxEnt(int kind, const char *a, const char *b, float f, int i, const vec3_t *v);
 void Pres_MsgText(const char *text, float time, const char *font);

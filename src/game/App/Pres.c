@@ -18,6 +18,7 @@
 #include "scrap/instance.h"
 #include "scrap/net2.h"
 #include "scrap/netaudit.h"
+#include "scrap/netclass.h"
 #include "scrap/netrep.h"
 #include "scrap/objentity.h"
 #include "scrap/platform.h"
@@ -27,6 +28,8 @@
 #include "scrap/repent.h"
 #include "scrap/scorer.h"
 #include "scrap/scrap.h"
+#include "scrap/scriptmodes.h"
+#include "scrap/scriptnative.h"
 #include "scrap/sound.h"
 #include "scrap/uichan.h"
 #include "scrap/viewers.h"
@@ -42,6 +45,8 @@
 #define PRES_HOLDS 32				/* effect records a client holds until it has their entities */
 #define PRES_HOLD_REC 640			/* the longest held record */
 #define PRES_HOLD_NS 1000000000ull	/* how long: then it plays and counts what it misses */
+#define PRES_GVARS 64
+#define PRES_CHARRES 64
 
 int g_PresIn;
 int g_PresDerived;
@@ -50,7 +55,7 @@ byte g_PresHud;
 
 static const char *const pres_opNames[PRES_O_COUNT] = { "?", "soundat", "sound3d", "sound2d", "voiceopen", "voiceplay",
 	"voicestop", "music", "shipexpl", "fxent", "msgtext", "labeltext", "speech", "speechcancel", "chat", "head", "fade",
-	"cinema", "actionset", "hudadd", "hudclear", "hudshow", "hudset", "talk", "itemsnd" };
+	"cinema", "actionset", "hudadd", "hudclear", "hudshow", "hudset", "talk", "itemsnd", "gvar", "charres" };
 
 /* a voice of a -mp2 instance's model: nothing plays, the file's length and the time it started give what the scripts
  * read (VoiceRemain), the text what the talk voice's checks read */
@@ -89,6 +94,11 @@ static struct {
 	char music[64];					/* the world's music (the last play outside a player's context), "" none */
 	float musicVolume;
 	byte haveMusicVolume;
+	char gvars[PRES_GVARS][48];		/* the engine variables of Pres_GVar the world's scripts set: their values then
+									 * go to the players that join later (C code sets some of them too) */
+	int numGVars;
+	char charRes[PRES_CHARRES][32];	/* the character classes of Pres_CharRes */
+	int numCharRes;
 	uint32_t sent[PRES_O_COUNT], bytes, cut;
 	/* client */
 	PresRecent recent[PRES_RECENT];
@@ -598,9 +608,91 @@ void Pres_Music(const char *name, const char *cmd, float volume) {
 	Pres_Send();
 }
 
+/* the fields of a PRES_O_GVAR record: name, kind (1 text, 2 number), value */
+static void Pres_PutGVar(const char *name, byte text, const char *s, float f) {
+	Pres_PutStr(name);
+	NetRep_PutU8(&pres.w, text ? 1u : 2u);
+	if (text) {
+		Pres_PutStr(s);
+	} else {
+		Pres_PutFloat(f);
+	}
+}
+
+/* the engine variable name when the gvar table tags it STATE or WORLD_SETTING and it holds a text or a number, NULL
+ * else */
+static const cGVar *Pres_GVarOf(const char *name) {
+	netTag_t tag = NetClass_Find(NCT_GVAR, name);
+	const cGVar *v = GVar_Find(name);
+	if ((tag != NC_STATE && tag != NC_WORLD_SETTING) || !v ||
+		(v->base.type != GVAR_STRING && v->base.type != GVAR_INT && v->base.type != GVAR_FLOAT)) {
+		return NULL;
+	}
+	return v;
+}
+
+/* the fields of v's value now into the record begun, sent */
+static void Pres_SendGVar(const char *name, const cGVar *v) {
+	byte text = v->base.type == GVAR_STRING;
+	Pres_PutGVar(name, text, text && v->value.s ? v->value.s : "",
+		v->base.type == GVAR_INT ? (float)v->value.i : v->base.type == GVAR_FLOAT ? v->value.f : 0.0f);
+	Pres_Send();
+}
+
+void Pres_GVar(const char *name) {
+	const cGVar *v = Pres_Out() ? Pres_GVarOf(name) : NULL;
+	if (!v) {
+		return;
+	}
+	if (Players_Current() == PLAYERS_NONE) {
+		int k;
+		for (k = 0; k < pres.numGVars && strcmp(pres.gvars[k], name); k++) {
+		}
+		if (k == pres.numGVars && k < PRES_GVARS) {
+			Str_Copy(pres.gvars[k], name, sizeof(pres.gvars[k]));
+			pres.numGVars++;
+		}
+	}
+	if (Pres_Begin(PRES_PLAYER, NULL, PRES_O_GVAR)) {
+		Pres_SendGVar(name, v);
+	}
+}
+
+void Pres_CharRes(const char *name) {
+	if (!Pres_Out() || !name || !*name) {
+		return;
+	}
+	int k;
+	for (k = 0; k < pres.numCharRes && crt_stricmp(pres.charRes[k], name); k++) {
+	}
+	if (k < pres.numCharRes) {
+		return;
+	}
+	if (k < PRES_CHARRES) {
+		Str_Copy(pres.charRes[k], name, sizeof(pres.charRes[k]));
+		pres.numCharRes++;
+	}
+	if (Pres_Begin(PRES_LEVEL, NULL, PRES_O_CHARRES)) {
+		Pres_PutStr(name);
+		Pres_Send();
+	}
+}
+
 void Pres_Joined(int i) {
 	if (!Pres_Out() || i < 0 || i >= PLAYERS_MAX || !Pres_Online(i)) {
 		return;
+	}
+	for (int k = 0; k < pres.numCharRes; k++) {
+		if (Pres_BeginTo((uint64_t)1 << i, PRES_O_CHARRES)) {
+			Pres_PutStr(pres.charRes[k]);
+			Pres_Send();
+		}
+	}
+	for (int k = 0; k < pres.numGVars; k++) {
+		const cGVar *v = Pres_GVarOf(pres.gvars[k]);
+		if (v && Pres_BeginTo((uint64_t)1 << i, PRES_O_GVAR)) {
+			Pres_SendGVar(pres.gvars[k], v);
+		}
 	}
 	if (pres.haveMusicVolume && Pres_BeginTo((uint64_t)1 << i, PRES_O_MUSIC)) {
 		Pres_PutStr(NULL);
@@ -1151,6 +1243,27 @@ static void Pres_Play(int op, NetRepReader *r) {
 		}
 		break;
 	}
+	case PRES_O_GVAR: {
+		NetRep_GetStr(r, name, sizeof(name));
+		uint32_t kind = NetRep_GetU8(r);
+		if (kind == 1) {
+			NetRep_GetStr(r, s2, sizeof(s2));
+		}
+		float f = kind == 2 ? Pres_GetFloat(r) : 0.0f;
+		if (!r->bad && (kind == 1 ? GVar_SetStr(name, s2) : GVar_SetNum(name, (double)f)) < 0) {
+			Pres_Missing(op, name);
+		}
+		break;
+	}
+	case PRES_O_CHARRES:
+		NetRep_GetStr(r, name, sizeof(name));
+		/* the class with its sounds as single player loads a class it lacks (Chars.LoadRes: nothing when the
+		 * level's start has it) */
+		if (!r->bad && (!Mode_Import("Chars") || !PORT_CALL(Chars, LoadRes, NULL, "s", name))) {
+			Native_ErrPrint();
+			Pres_Missing(op, name);
+		}
+		break;
 	case PRES_O_ACTIONSET:
 		NetRep_GetStr(r, name, sizeof(name));
 		if (!r->bad && !Input_SelectActionSetNamed(name)) {
