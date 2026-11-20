@@ -14,6 +14,7 @@ crazy character) is marked "<npc> retry <k>: <message>" and made again RETRY_WAI
 SCRAP_TALK_TRACE=1), so talkcmp.py splits the traces per character and use. A player that is
 not selected by the character's arrow after about ten seconds gets "mark <npc> use <k>: not selected (<selected>)".
 """
+import fcntl
 import os
 import sys
 import time
@@ -57,10 +58,13 @@ def ask(game, lines, inst=None, timeout=20.0):
     save = channel.CMD, channel.REPLY, channel.TMP
     if inst:
         channel.use_instance(inst)
-    try:
-        return channel.send(game, '\n'.join(lines) if isinstance(lines, list) else lines, timeout=timeout)
-    finally:
-        channel.CMD, channel.REPLY, channel.TMP = save
+    # two bots of one instance (two players) take turns at its command file
+    with open(os.path.join(game, channel.CMD + '.lock'), 'w') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        try:
+            return channel.send(game, '\n'.join(lines) if isinstance(lines, list) else lines, timeout=timeout)
+        finally:
+            channel.CMD, channel.REPLY, channel.TMP = save
 
 
 class Side:
