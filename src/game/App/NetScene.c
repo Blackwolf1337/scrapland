@@ -52,6 +52,7 @@ static struct {
 	char cls[NS_NAME], ent[NS_NAME];
 	int player;						/* the scene's player outside coop, PLAYERS_NONE */
 	uint64_t mask, skips;
+	uint64_t told;					/* the players of the audience that got the scene's record */
 	int flags;
 	int rule;						/* NS_SKIP_, -1 before the rules were read */
 	char path[PLAYERS_MAX][NS_NAME];	/* the camera path each player's view 0 shows now, to send */
@@ -157,7 +158,8 @@ void NetScene_Started(const char *cls, const char *ent) {
 	Native_Free(&out);
 	Native_ErrClear();
 	ns.flags = (coop ? 0 : NETSCENE_F_LOCALHIDE) | (outdoor ? NETSCENE_F_OUTDOOR : 0);
-	NetScene_Record(ns.mask);
+	ns.told = ns.mask & NetScene_Online();
+	NetScene_Record(ns.told);
 	NetAudit_Name(NA_HUD, "scene.start:", cls);
 	if (ns.player == PLAYERS_NONE) {
 		Con_Printf("scene: %s (%s) plays for every player\n", cls, ent);
@@ -180,11 +182,10 @@ void NetScene_Ending(void) {
 }
 
 void NetScene_Joined(int i) {
-	if (!NetScene_On() || i < 0 || i >= PLAYERS_MAX || !(ns.mask >> i & 1)) {
-		return;
+	/* its record goes with the next records (NetScene_Flush) */
+	if (NetScene_On() && i >= 0 && i < PLAYERS_MAX && (ns.mask >> i & 1)) {
+		ns.told &= ~((uint64_t)1 << i);
 	}
-	NetScene_Record((uint64_t)1 << i);
-	Con_Printf("scene: player %d joins scene %s at its current time\n", i, ns.cls);
 }
 
 /* the scene ends for its audience now, as Escape ends it in single player (in the context of player i outside coop) */
@@ -243,6 +244,21 @@ void NetScene_CamSet(cEntity *cam) {
 }
 
 void NetScene_Flush(void) {
+	/* a player of the audience that came while the scene plays joins it at its current time (the replica of the
+	 * scene entity brings the server's action time) */
+	if (NetScene_On()) {
+		uint64_t online = NetScene_Online(), want = ns.mask & online & ~ns.told;
+		ns.told &= online;
+		if (want) {
+			NetScene_Record(want);
+			ns.told |= want;
+			for (int i = 0; i < PLAYERS_MAX; i++) {
+				if (want >> i & 1) {
+					Con_Printf("scene: player %d joins scene %s at its current time\n", i, ns.cls);
+				}
+			}
+		}
+	}
 	for (int i = 0; NetScene_Derives() && i < PLAYERS_MAX; i++) {
 		cEntity *e = ns.path[i][0] ? World_FindEntity(ns.path[i]) : NULL;
 		if (!ns.path[i][0]) {

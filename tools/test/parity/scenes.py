@@ -7,6 +7,8 @@ second multiplayer design; the games run with the test channel, SCRAP_SCENE_SHOT
       on a -mp2 instance (player: the context the scene starts in, sandbox); after each scene the instance's audit
       (pres.unforwarded, pres.double, scene keys) since the scene's start, each client's (pres.double, pres.missing,
       client.fail), and the mirror diff of each client (tools/test/parity/mirror.py) into <out>/<scene>.json
+  scenes.py auto <game> [<level>]                       the scenes the level plays itself at its start (Fake, ABIndoor):
+      waits until one plays and until none has played for 15 s (an instance's with its level)
 Waits are game time (gameclock.py, SCRAP_TIMESCALE)."""
 import json, os, subprocess, sys, time
 R = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -50,8 +52,31 @@ def wait_end(game, inst=None, limit=240.0):
         time.sleep(0.25)
     return False
 
+def auto(game, inst):
+    t0 = time.time()
+    seen, idle = [], None
+    while time.time() - t0 < gameclock.secs(600) + 60:
+        st = ask(game, ['scene state'], inst)
+        cur = [l.split('\t')[1] for l in st.splitlines() if l.startswith('time\t')]
+        if inst:
+            cur = [l.split('\t')[2] for l in st.splitlines() if l.startswith('server\t') and not l.startswith('server\t-')]
+        if cur:
+            if not seen or seen[-1] != cur[0]:
+                seen.append(cur[0])
+                print('playing', cur[0], flush=True)
+            idle = None
+        elif seen:
+            idle = idle or time.time()
+            if time.time() - idle > gameclock.secs(15):
+                break
+        time.sleep(0.25)
+    print('auto: %d scenes: %s' % (len(seen), ' '.join(seen)), flush=True)
+
 def main():
     a = sys.argv[1:]
+    if a[0] == 'auto':
+        auto(a[1], a[2] if len(a) > 2 else None)
+        return
     if a[0] == 'sp':
         game = a[1]
         for sc in a[2:]:
