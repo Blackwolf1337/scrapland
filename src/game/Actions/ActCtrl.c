@@ -508,6 +508,10 @@ void cActCtrl_NetDrive(cActCtrl *self, const uint16_t *act, const float *rate, c
 			l->event = a->events;
 			l->time = 0.0f;
 			CGameModel_SetAnimLoop(m, Action_Anim(a), a->isLoop);
+			if (again) {
+				/* the model keeps the time of an animation set again on its channel: from its start */
+				CGameModel_StopAnim(m, k);
+			}
 			CGameModel_SetAnim(m, Action_Anim(a), k, 0);
 		}
 		before[k] = l->time;

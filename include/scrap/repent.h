@@ -76,7 +76,9 @@ enum {
 	REPX_BLINK,						/* item: blink */
 	REPX_TARGET,					/* missile: the slot of its target + 1 */
 	REPX_LEVEL,						/* missile: its upgrade level */
-	REPX_ARROW,						/* the arrow: can use, view, mission (bits 0..2) and the target type << 8 */
+	REPX_ARROW,						/* the arrow: can use, view, mission (bits 0..2), the view cone's status (off,
+									 * relax, alert, danger: bits 3..4, the radar's cones and a sentinel's light)
+									 * and the target type << 8 */
 	REPX_COUNT
 };
 /* ship: the sound item of the firing loop + 1, 0 none (cWeaponManager.weapSnd: a replica runs no weapon update) */

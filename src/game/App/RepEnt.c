@@ -205,7 +205,7 @@ void RepEnt_State(cEntity *e, int kind, NetRepState *s) {
 	s->x[REPX_PREVLIFE] = w->prevLife;
 	s->x[REPX_BURN] = RepEnt_Ms(w->fireRemain > 0.0f ? w->fireRemain : 0.0f);
 	s->x[REPX_ARROW] = (w->arrow.canUse ? 1 : 0) | (w->arrow.canView ? 2 : 0) | (w->arrow.canMission ? 4 : 0) |
-		(w->arrow.tgType << 8);
+		((w->arrow.coneStatus & 3) << 3) | (w->arrow.tgType << 8);
 	if (kind == NETREP_SHIP) {
 		cVehicleEntity *v = Veh(e);
 		s->x[REPX_MAXLIFE] = v->maxLife;

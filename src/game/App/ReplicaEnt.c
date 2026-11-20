@@ -600,6 +600,7 @@ void ReplicaEnt_Present(cEntity *e, int kind, const NetRepState *a, const NetRep
 	w->arrow.canUse = a->x[REPX_ARROW] & 1;
 	w->arrow.canView = (a->x[REPX_ARROW] >> 1) & 1;
 	w->arrow.canMission = (a->x[REPX_ARROW] >> 2) & 1;
+	w->arrow.coneStatus = (a->x[REPX_ARROW] >> 3) & 3;
 	w->arrow.tgType = a->x[REPX_ARROW] >> 8;
 	if (w->actCtrl && w->actCtrl->cls && w->actCtrl->cls->dynShip) {
 		ReplicaEnt_ShipLayers(w->actCtrl, a);
