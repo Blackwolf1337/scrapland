@@ -26,7 +26,12 @@ did not run.
 --mp2: the replication v2 (-mp2 for the host, its instance and the joined client, include/scrap/repent.h); at the
 end of each level's route also the mirror diff (mirror.py: the declared state of every replicated entity, instance
 against the joined client) and the positional sound census (census.py, joined client against single player and the
-instance) at the last point, as the columns mirror and census.
+instance) at the last point, as the columns mirror and census. The moment of a point is the server's then (stage
+4.2): single player runs its own simulation, so its traffic, police and NPCs near a point, its fights and passing
+ships are of its own moment. With --mp2 the kinds of the moment (LOOSE) are compared against the instance's count,
+a sound single player plays counts when the instance had a source of it near the point (sounds src) or played it near
+a player (census snd.near), a particle system when the instance dropped it near a player (census debris.near); a
+positional set is the census column's. What that leaves out is listed per point as single player's moment.
 
 Default levels: every level a free world hosts (the city and the listed places of data/places/places.def, the coop
 story's levels among them) in free roam, and the PvP maps of the original in --pvp-mode (dm). Network only on
@@ -608,6 +613,9 @@ def run_level(a, spec, routes=None):
             pt['instance'] = {'kinds': count(inst_now(), pos, a.radius)}
             sides = [('sp', sp, None), ('host', host, inst_now)] + ([('join', join, inst_now)] if join else [])
             pt.update(collect_all(sides, pos, a.radius))
+            if a.mp2:
+                pt['mp2'] = True
+                pt['instance'].update(instance_evidence(host, level, pos, a.radius))
             if a.shots:
                 shots = [g.shot(os.path.join(a.out, '%s-%s-%s.png' % (res['tag'], name, g.name)))
                          for g in (sp, host, join) if g]
@@ -629,6 +637,29 @@ def run_level(a, spec, routes=None):
         for g in games:
             g.stop()
     return res
+
+
+def instance_evidence(host, level, pos, radius):
+    """-mp2: what the instance had near the point, the measure of the moment for the clients (single player's moment
+    is its own simulation's): the sound names of the entity sound items and positional sets within radius (`sounds
+    src`), and the sounds and debris systems it played or dropped near a player since the route began (the census keys
+    snd.near and debris.near of its audit, include/scrap/pres.h)"""
+    src = set()
+    for line in (host.try_ask('sounds src %.0f %.0f %.0f %.0f' % (pos[0], pos[1], pos[2], radius), level, 20) or
+                 '').splitlines():
+        f = line.split('\t')
+        if f[0] == 'ps' and len(f) > 2:
+            src |= {f[1], f[2]}
+        elif f[0] == 'es' and len(f) > 3:
+            src.add(f[3])
+    near = {'snd': set(), 'debris': set()}
+    a = audit(host, level, 'json') or {}
+    for r in a.get('rows', []):
+        k = str(r.get('key', ''))
+        for what in near:
+            if k.startswith(what + '.near:'):
+                near[what].add(k.split(':', 1)[1])
+    return {'src': sorted(src), 'snd_near': sorted(near['snd']), 'debris_near': sorted(near['debris'])}
 
 
 def mirror_census(a, tag, level, host, sp, join):
@@ -703,8 +734,9 @@ def gaps(res):
         cnt = [sk[s].get(k, {}).get('active', 0) for s in sides]
         loose = any(k.startswith(x) for x in LOOSE)
         worst = min(cnt) if cnt else 0
-        if k in TIMED:
-            # what the instance has there now; single player's count is of its own moment
+        if k in TIMED or (res.get('mp2') and loose):
+            # what the instance has there now; single player's count is of its own moment (-mp2: every kind of the
+            # moment, the traffic, the police, the NPCs, against the server the clients replicate)
             a_sp = ik.get(k, {}).get('active', 0)
         if loose:
             gap = a_sp > 0 and (worst == 0 or worst < a_sp * 0.5)
@@ -754,13 +786,38 @@ def sound_gaps(res):
         if 'parked' in res.get('sp', {}) and sp[k] <= idle.get(k, 0):
             continue
         v = [sp[k]] + [res[s].get('sounds', {}).get(k, 0) for s in sides]
-        if k != 'ch ?' and min(v[1:] or [1]) == 0:
+        if k != 'ch ?' and min(v[1:] or [1]) == 0 and (not res.get('mp2') or mp2_sound_due(res, k)):
             out.append((k, v))
     if 'parked' in res.get('sp', {}):
         v = [sum(1 for m in res[s].get('parked', []) if m['role'] == 'idle') for s in ['sp'] + sides]
         fly = sum(1 for s in sides for m in res[s].get('parked', []) if m['role'] == 'flying')
         if fly or min(v[1:] or [v[0]]) < v[0]:
             out.append(('parked ships idling (flying on the clients: %d)' % fly, v))
+    return out
+
+
+def mp2_sound_due(res, k):
+    """-mp2: a sound single player plays that a client must play too: a sample the instance has a source of near the
+    point or played near a player (instance_evidence); a positional set is the census column's (the sources of the
+    client against the instance and single player; which sets play is the listener's place)"""
+    ev = res.get('instance', {})
+    kind, _, name = k.partition(' ')
+    if kind == 'ps':
+        return False
+    return name in ev.get('src', []) or name in ev.get('snd_near', [])
+
+
+def moment(res):
+    """-mp2: the names of single player's moment a point leaves out (no source or play on the instance near the
+    players): sounds, particle systems"""
+    if not res.get('mp2'):
+        return []
+    out = []
+    plain = dict(res, mp2=False)
+    due = {k for k, _ in sound_gaps(res)}
+    out += ['sound %s' % k for k, _ in sound_gaps(plain) if k not in due]
+    dfx = {k for k, _ in lacks(res, 'fx')}
+    out += ['fx %s' % k for k, _ in lacks(plain, 'fx') if k not in dfx]
     return out
 
 
@@ -779,8 +836,11 @@ def lacks(res, key):
     single player (the most over the samples), only the steady ones of single player (seen in at least half of the
     samples: the icons of passing traffic and the effects of a fight come and go): [(name, [sp, host, join])]"""
     seen = res.get('sp', {}).get(key + '_seen')
+    # -mp2: a particle system of single player's moment (a fight, a passing ship) is due on the clients when the
+    # instance dropped it near a player (instance_evidence)
+    due = set(res.get('instance', {}).get('debris_near', [])) if res.get('mp2') and key == 'fx' else None
     return [(k, v) for k, v in hist_gaps(res, key) if len(v) > 1 and v[0] > 0 and min(v[1:]) < v[0] * 0.5 and
-            (seen is None or seen.get(k, 0) * 2 >= SOUND_SAMPLES)]
+            (seen is None or seen.get(k, 0) * 2 >= SOUND_SAMPLES) and (due is None or k in due)]
 
 
 def hud_lacks(res):
@@ -903,6 +963,10 @@ def point_lines(res):
         lines += ['', 'Sound gaps (steady sounds single player plays near the player, a client not; SP, host, join):',
                   '']
         lines += ['- %s: %s' % (k, ', '.join(str(x) for x in v)) for k, v in sg]
+    mo = moment(res)
+    if mo:
+        lines += ['', '-mp2, single player\'s moment (no source or play of the instance near the players, not counted): ' +
+                  ', '.join(mo)]
     for key, title in (('radar', 'Radar icons'), ('hud', 'HUD items'), ('sounds', 'Sounds playing'),
                        ('fx', 'Particle systems drawn')):
         if key == 'hud':

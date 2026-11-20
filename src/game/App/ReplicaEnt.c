@@ -632,6 +632,7 @@ void ReplicaEnt_Present(cEntity *e, int kind, const NetRepState *a, const NetRep
 		v->cloudOn = (a->x[REPX_CLOUD] >> 30) & 1;
 		v->emi = ReplicaEnt_Sec(a->x[REPX_EMI]);
 		cWeaponManager_NetPlug(&v->weapons, e, ((uint32_t)a->x[REPX_FIREW] >> 31) != 0);
+		cWeaponManager_NetWeapSnd(&v->weapons, a->x[REPX_WEAPSND] - 1);
 		v->controls.cm = (a->x[REPX_FIREW] >> 30) & 1;
 		Hook_NetPresent(e, v->controls.cm, dt);
 	} else if (kind == NETREP_MISSILE) {

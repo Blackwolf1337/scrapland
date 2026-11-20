@@ -54,11 +54,18 @@ static inline float Missile_RandSym(float v) {
 	return Missile_Rand((double)range, (double)lo);
 }
 
-/* OnHit runs: its effects are the clients' own (they play a missile's hit themselves, include/scrap/pres.h) */
+/* OnHit runs: the effects of a weapon's missile are the clients' own (its replica plays the hit itself,
+ * include/scrap/pres.h); those of a missile the scripts made (a falling hull, a lost engine, a gear's missile) go to
+ * the players near */
 static void Missile_ExecHit(cMissileEntity *self) {
-	Pres_Derive();
+	byte own = self->weap != MISSILE_WEAP_NONE;
+	if (own) {
+		Pres_Derive();
+	}
 	cPy_Function_Execute(&self->onHit, 0);
-	Pres_Underive();
+	if (own) {
+		Pres_Underive();
+	}
 }
 
 /* OnHit with the missile, its parent and other */

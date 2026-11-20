@@ -214,6 +214,7 @@ void RepEnt_State(cEntity *e, int kind, NetRepState *s) {
 		s->x[REPX_EMI] = RepEnt_Ms(v->emi);
 		s->x[REPX_FIREW] = v->controls.fire && v->weapons.curWeap >= 0 && v->weapons.curWeap < 30 ?
 			1 << v->weapons.curWeap : 0;
+		s->x[REPX_WEAPSND] = v->weapons.weapSnd + 1;
 		/* the Hook firing (its sound and the effect of a shot at nothing are the replica's, Hook_NetPresent; a
 		 * replica keeps the bit in its countermeasure key, which only the Advance half reads) */
 		if (g_Instance ? Hook_Firing(e) : v->controls.cm) {
