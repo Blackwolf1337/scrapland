@@ -119,6 +119,7 @@ static struct {
 	byte bot;							/* 1, PLAY_BOT_NPC, PLAY_BOT_TARGET, PLAY_BOT_WALK, PLAY_BOT_IDLE, PLAY_BOT_USE */
 	byte botCycle;
 	byte botCm;							/* SCRAP_PLAYBOT_CM=1: also the countermeasure of the weapon now and then */
+	byte botBoost;						/* SCRAP_PLAYBOT_BOOST=1: in a ship also the boost for 0.4 s every 12 s, from 3 s on */
 	byte ahead;							/* SCRAP_PLAYAHEAD: PLAY_AHEAD_ */
 	double botNear;						/* s the bot aimed at its target from close by (the weapon turns) */
 	double botStart;					/* local time the own entity of now came */
@@ -455,6 +456,8 @@ void Play_Start(void) {
 	play.botCycle = cycle && *cycle && *cycle != '0';
 	const char *cm = getenv("SCRAP_PLAYBOT_CM");
 	play.botCm = cm && *cm == '1';
+	const char *boost = getenv("SCRAP_PLAYBOT_BOOST");
+	play.botBoost = boost && *boost == '1';
 	/* the missile weapons fire as the client of the game's network mode: the launch effects, no missile */
 	if (g_SwarmIDWeap >= 0 && g_SwarmIDWeap < g_pWorld->weapons.count) {
 		cPy_Function_SetFunc(&TABLE_AT(g_pWorld->weapons, g_SwarmIDWeap)->onFire, "!SwarmClientFire");
@@ -755,6 +758,10 @@ void Play_PreFrame(double now, double rtt, double rttVar, float loss) {
 		}
 		if (play.bot) {
 			Play_Bot(now);
+			if (play.botBoost && play.kind == NETREP_SHIP && fmod(now - play.botStart, 12.0) >= 3.0 &&
+				fmod(now - play.botStart, 12.0) < 3.4) {
+				play.acc.buttons |= NETREP_IN_BOOST;
+			}
 		}
 		Play_Step(play.tick + 1, play.catchup && play.tick + 1 < target);
 		play.tickLocal = now;

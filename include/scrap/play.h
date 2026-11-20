@@ -61,6 +61,7 @@
  * input (the tests drive it with the instance's test lines); =use: it stands and presses use every 3 s after 10 s (doors);
  * SCRAP_PLAYBOT_WEAPONS=1 (or weapon names): it fires each weapon for 6 s of aiming in turn and stays in the ship;
  * SCRAP_PLAYBOT_CM=1: it also holds the countermeasure of the weapon now and then;
+ * SCRAP_PLAYBOT_BOOST=1: in a ship it also holds the boost for 0.4 s every 12 s;
  * SCRAP_PLAYAHEAD=0: the prediction collides with the others where they are drawn, =all: the characters near it at
  * the predicted tick too (tests). SCRAP_NET2_LOSS (percent) and SCRAP_NET2_DELAY (ms, each way, +
  * SCRAP_NET2_JITTER ms) on either side: a test link.
