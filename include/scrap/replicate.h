@@ -127,7 +127,7 @@ void Watch_ProxiesBack(void);
 /* the client's own entity of a slot it no longer drives becomes the proxy of that slot (a dead player's wreck stays
  * in view: the death camera follows it) */
 void Watch_Adopt(int slot, struct cEntity *e, int kind);
-/* the proxy is a player's entity */
+/* the proxy is a player's entity in the world (not one it left: the character inside its ship) */
 byte Watch_IsPlayer(struct cEntity *e);
 /* the entity of a replication slot (the own entity or a proxy), NULL */
 struct cEntity *Watch_SlotEntity(int slot);

@@ -474,7 +474,7 @@ byte Watch_IsPlayer(cEntity *e) {
 	for (int s = 0; s < NETREP_MAX_ENTS; s++) {
 		WatchProxy *p = &watch.px[s];
 		if (p->e == e) {
-			return p->n && (p->s[p->n - 1].st.flags & NETREP_FL_PLAYER);
+			return p->n && (p->s[p->n - 1].st.flags & NETREP_FL_PLAYER) && e->active;
 		}
 	}
 	return 0;
