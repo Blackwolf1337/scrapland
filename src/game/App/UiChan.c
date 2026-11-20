@@ -1,6 +1,7 @@
 /*
  * One UI transaction channel of the second multiplayer design, see include/scrap/uichan.h. Not in the original.
  */
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -44,7 +45,7 @@ static const char *const ui_names[UI_K_COUNT] = { "-", "yesno", "textbox", "conv
 static const char *const ui_convVars[] = { "Char", "Conversor.AvailableChars", NULL };
 static const char *const ui_hangarVars[] = { "Hangar.", NULL };
 static const char *const ui_missionVars[] = { "Mission.", "MissionState", "PrimaryMissionDesc", "SecondaryMissionDesc",
-	"SuperDeal", "CrazyDeal.", "JackInTheBox", "NewBluePrintAvaliable", "GameAct", NULL };
+	"SuperDeal.", "CrazyDeal.", "JackInTheBox", "NewBluePrintAvaliable", "GameAct", NULL };
 /* what Sputnik's screen changes: the ship flown and the destroyed ones (and the money) */
 static const char *const ui_sputnikBack[] = { "Hangar.iHangarShip", "Hangar.DestroyedShips", NULL };
 
@@ -66,6 +67,7 @@ static struct {
 	uint16_t cseq;
 	byte answering;					/* the instance's values of an interface the client asked for are being shown */
 	cEntity *kept;					/* the replica the shown interface plays here (Ui_ClientKeeps), NULL */
+	byte hudBack;					/* the conversor closed here: the HUD skeleton waits for the controls back */
 	uint32_t copens[UI_K_COUNT], cdones[UI_K_COUNT], crefused[UI_K_COUNT];
 } ui;
 
@@ -150,6 +152,10 @@ static void Ui_ToPlayer(int i, const uint8_t *buf, int size) {
 	if (conn >= 0 && Instance_Host()) {
 		Net2_Send(Instance_Host(), conn, REP_CH_RELIABLE, buf, size);
 	}
+}
+
+byte Ui_Instance(void) {
+	return g_Mp2 && g_Instance;
 }
 
 /* the player an interface of the instance opens for: the current one, in the world's context the acting one
@@ -989,6 +995,7 @@ byte Ui_ClientConv(const char *cls) {
 		return 0;
 	}
 	Ui_ClientClosed();
+	ui.hudBack = 1;
 	if (!PORT_CALL(Menu, BackToGame, NULL, "is", 0L, "")) {
 		Native_ErrPrint();
 	}
@@ -1019,6 +1026,20 @@ byte Ui_ClientHangar(int k) {
 	return 1;
 }
 
+void Ui_ClientControls(const char *set) {
+	/* the end of the machine's scene (CharConversor.EndOfScene) builds the HUD skeleton the instance does not send
+	 * (include/scrap/pres.h): the client's own, as Play.c builds it */
+	byte racer = !strcmp(set, "Racer");
+	if (!ui.hudBack || (!racer && strcmp(set, "Walk"))) {
+		return;
+	}
+	ui.hudBack = 0;
+	const char *mod = racer ? "RacerScorer" : "CharScorer";
+	if (!Mode_Import(mod) || !Native_CallMod(mod, "Create", NULL, "i", 0L)) {
+		Native_ErrPrint();
+	}
+}
+
 byte Ui_ClientAsk(int k) {
 	uint8_t buf[4] = { UI_MSG, UI_C_ASK, (uint8_t)k, 0 };
 	if (!g_Mp2 || !g_Watch || ui.answering) {
@@ -1046,12 +1067,37 @@ static void Ui_State(tcBuf *b, int i) {
 		const char *v = SaveVar_Get(vars[k]);
 		TC_Addf(b, "%s\t%s\n", vars[k], v ? v : "(none)");
 	}
+	/* the news the player reads (NewsPanel, a PLAYER row of the module variables) */
+	nativeVal_t v, r;
+	Native_SetNone(&v);
+	Native_SetNone(&r);
+	if (Mode_Import("NewsPanel") && Mode_ModGet("NewsPanel", "ShowingNews", &v)) {
+		Mode_Repr(&v, &r);
+		TC_Addf(b, "NewsPanel.ShowingNews\t%s\n", r.type == NV_STR ? Native_Text(&r) : "?");
+	}
+	Native_ErrClear();
+	Native_Free(&v);
+	Native_Free(&r);
 	Players_Leave(was);
 }
 
 void Ui_Status(tcBuf *b, const char *arg) {
 	if (arg && !strncmp(arg, "state", 5)) {
 		Ui_State(b, arg[5] ? crt_atoi(arg + 6) : 0);
+		return;
+	}
+	int i, at = 0;
+	if (arg && sscanf(arg, "call %d %n", &i, &at) == 1 && at > 0 && i >= 0 && i < PLAYERS_MAX) {
+		/* "ui call <player> Module.Func|arg|...": a call table line of the scripts in the player's context (an
+		 * interface the scripts open for that player) */
+		const char *one[2] = { arg + at, NULL };
+		char mod[UI_NAME];
+		Str_PrintfQuiet(mod, sizeof(mod), "%.*s", (int)strcspn(arg + at, ".|"), arg + at);
+		int was = Players_Enter(i);
+		byte ok = Mode_Import(mod) && Mode_Calls(NULL, one);
+		Native_ErrPrint();
+		Players_Leave(was);
+		TC_Addf(b, "%s\n", ok ? "called" : "failed");
 		return;
 	}
 	TC_Addf(b, "ui: %s\n", !g_Mp2 ? "off" : g_Instance ? "instance" : "client");

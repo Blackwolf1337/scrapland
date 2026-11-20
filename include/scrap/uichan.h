@@ -33,7 +33,8 @@
  * Audit (include/scrap/netaudit.h, category NA_HUD): "ui.open:<ui>", "ui.done:<ui>", "ui.refuse:<ui>:<why>",
  * "ui.world:<ui>" (an interface opened in the world's context: its player resolved), on the client
  * "ui.client.open:<ui>", "ui.client.done:<ui>". Test verb "ui" (TestChannel.c): the open interfaces, the counts, the
- * player's values ("ui state").
+ * player's values ("ui state [player]"), a call of the scripts in a player's context ("ui call <player>
+ * Module.Func|arg|...", the call table line format of include/scrap/scriptmodes.h).
  */
 #ifndef SCRAP_UICHAN_H
 #define SCRAP_UICHAN_H
@@ -75,6 +76,10 @@ const char *Ui_Name(int ui);
 
 /* ---- instance ---- */
 
+/* a -mp2 instance: its interfaces open on the clients, the menu system's own state (Menu.InitMenuSys, BackToGame:
+ * the action set, the scorer, the time) is the client's */
+byte Ui_Instance(void);
+
 /* the interface opens on the client of the current player instead (each returns 1 when it went there, 0 when the
  * caller builds it as single player does: not a -mp2 instance) */
 byte Ui_YesNo(const char *title, const char *yes, const char *no);
@@ -114,6 +119,9 @@ byte Ui_ClientConv(const char *cls);
 /* Sputnik's screen or the ship editor closed on the client: the hangar and money to the instance; 0 when no such
  * interface of the instance is open */
 byte Ui_ClientHangar(int ui);
+/* the instance gave the player the action set (include/scrap/pres.h): after the conversor of the instance closed here,
+ * the walk or racer controls back also build the client's HUD skeleton (the end of the machine's scene) */
+void Ui_ClientControls(const char *set);
 /* the mission pages open on the client: the story's values asked of the instance (1 when asked) */
 byte Ui_ClientAsk(int ui);
 
