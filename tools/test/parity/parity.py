@@ -30,8 +30,8 @@ instance) at the last point, as the columns mirror and census. The moment of a p
 4.2): single player runs its own simulation, so its traffic, police and NPCs near a point, its fights and passing
 ships are of its own moment. With --mp2 the kinds of the moment (LOOSE) are compared against the instance's count
 and the other kinds against the smaller of single player's and the instance's (the free world leaves the story's
-things of a place out on purpose), a sound single player plays counts when the instance had a source of it near the
-point (sounds src) or played it near a player (census snd.near), a particle system when the instance dropped it near a
+things of a place out on purpose), a sound single player plays counts when the instance played it near a player (census
+snd.near; its sources near the point are the census column's), a particle system when the instance dropped it near a
 player (census debris.near), a HUD item when the instance's world scorer or the other client has it; a positional set
 is the census column's and a radar icon the mirror column's (RadarShow, the arrow and its view cone of every
 replica). What that leaves out is listed per point as single player's moment.
@@ -805,14 +805,15 @@ def sound_gaps(res):
 
 
 def mp2_sound_due(res, k):
-    """-mp2: a sound single player plays that a client must play too: a sample the instance has a source of near the
-    point or played near a player (instance_evidence); a positional set is the census column's (the sources of the
-    client against the instance and single player; which sets play is the listener's place)"""
+    """-mp2: a sound single player plays that a client must play too: a sample the instance played near a player
+    (census snd.near, instance_evidence; an entity's loop starts by the listener's distance, so a source near the
+    point alone is no proof: the census column compares the sources); a positional set is the census column's (the
+    sources of the client against the instance and single player; which sets play is the listener's place)"""
     ev = res.get('instance', {})
     kind, _, name = k.partition(' ')
     if kind == 'ps':
         return False
-    return name in ev.get('src', []) or name in ev.get('snd_near', [])
+    return name in ev.get('snd_near', [])
 
 
 def moment(res):

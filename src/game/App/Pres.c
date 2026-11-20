@@ -260,6 +260,22 @@ void Pres_Flush(Net2Host *host) {
 	}
 }
 
+presSaved_t Pres_SimScript(void) {
+	presSaved_t s = { g_PresDerived, pres.own };
+	if (g_Mp2 && g_Instance) {
+		g_PresDerived = 0;
+		pres.own = -1;
+	}
+	return s;
+}
+
+void Pres_SimScriptEnd(presSaved_t saved) {
+	if (g_Mp2 && g_Instance) {
+		g_PresDerived = saved.derived;
+		pres.own = saved.own;
+	}
+}
+
 void Pres_OwnStep(int player) {
 	pres.own = player;
 }
@@ -502,6 +518,7 @@ void Pres_SoundAt(const char *name, const vec3_t *pos, int volume) {
 	if (!Pres_Out() || !Pres_Begin(PRES_NEAR, pos, PRES_O_SOUNDAT)) {
 		return;
 	}
+	NetAudit_Name(NA_CENSUS, "snd.sent:", name);
 	Pres_PutStr(name);
 	Pres_PutVec(pos);
 	Pres_PutInt(volume);
@@ -522,6 +539,7 @@ void Pres_Sound3D(const char *name, const cSoundDesc *d) {
 	if (!Pres_Begin(PRES_NEAR, &pres.pos, PRES_O_SOUND3D)) {
 		return;
 	}
+	NetAudit_Name(NA_CENSUS, "snd.sent:", name);
 	Pres_PutStr(name);
 	Pres_PutVec(&pres.pos);
 	Pres_PutInt(d->volume - pres.posVolume);

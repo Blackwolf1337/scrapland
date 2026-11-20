@@ -18,6 +18,7 @@
 #include "scrap/faction.h"
 #include "scrap/play.h"
 #include "scrap/players.h"
+#include "scrap/pres.h"
 #include "scrap/repent.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
@@ -429,6 +430,8 @@ static void WL_RunFunc(cEntity *self, cPy_Function *own, size_t listOff, const i
 	if (damage) {
 		cPy_Function_AddParamI(own, *damage);
 	}
+	/* not in the original: what the scripts present goes to the players (include/scrap/pres.h) */
+	presSaved_t pres = Pres_SimScript();
 	cPy_Function_Execute(own, 0);
 	byte *list = self->listNode.node.target;
 	if (list) {
@@ -440,6 +443,7 @@ static void WL_RunFunc(cEntity *self, cPy_Function *own, size_t listOff, const i
 		}
 		cPy_Function_Execute(f, 0);
 	}
+	Pres_SimScriptEnd(pres);
 	Players_Leave(was);
 }
 
