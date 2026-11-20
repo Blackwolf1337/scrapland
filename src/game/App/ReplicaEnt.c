@@ -20,6 +20,7 @@
 #include "scrap/netclass.h"
 #include "scrap/netrep.h"
 #include "scrap/play.h"
+#include "scrap/pres.h"
 #include "scrap/replicate.h"
 #include "scrap/repent.h"
 #include "scrap/uichan.h"
@@ -34,6 +35,7 @@
 #define RC_JOURNAL 65536
 #define RC_NAME 128					/* an entity name with its end (cEntity_ctor takes less than 0x7c) */
 #define RC_CLASS 16
+#define RC_LINKS 64					/* LinkModel values waiting for the entity they name */
 
 typedef struct RcSlot {
 	uint32_t gen;					/* of the create message held, 0 none */
@@ -51,6 +53,12 @@ static struct {
 	int applying;					/* a journal value goes into an entity now */
 	uint32_t made, waits, fails, purged, messages, events, simCalls;
 	int railDepth;					/* calls of the rail traffic's modules running */
+	struct {
+		int slot;					/* the slot + 1, 0: free */
+		uint32_t gen;
+		char value[NETREP_JSTR];
+	} link[RC_LINKS];
+	uint32_t linkWaits, linkLost;
 } rc;
 
 static NetRepJournal *ReplicaEnt_J(void) {
@@ -137,15 +145,107 @@ int ReplicaEnt_SlotOf(const cEntity *e) {
 	return e && e->netSlot ? e->netSlot - 1 : -1;
 }
 
+/* LinkModel "object,node" names another entity (the CHECK of cModMove_Link ends the game without it): the value
+ * with the client's name of it (the own entity has its own name) in out; 0 when the client does not have it yet */
+static byte ReplicaEnt_LinkValue(const char *value, char *out, int size) {
+	char obj[RC_NAME];
+	const char *comma = strchr(value, ',');
+	int n = comma ? (int)(comma - value) : (int)strlen(value);
+	if (!n || n >= (int)sizeof(obj)) {
+		Str_Copy(out, value, size);
+		return 1;
+	}
+	memcpy(obj, value, (size_t)n);
+	obj[n] = 0;
+	cEntity *t = ReplicaEnt_Find(obj);
+	if (!t) {
+		return 0;
+	}
+	Str_PrintfQuiet(out, size, "%s%s", t->name, comma ? comma : "");
+	return 1;
+}
+
+static void ReplicaEnt_Apply(cEntity *e, const NetRepJVal *v);
+
+/* a LinkModel of slot that names an entity the client lacks: applied by ReplicaEnt_Links once it is there */
+static void ReplicaEnt_LinkWait(int slot, const char *value) {
+	int free = -1;
+	for (int k = 0; k < RC_LINKS; k++) {
+		if (rc.link[k].slot == slot + 1) {
+			free = k;
+			break;
+		}
+		if (!rc.link[k].slot && free < 0) {
+			free = k;
+		}
+	}
+	if (free < 0) {
+		rc.linkLost++;
+		return;
+	}
+	rc.link[free].slot = slot + 1;
+	rc.link[free].gen = rc.s[slot].madeGen ? rc.s[slot].madeGen : rc.s[slot].gen;
+	Str_Copy(rc.link[free].value, value, sizeof(rc.link[free].value));
+	rc.linkWaits++;
+}
+
+/* each frame: the waiting links whose entity came */
+static void ReplicaEnt_Links(void) {
+	for (int k = 0; k < RC_LINKS; k++) {
+		int slot = rc.link[k].slot - 1;
+		if (slot < 0) {
+			continue;
+		}
+		cEntity *e = rc.s[slot].made && rc.s[slot].madeGen == rc.link[k].gen ? Watch_SlotEntity(slot) : NULL;
+		if (!e && rc.s[slot].gen != rc.link[k].gen) {
+			rc.link[k].slot = 0;	/* another entity in the slot now */
+			continue;
+		}
+		char buf[NETREP_JSTR];
+		if (!e || !ReplicaEnt_LinkValue(rc.link[k].value, buf, sizeof(buf))) {
+			continue;
+		}
+		NetRepJVal v;
+		memset(&v, 0, sizeof(v));
+		Str_Copy(v.name, "LinkModel", sizeof(v.name));
+		v.type = NETREP_JS;
+		Str_Copy(v.u.s, rc.link[k].value, sizeof(v.u.s));
+		rc.link[k].slot = 0;
+		ReplicaEnt_Apply(e, &v);
+	}
+}
+
 /* a journal value into the entity through its Var functions (an entry "name#n" of the values that add up is the
  * variable name) */
 static void ReplicaEnt_Apply(cEntity *e, const NetRepJVal *v) {
 	char name[NETREP_JNAME];
 	rc.applying++;
+	if (!strcmp(v->name, REPENT_J_FX) && v->type == NETREP_JS) {
+		/* the embedded effect, played as the server's (g_PresIn); a replica made now takes the state only: the
+		 * named effect of a character is a one-shot of the moment it was set */
+		g_PresIn++;
+		if (rc.creating && Entity_IsType(e, TYEN_WALKCHAR)) {
+			cWithLifeEntity_SetEmbeddedFX(e, v->u.s);
+		} else {
+			Entity_SetEmbeddedFX(e, v->u.s);
+		}
+		g_PresIn--;
+		rc.applying--;
+		return;
+	}
 	Str_Copy(name, v->name, sizeof(name));
 	char *hash = strchr(name, '#');
 	if (hash) {
 		*hash = 0;
+	}
+	char file[0x200];
+	if (v->type == NETREP_JI && !strcmp(name, "AnmP0") && Entity_IsType(e, TYEN_CAR) &&
+		cVehicleEntity_PilotAnimFile(Veh(e), v->u.i, file, sizeof(file)) && !Watch_ModelExists(file)) {
+		/* an animation of a pilot this replica shows another model for (the missing pilot's stand-in model): the
+		 * file is not there, its load would end the client */
+		NetAudit_Name(NA_CREATE, "client.skip:", file);
+		rc.applying--;
+		return;
 	}
 	switch (v->type) {
 	case NETREP_JI: {
@@ -166,25 +266,24 @@ static void ReplicaEnt_Apply(cEntity *e, const NetRepJVal *v) {
 	case NETREP_JS: {
 		char buf[NETREP_JSTR];
 		char *s = buf;
-		Str_Copy(buf, v->u.s, sizeof(buf));
-		if (!strcmp(name, "LinkModel") && buf[0] == ',' && Entity_IsType(e, TYEN_OBJECT) && !Obj(e)->mod.link.target) {
-			/* the unlink of a link the client left undone (below) */
-			break;
-		}
-		if (!strcmp(name, "LinkModel") && buf[0] != ',' && Entity_IsType(e, TYEN_OBJECT)) {
-			char obj[NETREP_JSTR];
-			Str_PrintfQuiet(obj, sizeof(obj), "%.*s", (int)strcspn(buf, ","), buf);
-			/* a new link of a linked replica: the scripts' unlink before it is not in the journal (the editor's end
-			 * links the platform's ship again, include/scrap/uichan.h) */
-			if (Obj(e)->mod.link.target) {
+		if (!strcmp(name, "LinkModel")) {
+			if (!ReplicaEnt_LinkValue(v->u.s, buf, sizeof(buf))) {
+				ReplicaEnt_LinkWait(ReplicaEnt_SlotOf(e) >= 0 ? ReplicaEnt_SlotOf(e) : Play_OwnSlot(), v->u.s);
+				break;
+			}
+			byte linked = Entity_IsType(e, TYEN_OBJECT) && Obj(e)->mod.link.target;
+			if (buf[0] == ',' && Entity_IsType(e, TYEN_OBJECT) && !linked) {
+				/* the unlink of a link the replica does not have (it waited for its entity) */
+				break;
+			}
+			if (buf[0] != ',' && linked) {
+				/* a new link of a linked replica: the scripts' unlink before it is not in the journal (the editor's
+				 * end links the platform's ship again, include/scrap/uichan.h) */
 				char *un = ",";
 				Entity_VarS(e, name, &un, 1);
 			}
-			/* a link to an entity the client does not have (a ship of another player the parking made: Sputnik's
-			 * screen of a -mp2 player) stays undone: the replica's place comes from the instance */
-			if (!World_FindEntity(obj)) {
-				break;
-			}
+		} else {
+			Str_Copy(buf, v->u.s, sizeof(buf));
 		}
 		Entity_VarS(e, name, &s, 1);
 		break;
@@ -372,6 +471,7 @@ void ReplicaEnt_Frame(void) {
 	if (!InitSteps_Client() && !Ui_ClientIn(0)) {
 		ReplicaEnt_Purge();
 	}
+	ReplicaEnt_Links();
 	for (int slot = 0; slot < NETREP_MAX_ENTS; slot++) {
 		RcSlot *s = &rc.s[slot];
 		if (!s->want || s->made || !s->gen) {
@@ -532,6 +632,8 @@ void ReplicaEnt_Present(cEntity *e, int kind, const NetRepState *a, const NetRep
 		v->cloudOn = (a->x[REPX_CLOUD] >> 30) & 1;
 		v->emi = ReplicaEnt_Sec(a->x[REPX_EMI]);
 		cWeaponManager_NetPlug(&v->weapons, e, ((uint32_t)a->x[REPX_FIREW] >> 31) != 0);
+		v->controls.cm = (a->x[REPX_FIREW] >> 30) & 1;
+		Hook_NetPresent(e, v->controls.cm, dt);
 	} else if (kind == NETREP_MISSILE) {
 		Missile(e)->level = a->x[REPX_LEVEL];
 	}
@@ -553,6 +655,7 @@ void ReplicaEnt_Reset(void) {
 		}
 	}
 	memset(rc.s, 0, sizeof(rc.s));
+	memset(rc.link, 0, sizeof(rc.link));
 }
 
 void ReplicaEnt_Mirror(tcBuf *b) {
@@ -564,8 +667,8 @@ void ReplicaEnt_Mirror(tcBuf *b) {
 		view[2] = own->pos.z;
 	}
 	TC_Addf(b, "{\"side\":\"client\",\"view\":[%.0f,%.0f,%.0f],\"own\":%d,\"made\":%u,\"waits\":%u,\"fails\":%u,"
-		"\"purged\":%u,\"simcalls\":%u,\"ents\":[", (double)view[0], (double)view[1], (double)view[2], Play_OwnSlot(),
-		rc.made, rc.waits, rc.fails, rc.purged, rc.simCalls);
+		"\"purged\":%u,\"simcalls\":%u,\"linkwaits\":%u,\"linklost\":%u,\"ents\":[", (double)view[0], (double)view[1],
+		(double)view[2], Play_OwnSlot(), rc.made, rc.waits, rc.fails, rc.purged, rc.simCalls, rc.linkWaits, rc.linkLost);
 	int n = 0;
 	for (int s = 0; s < NETREP_MAX_ENTS; s++) {
 		cEntity *e = rc.s[s].made && s != Play_OwnSlot() ? Watch_SlotEntity(s) : NULL;

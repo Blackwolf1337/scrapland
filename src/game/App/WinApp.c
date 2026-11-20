@@ -24,6 +24,7 @@
 #include "scrap/platform.h"
 #include "scrap/platform.h"
 #include "scrap/staticinit.h"
+#include "scrap/snd.h"
 #include "scrap/testdet.h"
 
 #define g_CWinAppVftable (&CWinApp_vftable)
@@ -355,6 +356,9 @@ int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow)
 		 * game */
 		if (TestDet_On() && (waiting || !(g_pApp->loadPending || TestChannel_Hold() || InputTape_Hold()))) {
 			TestDet_Tick();
+		} else if (Plat_TimeScale() > 1) {
+			/* not in the original: the mixer runs by the faster clock (include/scrap/platform.h) */
+			Snd_MixTo(Plat_Ticks(), 1000);
 		}
 		if (Plat_PumpEvents(waiting)) {
 			if (!waiting) {

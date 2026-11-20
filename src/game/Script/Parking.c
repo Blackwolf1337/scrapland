@@ -33,6 +33,7 @@
 #include "scrap/nativeobj.h"
 #include "scrap/play.h"
 #include "scrap/players.h"
+#include "scrap/pres.h"
 #include "scrap/replicate.h"
 #include "scrap/world.h"
 #include "scrap/scrap.h"
@@ -139,6 +140,15 @@ static byte Pk_SetCam(const nativeVal_t *name) {
 	return PORT_CALL(Scrap, SetCam, NULL, "iv", 0L, name);
 }
 
+/* Pk_SetCam of the camera that follows the player's entity again at the end of a camera path (a -mp2 client's camera
+ * follows its own entity itself, Play.c: no presentation record, include/scrap/pres.h) */
+static byte Pk_SetOwnCam(const nativeVal_t *name) {
+	Pres_Derive();
+	byte ok = Pk_SetCam(name);
+	Pres_Underive();
+	return ok;
+}
+
 /* Scrap.SwitchMissionArrows(Init.Arrows[a], Init.Arrows[b]) */
 static byte Pk_Arrows(long a, long b) {
 	nativeVal_t arrows = { 0 }, x = { 0 }, y = { 0 };
@@ -231,7 +241,7 @@ static byte Pk_CharOnShipN(const nativeVal_t *path) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *cp = Mode_V(&t), *x = Mode_V(&t), *cam = Mode_V(&t), *v = Mode_V(&t), *solid = Mode_V(&t);
 	nativeVal_t *now = Mode_V(&t), *at = Mode_V(&t);
-	if (!Mode_Import("RacerScorer") || !Pk_Ent(path, cp) || !Mode_VObjRead(cp, "TgtCam01", x) || !Pk_SetCam(x) || !Mode_VDel(cp)) {
+	if (!Mode_Import("RacerScorer") || !Pk_Ent(path, cp) || !Mode_VObjRead(cp, "TgtCam01", x) || !Pk_SetOwnCam(x) || !Mode_VDel(cp)) {
 		return Mode_Done(&t, 0);
 	}
 	Native_Free(x);
@@ -375,7 +385,7 @@ static byte Pk_ExecSwitchVehicleMissionCallbackN(void) {
 static byte Pk_EndPathCamN(const nativeVal_t *path) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *cp = Mode_V(&t), *x = Mode_V(&t), *lcam = Mode_V(&t), *v = Mode_V(&t);
-	if (!Mode_Import("CharScorer") || !Pk_Ent(path, cp) || !Mode_VObjRead(cp, "TgtCam03", x) || !Pk_SetCam(x) || !Mode_VDel(cp)) {
+	if (!Mode_Import("CharScorer") || !Pk_Ent(path, cp) || !Mode_VObjRead(cp, "TgtCam03", x) || !Pk_SetOwnCam(x) || !Mode_VDel(cp)) {
 		return Mode_Done(&t, 0);
 	}
 	Native_Free(x);

@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include "scrap/crt.h"
+#include "scrap/platform.h"
 #include "scrap/snd.h"
 #include "scrap/testdet.h"
 #include "sound/ma.h"
@@ -263,8 +264,8 @@ int Snd_Init(void) {
 	}
 	snd.ctxInit = 1;
 	snprintf(snd.name, sizeof(snd.name), "%s: %s", ma_get_backend_name(snd.ctx.backend), snd.device.playback.name);
-	/* the deterministic test mode mixes by its own clock (Snd_MixTo): the device stays stopped */
-	if (!TestDet_On() && ma_device_start(&snd.device) != MA_SUCCESS) {
+	/* the deterministic test mode and SCRAP_TIMESCALE mix by the game's clock (Snd_MixTo): the device stays stopped */
+	if (!TestDet_On() && Plat_TimeScale() == 1 && ma_device_start(&snd.device) != MA_SUCCESS) {
 		ma_device_uninit(&snd.device);
 		ma_context_uninit(&snd.ctx);
 		ma_mutex_uninit(&snd.lock);

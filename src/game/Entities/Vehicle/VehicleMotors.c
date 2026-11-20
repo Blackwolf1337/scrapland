@@ -7,6 +7,7 @@
 #include "scrap/arrowindicator.h"
 #include "scrap/embeddedfxvehicle.h"
 #include "scrap/fxmisc.h"
+#include "scrap/pres.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/vehiclemotors.h"
 #include "scrap/weaps2.h"
@@ -279,7 +280,10 @@ void cVehicleMotors_Update(cVehicleMotors *self) {
 	}
 	VM_UpdateEffects(self, &self->effects, &u);
 	if (g_SceneDuDvRTarget && g_FXMotorHaze && u.player && !self->stopped && !u.traffic && !g_SplitScreenGame) {
+		/* of a player's own ship: a -mp2 client draws it for its own entity (include/scrap/pres.h) */
+		Pres_Derive();
 		VM_Haze(self, &u);
+		Pres_Underive();
 	}
 	owner = self->owner;
 	if (Veh(owner)->smoothThrust == 0.0f && Veh(owner)->boost / Veh(owner)->boostTime == 0.0f &&
@@ -852,7 +856,10 @@ void cVehicleMotorsEffects_Stop(cVehicleMotorsEffects *self) {
 			cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXVehicleDeathTrailFile);
 			cDebris *d = cDebrisSys_NewElement(sys);
 			d->life = 1.0f;
+			/* the death trail: a -mp2 client's replica of the ship drops its own when it goes off dead (Watch.c) */
+			Pres_Derive();
 			cDebrisSys_Drop(sys, d);
+			Pres_Underive();
 			cObjElementFXDevastatorShoot *fx = Debris_Element(d);
 			if (fx) {
 				if (!fx->on) {

@@ -331,8 +331,9 @@ void Instance_Line(char *line) {
 	}
 	/* tests: "alarm <player> <level>" sets one player's alarm (include/scrap/players.h), "money <player> <n>" its
 	 * money, "use <player> <entity> [<option>]" makes it use an entity (include/scrap/travel.h), "goto <player>
-	 * <entity> [<dx> <dz>]" puts it next to one, "switch <player>" gets it into the nearest parked ship or out of its ship, "call
-	 * <player>" calls a ship beside it, "msg <player> <text>" shows a message on its HUD (include/scrap/pres.h) */
+	 * <entity> [<dx> <dz>]" puts it next to one (a ship level and standing), "switch <player>" gets it into the
+	 * nearest parked ship or out of its ship, "call <player>" calls a ship beside it, "msg <player> <text>" shows a
+	 * message on its HUD (include/scrap/pres.h) */
 	int player, money;
 	float level;
 	char ent[64], opt[64];

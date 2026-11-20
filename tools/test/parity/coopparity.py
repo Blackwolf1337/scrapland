@@ -32,6 +32,7 @@ import time
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import parity  # noqa: E402
+import gameclock  # noqa: E402
 
 STORE_HEAD = 'scrapplayer 1\n'
 # a player's own variables of the story (Coop.c cp_local) and the coop ones: not set in the single player
@@ -182,7 +183,7 @@ def run_point(a, name, data, level, key):
         # variables can take single player to another level: a run of stage 0.4 had Police for Press)
         for _ in range(3):
             sp_story(sp, story, own, level)
-            time.sleep(8)
+            gameclock.sleep(8)
             path = parity.wait_for(lambda: sp.try_ask('Scrap.GetLevelPath()', timeout=5), 240, 2) or ''
             if level.lower() in path.lower():
                 break
@@ -196,7 +197,7 @@ def run_point(a, name, data, level, key):
             return res
         still, end = 0, time.time() + 40
         while still < 4 and time.time() < end:
-            time.sleep(1.0)
+            gameclock.sleep(1.0)
             now = member_own() or me
             still = still + 1 if parity.dist(now['pos'], me['pos']) < 50.0 else 0
             me = now
@@ -207,7 +208,7 @@ def run_point(a, name, data, level, key):
         sp.ask('do e = Scrap.UsrEntity(0); e.Pos = (%.1f, %.1f, %.1f); e.Ang = (%.3f, %.3f, %.3f)' % (at + ang))
         # the instance's audit counts over the wait (stage 0.1; None without the verb)
         res['audit_verb'] = parity.audit(world, level, 'reset') is not None
-        time.sleep(a.settle)
+        gameclock.sleep(a.settle)
         def inst_now():
             return parity.parse_ents(world.ask('entinfo %.0f %.0f %.0f %.0f' % (at[0], at[1], at[2], a.radius * 1.2),
                                                level, timeout=30))
@@ -220,10 +221,10 @@ def run_point(a, name, data, level, key):
             if same_level(sp, inst) and sp_mission(sp) == story.get('Mission.Library', ''):
                 break
             sp_story(sp, story, own, level)
-            time.sleep(8)
+            gameclock.sleep(8)
             parity.wait_for(lambda: sp.try_ask('Scrap.GetLevelPath()', timeout=5), 240, 2)
             sp.ask('do e = Scrap.UsrEntity(0); e.Pos = (%.1f, %.1f, %.1f); e.Ang = (%.3f, %.3f, %.3f)' % (at + ang))
-            time.sleep(a.settle)
+            gameclock.sleep(a.settle)
             inst = inst_now()
         res['sp_same_level'] = same_level(sp, inst) and sp_mission(sp) == story.get('Mission.Library', '')
         res['instance'] = {'kinds': parity.count(inst, at, a.radius)}

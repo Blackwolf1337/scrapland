@@ -237,5 +237,7 @@ const char *cVehicleEntity_GetPilot(cVehicleEntity *self, int slot);
 byte cVehicleEntity_GetLaunchTaunts(cVehicleEntity *self);
 void cVehicleEntity_EnableAI(cVehicleEntity *self, byte enable, void *p1, void *p2, void *p3);
 byte cVehicleEntity_SetPilot(cVehicleEntity *self, int slot, const char *name, float sx, float sy, float sz);
+/* not in the original: the file of pilot animation anim (0..4) of the ship's pilot of slot 0 into out, 0 for none */
+byte cVehicleEntity_PilotAnimFile(cVehicleEntity *self, int anim, char *out, int size);
 
 #endif

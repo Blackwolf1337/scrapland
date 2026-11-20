@@ -475,7 +475,7 @@ byte Watch_IsPlayer(cEntity *e) {
 	for (int s = 0; s < NETREP_MAX_ENTS; s++) {
 		WatchProxy *p = &watch.px[s];
 		if (p->e == e) {
-			return p->n && (p->s[p->n - 1].st.flags & NETREP_FL_PLAYER);
+			return p->n && (p->s[p->n - 1].st.flags & NETREP_FL_PLAYER) && e->active;
 		}
 	}
 	return 0;
@@ -666,6 +666,11 @@ static void Watch_Place(int slot, WatchProxy *p, double rt, float dt) {
 		const NetRepState *sn = &p->s[p->n - 1].st;
 		Watch_MissileHit(p, sn, !(sn->flags & NETREP_FL_ACTIVE));
 		on = on && e->active;
+	}
+	if (g_Mp2 && p->kind == NETREP_SHIP) {
+		/* the life before the switch: a ship that dies goes off with its life at 0 (the death trail of its motors,
+		 * cVehicleMotorsEffects_Stop) */
+		w->life = sa->life;
 	}
 	if (on != e->active && p->kind == NETREP_SHIP && !g_pWorld->weapons.count) {
 		/* a ship of an indoor level (no weapons there): the vehicle's stop of its weapons would read the empty
@@ -1192,6 +1197,7 @@ void Watch_PreFrame(void) {
 	}
 	if (g_Mp2) {
 		ReplicaEnt_Frame();
+		Pres_ClientFrame();
 	} else {
 		Watch_Purge();
 	}

@@ -39,6 +39,7 @@ typedef enum {
 	NA_VISIBLE,			/* reads of the render flag and the camera distance on a headless process */
 	NA_CREATE,			/* the replication v2 (include/scrap/repent.h): entities a client made itself and deleted,
 						   variables without a tag */
+	NA_CENSUS,			/* the samples played and the debris systems dropped by name (the census of the tests) */
 	NA_CATS
 } netAuditCat_t;
 

@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include "scrap/players.h"
+#include "scrap/pres.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -731,14 +732,18 @@ static byte Veh_SwitchViewN(const nativeVal_t *camName, const nativeVal_t *id) {
 	return Mode_Done(&t, Mode_VSet(ply, "UsrControl", !Native_Compare(tg, m) ? id : Mode_I(&t, -1)));
 }
 
-/* SetActiveCam(ply, cam, id): camera cam of player id follows ply */
+/* SetActiveCam(ply, cam, id): camera cam of player id follows ply (a -mp2 client's camera follows its own entity
+ * itself, Play.c: no presentation record, include/scrap/pres.h) */
 static byte Veh_SetActiveCamN(const nativeVal_t *plyName, const nativeVal_t *camName, const nativeVal_t *id) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *cam = Mode_V(&t), *ply = Mode_V(&t), *cname = Mode_V(&t), *pname = Mode_V(&t);
-	return Mode_Done(&t, Mode_EntitySeam(camName, cam) && Mode_EntitySeam(plyName, ply) && Mode_VObj(cam, "Name", cname) &&
-		PORT_CALL(Scrap, SetCam, NULL, "vv", id, cname) && LvN_SetS(cam, "OnSwitch", "Vehicles.SwitchView") &&
-		Mode_VObj(ply, "Name", pname) && Mode_VSet(cam, "MainTarget", pname) && Mode_VObjRead(ply, "Name", pname) &&
-		Mode_VSet(cam, "Target", pname) && LvN_SetI(cam, "FreeCam", 0));
+	byte ok = Mode_EntitySeam(camName, cam) && Mode_EntitySeam(plyName, ply) && Mode_VObj(cam, "Name", cname);
+	Pres_Derive();
+	ok = ok && PORT_CALL(Scrap, SetCam, NULL, "vv", id, cname);
+	Pres_Underive();
+	return Mode_Done(&t, ok && LvN_SetS(cam, "OnSwitch", "Vehicles.SwitchView") && Mode_VObj(ply, "Name", pname) &&
+		Mode_VSet(cam, "MainTarget", pname) && Mode_VObjRead(ply, "Name", pname) && Mode_VSet(cam, "Target", pname) &&
+		LvN_SetI(cam, "FreeCam", 0));
 }
 
 /* ---- respawn and set up ---- */

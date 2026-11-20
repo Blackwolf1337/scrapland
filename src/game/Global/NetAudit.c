@@ -41,7 +41,7 @@ static double na_resetTime;		/* App_GetTime at the last reset */
 
 static const char *const na_catNames[NA_CATS] = {
 	"sound", "soundsrc", "voice", "music", "sfx", "debris", "animevent", "hud", "fade", "cinema", "camera",
-	"actionset", "timespeed", "entvar", "player", "visible", "create",
+	"actionset", "timespeed", "entvar", "player", "visible", "create", "census",
 };
 
 const char *NetAudit_CatName(netAuditCat_t cat) {
