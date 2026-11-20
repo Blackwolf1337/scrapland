@@ -30,7 +30,9 @@ typedef struct cWalkCharControl {
 	byte disabled;			/* no input at all */
 	byte lockStart;			/* the lock button went down (action 20, or 19 for some classes) */
 	byte lock;			/* the view stays on the target */
-	byte pad_21[3];
+	byte opts;			/* not in the original: the presses of the arrow's next option (low 4 bits) and previous
+					   option (high 4 bits), counted for a network player's input (netrep.h NETREP_IN_OPTS) */
+	byte pad_22[2];
 	Nto1Node target;		/* the entity the view turns to */
 } cWalkCharControl;
 

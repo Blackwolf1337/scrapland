@@ -847,6 +847,7 @@ static void cMonitorScorer_SetAnim(cScorerItem *base, int anim) {
 
 void Scorer_SetHeadMonitor(const char *a, const char *b, int c) {
 	NetAudit_Site(NA_HUD, "hud.headmonitor");
+	NetAudit_Talk("head", "%s \"%s\" %d", a, b, c);
 	if (g_Mp2) {
 		Pres_HeadMonitor(a, b, c);
 	}

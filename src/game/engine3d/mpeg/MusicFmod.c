@@ -168,10 +168,33 @@ int Voice_Unused(int voice) {
 	return Snd_IsPlaying(v->channel) != 0;
 }
 
-int Voice_Open(const char *name, int voice, int voiceover) {
-	char path[0x104];
+/* the stream of the voice file name (&U&D&N.ogg, in a pack or a file), NULL; path (0x104) the file's name */
+static void *Voice_StreamOpen(const char *name, char *path) {
 	char pack[0x80];
 	int offset, size;
+
+	Path_Format(path, name, "&U&D&N.ogg");
+	if (Pack_GetFileInfo(path, pack, &offset, &size)) {
+		Path_Format(path, path, "PACK:&N&E");
+		return Snd_StreamOpen(pack, (uint32_t)offset, (uint32_t)size, 0);
+	}
+	return Snd_StreamOpen(path, 0, 0, 0);
+}
+
+int Voice_LengthMs(const char *name) {
+	char path[0x104];
+	void *s = Voice_StreamOpen(name, path);
+
+	if (!s) {
+		return -1;
+	}
+	int len = Snd_StreamLengthMs(s);
+	Snd_StreamClose(s);
+	return len;
+}
+
+int Voice_Open(const char *name, int voice, int voiceover) {
+	char path[0x104];
 	uint32_t t;
 	int vo;
 	cMusicVoice *v = Voice_Get(voice);
@@ -179,16 +202,10 @@ int Voice_Open(const char *name, int voice, int voiceover) {
 	if (!v) {
 		return 0;
 	}
-	Path_Format(path, name, "&U&D&N.ogg");
 	Voice_Close(v);
 	/* differs from the original on purpose (no blocking waits): the stream opens here and now instead of in the
 	 * background; the scripts read the length (Voice_Remain) right after PlayVoice, the original waited there */
-	if (Pack_GetFileInfo(path, pack, &offset, &size)) {
-		Path_Format(path, path, "PACK:&N&E");
-		v->stream = Snd_StreamOpen(pack, (uint32_t)offset, (uint32_t)size, 0);
-	} else {
-		v->stream = Snd_StreamOpen(path, 0, 0, 0);
-	}
+	v->stream = Voice_StreamOpen(name, path);
 	if (!v->stream) {
 		E3D_LogBlue((&g_FileLog), "Error: %s", Fmod_ErrorString(Snd_GetError()));
 		return 0;

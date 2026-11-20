@@ -13,6 +13,7 @@
 #include "scrap/game.h"
 #include "scrap/input.h"
 #include "scrap/logic.h"
+#include "scrap/musicfmod.h"
 #include "scrap/instance.h"
 #include "scrap/net2.h"
 #include "scrap/netaudit.h"
@@ -45,6 +46,15 @@ static const char *const pres_opNames[PRES_O_COUNT] = { "?", "soundat", "sound3d
 	"voicestop", "music", "shipexpl", "fxent", "msgtext", "labeltext", "speech", "speechcancel", "chat", "head", "fade",
 	"cinema", "actionset", "hudadd", "hudclear", "hudshow", "hudset", "talk" };
 
+/* a voice of a -mp2 instance's model: nothing plays, the file's length and the time it started give what the scripts
+ * read (VoiceRemain), the text what the talk voice's checks read */
+typedef struct PresVoice {
+	char text[0x80];
+	int lenMs;
+	double playAt;					/* Instance_Time when it started to play, < 0 before */
+	byte open;
+} PresVoice;
+
 typedef struct PresRecent {
 	uint32_t hash;
 	uint64_t ns;
@@ -61,13 +71,12 @@ static struct {
 	int op;
 	int own;						/* the player whose own entity steps, -1 */
 	int skel;						/* depth of the HUD skeleton modules */
-	vec3_t voiceFrom;
-	byte haveVoiceFrom;
 	const struct cSoundDesc *posDesc;	/* the description cSoundDesc_SetPos computed last, its place and volume */
 	vec3_t pos;
 	int posVolume;
 	cScorer models[PLAYERS_MAX];
 	byte made[PLAYERS_MAX];
+	PresVoice voices[PLAYERS_MAX + 1][MUSIC_MAX_VOICES];	/* each player's, the last the world's */
 	uint32_t sent[PRES_O_COUNT], bytes, cut;
 	/* client */
 	PresRecent recent[PRES_RECENT];
@@ -105,6 +114,9 @@ void Pres_Status(tcBuf *b) {
 
 void Pres_Init(void) {
 	g_PresHud = g_Mp2 && g_Instance;
+	if (g_PresHud) {
+		Scorer_TalkModels();
+	}
 }
 
 /* player i can get records: joined, with a connection */
@@ -261,6 +273,98 @@ void Pres_HudReset(int i) {
 		Scorer_FreeModel(&pres.models[i]);
 		pres.made[i] = 0;
 	}
+	if (i >= 0 && i < PLAYERS_MAX) {
+		memset(pres.voices[i], 0, sizeof(pres.voices[i]));
+		Scorer_TalkReset(i);
+	}
+}
+
+/* ---- instance: the voice models ---- */
+
+/* the voice of the current context (a player's, else the world's), NULL without the models or for a bad voice */
+static PresVoice *Pres_Voice(int voice) {
+	if (!g_PresHud || voice < 0 || voice >= MUSIC_MAX_VOICES) {
+		return NULL;
+	}
+	int i = Players_Current();
+	return &pres.voices[i >= 0 && i < PLAYERS_MAX ? i : PLAYERS_MAX][voice];
+}
+
+/* the ms the voice has played (its length at most) */
+static int Pres_VoicePlayed(const PresVoice *v) {
+	if (v->playAt < 0.0) {
+		return 0;
+	}
+	double ms = (Instance_Time() - v->playAt) * 1000.0;
+	return ms >= (double)v->lenMs ? v->lenMs : ms > 0.0 ? (int)ms : 0;
+}
+
+int Pres_VoxOpen(const char *name, int voice) {
+	PresVoice *v = Pres_Voice(voice);
+	if (!v) {
+		return -1;
+	}
+	memset(v, 0, sizeof(*v));
+	v->lenMs = Voice_LengthMs(name);
+	v->open = v->lenMs >= 0;
+	v->playAt = -1.0;
+	return v->open;
+}
+
+int Pres_VoxPlay(int voice) {
+	PresVoice *v = Pres_Voice(voice);
+	if (!v) {
+		return -1;
+	}
+	if (v->open && v->playAt < 0.0) {
+		v->playAt = Instance_Time();
+	}
+	return 1;
+}
+
+int Pres_VoxStop(int voice) {
+	PresVoice *v = Pres_Voice(voice);
+	if (!v) {
+		return -1;
+	}
+	memset(v, 0, sizeof(*v));
+	return 1;
+}
+
+int Pres_VoxRemain(int voice, float *remain) {
+	PresVoice *v = Pres_Voice(voice);
+	if (!v) {
+		return -1;
+	}
+	*remain = v->open ? (float)(v->lenMs - Pres_VoicePlayed(v)) * 0.001f : 0.0f;
+	return v->open;
+}
+
+int Pres_VoxSetString(int voice, const char *text) {
+	PresVoice *v = Pres_Voice(voice);
+	if (!v) {
+		return -1;
+	}
+	if (v->open) {
+		Str_Copy(v->text, text, sizeof(v->text));
+	}
+	return v->open;
+}
+
+int Pres_VoxGetString(int voice, char *buf, int size) {
+	PresVoice *v = Pres_Voice(voice);
+	if (!v) {
+		return -1;
+	}
+	*buf = 0;
+	if (v->open && v->playAt >= 0.0 && Pres_VoicePlayed(v) >= v->lenMs) {
+		/* played to its end: closed, as single player's talk voice stops at its end (PosSound.c) */
+		memset(v, 0, sizeof(*v));
+	}
+	if (v->open) {
+		Str_Copy(buf, v->text, size);
+	}
+	return v->open;
 }
 
 int Pres_HudOwner(const cScorer *sc) {
@@ -350,22 +454,10 @@ void Pres_Sound2D(const char *name, int volume, int pan) {
 	Pres_Send();
 }
 
-void Pres_VoiceFrom(const vec3_t *pos) {
-	pres.haveVoiceFrom = pos != NULL;
-	if (pos) {
-		pres.voiceFrom = *pos;
-	}
-}
-
-/* a voice: to the players near its speaker, in a player's context to that player */
+/* a voice: in a player's context to that player (the talk voice of a speaker goes to each player that hears it in
+ * its context, Sound_PlayVoice), in the world's to every player */
 static byte Pres_BeginVoice(int op) {
-	if (!Pres_Out()) {
-		return 0;
-	}
-	if (Players_Current() == PLAYERS_NONE && pres.haveVoiceFrom) {
-		return Pres_Begin(PRES_NEAR, &pres.voiceFrom, op);
-	}
-	return Pres_Begin(PRES_PLAYER, NULL, op);
+	return Pres_Out() && Pres_Begin(PRES_PLAYER, NULL, op);
 }
 
 void Pres_VoiceOpen(const char *file, int voice, int arg) {

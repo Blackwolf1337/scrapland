@@ -458,6 +458,10 @@ void Instance_Pass(void) {
 	App_Frame(g_pApp);
 	Faction_Tick(inst.host, inst.ticks);
 	Coop_Pass();
+	if (g_TalkModels) {
+		/* nothing draws the talks here: the world's and each player's run down (include/scrap/scorer.h) */
+		Scorer_TalkTickPlayers(1.0f / INSTANCE_TICK_HZ);
+	}
 	Arena_Tick(inst.host, inst.ticks);
 	if (inst.host) {
 		Rep_Tick(inst.host, inst.ticks);

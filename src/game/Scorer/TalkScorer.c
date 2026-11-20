@@ -2,6 +2,11 @@
  * TalkScorer.cpp of the game (Menu/): cTalkScorer, the talk text of Scorer_SetSpeechText scrolling above the
  * character, the use text of the character in front of it, and the talk functions of SScorer. See
  * include/scrap/scorerhud.h.
+ *
+ * Not in the original: on a -mp2 instance each player has a talk of its own (stage 4.3): its time and whole time (the
+ * engine variables RemainTalkTime and FullTalkTime read and set in its context, g_GVarRedirect) and its speech
+ * callback; Scorer_TalkTickPlayers runs them down every tick in each player's context, as the drawing of the talk does
+ * in single player. The world's context keeps the talk of the original.
  */
 #include <string.h>
 
@@ -22,7 +27,7 @@
 #define CTALKSCORER_VFTABLE (&cTalkScorer_vftable)
 #define g_TalkWidth (GVar_MaxTalkLineSizePix.value.f)		/* the width of the lines */
 #define g_TalkUseTime (GVar_TimeToAbortChatText.value.f)	/* the hold time of the use that skips a talk */
-#define g_TalkTime (GVar_FullTalkTime.value.f)		/* the time of the whole talk */
+#define g_TalkTime (GVar_Redirect(&GVar_FullTalkTime)->value.f)	/* the time of the whole talk */
 static const cScorerItemVtbl cTalkScorer_vftable;
 static cGVar GVar_TimeToAbortChatText;
 static cGVar GVar_MaxTalkLineSizePix;
@@ -183,13 +188,71 @@ static cPy_Function g_TalkCallback;
 static int g_TalkPlayer = PLAYERS_NONE;
 static uint16_t g_TalkJoined;
 
+/* a -mp2 instance: the talk of each player (copies of the two engine variables with the player's values, its
+ * callback and the join that set it) */
+typedef struct {
+	cGVar remain, full;
+	cPy_Function cb;
+	uint16_t joined;
+	byte made;
+} talkModel_t;
+static talkModel_t g_TalkPl[PLAYERS_MAX];
+byte g_TalkModels;
+
+/* the talk of player i (made on its first use), NULL for the world's context or without the models */
+static talkModel_t *Talk_Model(int i) {
+	if (!g_TalkModels || i < 0 || i >= PLAYERS_MAX) {
+		return NULL;
+	}
+	talkModel_t *m = &g_TalkPl[i];
+	if (!m->made) {
+		m->remain = GVar_RemainTalkTime;
+		m->full = GVar_FullTalkTime;
+		m->remain.value.f = 0.0f;
+		m->full.value.f = 0.0f;
+		cPy_Function_ctor(&m->cb);
+		m->made = 1;
+	}
+	return m;
+}
+
+/* g_GVarRedirect: the two variables of the talk are the current player's */
+static cGVar *Talk_GVar(cGVar *v) {
+	if (v != &GVar_RemainTalkTime && v != &GVar_FullTalkTime) {
+		return v;
+	}
+	talkModel_t *m = Talk_Model(Players_Current());
+	return !m ? v : v == &GVar_RemainTalkTime ? &m->remain : &m->full;
+}
+
+void Scorer_TalkModels(void) {
+	g_TalkModels = 1;
+	g_GVarRedirect = Talk_GVar;
+}
+
+void Scorer_TalkReset(int i) {
+	talkModel_t *m = g_TalkModels && i >= 0 && i < PLAYERS_MAX && g_TalkPl[i].made ? &g_TalkPl[i] : NULL;
+	if (m) {
+		m->remain.value.f = 0.0f;
+		m->full.value.f = 0.0f;
+		cPy_Function_SetFunc(&m->cb, "");
+	}
+}
+
 static int g_TalkColor[3] = { 174, 229, 251 };
 
 /* the time of the talk runs down by dt; 0 when it is over (its callback runs) */
 static byte Talk_Run(float dt) {
 	if (!(g_RemainTalkTime > 0.01f)) {
 		g_RemainTalkTime = 0.0f;
-		if (cPy_Function_IsValid((&g_TalkCallback))) {
+		talkModel_t *m = Talk_Model(Players_Current());
+		if (m) {
+			if (cPy_Function_IsValid(&m->cb)) {
+				int was = Players_EnterJoined(Players_Current(), m->joined);
+				cPy_Function_Execute(&m->cb, 1);
+				Players_Leave(was);
+			}
+		} else if (cPy_Function_IsValid((&g_TalkCallback))) {
 			int was = Players_EnterJoined(g_TalkPlayer, g_TalkJoined);
 			cPy_Function_Execute((&g_TalkCallback), 1);
 			Players_Leave(was);
@@ -202,6 +265,17 @@ static byte Talk_Run(float dt) {
 
 void Scorer_TalkTick(float dt) {
 	Talk_Run(dt);
+}
+
+void Scorer_TalkTickPlayers(float dt) {
+	Talk_Run(dt);
+	for (int i = 0; i < PLAYERS_MAX; i++) {
+		if (g_TalkPl[i].made && Players_Ctx(i)) {
+			int was = Players_Enter(i);
+			Talk_Run(dt);
+			Players_Leave(was);
+		}
+	}
 }
 
 static void cTalkScorer_DrawTalk(cTalkScorer *self, int player, float *pos) {
@@ -316,22 +390,30 @@ static void cTalkScorer_DrawUse(cTalkScorer *self, int player, float *pos) {
 
 void Scorer_CancelSpeech(float time) {
 	NetAudit_Site(NA_HUD, "speech.cancel");
+	NetAudit_Talk("cancel", "%.2f", (double)time);
 	if (g_Mp2) {
 		Pres_SpeechCancel(time);
 	}
 	g_RemainTalkTime = time;
 }
 
-static void Talk_AddCallbackParam(const nativeVal_t *item);
+static void Talk_AddCallbackParam(cPy_Function *cb, const nativeVal_t *item);
 void Scorer_SetSpeechCallback(const char *func, const nativeVal_t *arg) {
 	NetAudit_Site(NA_HUD, "speech.callback");
+	NetAudit_Talk("callback", "%s", func ? func : "");
 	nativeVal_t key, item;
-	cPy_Function_SetFunc((&g_TalkCallback), func);
-	g_TalkPlayer = Players_Current();
-	g_TalkJoined = Players_Joined(g_TalkPlayer);
+	talkModel_t *m = Talk_Model(Players_Current());
+	cPy_Function *cb = m ? &m->cb : &g_TalkCallback;
+	cPy_Function_SetFunc(cb, func);
+	if (m) {
+		m->joined = Players_Joined(Players_Current());
+	} else {
+		g_TalkPlayer = Players_Current();
+		g_TalkJoined = Players_Joined(g_TalkPlayer);
+	}
 	if (arg && arg->type == NV_LIST) {
 		for (int k = 0; k < arg->n; k++) {
-			Talk_AddCallbackParam(&arg->items[k]);
+			Talk_AddCallbackParam(cb, &arg->items[k]);
 		}
 	} else if (arg && NObj_Kind(arg) == NO_LIST) {
 		/* a list object (a view too) */
@@ -340,7 +422,7 @@ void Scorer_SetSpeechCallback(const char *func, const nativeVal_t *arg) {
 			Native_SetInt(&key, k);
 			Native_SetNone(&item);
 			if (NObj_GetItem(arg, &key, &item)) {
-				Talk_AddCallbackParam(&item);
+				Talk_AddCallbackParam(cb, &item);
 			}
 			Native_Free(&item);
 		}
@@ -348,18 +430,19 @@ void Scorer_SetSpeechCallback(const char *func, const nativeVal_t *arg) {
 }
 
 /* an item of the list of the talk callback: a text, a float or an int as its parameter, anything else left out */
-static void Talk_AddCallbackParam(const nativeVal_t *item) {
+static void Talk_AddCallbackParam(cPy_Function *cb, const nativeVal_t *item) {
 	if (item->type == NV_STR) {
-		cPy_Function_AddParamS((&g_TalkCallback), Native_Text(item));
+		cPy_Function_AddParamS(cb, Native_Text(item));
 	} else if (item->type == NV_FLOAT) {
-		cPy_Function_AddParamF((&g_TalkCallback), (float)item->f);
+		cPy_Function_AddParamF(cb, (float)item->f);
 	} else if (item->type == NV_INT) {
-		cPy_Function_AddParamI((&g_TalkCallback), (int)item->i);
+		cPy_Function_AddParamI(cb, (int)item->i);
 	}
 }
 
 void Scorer_SetSpeechText(const char *text, float time, int r, int g, int b) {
 	NetAudit_Site(NA_HUD, "speech.text");
+	NetAudit_Talk("speech", "%.2f \"%s\"", (double)time, text);
 	if (g_Mp2) {
 		Pres_SpeechText(text, time, r, g, b);
 	}

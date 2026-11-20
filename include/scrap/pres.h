@@ -148,10 +148,20 @@ void Pres_ModLeave(const char *module);
 struct cScorer *Pres_HudModel(int i);
 /* the HUD model of player i when it was made, NULL */
 struct cScorer *Pres_HudMade(int i);
-/* player i joined or left: its HUD model empty */
+/* player i joined or left: its HUD model, its talk and its voice models empty */
 void Pres_HudReset(int i);
 /* the player whose HUD model sc is, -1 for another scorer */
 int Pres_HudOwner(const struct cScorer *sc);
+/* the voice models (stage 4.3): on a -mp2 instance every player's context and the world's have voices of their own
+ * that play nothing; the voice functions of the sound system (Sound.c) answer from them, so a player's talk times
+ * (VoiceRemain: the file's length less the time it has played) and its talk voice's checks are its own and equal single
+ * player's. Each returns -1 without the models (single player, a client), else the voice function's result */
+int Pres_VoxOpen(const char *name, int voice);
+int Pres_VoxPlay(int voice);
+int Pres_VoxStop(int voice);
+int Pres_VoxRemain(int voice, float *remain);
+int Pres_VoxSetString(int voice, const char *text);
+int Pres_VoxGetString(int voice, char *buf, int size);
 /* a presentation sink without a route ran on the instance (the camera of view 0, the debris, the world's time
  * speed): counted as prefix site ("pres.unforwarded:<sink>:") unless inside a routed or derived call */
 void Pres_NoRoute(int cat, const char *prefix, const char *site);
@@ -166,8 +176,6 @@ void Pres_VoiceOpen(const char *file, int voice, int arg);
 void Pres_Talk(const char *file, const char *speaker, int arg);
 void Pres_VoicePlay(int voice);
 void Pres_VoiceStop(int voice);
-/* the place a voice speaks from (Sound_PlayVoice: the speaker), for the voice calls that follow; NULL clears it */
-void Pres_VoiceFrom(const vec3_t *pos);
 void Pres_Music(const char *name, const char *cmd, float volume);
 void Pres_ShipExplosion(const vec3_t *pos, const vec3_t *vel, float scale, float time, int flames, int collision);
 void Pres_FxEnt(int kind, const char *a, const char *b, float f, int i, const vec3_t *v);

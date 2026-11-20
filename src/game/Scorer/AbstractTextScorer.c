@@ -580,6 +580,7 @@ static char g_MsgText[62500];
 
 void Scorer_SetMsgText(const char *text, float time, const char *font) {
 	NetAudit_Site(NA_HUD, "hud.msgtext");
+	NetAudit_Talk("msg", "\"%s\"", text);
 	if (g_Mp2) {
 		Pres_MsgText(text, time, font);
 	}

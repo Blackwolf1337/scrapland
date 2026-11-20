@@ -6,11 +6,16 @@
  * found by its text and copied into a fixed pool. Nothing is allocated and nothing is written; the game's output stays
  * what it was.
  */
+#include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "scrap/console.h"
 #include "scrap/game.h"
 #include "scrap/global.h"
+#include "scrap/players.h"
+#include "scrap/world.h"
 
 #include "scrap/netaudit.h"
 
@@ -198,4 +203,36 @@ int NetAudit_Each(netAuditFn_t fn, void *ctx) {
 		fn(ctx, (netAuditCat_t)na_rows[i].cat, na_rows[i].key, na_rows[i].count);
 	}
 	return m;
+}
+
+/* ---- the talk trace of the tests ---- */
+
+int NetAudit_TalkOn(void) {
+	static int on = -1;
+	if (on < 0) {
+		const char *v = getenv("SCRAP_TALK_TRACE");
+		on = v && *v && *v != '0';
+	}
+	return on;
+}
+
+void NetAudit_Talk(const char *op, const char *fmt, ...) {
+	char text[0x400], ctx[16];
+	va_list ap;
+
+	if (!NetAudit_TalkOn()) {
+		return;
+	}
+	va_start(ap, fmt);
+	vsnprintf(text, sizeof(text), fmt, ap);
+	va_end(ap);
+	int pl = Players_Current();
+	if (!Players_Net()) {
+		Str_Copy(ctx, "-", sizeof(ctx));
+	} else if (pl == PLAYERS_NONE) {
+		Str_Copy(ctx, "w", sizeof(ctx));
+	} else {
+		snprintf(ctx, sizeof(ctx), "p%d", pl);
+	}
+	Con_Printf("talk %.2f %s %s %s\n", g_pWorld ? (double)Timer_GetTime(&g_pWorld->timer) : 0.0, ctx, op, text);
 }
