@@ -751,8 +751,9 @@ static byte Sc_Started(const nativeVal_t *cls, byte ok) {
 /* Play(SceneClass): loads the scene, creates its actors and the scene entity at the dummy DM_Scene_<name>, links
  * the camera, hides the characters (and outdoors the ships), the cinema HUD, no input, no doppler, no music */
 static byte Sc_PlayAll(const nativeVal_t *cls) {
-	/* not in the original: a coop client plays the scenes of its instance only (include/scrap/coop.h) */
-	if (Coop_ClientNoScene()) {
+	/* not in the original: a coop client plays the scenes of its instance only (include/scrap/coop.h), a -mp2 client
+	 * the scenes its server starts (include/scrap/netscene.h; its own level start must not make them) */
+	if (Coop_ClientNoScene() || (g_Mp2 && !g_Instance)) {
 		return 1;
 	}
 	modeVals_t t = { .n = 0 };

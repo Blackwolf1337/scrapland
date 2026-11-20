@@ -462,6 +462,10 @@ void NetScene_ClientFrame(void) {
 		ns.seen = 1;
 		ns.goneNs = 0;
 		cEntity *cam = NetScene_ViewCam();
+		if (!cam) {
+			/* a player that joined during the scene has no own entity nor camera yet (it gets them after the scene) */
+			cam = Play_ViewCamera(e->pos.x, e->pos.y, e->pos.z);
+		}
 		char *link = NULL;
 		if (cam && (!Entity_VarS(cam, "EntityLink", &link, 0) || !link || strcmp(link, ns.cEnt))) {
 			char *name = ns.cEnt;
