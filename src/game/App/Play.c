@@ -740,6 +740,13 @@ void Play_PreFrame(double now, double rtt, double rttVar, float loss) {
 	if (!play.e || !Watch_ClockReady()) {
 		return;
 	}
+	/* -mp2: the ship's fire and boost as the input has them now, not only from the controls of the last frame (they
+	 * are read after this step in the frame: a press would wait a frame more than in single player) */
+	if (g_Mp2 && !play.bot && play.kind == NETREP_SHIP) {
+		byte fire, boost;
+		cVehicleControls_Held(cVehicleEntity_GetOwnerSlot(play.e), &fire, &boost);
+		play.acc.buttons |= (uint16_t)((fire ? NETREP_IN_ACT : 0) | (boost ? NETREP_IN_BOOST : 0));
+	}
 	double want = Watch_InputTime(now, rtt, PLAY_LEAD + rttVar + (loss > 0.01f ? PLAY_LOSS_LEAD : 0.0));
 	double tt = NetRepFollow_Step(&play.clock, want, play.clock.have ? now - play.clockNow : 0.0);
 	play.clockNow = now;
