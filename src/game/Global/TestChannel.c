@@ -79,6 +79,7 @@
 #include "scrap/modvars.h"
 #include "scrap/netaudit.h"
 #include "scrap/netclass.h"
+#include "scrap/netscene.h"
 #include "scrap/pyfunction.h"
 #include "scrap/objentity.h"
 #include "scrap/particlesystem.h"
@@ -1702,6 +1703,11 @@ static void TC_Line(tcBuf *b, const char *line) {
 	/* mirror [json]: the replicated entities of the replication v2 (include/scrap/repent.h) */
 	if (TC_Verb(line, "mirror", &arg)) {
 		RepEnt_Mirror(b, arg);
+		return;
+	}
+	/* scene [state|list|play <name> [player]|skip [player]]: the cutscenes (include/scrap/netscene.h) */
+	if (TC_Verb(line, "scene", &arg)) {
+		NetScene_Verb(b, arg);
 		return;
 	}
 	/* ui [state [player]]: the UI transaction channel (include/scrap/uichan.h) */

@@ -173,6 +173,24 @@ Instances read test lines on their standard input (or through `iline`): `status`
 
 `SCRAP_TIMESCALE=<n>` (1 to 16) makes every clock of a game and of ScrapCoord run n times as fast as the real one: the game time, the instance's ticks, the frames of a headless client, the net timers (the delay of `SCRAP_NET2_DELAY` too), the waits between passes and the mixer (the sound device stays stopped). Rendered games present without waiting for the display. Give all processes of a network test the same n and they play their game time in 1/n of the real time, as long as each keeps up: the instance's status line counts dropped ticks, which must stay 0. DownTown with one fight bot keeps up at 16. The tools wait game time through `tools/test/gameclock.py` (parity.py, coopparity.py, the `wait` lines of coop/chap.sh). feel.py and the single player gates of mp2.py (regress, golden, levels) always run on the real clock, and the deterministic test mode ignores the variable.
 
+The test verb `scene` plays the cutscenes (single player, instance and client). `scene list` prints the 35 cutscenes of the scene table: name, level, mission, the function that loads its classes and the actors. `scene play <name> [player]` clears the screen fade, loads the scene's classes with its load function when they are not there yet and plays the scene (`Scene.Play`). On an instance the optional player is the context the scene starts in, and in sandbox the scene then belongs to that player. `scene state` prints the scene that plays and the time of its scene entity's action. `scene skip [player]` asks to skip the scene. On a client it sends the skip to the server, on an instance it is the skip of player N (default 0), and in single player it ends the scene as Escape does.
+
+`SCRAP_SCENE_SHOTS=<dir>:<t>,<t>,...` in the environment of a single player game or a client takes an in-engine screenshot `<dir>/<scene>-<k>.pcx` when the action time of the scene entity reaches each t (in seconds). `f<x>` means that part of the scene's length, so `f0.5` is the middle. A camera path on view 0 (boarding or parking a ship) is shot the same way as `Path<n>-<k>.pcx`, with n counting the paths of the run. The time is the scene's own, so single player and a client are compared at the same scene time whatever their clocks do.
+
+`SCRAP_TEST_SAVEVARS=<name>=<value>[;...]` sets save variables at the start of every level (`Init.Init`). It is for scenes whose level state depends on the story. HumanCD, for example, needs `GameAct=2ndMurder` (the mental controller of the press). Give it to every game of a test alike.
+
+```
+python3 tools/test/parity/scenes.py sp <game> <scene>...
+python3 tools/test/parity/scenes.py net <instance game> <level> <player|all> --clients <game>,<game> [--out DIR] <scene>...
+python3 tools/test/parity/scenecmp.py <single player shots> <client shots>... [--mad M] [--bad B] [--sheet out.png]
+```
+
+`scenes.py sp` plays the scenes one after the other in single player and waits for each end. `scenes.py net` does the same on a `-mp2` instance and writes, per scene, a JSON file with the instance's audit keys `pres.unforwarded` and `pres.double` and the scene keys, each client's `pres.double`, `pres.missing`, `client.fail` and scene keys, and each client's mirror diff (`mirror.py`) after the scene. `scenecmp.py` compares the screenshots of the same names. It takes the mean absolute difference of the RGB values at 320x180 (0 to 255) and the share of pixels that differ by more than 48 in a channel. A shot passes when mad is at most M (default 12) and bad is at most B (default 0.12), and a missing shot fails.
+
+The audit keys of the scenes are in the category `hud`. An instance has `scene.start:<name>`, `scene.end:<name>`, `scene.skip:<name>` and `scene.skip.refused`. A client has `scene.client:<name>`, `scene.load:<name>` (the client loaded the scene's classes itself) and `pres.missing:scene:<name>` (the client has no tables of that scene). In the category `camera`, `scene.path` on the instance counts a camera path sent to a player and `scene.client.path:<name>` counts it on the client.
+
+In coop the skipping follows the rule `SceneSkip` of `data/coop/rules.def`: `all` (every member who sees the scene asked, the default), `any`, `host` (player 0 alone) or `none`. In sandbox and free roam the scene's own player ends it alone.
+
 What the multiplayer tests did not cover is listed in [multiplayer.md](multiplayer.md).
 
 ## Retired difftest

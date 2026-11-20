@@ -65,6 +65,10 @@ void cPy_Function_AddParamS(cPy_Function *self, const char *v);
 /* calls the function; the int result of a function value or a port entry, else 0. clear drops function and
  * parameters first. A failure of a function value or a port entry is printed (Native_ErrPrint). */
 int cPy_Function_Execute(cPy_Function *self, byte clear);
+/* the parameters of a C function (PYF_NATIVE) as the bytes the AddParam functions wrote: their count, *data; and
+ * those bytes as its parameters (the network's record of a call, include/scrap/pres.h) */
+int cPy_Function_NativeBytes(cPy_Function *self, const void **data);
+void cPy_Function_SetNativeBytes(cPy_Function *self, const void *data, int n);
 /* clears every function of the ring and frees the parameter files */
 void cPy_Function_ClearAll(void);
 /* ScrapC: the calls of Execute by kind since the start or the last reset (the test channel's native ports) */

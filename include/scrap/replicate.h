@@ -145,6 +145,8 @@ byte Watch_SendReliable(const uint8_t *data, int size);
 byte Watch_ClockReady(void);
 double Watch_InputTime(double now, double rtt, double lead);
 double Watch_ShownTime(void);
+/* the interpolation delay of the others now, s (they are drawn that long behind the newest samples) */
+double Watch_Delay(void);
 /* the welcome said the world has no single player setup (REP_WELCOME_ARENA); 0 before the welcome */
 byte Watch_ArenaWorld(void);
 

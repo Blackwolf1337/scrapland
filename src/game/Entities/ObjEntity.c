@@ -729,7 +729,8 @@ void cObjEntity_Update(cEntity *self) {
 	cSndInterface_Tick(&o->snd, dt);
 	float f = o->slot->time / o->slot->interval;
 	Obj_RenderLerp(self, f);
-	if (adv) {
+	/* a replica follows the node of the model it is linked to as well (a scene's actors, Present) */
+	if (adv || o->replica) {
 		cModMove_Update(&o->mod, dt);
 	}
 	Obj_UpdateModel(self);

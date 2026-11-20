@@ -152,8 +152,8 @@ UseFunc	SERVER_ONLY	script callback or server bookkeeping
 ViewFunc	SERVER_ONLY	script callback or server bookkeeping
 ArrowModUse	STATE	what a client shows of the entity
 ArrowModMission	STATE	what a client shows of the entity
-OffMul	SIM	simulation value of the server
-DeltaOffMul	SIM	simulation value of the server
+OffMul	STATE	the blend of a linked entity onto its link (a replica follows its link, include/scrap/netscene.h)
+DeltaOffMul	STATE	the speed of that blend
 OffModPosAsPos	STATE	what a client shows of the entity
 UseLinkAng	STATE	what a client shows of the entity
 LinkModel	STATE	what a client shows of the entity

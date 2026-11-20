@@ -110,9 +110,11 @@ byte Surface_SaveShot(void *surf) {
 		const byte *s = row;
 		for (int x = 0; x < w; x++) {
 			uint32_t c = *(const uint32_t *)s;
-			p[0] = (byte)((byte)(c >> sh->rShr) << sh->rShl);
-			p[1] = (byte)((byte)(c >> sh->gShr) << sh->gShl);
-			p[2] = (byte)((byte)(c >> sh->bShr) << sh->bShl);
+			/* a channel from the pixel: right by the zero bits below its mask, left by the bits it lacks of 8 (the
+			 * shifts of a palette entry the other way; that way round only blue was left) */
+			p[0] = (byte)((c >> sh->rShl) << sh->rShr);
+			p[1] = (byte)((c >> sh->gShl) << sh->gShr);
+			p[2] = (byte)((c >> sh->bShl) << sh->bShr);
 			if (g_Gamma2x) {
 				p[0] = Shot_Double(p[0]);
 				p[1] = Shot_Double(p[1]);

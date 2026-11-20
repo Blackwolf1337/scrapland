@@ -22,6 +22,7 @@
 #include "scrap/replicate.h"
 #include "scrap/model.h"
 #include "scrap/net.h"
+#include "scrap/netscene.h"
 #include "scrap/nodestraffic.h"
 #include "scrap/scrapfont.h"
 #include "scrap/scrapmain.h"
@@ -626,6 +627,8 @@ static void CApp_UpdateTaped(CApp *self, float dt) {
 static byte CApp_FrameRun(CApp *self) {
 	double t = App_GetTime(self);
 	TestChannel_Frame(t);
+	/* not in the original: the scene screenshots of the tests (SCRAP_SCENE_SHOTS, include/scrap/netscene.h) */
+	NetScene_ShotFrame();
 	uint32_t flags = self->flags;
 	self->time = t;
 	if (!flags && !self->active) {

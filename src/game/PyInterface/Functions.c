@@ -136,6 +136,22 @@ static byte cPy_Function_NativeParams(cPy_Function *self) {
 	return 1;
 }
 
+int cPy_Function_NativeBytes(cPy_Function *self, const void **data) {
+	if (!(self->flags & PYF_NATIVE) || !self->params) {
+		*data = NULL;
+		return 0;
+	}
+	cFileMem *f = self->params;
+	*data = f->buffer;
+	return (int)(f->pos - f->buffer);
+}
+
+void cPy_Function_SetNativeBytes(cPy_Function *self, const void *data, int n) {
+	if (n > 0 && (cPy_Function_NativeParams(self) || self->params)) {
+		VFile_Write(self->params, data, n);
+	}
+}
+
 /* a new value (None), for the function and the parameters of PYF_VALUE */
 static nativeVal_t *Value_New(void) {
 	nativeVal_t *v = Mem_Alloc(sizeof(*v));
