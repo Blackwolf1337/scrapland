@@ -678,7 +678,7 @@ void Coop_Pass(void) {
 	if (Coop_On()) {
 		/* nothing draws the talk scorer here: its time and the end of a remote communication (a talk of the level's
 		 * start waits for the first member, as the level does) */
-		if (!cp.waiting) {
+		if (!cp.waiting && !g_TalkModels) {
 			Scorer_TalkTick(1.0f / INSTANCE_TICK_HZ);
 		}
 		Scorer_Tick(0);

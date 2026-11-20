@@ -365,10 +365,35 @@ int NetRep_ReadAck(const uint8_t *data, int size, uint16_t *newest, uint32_t *bi
 #define NETREP_IN_BOOST 0x0010		/* ship: boost */
 #define NETREP_IN_SWITCH 0x0020		/* get into the nearest parked ship, out of the ship (on its press) */
 #define NETREP_IN_FULL 0x0040		/* ship: the full thrust (its second accelerate key) */
-/* -mp2: the high byte has the buttons first pressed after the tick's first slot was taken: its second slot takes them
- * too (as single player's slot takes the controls of its frame) */
-#define NETREP_IN_LATE 8
-#define NETREP_IN_SLOT(b, part) ((uint16_t)(((b) | ((part) ? (b) >> NETREP_IN_LATE : 0)) & 0xff))
+/* character: the presses of the next and the previous option of the arrow it listens to (the answers of a talk), each
+ * a counter of 2 bits: the server takes one press when a counter is one more than in the input before */
+#define NETREP_IN_OPTNEXT_SHIFT 7
+#define NETREP_IN_OPTPREV_SHIFT 9
+#define NETREP_IN_OPTS 0x0780
+/* -mp2: the buttons a client runs itself (action or fire, lock, boost, full thrust) first pressed after the tick's
+ * first slot was taken, one bit each: the tick's second slot takes them too (as single player's slot takes the
+ * controls of its frame) */
+#define NETREP_IN_LATE_ACT 0x0800
+#define NETREP_IN_LATE_LOCK 0x1000
+#define NETREP_IN_LATE_BOOST 0x2000
+#define NETREP_IN_LATE_FULL 0x4000
+#define NETREP_IN_LATES 0x7800
+
+/* the late bits of the presses p */
+static inline uint16_t NetRep_InLate(uint16_t p) {
+	return (uint16_t)((p & NETREP_IN_ACT ? NETREP_IN_LATE_ACT : 0) | (p & NETREP_IN_LOCK ? NETREP_IN_LATE_LOCK : 0) |
+		(p & NETREP_IN_BOOST ? NETREP_IN_LATE_BOOST : 0) | (p & NETREP_IN_FULL ? NETREP_IN_LATE_FULL : 0));
+}
+
+/* the buttons slot part of a tick takes from its input's buttons b */
+static inline uint16_t NetRep_InSlot(uint16_t b, int part) {
+	uint16_t s = (uint16_t)(b & ~NETREP_IN_LATES);
+	if (part) {
+		s |= (uint16_t)((b & NETREP_IN_LATE_ACT ? NETREP_IN_ACT : 0) | (b & NETREP_IN_LATE_LOCK ? NETREP_IN_LOCK : 0) |
+			(b & NETREP_IN_LATE_BOOST ? NETREP_IN_BOOST : 0) | (b & NETREP_IN_LATE_FULL ? NETREP_IN_FULL : 0));
+	}
+	return s;
+}
 
 /* the input of one tick: the controls of a character (walk, strafe, jump; the view turn) or a ship (acceleration,
  * strafe, vertical strafe; the turn) */

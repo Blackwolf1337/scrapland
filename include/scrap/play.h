@@ -182,7 +182,7 @@ typedef struct NetPlAccum {
 void NetPl_Accumulate(struct cEntity *e, NetPlAccum *a, float dt);
 void NetPl_Input(NetPlAccum *a, NetRepInput *out);
 /* the moves of the frame before the tick's second slot into out->move2 (none since the first slot: its moves); -mp2:
- * the buttons first pressed since the first slot into the high byte of out->buttons (NETREP_IN_LATE) */
+ * the buttons it runs itself first pressed since the first slot into the late bits of out->buttons (NETREP_IN_LATES) */
 void NetPl_InputSlot(const NetPlAccum *a, NetRepInput *out);
 void NetPl_Save(struct cEntity *e, NetPlMotion *m);
 void NetPl_Restore(struct cEntity *e, const NetPlMotion *m);

@@ -113,7 +113,7 @@ void NetPl_Slot(cEntity *e, const NetRepInput *in, byte local, byte replay, int 
 	if (part) {
 		memcpy(slot.move, in->move2, sizeof(slot.move));
 	}
-	slot.buttons = NETREP_IN_SLOT(in->buttons, part);
+	slot.buttons = NetRep_InSlot(in->buttons, part);
 	NetPl_Apply(e, &slot, local, replay);
 	/* the solo instance: the exact controls and slot lengths of the input tape (include/scrap/inputtape.h) */
 	byte taped = g_InputTape == INPUTTAPE_SOLO && !local;
@@ -154,7 +154,7 @@ void NetPl_StepPart(cEntity *e, const NetRepInput *in, byte local, byte replay, 
 		if (part) {
 			memcpy(slot.move, in->move2, sizeof(slot.move));
 		}
-		slot.buttons = NETREP_IN_SLOT(in->buttons, part);
+		slot.buttons = NetRep_InSlot(in->buttons, part);
 		NetPl_Apply(e, &slot, local, replay);
 		return;
 	}
@@ -192,6 +192,9 @@ void NetPl_Accumulate(cEntity *e, NetPlAccum *a, float dt) {
 		 * info key (Play_Switch) */
 		b = (c->act ? NETREP_IN_ACT : 0) | (c->act2 ? NETREP_IN_ACT2 : 0) | (c->act3 ? NETREP_IN_ACT3 : 0) |
 			(c->lock ? NETREP_IN_LOCK : 0);
+		/* the counters of the arrow's option presses, the newest of the tick's frames */
+		a->buttons &= (uint16_t)~NETREP_IN_OPTS;
+		b |= (uint16_t)((c->opts & 3) << NETREP_IN_OPTNEXT_SHIFT | (c->opts >> 4 & 3) << NETREP_IN_OPTPREV_SHIFT);
 		break;
 	}
 	case NETREP_SHIP: {
@@ -246,7 +249,7 @@ void NetPl_InputSlot(const NetPlAccum *a, NetRepInput *out) {
 		out->move2[i] = NetRep_QMove(a->move[i]);
 	}
 	if (g_Mp2) {
-		out->buttons |= (uint16_t)((a->buttons & ~out->buttons & 0xff) << NETREP_IN_LATE);
+		out->buttons |= NetRep_InLate((uint16_t)(a->buttons & ~out->buttons));
 	}
 }
 

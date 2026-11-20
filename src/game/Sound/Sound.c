@@ -444,33 +444,40 @@ void CSoundSys_StopMusic(CSoundSys *self) {
 int CSoundSys_OpenVoice(CSoundSys *self, const char *name, int voice, int arg) {
 	(void)self;
 	NetAudit_Site(NA_VOICE, "voice.open");
+	NetAudit_Talk("voiceopen", "%d %s", voice, name);
 	if (g_Mp2) {
 		Pres_VoiceOpen(name, voice, arg);
 	}
-	return Voice_Open(name, voice, arg);
+	int r = Pres_VoxOpen(name, voice);
+	return r >= 0 ? r : Voice_Open(name, voice, arg);
 }
 
 int CSoundSys_PlayVoice(CSoundSys *self, int voice) {
 	(void)self;
 	NetAudit_Site(NA_VOICE, "voice.play");
+	NetAudit_Talk("voiceplay", "%d", voice);
 	if (g_Mp2) {
 		Pres_VoicePlay(voice);
 	}
-	return Voice_Play(voice);
+	int r = Pres_VoxPlay(voice);
+	return r >= 0 ? r : Voice_Play(voice);
 }
 
 int CSoundSys_StopVoice(CSoundSys *self, int voice) {
 	(void)self;
 	NetAudit_Site(NA_VOICE, "voice.stop");
+	NetAudit_Talk("voicestop", "%d", voice);
 	if (g_Mp2) {
 		Pres_VoiceStop(voice);
 	}
-	return Voice_Stop(voice);
+	int r = Pres_VoxStop(voice);
+	return r >= 0 ? r : Voice_Stop(voice);
 }
 
 byte CSoundSys_VoiceRemain(CSoundSys *self, int voice, float *remain) {
 	(void)self;
-	return Voice_Remain(voice, remain);
+	int r = Pres_VoxRemain(voice, remain);
+	return r >= 0 ? (byte)r : Voice_Remain(voice, remain);
 }
 
 int CSoundSys_SetVoiceVolume(CSoundSys *self, int voice, float volume) {
@@ -485,12 +492,14 @@ int CSoundSys_SetVoiceParam(CSoundSys *self, int voice, float v) {
 
 int CSoundSys_SetVoiceString(CSoundSys *self, int voice, const char *text) {
 	(void)self;
-	return Voice_SetString(voice, text);
+	int r = Pres_VoxSetString(voice, text);
+	return r >= 0 ? r : Voice_SetString(voice, text);
 }
 
 int CSoundSys_GetVoiceString(CSoundSys *self, int voice, char *buf, int size) {
 	(void)self;
-	return Voice_GetString(voice, buf, size);
+	int r = Pres_VoxGetString(voice, buf, size);
+	return r >= 0 ? r : Voice_GetString(voice, buf, size);
 }
 
 int CSoundSys_VoiceUnused(CSoundSys *self, int voice) {

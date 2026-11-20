@@ -913,7 +913,7 @@ typedef struct cShipGroupData {
 } cShipGroupData;
 
 extern cGVar GVar_RemainTalkTime;
-#define g_RemainTalkTime (GVar_RemainTalkTime.value.f)
+#define g_RemainTalkTime (GVar_Redirect(&GVar_RemainTalkTime)->value.f)
 /* the callback the world puts a new entity at its origin with (set by Logic_ctor) */
 extern void *g_SetOriginFunc;
 
