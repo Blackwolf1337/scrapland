@@ -8,6 +8,12 @@
  * key ("snd.play", "entvar.set:Life", "player.read.world:Parking_Update"). The counts are always on and change
  * nothing the game does or writes: a static table, no allocation, no output. The test channel verb "audit" answers
  * them since the last "audit reset" ("audit json" for tools).
+ *
+ * The talk trace of the tests (SCRAP_TALK_TRACE=1 in the environment, off otherwise): the sinks of the conversations
+ * (the speech text and its end, the speech callback, the voices, the talk voice, the head of the monitor, the message)
+ * print one line each, "talk <world time> <context> <op> <fields>", context the player of an instance's context
+ * ("p0"), "w" for its world, "-" elsewhere. A single player game and a -mp2 client print the same lines for the same
+ * conversation (the client plays the records through the same sinks), so tools compare them.
  */
 #ifndef SCRAP_NETAUDIT_H
 #define SCRAP_NETAUDIT_H
@@ -59,5 +65,10 @@ typedef void (*netAuditFn_t)(void *ctx, netAuditCat_t cat, const char *key, uint
 int NetAudit_Each(netAuditFn_t fn, void *ctx);
 /* the count of the keys that did not fit into the table (0 in a healthy run) */
 uint32_t NetAudit_Lost(void);
+
+/* the talk trace is on */
+int NetAudit_TalkOn(void);
+/* a line of the talk trace (nothing when it is off) */
+void NetAudit_Talk(const char *op, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
 
 #endif

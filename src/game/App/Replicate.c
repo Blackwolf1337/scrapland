@@ -1403,6 +1403,29 @@ void Rep_Rebody(int i, const vec3_t *pos, float yaw) {
 	pl->told = -2;
 }
 
+/* the presses of the arrow's next and previous option in a character's input (the answers of a talk): its listener's
+ * arrow moves as single player's input moves it (WalkCharControl.c), as many presses as the counter went up since the
+ * input before (an input lost on the way leaves no press out) */
+static void Rep_InputOptions(cEntity *e, const NetRepInput *in, uint16_t before) {
+	int next = ((in->buttons >> NETREP_IN_OPTNEXT_SHIFT) - (before >> NETREP_IN_OPTNEXT_SHIFT)) & 3;
+	int prev = ((in->buttons >> NETREP_IN_OPTPREV_SHIFT) - (before >> NETREP_IN_OPTPREV_SHIFT)) & 3;
+	if (!next && !prev) {
+		return;
+	}
+	cEntity *l = NetPl_Kind(e) == NETREP_CHAR && WChar(e)->listenOn ? WChar_Listen(e) : NULL;
+	if (!l || !Entity_IsType(l, TYEN_WITH_LIFE)) {
+		NetAudit_Talk("opt", "- %d %d", next, -prev);
+		return;
+	}
+	for (int k = 0; k < next; k++) {
+		cArrowIndicator_NextOpt(&WLife(l)->arrow);
+	}
+	for (int k = 0; k < prev; k++) {
+		cArrowIndicator_PrevOpt(&WLife(l)->arrow);
+	}
+	NetAudit_Talk("opt", "%s %d %d", l->name ? l->name : "", next, -prev);
+}
+
 void Rep_PreFrame(uint64_t tick) {
 	NetRepInput in;
 
@@ -1482,6 +1505,7 @@ void Rep_PreFrame(uint64_t tick) {
 		Coop_TestInput(i, &in, (double)tick / NETREP_TICK_HZ - pl->shownNow / 1000.0);
 		Faction_Input(i, e, &in);
 		Places_Input(i, e, &in);
+		Rep_InputOptions(e, &in, pl->buttons);
 		/* a character's use as in single player: the ship its arrow is on boards it, a door runs the game's use; the
 		 * switch (the mission info key on foot, in a ship) is the sandbox's: into the nearest parked or a called
 		 * ship, out of the ship */

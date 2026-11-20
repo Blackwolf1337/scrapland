@@ -162,6 +162,9 @@ void NetPl_Accumulate(cEntity *e, NetPlAccum *a, float dt) {
 		 * info key (Play_Switch) */
 		b = (c->act ? NETREP_IN_ACT : 0) | (c->act2 ? NETREP_IN_ACT2 : 0) | (c->act3 ? NETREP_IN_ACT3 : 0) |
 			(c->lock ? NETREP_IN_LOCK : 0);
+		/* the counters of the arrow's option presses, the newest of the tick's frames */
+		a->buttons &= (uint16_t)~NETREP_IN_OPTS;
+		b |= (uint16_t)((c->opts & 3) << NETREP_IN_OPTNEXT_SHIFT | (c->opts >> 4 & 3) << NETREP_IN_OPTPREV_SHIFT);
 		break;
 	}
 	case NETREP_SHIP: {

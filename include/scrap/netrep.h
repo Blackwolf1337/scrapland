@@ -365,6 +365,11 @@ int NetRep_ReadAck(const uint8_t *data, int size, uint16_t *newest, uint32_t *bi
 #define NETREP_IN_BOOST 0x0010		/* ship: boost */
 #define NETREP_IN_SWITCH 0x0020		/* get into the nearest parked ship, out of the ship (on its press) */
 #define NETREP_IN_FULL 0x0040		/* ship: the full thrust (its second accelerate key) */
+/* character: the presses of the next and the previous option of the arrow it listens to (the answers of a talk), each
+ * a counter of 2 bits: the server takes one press when a counter is one more than in the input before */
+#define NETREP_IN_OPTNEXT_SHIFT 7
+#define NETREP_IN_OPTPREV_SHIFT 9
+#define NETREP_IN_OPTS 0x0780
 
 /* the input of one tick: the controls of a character (walk, strafe, jump; the view turn) or a ship (acceleration,
  * strafe, vertical strafe; the turn) */

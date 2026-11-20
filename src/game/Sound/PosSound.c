@@ -381,11 +381,37 @@ static void Sound_StopTalk(void) {
 	g_WarnVoiceVolume = g_WarnVoiceVolumeDef;
 }
 
-static float g_TalkDelay;
-static byte g_TalkStop;
+/* the talk voice's delay before it plays and its stop before it played: a -mp2 instance keeps them per player's
+ * context, as its voices (include/scrap/pres.h), the last for the world's and single player */
+typedef struct {
+	float delay;
+	byte stop;
+} talkDelay_t;
+static talkDelay_t g_TalkDelays[PLAYERS_MAX + 1];
 
-/* the talk voice name has ended: stops it, or later when it has not started yet */
+static talkDelay_t *Sound_TalkDelay(void) {
+	int i = g_PresHud ? Players_Current() : PLAYERS_NONE;
+	return &g_TalkDelays[i >= 0 && i < PLAYERS_MAX ? i : PLAYERS_MAX];
+}
+#define g_TalkDelay (Sound_TalkDelay()->delay)
+#define g_TalkStop (Sound_TalkDelay()->stop)
+
+static void Sound_TalkDoneHere(const char *name);
+
+/* the talk voice name has ended: stops it, or later when it has not started yet (a -mp2 instance: for every player
+ * that hears it) */
 void Sound_TalkDone(const char *name) {
+	Sound_TalkDoneHere(name);
+	for (int i = 0; g_PresHud && Players_Current() == PLAYERS_NONE && i < PLAYERS_MAX; i++) {
+		if (Players_Ctx(i)) {
+			int was = Players_Enter(i);
+			Sound_TalkDoneHere(name);
+			Players_Leave(was);
+		}
+	}
+}
+
+static void Sound_TalkDoneHere(const char *name) {
 	char cur[0x80];
 
 	cur[0] = 0;
@@ -480,15 +506,123 @@ static void Sound_UpdateVoice(int voice) {
 
 static uint32_t g_VoiceCount;
 
+/* the file of a talk voice of speaker sp: arg (in VoicePath with force, else StreamPath) or a warning of its type
+ * picked by the count; 0 for none (a boss without arg) */
+static byte Sound_VoiceFile(char *file, cEntity *sp, const char *event, const char *arg, int force, byte abort) {
+	const char *type = Logic_TypeName(sp);
+	if (arg) {
+		crt_sprintf(file, "%s%s.mp3", (byte)force ? g_VoicePath : g_StreamPath, arg);
+		return 1;
+	}
+	if (!strcmp(type, "Boss")) {
+		return 0;
+	}
+	uint32_t n = g_VoiceCount;
+	if (abort) {
+		crt_sprintf(file, "%sGenerics_GearWarning_%d.mp3", g_VoicePath, (n & 1) + 7);
+	} else if (!strcmp(type, "Gear")) {
+		if (!strcmp(event, "Fire")) {
+			crt_sprintf(file, "%sGenerics_GearShooting_%d.mp3", g_VoicePath, n % 5 + 1);
+		} else {
+			uint32_t m = n % 9;
+			crt_sprintf(file, "%sGenerics_GearWarning_%d.mp3", g_VoicePath, m <= 5 ? m + 1 : m + 3);
+		}
+	} else if (!strcmp(type, "Police") || !strcmp(type, "PoliceBoss")) {
+		if (n % 3 == 2) {
+			crt_sprintf(file, "%sGenerics_GearWarning_9.mp3", g_VoicePath);
+		} else {
+			crt_sprintf(file, "%sGenerics_PoliceWarning_%d.mp3", g_VoicePath, n % 3 + 12);
+		}
+	} else {
+		crt_sprintf(file, "%sGenerics_%s_Warning_%d.mp3", g_VoicePath, type, n % 3 + 1);
+	}
+	return 1;
+}
+
+/* the checks of a talk voice of speaker sp for the current context's player: its talk, its talk voice and its alarm,
+ * its entity (a walking character, not the speaker but for "AnmStr") within MaxPoliceWarnDist */
+static byte Sound_VoiceHears(cEntity *sp, byte anm, byte abort) {
+	char buf[0x80];
+	vec3_t t1, t2;
+
+	if (g_RemainTalkTime > 0.0f || g_TalkDelay > 0.0f || (!abort && !anm && !Players_CurAlarm()->on)) {
+		return 0;
+	}
+	SoundSys_GetVoiceString(g_pSound, TALK_VOICE, buf, sizeof(buf));
+	cEntity *user = Players_Get(Players_Current());
+	if (buf[0] || !user || !Entity_IsType(user, TYEN_WALKCHAR) || (!anm && sp == user)) {
+		return 0;
+	}
+	const vec3_t *pu = Obj_GetViewPos(user, &t1);
+	const vec3_t *ps = Obj_GetViewPos(sp, &t2);
+	float dx = ps->x - pu->x;
+	float dy = ps->y - pu->y;
+	float dz = ps->z - pu->z;
+	return (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz)) < g_MaxPoliceWarnDist;
+}
+
+/* a -mp2 instance, the world's context: the talk voice of speaker sp for every player that hears it (single player's
+ * checks with each player's talk, voice and alarm), each in its context, so the record goes to that player */
+static byte Sound_PlayVoiceAll(cEntity *sp, const char *event, const char *arg, int force, byte anm, byte abort) {
+	char file[0x80];
+	uint64_t hears = 0;
+
+	for (int i = 0; i < PLAYERS_MAX; i++) {
+		if (Players_Ctx(i)) {
+			int was = Players_Enter(i);
+			hears |= (uint64_t)Sound_VoiceHears(sp, anm, abort) << i;
+			Players_Leave(was);
+		}
+	}
+	float r = hears ? (float)((double)(crt_rand() & 0x7fff) * 0x1.0002000400080p-15 * 4.0 - 3.0) : 0.0f;
+	if (!hears || (0.0f > r && !strcmp(event, "Acuse"))) {
+		return 0;
+	}
+	g_VoiceCount++;
+	if (!Sound_VoiceFile(file, sp, event, arg, force, abort)) {
+		return 0;
+	}
+	for (int i = 0; i < PLAYERS_MAX; i++) {
+		if (hears >> i & 1) {
+			int was = Players_Enter(i);
+			Sound_OpenTalk(file, sp->name, (byte)force || !arg ? 1 : 0);
+			Players_Leave(was);
+		}
+	}
+	return 1;
+}
+
 /* the talk voice of the character name for event (in an alarm, or "AnmStr" and "Abort" always): the file arg (in
  * VoicePath with force, else StreamPath) or a warning of its type (Gear, Police, the generic ones) picked by the count;
- * not while another one talks, in slow motion, for the player itself (but "AnmStr") or too far away. 1 if it opens */
+ * not while another one talks, in slow motion, for the player itself (but "AnmStr") or too far away. 1 if it opens.
+ * Not in the original: a -mp2 instance gives the voice to the players that hear it (in a player's context: that
+ * player, in the world's: each one near, Sound_PlayVoiceAll) */
 byte Sound_PlayVoice(const char *name, const char *event, const char *arg, int force) {
 	char file[0x80], buf[0x80];
 	vec3_t t1, t2;
 
 	NetAudit_Site(NA_VOICE, "voice.talk");
 
+	if (g_PresHud) {
+		cEntity *sp = World_FindEntity(name);
+		byte anm = !strcmp(event, "AnmStr");
+		if (VOICE_MIN_SPEED > cTimer_GetSpeed(&g_pWorld->timer) || !sp || !Entity_IsType(sp, TYEN_WALKCHAR)) {
+			return 0;
+		}
+		if (Players_Current() == PLAYERS_NONE) {
+			return Sound_PlayVoiceAll(sp, event, arg, force, anm, !strcmp(event, "Abort"));
+		}
+		if (!Sound_VoiceHears(sp, anm, !strcmp(event, "Abort")) ||
+			((float)((double)(crt_rand() & 0x7fff) * 0x1.0002000400080p-15 * 4.0 - 3.0) < 0.0f && !strcmp(event, "Acuse"))) {
+			return 0;
+		}
+		g_VoiceCount++;
+		if (!Sound_VoiceFile(file, sp, event, arg, force, !strcmp(event, "Abort"))) {
+			return 0;
+		}
+		Sound_OpenTalk(file, sp->name, (byte)force || !arg ? 1 : 0);
+		return 1;
+	}
 	if (g_RemainTalkTime > 0.0f || g_TalkDelay > 0.0f) {
 		return 0;
 	}
@@ -525,42 +659,15 @@ byte Sound_PlayVoice(const char *name, const char *event, const char *arg, int f
 		return 0;
 	}
 	g_VoiceCount++;
-	const char *type = Logic_TypeName(sp);
-	if (arg) {
-		crt_sprintf(file, "%s%s.mp3", (byte)force ? g_VoicePath : g_StreamPath, arg);
-	} else {
-		if (!strcmp(type, "Boss")) {
-			return 0;
-		}
-		uint32_t n = g_VoiceCount;
-		if (abort) {
-			crt_sprintf(file, "%sGenerics_GearWarning_%d.mp3", g_VoicePath, (n & 1) + 7);
-		} else if (!strcmp(type, "Gear")) {
-			if (!strcmp(event, "Fire")) {
-				crt_sprintf(file, "%sGenerics_GearShooting_%d.mp3", g_VoicePath, n % 5 + 1);
-			} else {
-				uint32_t m = n % 9;
-				crt_sprintf(file, "%sGenerics_GearWarning_%d.mp3", g_VoicePath, m <= 5 ? m + 1 : m + 3);
-			}
-		} else if (!strcmp(type, "Police") || !strcmp(type, "PoliceBoss")) {
-			if (n % 3 == 2) {
-				crt_sprintf(file, "%sGenerics_GearWarning_9.mp3", g_VoicePath);
-			} else {
-				crt_sprintf(file, "%sGenerics_PoliceWarning_%d.mp3", g_VoicePath, n % 3 + 12);
-			}
-		} else {
-			crt_sprintf(file, "%sGenerics_%s_Warning_%d.mp3", g_VoicePath, type, n % 3 + 1);
-		}
-	}
-	if (g_Mp2) {
-		/* the players near the speaker hear it (include/scrap/pres.h) */
-		Pres_VoiceFrom(ps);
+	if (!Sound_VoiceFile(file, sp, event, arg, force, abort)) {
+		return 0;
 	}
 	Sound_OpenTalk(file, sp->name, (byte)force || !arg ? 1 : 0);
 	return 1;
 }
 
 void Sound_OpenTalk(const char *file, const char *speaker, int arg) {
+	NetAudit_Talk("talkvoice", "%s %s", speaker, file);
 	if (g_Mp2) {
 		Pres_Talk(file, speaker, arg);
 	}
@@ -572,9 +679,29 @@ void Sound_OpenTalk(const char *file, const char *speaker, int arg) {
 	g_TalkStop = 0;
 }
 
-void Sound_Update(float dt) {
+/* the talk voice plays after its delay (stops when it was stopped before); a -mp2 instance's client plays it after
+ * the same delay from the talk record itself, so the instance's play is not sent */
+static void Sound_UpdateTalk(float dt) {
 	char cur[0x80];
 
+	if (g_TalkDelay > 0.0f) {
+		g_TalkDelay = g_TalkDelay - dt;
+		SoundSys_GetVoiceString(g_pSound, TALK_VOICE, cur, sizeof(cur));
+		if (!cur[0]) {
+			g_TalkStop = 1;
+		} else if (g_TalkDelay <= 0.0f) {
+			if (g_TalkStop) {
+				Sound_StopTalk();
+			} else {
+				g_PresIn++;
+				SoundSys_PlayVoice(g_pSound, TALK_VOICE);
+				g_PresIn--;
+			}
+		}
+	}
+}
+
+void Sound_Update(float dt) {
 	if (g_useDynamicMusic && (g_IsMapOutDoor || g_isActionIndoor)) {
 		Sound_UpdateMusic(dt);
 	}
@@ -589,17 +716,12 @@ void Sound_Update(float dt) {
 	} else {
 		g_S_VoiceoverVolume = g_S_VoiceoverVolumeDef;
 	}
-	if (g_TalkDelay > 0.0f) {
-		g_TalkDelay = g_TalkDelay - dt;
-		SoundSys_GetVoiceString(g_pSound, TALK_VOICE, cur, sizeof(cur));
-		if (!cur[0]) {
-			g_TalkStop = 1;
-		} else if (g_TalkDelay <= 0.0f) {
-			if (g_TalkStop) {
-				Sound_StopTalk();
-			} else {
-				SoundSys_PlayVoice(g_pSound, TALK_VOICE);
-			}
+	Sound_UpdateTalk(dt);
+	for (int i = 0; g_PresHud && i < PLAYERS_MAX; i++) {
+		if (Players_Ctx(i)) {
+			int was = Players_Enter(i);
+			Sound_UpdateTalk(dt);
+			Players_Leave(was);
 		}
 	}
 	for (int i = 0; i < 3; i++) {

@@ -35,6 +35,9 @@ int Voice_Remain(int voice, float *remain);	/* in s */
 int Voice_SetString(int voice, const char *text);
 int Voice_Stop(int voice);
 int Voice_SetVolume(int voice, float volume);
+/* not in the original: the length of the voice file name in ms without the mixer (a -mp2 instance's voice models,
+ * include/scrap/pres.h), -1 when there is no such file */
+int Voice_LengthMs(const char *name);
 
 byte Music_PlayFile(const char *name, const char *dir);
 byte Music_Pause(void);

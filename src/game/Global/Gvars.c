@@ -122,10 +122,13 @@ void GVars_Done(void) {
 	g_GVarTable = NULL;
 }
 
+cGVar *(*g_GVarRedirect)(cGVar *v);
+
 /* by the hash table, or along the list before GVars_Init */
 cGVar *GVar_Find(const char *name) {
 	if (g_GVarTable) {
-		return PtrTable_Value(g_GVarTable, name);
+		cGVar *v = PtrTable_Value(g_GVarTable, name);
+		return v ? GVar_Redirect(v) : NULL;
 	}
 	g_GVarTable = NULL;
 	for (cGVar *v = g_GVars; v; v = v->base.next) {

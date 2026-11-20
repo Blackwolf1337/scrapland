@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "scrap/chartype.h"
+#include "scrap/netaudit.h"
 #include "scrap/arrowindicator.h"
 #include "scrap/staticinit.h"
 
@@ -246,7 +247,10 @@ void cWalkCharControl_Update(cWalkCharControl *self, cEntity *wle, float dt) {
 		if (prev) {
 			cArrowIndicator_PrevOpt(&WLife(l)->arrow);
 		}
+		NetAudit_Talk("opt", "%s %d %d", l->name ? l->name : "", next, -prev);
 	}
+	/* counted also without a listener: a client's own character does not know the one the server has it listen to */
+	self->opts = (byte)(((self->opts + next) & 0x0f) | ((self->opts + (prev << 4)) & 0xf0));
 }
 
 static cGVar GVar_AlwaysRun;
