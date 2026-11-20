@@ -33,6 +33,7 @@
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
+#include "scrap/uichan.h"
 #include "scrap/timer.h"
 #include "scrap/travel.h"
 
@@ -196,6 +197,11 @@ static void Main_MainMenu(int id, const char *control) {
 
 /* the menu during a game: the mode and the time speed are kept, the menu set active, the time stopped offline */
 static void Main_InitMenuSys(double timeSpeed) {
+	/* not in the original: a -mp2 instance opens no menu, the interface runs on its player's client
+	 * (include/scrap/uichan.h) */
+	if (Ui_Instance()) {
+		return;
+	}
 	cActionSet *set = TABLE_AT(g_ActionSets, Input_GetActionSet());
 	nativeVal_t v;
 	Native_SetText(&v, set->name, (int)strlen(set->name));
@@ -255,6 +261,10 @@ static byte Main_VolumeStep(int id, const char *prev, double sign) {
 static void Main_BackToGame(int id) {
 	char mode[0x20];
 	nativeVal_t speed, pitch;
+	/* not in the original: the client that showed the interface goes back to its game (include/scrap/uichan.h) */
+	if (Ui_Instance()) {
+		return;
+	}
 	cScorer *sc = Scorer_Get(id);
 	if (sc) {
 		cScorer_Clear(sc);

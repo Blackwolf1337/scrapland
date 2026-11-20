@@ -35,7 +35,7 @@ place Fake listed
 place Junkyard listed
 	link DM_Door_EditShip_00 Outskirts
 	gate Lift DM_Player_Spawn_ 0 0 0 * to Outskirts:Junker Fake
-	nouse DM_EditKeyboard
+	nouse DM_EditKeyboard ui
 
 place Outskirts
 	gate Junker DM_Player_Spawn_Junkyard 0 0 0 * to Junkyard:Lift

@@ -62,6 +62,8 @@
 #include "scrap/play.h"
 #include "scrap/players.h"
 #include "scrap/pres.h"
+#include "scrap/travel.h"
+#include "scrap/uichan.h"
 #include "scrap/vehiclemotors.h"
 #include "scrap/embeddedfxvehicle.h"
 #include "scrap/repent.h"
@@ -1700,6 +1702,25 @@ static void TC_Line(tcBuf *b, const char *line) {
 	/* mirror [json]: the replicated entities of the replication v2 (include/scrap/repent.h) */
 	if (TC_Verb(line, "mirror", &arg)) {
 		RepEnt_Mirror(b, arg);
+		return;
+	}
+	/* ui [state [player]]: the UI transaction channel (include/scrap/uichan.h) */
+	if (TC_Verb(line, "ui", &arg)) {
+		Ui_Status(b, arg);
+		return;
+	}
+	/* use <entity> [option]: player 0 uses the entity through its arrow (the instance's "use" line of
+	 * include/scrap/travel.h, here for single player: the same use in both) */
+	if (TC_Verb(line, "use", &arg)) {
+		char ent[0x40], opt[0x40];
+		opt[0] = 0;
+		if (!TC_Word(&arg, ent, sizeof(ent))) {
+			TC_Add(b, "error: use <entity> [option]\n", -1);
+			return;
+		}
+		TC_Word(&arg, opt, sizeof(opt));
+		Travel_TestUse(0, ent, opt);
+		TC_Add(b, "used\n", -1);
 		return;
 	}
 	/* pres: the records of the presentation interface sent and played (include/scrap/pres.h) */

@@ -472,6 +472,20 @@ extern const portFn_t g_MissionsFuncsMethods[];
  * (src/game/Script/CharConversor.c), the races and combats of the challenges (src/game/Script/RaceMaker.c) */
 extern const portFn_t g_SceneMethods[];
 extern const portFn_t g_CharConversorMethods[];
+/* the pick of a -mp2 client's conversor interface (include/scrap/uichan.h) applied on the instance in the current
+ * player's context: a class of the player's Conversor.AvailableChars becomes its character as ConvertExecute makes
+ * it, then the world's part of ExitCharConversor; cls "" (Escape) that part only. 0 when cls is not available (nothing
+ * changed), 1 else (an error of the scripts printed) */
+byte CharConversor_Pick(const char *cls);
+/* not in the original: the price HangarTab.ComputeShipTotalCost gives the ship of a hangar's save variable text (a
+ * ship made hidden at ShipEdit.editShipPosDummy as CreateShipFromSaveVar makes it, priced, removed; include/scrap/
+ * uichan.h checks a ship editor's transaction with it); *cost 0 for an empty hangar. 0 when there is no editor in the
+ * level or the text names a model the editor does not make */
+byte HangarTab_TextCost(const char *text, int *cost);
+/* not in the original: the world's part of ShipEdit.ExitEditShipMenu for the editor of a -mp2 instance's player that
+ * ran on its client (include/scrap/uichan.h), in the player's context: the editor's way point, the player's ship on the
+ * platform (Junkyard_PlatformShip), EndShipEditCallBack(0, ""); 0 with the error of the scripts */
+byte ShipEdit_ClientEnded(void);
 extern const portFn_t g_RaceMakerMethods[];
 
 /* the general sounds: the sound files of a level, the ship and damage sounds, the point sounds of the maps and the door

@@ -22,6 +22,7 @@
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/scriptnative.h"
+#include "scrap/uichan.h"
 
 static const char metro_def[] = {
 #embed "../../../data/menus/metro.def"
@@ -467,7 +468,8 @@ static byte Metro_OnUse(nativeVal_t *params) {
 		nativeVal_t tmp1, tmp2;
 		const nativeVal_t *u = Native_GetItem(params, 0, 1, &tmp1), *d = Native_GetItem(params, 1, 1, &tmp2);
 		byte ok = u && d;
-		if (ok) {
+		/* the -mp2 instance: the same map and pick, counted as an interface of the player (include/scrap/uichan.h) */
+		if (ok && !Ui_Metro(Native_Text(u), Native_Text(d))) {
 			Travel_MetroUse(Native_Text(u), Native_Text(d));
 		}
 		if (u == &tmp1) {

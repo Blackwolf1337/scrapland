@@ -17,6 +17,7 @@
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
+#include "scrap/uichan.h"
 #include "game/Script/levels/Levels.h"
 
 static const char mission_def[] = {
@@ -430,6 +431,11 @@ static byte Menu_EnterMissionInfo_E(const nativeVal_t *a, int n, nativeVal_t *ou
 	(void)out;
 	if (!Mode_Parse(a, n, "i", &id)) {
 		return 0;
+	}
+	/* not in the original: a -mp2 client asks the instance for the story's values the pages show, they open when they
+	 * come (include/scrap/uichan.h) */
+	if (Ui_ClientAsk(UI_K_MISSION)) {
+		return 1;
 	}
 	MODE_PRINTED(Menu, InitMenuSys, "i", 0L);
 	const char *map = SaveVar_Get("SuperDeal.Mission.Map");

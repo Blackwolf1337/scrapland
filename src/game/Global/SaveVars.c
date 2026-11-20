@@ -7,10 +7,15 @@
 
 #include "scrap/console.h"
 #include "scrap/coop.h"
+#include "scrap/game.h"
 #include "scrap/hashtable.h"
+#include "scrap/netclass.h"
+#include "scrap/players.h"
+#include "scrap/repent.h"
 #include "scrap/scrap.h"
 #include "scrap/staticinit.h"
 #include "scrap/testdet.h"
+#include "scrap/travel.h"
 
 void App_GetConfigDir(char *buf, int size);
 
@@ -45,6 +50,85 @@ static cSaveVar *SaveVar_Find(const char *name) {
 	return PtrTable_Value((&g_SaveVarTable), name);
 }
 
+/* ---- the players' own variables of a -mp2 instance (not in the original) ---- */
+
+#define SV_OVER_TEXT 1024			/* a value read from the player's state of the coordinator */
+
+/* per player its variables, a NULL value: deleted in its context */
+static cSaveVar *g_OverVars[PLAYERS_MAX];
+
+int SaveVar_OverOwner(const char *name) {
+	char prefix[64];
+	if (!g_Mp2 || !g_Instance) {
+		return -1;
+	}
+	int i = Players_Current();
+	if (i < 0 || i >= PLAYERS_MAX) {
+		return -1;
+	}
+	const char *dot = strchr(name, '.');
+	int n = dot ? (int)(dot - name) : (int)strlen(name);
+	if (n <= 0 || n >= (int)sizeof(prefix)) {
+		return -1;
+	}
+	memcpy(prefix, name, n);
+	prefix[n] = 0;
+	return NetClass_Find(NCT_SAVEVAR, prefix) == NC_PLAYER ? i : -1;
+}
+
+static cSaveVar *SV_OverFind(int i, const char *name) {
+	for (cSaveVar *v = g_OverVars[i]; v; v = v->next) {
+		if (!strcmp(v->name, name)) {
+			return v;
+		}
+	}
+	return NULL;
+}
+
+/* player i's entry of name (made with the value; NULL: deleted) */
+static cSaveVar *SV_OverSet(int i, const char *name, const char *value) {
+	cSaveVar *v = SV_OverFind(i, name);
+	if (!v) {
+		v = operator_new(sizeof(*v));
+		cString_ctor(&v->name);
+		cString_ctor(&v->value);
+		cString_Set(&v->name, name);
+		v->next = g_OverVars[i];
+		g_OverVars[i] = v;
+	}
+	if (value) {
+		cString_Set(&v->value, value);
+		/* the coordinator keeps it with the player's state (a player without one: nothing) */
+		Travel_SetVar(i, name, value);
+	} else {
+		cString_Set(&v->value, NULL);
+	}
+	return v;
+}
+
+/* player i's entry of name, or the one its state of the coordinator gives (taken in), NULL */
+static cSaveVar *SV_OverGet(int i, const char *name) {
+	static char text[SV_OVER_TEXT];
+	cSaveVar *v = SV_OverFind(i, name);
+	if (!v && Travel_GetVar(i, name, text, sizeof(text))) {
+		v = SV_OverSet(i, name, text);
+	}
+	return v;
+}
+
+void SaveVar_OverClear(int i) {
+	if (i < 0 || i >= PLAYERS_MAX) {
+		return;
+	}
+	while (g_OverVars[i]) {
+		cSaveVar *v = g_OverVars[i];
+		g_OverVars[i] = v->next;
+		cString_dtor(&v->value);
+		cString_dtor(&v->name);
+		operator_delete(v);
+	}
+}
+
 /* the value of a variable as int, 0 if it is missing or has no value */
 static int SaveVar_Int(const char *name) {
 	cSaveVar *v = SaveVar_Find(name);
@@ -72,6 +156,14 @@ static cSaveVar *SaveVar_New(const char *name, const char *value) {
 
 /* 0 if the variable exists already */
 byte SaveVar_Create(const char *name, const char *value) {
+	int i = SaveVar_OverOwner(name);
+	if (i >= 0) {
+		if (SaveVar_Get(name)) {
+			return 0;
+		}
+		SV_OverSet(i, name, value);
+		return 1;
+	}
 	if (SaveVar_Find(name)) {
 		return 0;
 	}
@@ -80,11 +172,21 @@ byte SaveVar_Create(const char *name, const char *value) {
 }
 
 const char *SaveVar_Get(const char *name) {
-	cSaveVar *v = SaveVar_Find(name);
+	int i = SaveVar_OverOwner(name);
+	cSaveVar *v = i >= 0 ? SV_OverGet(i, name) : NULL;
+	if (v) {
+		return v->value;
+	}
+	v = SaveVar_Find(name);
 	return v ? v->value : NULL;
 }
 
 byte SaveVar_Set(const char *name, const char *value) {
+	int i = SaveVar_OverOwner(name);
+	if (i >= 0) {
+		SV_OverSet(i, name, value ? value : "");
+		return 1;
+	}
 	cSaveVar *v = SaveVar_Find(name);
 	if (v) {
 		if (g_Instance && strcmp(v->value ? v->value : "", value ? value : "")) {
@@ -97,6 +199,11 @@ byte SaveVar_Set(const char *name, const char *value) {
 }
 
 void SaveVar_Delete(const char *name) {
+	int i = SaveVar_OverOwner(name);
+	if (i >= 0) {
+		SV_OverSet(i, name, NULL);
+		return;
+	}
 	cSaveVar **link = &g_SaveVars;
 	while (*link && strcmp((*link)->name, name)) {
 		link = &(*link)->next;
@@ -118,10 +225,43 @@ void SaveVars_Each(void (*fn)(const char *name, const char *value, void *u), voi
 	}
 }
 
-/* deletes the variables whose name starts with prefix ("" all) */
+void SaveVars_EachSeen(void (*fn)(const char *name, const char *value, void *u), void *u) {
+	for (cSaveVar *v = g_SaveVars; v; v = v->next) {
+		const char *seen = SaveVar_Get(v->name);
+		if (seen) {
+			fn(v->name, seen, u);
+		}
+	}
+	int i = g_Mp2 && g_Instance ? Players_Current() : -1;
+	if (i < 0 || i >= PLAYERS_MAX) {
+		return;
+	}
+	for (cSaveVar *v = g_OverVars[i]; v; v = v->next) {
+		if (v->value && !SaveVar_Find(v->name)) {
+			fn(v->name, v->value, u);
+		}
+	}
+}
+
+/* deletes the variables whose name starts with prefix ("" all); a player's own prefix in its context: its variables
+ * of the prefix (the world's ones read as deleted there) */
 void SaveVars_Delete(const char *prefix) {
 	size_t len = strlen(prefix);
 	cSaveVar **link = &g_SaveVars;
+	int i = prefix[0] ? SaveVar_OverOwner(prefix) : -1;
+	if (i >= 0) {
+		for (cSaveVar *v = g_SaveVars; v; v = v->next) {
+			if (!crt_strncmp(prefix, v->name, len)) {
+				SV_OverSet(i, v->name, NULL);
+			}
+		}
+		for (cSaveVar *v = g_OverVars[i]; v; v = v->next) {
+			if (!crt_strncmp(prefix, v->name, len) && v->value) {
+				SV_OverSet(i, v->name, NULL);
+			}
+		}
+		return;
+	}
 
 	while (*link) {
 		if (!crt_strncmp(prefix, (*link)->name, len)) {
@@ -191,13 +331,23 @@ int SaveVar_Inc(const char *name, int n) {
 	int deals = CrazyDeals_Count();
 	int blueprints = SaveVar_Int("NewBluePrintAvaliable");
 
-	cSaveVar *v = SaveVar_Find(name);
-	if (!v) {
-		v = SaveVar_New(name, "0");
+	int over = SaveVar_OverOwner(name);
+	cSaveVar *v = over >= 0 ? NULL : SaveVar_Find(name);
+	int value;
+	if (over >= 0) {
+		char text[16];
+		const char *was = SaveVar_Get(name);
+		value = (was ? crt_atoi(was) : 0) + n;
+		Str_PrintfQuiet(text, sizeof(text), "%d", value);
+		SV_OverSet(over, name, text);
+	} else {
+		if (!v) {
+			v = SaveVar_New(name, "0");
+		}
+		value = crt_atoi(v->value) + n;
+		cString_Printf(&v->value, "%d", value);
 	}
-	int value = crt_atoi(v->value) + n;
-	cString_Printf(&v->value, "%d", value);
-	if (g_Instance && n) {
+	if (g_Instance && n && over < 0) {
 		char old[16];
 		Str_PrintfQuiet(old, sizeof(old), "%d", value - n);
 		Coop_SaveVarChanged(name, old, 1);
