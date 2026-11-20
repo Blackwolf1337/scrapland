@@ -167,11 +167,24 @@ static void ReplicaEnt_Apply(cEntity *e, const NetRepJVal *v) {
 		char buf[NETREP_JSTR];
 		char *s = buf;
 		Str_Copy(buf, v->u.s, sizeof(buf));
-		if (!strcmp(name, "LinkModel") && buf[0] != ',' && Entity_IsType(e, TYEN_OBJECT) && Obj(e)->mod.link.target) {
+		if (!strcmp(name, "LinkModel") && buf[0] == ',' && Entity_IsType(e, TYEN_OBJECT) && !Obj(e)->mod.link.target) {
+			/* the unlink of a link the client left undone (below) */
+			break;
+		}
+		if (!strcmp(name, "LinkModel") && buf[0] != ',' && Entity_IsType(e, TYEN_OBJECT)) {
+			char obj[NETREP_JSTR];
+			Str_PrintfQuiet(obj, sizeof(obj), "%.*s", (int)strcspn(buf, ","), buf);
 			/* a new link of a linked replica: the scripts' unlink before it is not in the journal (the editor's end
 			 * links the platform's ship again, include/scrap/uichan.h) */
-			char *un = ",";
-			Entity_VarS(e, name, &un, 1);
+			if (Obj(e)->mod.link.target) {
+				char *un = ",";
+				Entity_VarS(e, name, &un, 1);
+			}
+			/* a link to an entity the client does not have (a ship of another player the parking made: Sputnik's
+			 * screen of a -mp2 player) stays undone: the replica's place comes from the instance */
+			if (!World_FindEntity(obj)) {
+				break;
+			}
 		}
 		Entity_VarS(e, name, &s, 1);
 		break;

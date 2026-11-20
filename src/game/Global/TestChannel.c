@@ -1615,7 +1615,6 @@ static void TC_Line(tcBuf *b, const char *line) {
 		RepEnt_Mirror(b, arg);
 		return;
 	}
-	/* pres: the records of the presentation interface sent and played (include/scrap/pres.h) */
 	/* ui [state [player]]: the UI transaction channel (include/scrap/uichan.h) */
 	if (TC_Verb(line, "ui", &arg)) {
 		Ui_Status(b, arg);
@@ -1635,6 +1634,7 @@ static void TC_Line(tcBuf *b, const char *line) {
 		TC_Add(b, "used\n", -1);
 		return;
 	}
+	/* pres: the records of the presentation interface sent and played (include/scrap/pres.h) */
 	if (TC_Verb(line, "pres", &arg)) {
 		if (arg && !strncmp(arg, "ship ", 5)) {
 			TC_PresShip(b, arg + 5);
