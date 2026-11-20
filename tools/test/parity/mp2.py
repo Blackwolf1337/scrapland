@@ -527,11 +527,12 @@ def gate_numbers(r):
     if g == 'classes':
         lv = r.get('levels', [])
         return '%d levels: mirror %d, class gaps %d, definitions %d, client sim/create/purge/noclass %d, pres %d, ' \
-            'crashes %d%s' % (len(lv), *[sum(x.get(k) or 0 for x in lv) for k in ('mirror', 'classes', 'defs')],
+            'unresolved player reads %d, crashes %d%s' % (
+                len(lv), *[sum(x.get(k) or 0 for x in lv) for k in ('mirror', 'classes', 'defs')],
                               sum(sum(x.get(k) or 0 for k in ('start_sim', 'start_create', 'start_purge', 'start_noclass',
                                                               'sim', 'create', 'purge', 'noclass')) for x in lv),
                               sum(sum(x.get(k) or 0 for k in ('unforwarded', 'double', 'missing')) for x in lv),
-                              sum(x.get('crash') or 0 for x in lv),
+                              sum(x.get('norule') or 0 for x in lv), sum(x.get('crash') or 0 for x in lv),
                               ', could not run: ' + ','.join(r['errors']) if r.get('errors') else '')
     if g == 'weapons':
         return '; '.join('%s %s hits %s deaths, mirror %s/%s, census %s' % (

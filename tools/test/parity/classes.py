@@ -6,8 +6,8 @@ headless -mp2 instance (sandbox) and one joined headless -mp2 client (SCRAP_PLAY
   - census.py --classes: the replicated entities by class and kind (missing, extra, state),
   - defcmp.py: the engine and module variables the client's level start must make as the server's,
   - the audits of both sides: the client's level start and its steady state (client.sim.call, client.script.create,
-    client.purge, client.noclass, client.def.skip), pres.unforwarded and pres.double of the instance, pres.double and
-    pres.missing of the client,
+    client.purge, client.noclass, client.def.skip), pres.unforwarded, pres.double and the unresolved player reads
+    (player.world.norule) of the instance, pres.double and pres.missing of the client,
   - a crash of either side (FATAL ERROR, AddressSanitizer, a signal; the instance's known exit check
     g_CountSprite2D == 0 is not counted).
 
@@ -39,7 +39,7 @@ ENV = {'SCRAP_NO_MSGBOX': '1', 'PULSE_SERVER': 'unix:/nonexistent', 'PIPEWIRE_RE
        'SDL_AUDIODRIVER': 'dummy', 'SDL_VIDEODRIVER': 'dummy', 'SCRAP_TEST_CHANNEL': '1'}
 CRASH = re.compile(r'FATAL ERROR|AddressSanitizer|LeakSanitizer|Segmentation fault|SIGSEGV|SIGABRT')
 COLUMNS = ('mirror', 'classes', 'defs', 'start_sim', 'start_create', 'start_purge', 'start_noclass', 'sim', 'create',
-           'purge', 'noclass', 'unforwarded', 'double', 'missing', 'crash')
+           'purge', 'noclass', 'unforwarded', 'double', 'missing', 'norule', 'crash')
 
 
 def ask(game, lines, level=None, timeout=60):
@@ -128,12 +128,14 @@ def run_level(a, w, level):
                    start_defskip=keys(start, 'client.def.skip'), sim=keys(ca, 'client.sim.call'),
                    create=keys(ca, 'client.script.create'), purge=keys(ca, 'client.purge'),
                    noclass=keys(ca, 'client.noclass'), unforwarded=keys(ia, 'pres.unforwarded'),
+                   norule=keys(ia, 'player.world.norule'),
                    double=keys(ia, 'pres.double') + keys(ca, 'pres.double'), missing=keys(ca, 'pres.missing'))
         res['client_rows'] = [r for r in start.get('rows', []) + ca.get('rows', [])
                               if str(r.get('key', '')).startswith(('client.sim', 'client.script', 'client.purge',
                                                                    'client.noclass', 'pres.missing'))][:40]
         res['instance_rows'] = [r for r in ia.get('rows', [])
-                                if str(r.get('key', '')).startswith(('pres.unforwarded', 'pres.double'))][:40]
+                                if str(r.get('key', '')).startswith(('pres.unforwarded', 'pres.double',
+                                                                     'player.world.norule'))][:40]
     finally:
         if cli:
             cli.terminate()
@@ -168,14 +170,14 @@ def total(r):
 
 def table(results):
     head = ['level', 'mirror', 'classes', 'defs', 'start sim/create/purge/noclass', 'sim/create/purge/noclass',
-            'pres unforwarded/double/missing', 'crash']
+            'pres unforwarded/double/missing', 'unresolved player reads', 'crash']
     lines = ['| ' + ' | '.join(head) + ' |', '|' + '---|' * len(head)]
     for r in results:
         n = lambda k: 'n/a' if r.get(k) is None else str(r[k])
-        lines.append('| %s | %s | %s | %s | %s/%s/%s/%s | %s/%s/%s/%s | %s/%s/%s | %s |' % (
+        lines.append('| %s | %s | %s | %s | %s/%s/%s/%s | %s/%s/%s/%s | %s/%s/%s | %s | %s |' % (
             r['level'], n('mirror'), n('classes'), n('defs'), n('start_sim'), n('start_create'), n('start_purge'),
             n('start_noclass'), n('sim'), n('create'), n('purge'), n('noclass'), n('unforwarded'), n('double'),
-            n('missing'), n('crash')))
+            n('missing'), n('norule'), n('crash')))
     return lines
 
 
