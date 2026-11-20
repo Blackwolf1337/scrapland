@@ -516,6 +516,14 @@ actEventFilter_t NetScene_Filter(cEntity *e) {
 	return ns.cOn && !strcmp(e->name, ns.cEnt) ? NetScene_SceneEvent : NetScene_NoEvent;
 }
 
+byte NetScene_Exact(cEntity *e) {
+	if (!ns.cOn || !e->name) {
+		return 0;
+	}
+	const cEntity *l = Entity_IsType(e, TYEN_OBJECT) ? Obj(e)->mod.link.target : NULL;
+	return !strcmp(e->name, ns.cEnt) || (l && l->name && !strcmp(l->name, ns.cEnt));
+}
+
 void NetScene_ClientReset(void) {
 	ns.cOn = 0;
 	ns.pathOn = 0;

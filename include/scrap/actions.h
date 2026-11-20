@@ -242,6 +242,9 @@ typedef byte (*actEventFilter_t)(const cActEvent *ev);
  * now (s, < 0 none), the rate (< 0: not known, 1) goes faster or slower until the layer is there, 0 stops it */
 void cActCtrl_NetDrive(cActCtrl *self, const uint16_t *act, const float *rate, const float *target, int layers,
 	float dt, actEventFilter_t fire);
+/* the layers of a replica at exactly the times of the network (a scene's entities, include/scrap/netscene.h): the
+ * model set to each target time and standing there, the events up to it fired (the passing ones) */
+void cActCtrl_NetSet(cActCtrl *self, const uint16_t *act, const float *target, int layers, actEventFilter_t fire);
 /* layer i (> 0) stopped */
 void cActCtrl_StopChan(cActCtrl *self, int i);
 byte cActCtrl_IsActive(void *ctrl, const char *action);

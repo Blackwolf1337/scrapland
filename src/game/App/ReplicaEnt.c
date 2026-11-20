@@ -661,7 +661,13 @@ void ReplicaEnt_Present(cEntity *e, int kind, const NetRepState *a, const NetRep
 			target[l] = ia && ia == ib && tb >= ta ? ta + (tb - ta) * f : ia ? ta : -1.0f;
 		}
 		w->actCtrl->walkSpeed = ReplicaEnt_Sec(a->x[REPX_WALK]);
-		cActCtrl_NetDrive(w->actCtrl, act, rates, target, 4, dt, NetScene_Filter(e));
+		if (NetScene_Exact(e)) {
+			/* the scene entity and its actors stand at the server's times of the moment drawn: the camera, the
+			 * actors and the scene's own events at the server's scene time, from its first frame on */
+			cActCtrl_NetSet(w->actCtrl, act, target, 4, NetScene_Filter(e));
+		} else {
+			cActCtrl_NetDrive(w->actCtrl, act, rates, target, 4, dt, NetScene_Filter(e));
+		}
 	}
 	if (kind == NETREP_CHAR) {
 		/* the head turns with the view by this lock (WCE_ViewLockBlend, Present) */

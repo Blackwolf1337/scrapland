@@ -128,6 +128,9 @@ byte NetScene_ClientSkip(void);
 /* the events replica e fires: the presentation events (Event_IsPresent); on the replica of the scene entity of the
  * scene that plays here also the scene's own texts and streams, on that of another player's scene none */
 actEventFilter_t NetScene_Filter(struct cEntity *e);
+/* replica e is the scene entity of the scene that plays here or an entity linked to it (an actor): its layers are
+ * set to the server's times exactly (cActCtrl_NetSet) */
+byte NetScene_Exact(struct cEntity *e);
 /* the connection is gone */
 void NetScene_ClientReset(void);
 
