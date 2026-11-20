@@ -100,7 +100,7 @@ typedef struct NetPlMotion {
  * first NETPL_O_COMMON of every kind, then the kind's own */
 enum {
 	NETPL_O_POS = 0, NETPL_O_VEL = 3, NETPL_O_ANG = 6, NETPL_O_ROTVEL = 9,
-	NETPL_O_LIFE = 12,				/* the server's damage: taken, not a correction (NETPL_D_LIFE) */
+	NETPL_O_LIFE = 12,				/* the life (a ship's armour weighs: its acceleration follows it) */
 	NETPL_O_COMMON = 13,
 	/* characters */
 	NETPL_O_VIEW = NETPL_O_COMMON, NETPL_O_VIEWVEL = NETPL_O_VIEW + 3, NETPL_O_FALLVEL = NETPL_O_VIEWVEL + 3,
@@ -110,7 +110,7 @@ enum {
 	NETPL_O_CHAR = NETPL_O_ACTTIME + 4,
 	/* ships */
 	NETPL_O_SPEED = NETPL_O_COMMON, NETPL_O_THRUST, NETPL_O_TURNX, NETPL_O_TURNY, NETPL_O_ROLL, NETPL_O_BOOST, NETPL_O_PUSHTIME,
-	NETPL_O_PUSH, NETPL_O_CLOUD = NETPL_O_PUSH + 3, NETPL_O_EMI, NETPL_O_ACMASS,
+	NETPL_O_PUSH, NETPL_O_CLOUD = NETPL_O_PUSH + 3, NETPL_O_EMI,
 	NETPL_O_SHIP,
 	/* the scripted move (both, after the kind's) */
 	NETPL_O_MOVETIME = 0, NETPL_O_MOVELEN, NETPL_O_MOVEPOS, NETPL_O_MOVEANG = NETPL_O_MOVEPOS + 3,
@@ -131,7 +131,8 @@ enum {
 #define NETPL_D_ACT 0x08			/* the actions of the layers, their times */
 #define NETPL_D_STATE 0x10			/* the timed states: boost, cloud, EMI, energy, falling, walking, push */
 #define NETPL_D_MOVE 0x20			/* the scripted move */
-#define NETPL_D_LIFE 0x40			/* the life (a hit of the world): taken from the server, not counted a correction */
+#define NETPL_D_LIFE 0x40			/* the life (the server's damage): taken, not counted as a correction */
+#define NETPL_D_BITS 7
 
 /* the input into the controls of the entity (local: the client's own, its action buttons stay off but the fire of
  * a NetPl_LocalWeapon outside a replay) */

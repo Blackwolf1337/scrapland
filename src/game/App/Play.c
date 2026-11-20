@@ -130,7 +130,7 @@ static struct {
 	byte haveMoved;						/* 0 for a new own entity: its first state hands it over (smoothed, no correction) */
 	uint32_t jumps;						/* the server's moves taken as jumps */
 	uint32_t handovers;
-	uint32_t corrBy[6];					/* corrections by NETPL_D_ bit */
+	uint32_t corrBy[NETPL_D_BITS];		/* corrections by NETPL_D_ bit */
 } play = { .slot = -1, .player = -1 };
 
 byte Play_Mute(const char *what, const char *site) {
@@ -951,7 +951,7 @@ void Play_OwnUpdate(uint32_t tick, const NetRepState *st) {
 }
 
 void Play_OwnState(const uint8_t *data, int size) {
-	static const char *const why[] = { "pos", "vel", "ang", "act", "state", "move" };
+	static const char *const why[NETPL_D_BITS] = { "pos", "vel", "ang", "act", "state", "move", "life" };
 	NetRepOwn o;
 	cEntity *e = play.e;
 
@@ -984,13 +984,16 @@ void Play_OwnState(const uint8_t *data, int size) {
 		play.handovers++;
 		NetAudit_Name(NA_PREDICT, "pred.handover:", play.kind == NETREP_SHIP ? "ship" : "char");
 	} else {
-		play.st.corr[play.st.nc++ % PLAY_ERRS] = corr;
-		play.st.corrections++;
-		play.corrTotal++;
-		for (int k = 0; k < 6; k++) {
+		/* the server's damage alone is taken as it is (a hit the client could not know), not a correction */
+		if (d & ~NETPL_D_LIFE) {
+			play.st.corr[play.st.nc++ % PLAY_ERRS] = corr;
+			play.st.corrections++;
+			play.corrTotal++;
+		}
+		for (int k = 0; k < NETPL_D_BITS; k++) {
 			if (d & (1 << k)) {
 				play.corrBy[k]++;
-				NetAudit_Name(NA_PREDICT, "pred.corr:", why[k]);
+				NetAudit_Name(NA_PREDICT, k == 6 ? "pred.took:" : "pred.corr:", why[k]);
 			}
 		}
 	}
@@ -1049,9 +1052,9 @@ void Play_Status(void) {
 		play.tick, play.st.states, play.st.unknown, (double)e[0], (double)e[1], (double)e[2], (double)e[3],
 		play.st.corrections, (double)c[0], (double)c[1], (double)c[2], (double)c[3], play.st.replayed);
 	if (g_Mp2) {
-		Con_Printf("play: -mp2 corrections by pos %u vel %u ang %u act %u state %u move %u, %u jumps, %u handovers\n",
-			play.corrBy[0], play.corrBy[1], play.corrBy[2], play.corrBy[3], play.corrBy[4], play.corrBy[5], play.jumps,
-			play.handovers);
+		Con_Printf("play: -mp2 corrections by pos %u vel %u ang %u act %u state %u move %u, life taken %u, %u jumps, "
+			"%u handovers\n", play.corrBy[0], play.corrBy[1], play.corrBy[2], play.corrBy[3], play.corrBy[4],
+			play.corrBy[5], play.corrBy[6], play.jumps, play.handovers);
 	}
 }
 
