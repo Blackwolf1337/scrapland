@@ -24,6 +24,7 @@
 #include "scrap/play.h"
 #include "scrap/players.h"
 #include "scrap/replicate.h"
+#include "scrap/repent.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/scrapworld.h"
@@ -445,7 +446,8 @@ byte Places_LevelInit(void) {
 	for (int i = 0; i < l->nnouse; i++) {
 		cEntity *e = World_FindEntity(l->nouse[i]);
 		int zero = 0;
-		if (e && Entity_IsType(e, TYEN_WITH_LIFE)) {
+		/* a -mp2 world opens its interface on the player's client (include/scrap/uichan.h) */
+		if (e && Entity_IsType(e, TYEN_WITH_LIFE) && !(g_Mp2 && l->nouseUi[i])) {
 			Entity_VarI(e, "ArrowCanUse", &zero, 1);
 		}
 	}

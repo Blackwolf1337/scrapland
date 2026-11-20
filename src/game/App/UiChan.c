@@ -35,6 +35,7 @@
 #define UI_MSGMAX 8192				/* an open or a transaction with the hangar's ships */
 #define UI_TEXT 1024				/* a title, a text box's text, a save variable's value */
 #define UI_HANGARS 10				/* Hangar.HangarShip1-9 and the spare ship (Hangar.iHangarShip 9) */
+#define UI_PLATFORM "DM_Door_EditShip_00"	/* the ship editor's platform (ShipEdit.editPlatform) */
 
 static const char *const ui_names[UI_K_COUNT] = { "-", "yesno", "textbox", "conv", "metro", "sputnik", "shipedit",
 	"mission" };
@@ -64,6 +65,7 @@ static struct {
 	byte cui;						/* the interface of the instance shown here, 0 */
 	uint16_t cseq;
 	byte answering;					/* the instance's values of an interface the client asked for are being shown */
+	cEntity *kept;					/* the replica the shown interface plays here (Ui_ClientKeeps), NULL */
 	uint32_t copens[UI_K_COUNT], cdones[UI_K_COUNT], crefused[UI_K_COUNT];
 } ui;
 
@@ -424,6 +426,23 @@ static void Ui_SputnikVar(const char *name, const char *value, void *u) {
 	}
 }
 
+/* the world's part of the end of Sputnik's screen in player i's context (also after a refusal: the screen closed on
+ * the client): SaveMoney, the callback of the scripts */
+static void Ui_EndSputnik(int i) {
+	nativeVal_t cb, none;
+	Native_SetNone(&cb);
+	Native_SetNone(&none);
+	int was = Players_Enter(i);
+	if (!Mode_Import("SaveGame") || !PORT_CALL(SaveGame, SaveMoney, NULL, "") ||
+		!Mode_ModGet("SputnikInterface", "EndSputnikCallBack", &cb) ||
+		(Native_True(&cb) && (!Mode_CallArgs(&cb, NULL, NULL, 0) || !Mode_SetModVar("SputnikInterface", "EndSputnikCallBack",
+		&none)))) {
+		Native_ErrPrint();
+	}
+	Native_Free(&cb);
+	Players_Leave(was);
+}
+
 /* Sputnik's screen closed on player i's client: the ship it flies and its money as single player's SelectShip gives
  * them, checked against its rules (an intact ship of the hangar, or a destroyed one rebuilt for rebuildCost with the
  * money for it, no other change), then single player's end of the screen (SaveMoney, the destroyed ships saved, the
@@ -487,6 +506,7 @@ static void Ui_DoneSputnik(int i, NetRepReader *r) {
 	if (why) {
 		Players_Leave(was);
 		Ui_Refuse(i, UI_K_SPUTNIK, why, msg);
+		Ui_EndSputnik(i);
 		return;
 	}
 	char fly[16];
@@ -496,17 +516,8 @@ static void Ui_DoneSputnik(int i, NetRepReader *r) {
 	if (b.haveLost) {
 		SaveVar_Set("Hangar.DestroyedShips", b.lost);
 	}
-	nativeVal_t cb, none;
-	Native_SetNone(&cb);
-	Native_SetNone(&none);
-	if (!Mode_Import("SaveGame") || !PORT_CALL(SaveGame, SaveMoney, NULL, "") ||
-		!Mode_ModGet("SputnikInterface", "EndSputnikCallBack", &cb) ||
-		(Native_True(&cb) && (!Mode_CallArgs(&cb, NULL, NULL, 0) || !Mode_SetModVar("SputnikInterface", "EndSputnikCallBack",
-		&none)))) {
-		Native_ErrPrint();
-	}
-	Native_Free(&cb);
 	Players_Leave(was);
+	Ui_EndSputnik(i);
 	Con_Printf("ui: player %d flies hangar %d%s, money %d\n", i, k, rebuilt ? " (rebuilt)" : "", (int)now);
 }
 
@@ -554,10 +565,20 @@ static byte Ui_HangarWorth(const char *const ships[UI_HANGARS], const int lost[U
 	return 1;
 }
 
+/* the world's part of the editor's end in player i's context (also after a refusal: the editor closed on the
+ * client) */
+static void Ui_EndShipEdit(int i) {
+	int was = Players_Enter(i);
+	if (!ShipEdit_ClientEnded()) {
+		Native_ErrPrint();
+	}
+	Players_Leave(was);
+}
+
 /* the ship editor closed on player i's client: its hangar and money, checked against single player's prices (the money
- * it has plus the worth of its hangar stay what they were at the open: each part, ship and rebuild paid at the price
- * of single player's editor, every ship one the editor makes, the money not below 0), then applied with the editor's
- * end in the world (its way point, the ship on the platform, its callback) in the player's context */
+ * it has plus the worth of its hangar not above what they were at the open: each part, ship and rebuild paid at the
+ * price of single player's editor, every ship one the editor makes, the money not below 0), then applied with the
+ * editor's end in the world (its way point, the ship on the platform, its callback) in the player's context */
 static void Ui_DoneShipEdit(int i, NetRepReader *r) {
 	static UiHangarBack b;
 	const char *before[UI_HANGARS], *after[UI_HANGARS];
@@ -582,8 +603,9 @@ static void Ui_DoneShipEdit(int i, NetRepReader *r) {
 	} else if (!Ui_Destroyed(b.lost, lost1)) {
 		why = "hangar";
 	}
+	/* -1: no ship (an empty hangar was chosen last, as single player's editor leaves it) */
 	int fly = b.haveFly ? crt_atoi(b.fly) : 0;
-	if (!why && b.haveFly && (fly < 0 || fly >= UI_HANGARS)) {
+	if (!why && b.haveFly && (fly < -1 || fly >= UI_HANGARS)) {
 		why = "hangar";
 	}
 	long long worth0 = 0, worth1 = 0;
@@ -592,7 +614,9 @@ static void Ui_DoneShipEdit(int i, NetRepReader *r) {
 	}
 	/* the money changed in the world meanwhile stays (the transaction is the editor's change) */
 	long long now = (long long)Players_Money(i) + money - ui.pl[i].money;
-	if (!why && (long long)money + worth1 != (long long)ui.pl[i].money + worth0) {
+	/* worth no more than before: single player's editor may give less (a sale pays HangarTab.shipTotalCost, which a
+	 * ship bought just now does not have yet), never more */
+	if (!why && (long long)money + worth1 > (long long)ui.pl[i].money + worth0) {
 		why = "price";
 	}
 	if (!why && (money < 0 || now < 0)) {
@@ -604,6 +628,7 @@ static void Ui_DoneShipEdit(int i, NetRepReader *r) {
 			worth0, worth1);
 		Players_Leave(was);
 		Ui_Refuse(i, UI_K_SHIPEDIT, why, msg);
+		Ui_EndShipEdit(i);
 		return;
 	}
 	*Players_CurMoney() = (int)now;
@@ -619,10 +644,8 @@ static void Ui_DoneShipEdit(int i, NetRepReader *r) {
 	if (b.haveLost) {
 		SaveVar_Set("Hangar.DestroyedShips", b.lost);
 	}
-	if (!ShipEdit_ClientEnded()) {
-		Native_ErrPrint();
-	}
 	Players_Leave(was);
+	Ui_EndShipEdit(i);
 	Con_Printf("ui: player %d closed the ship editor (hangar %d, money %d, worth %lld)\n", i, fly, (int)now, worth1);
 }
 
@@ -715,6 +738,15 @@ void Ui_PlayerGone(int i) {
 }
 
 /* ---- client ---- */
+/* the interface shown here closed: the replica it played goes back to the instance's state */
+static void Ui_ClientClosed(void) {
+	ui.cui = 0;
+	if (ui.kept && World_FindEntity(UI_PLATFORM) == ui.kept) {
+		Obj(ui.kept)->replica = 1;
+	}
+	ui.kept = NULL;
+}
+
 
 static void Ui_ClientSend(const uint8_t *buf, int size, int k) {
 	if (Watch_SendReliable(buf, size)) {
@@ -737,7 +769,7 @@ static void Ui_ClientAnswer(int yes) {
 	if (ui.cui != UI_K_YESNO) {
 		return;
 	}
-	ui.cui = 0;
+	Ui_ClientClosed();
 	if (!PORT_CALL(Menu, BackToGame, NULL, "is", 0L, "")) {
 		Native_ErrPrint();
 	}
@@ -778,9 +810,17 @@ static void Ui_ClientEditor(const char *via) {
 	byte ok = Mode_Import("HangarTab") && Mode_SetModVar("HangarTab", "prevShip", &none) && Mode_Import("ShipEdit"), done = 0;
 	/* the platform the client's level start made went with the purge (include/scrap/repent.h): the editor takes its
 	 * replica */
-	if (ok && Native_SetEnt(&plt, "DM_Door_EditShip_00")) {
+	if (ok && Native_SetEnt(&plt, UI_PLATFORM)) {
 		ok = Mode_SetModVar("ShipEdit", "editPlatform", &plt);
 		Native_Free(&plt);
+	}
+	/* its Change animation and the events of it (ShipEdit.ChangeShip, VerifyChangeShip) run here while the editor is
+	 * open: the replica advances as an entity of the client's own */
+	ui.kept = World_FindEntity(UI_PLATFORM);
+	if (ui.kept && Entity_IsType(ui.kept, TYEN_OBJECT)) {
+		Obj(ui.kept)->replica = 0;
+	} else {
+		ui.kept = NULL;
 	}
 	ok = ok && Junkyard_PlatformShip();
 	if (ok && dot && dot - via < UI_NAME) {
@@ -922,7 +962,7 @@ void Ui_ClientMessage(const uint8_t *data, int size) {
 		ui.crefused[k]++;
 		Con_Printf("ui: the instance refused the %s\n", ui_names[k]);
 	} else if (data[1] == UI_S_CLOSE && ui.cui == k && ui.cseq == seq) {
-		ui.cui = 0;
+		Ui_ClientClosed();
 		if (!PORT_CALL(Menu, BackToGame, NULL, "is", 0L, "")) {
 			Native_ErrPrint();
 		}
@@ -933,13 +973,22 @@ byte Ui_ClientIn(int k) {
 	return g_Mp2 && g_Watch && ui.cui && (!k || ui.cui == k);
 }
 
+byte Ui_ClientMoney(void) {
+	return Ui_ClientIn(UI_K_SPUTNIK) || Ui_ClientIn(UI_K_SHIPEDIT);
+}
+
+byte Ui_ClientKeeps(const cEntity *e) {
+	return e && e == ui.kept;
+}
+
+
 byte Ui_ClientConv(const char *cls) {
 	uint8_t buf[16 + UI_NAME];
 	NetRepBuf w;
 	if (!Ui_ClientIn(UI_K_CONV)) {
 		return 0;
 	}
-	ui.cui = 0;
+	Ui_ClientClosed();
 	if (!PORT_CALL(Menu, BackToGame, NULL, "is", 0L, "")) {
 		Native_ErrPrint();
 	}
@@ -958,7 +1007,7 @@ byte Ui_ClientHangar(int k) {
 	if (!Ui_ClientIn(k)) {
 		return 0;
 	}
-	ui.cui = 0;
+	Ui_ClientClosed();
 	Ui_ClientBegin(&w, buf, sizeof(buf), k);
 	NetRep_PutU32(&w, (uint32_t)*Players_CurMoney());
 	Ui_PutVars(&w, k == UI_K_SPUTNIK ? ui_sputnikBack : ui_hangarVars);

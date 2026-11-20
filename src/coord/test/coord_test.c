@@ -648,7 +648,7 @@ static void Test_Places(void) {
 		"\tpolice on\n"
 		"\tspawn DM_Player_Spawn 0 0 0 *\n"
 		"\trepos Functionary 3\n"
-		"\tnouse DM_EditKeyboard\n"
+		"\tnouse DM_EditKeyboard ui\n"
 		"\tai 6000\n"
 		"place QF listed\n";
 	CHECK(PlaceDef_Parse(ok, &t, err, sizeof(err)));
@@ -663,7 +663,8 @@ static void Test_Places(void) {
 	CHECK(g && !strcmp(g->opt[0].level, "TownHall") && !g->opt[0].gate[0] && !strcmp(g->opt[1].level, "Junkyard") &&
 		!strcmp(g->opt[1].gate, "Lift"));
 	CHECK(l && l->traffic == 12 && !strcmp(l->ships, "SBetty1,SFunc1") && l->rail[2] == 3 && l->police == 1);
-	CHECK(l && l->nspawns == 1 && l->nrepos == 1 && l->repos[0].n == 3 && l->nnouse == 1 && l->intraffic[0] == -1);
+	CHECK(l && l->nspawns == 1 && l->nrepos == 1 && l->repos[0].n == 3 && l->nnouse == 1 && l->nouseUi[0] == 1 &&
+		l->intraffic[0] == -1);
 	CHECK(l && l->aiStep == 6000.0f);
 	l = PlaceDef_Level(&t, "TownHall");
 	CHECK(l && !l->listed && l->traffic == -1 && l->police == -1);

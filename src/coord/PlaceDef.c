@@ -194,10 +194,11 @@ static int Pd_Line(PlaceTable *t, PlaceLevel *l, char **tok, int n, int ln, char
 		return 1;
 	}
 	if (Pd_Eq(k, "nouse")) {
-		if (n != 2 || l->nnouse >= PLACE_NOUSE || !Pd_Copy(l->nouse[l->nnouse], tok[1], PLACE_NAME)) {
-			return Pd_Err(err, cap, ln, "nouse <entity>", NULL);
+		if ((n != 2 && (n != 3 || !Pd_Eq(tok[2], "ui"))) || l->nnouse >= PLACE_NOUSE ||
+			!Pd_Copy(l->nouse[l->nnouse], tok[1], PLACE_NAME)) {
+			return Pd_Err(err, cap, ln, "nouse <entity> [ui]", NULL);
 		}
-		l->nnouse++;
+		l->nouseUi[l->nnouse++] = n == 3;
 		return 1;
 	}
 	if (Pd_Eq(k, "ai")) {

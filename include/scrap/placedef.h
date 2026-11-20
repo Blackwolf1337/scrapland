@@ -19,7 +19,9 @@
  *   intraffic <light> <medium> <heavy>   the indoor traffic behind the windows
  *   police on|off                  the police waves outdoors
  *   spawn <pos>                    a spawn point of the players (the level's own when there is none)
- *   nouse <entity>                 an entity of the level nobody can use (the ship editor's keypad)
+ *   nouse <entity> [ui]            an entity of the level nobody can use (the ship editor's keypad); ui: on a -mp2
+ *                                  instance it is usable, its interface opens on the player's client
+ *                                  (include/scrap/uichan.h)
  *   ai <step>                      a level without a graph of the AI gets one made from its geometry when it starts:
  *                                  the free space around its DM_NodeIniAI dummies in a grid of that step (units)
  * A position <pos> is "<dummy|-> <x> <y> <z> <yaw|*>": with a dummy of the level the numbers are added to its
@@ -81,6 +83,7 @@ typedef struct PlaceLevel {
 	} repos[PLACE_REPOS];
 	PlacePos spawn[PLACE_SPAWNS];
 	char nouse[PLACE_NOUSE][PLACE_NAME];
+	int nouseUi[PLACE_NOUSE];		/* 1: usable on a -mp2 instance */
 	int traffic;					/* -1 the level's */
 	char ships[PLACE_LIST];			/* "" the level's */
 	int rail[3];					/* -1 the level's */

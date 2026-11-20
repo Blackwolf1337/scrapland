@@ -100,8 +100,14 @@ void Ui_PlayerGone(int i);
 
 /* a message of the instance */
 void Ui_ClientMessage(const uint8_t *data, int size);
-/* the client shows an interface of kind ui of the instance */
+/* the client shows an interface of kind ui of the instance (0: any) */
 byte Ui_ClientIn(int ui);
+/* the money of the client is the one of the interface shown (Sputnik's screen, the ship editor spend it): the
+ * instance's status of the player does not overwrite it until the transaction */
+byte Ui_ClientMoney(void);
+/* the replica e is the client's own while its interface shows: the ship editor's platform plays the editor's
+ * animations here, not the instance's state (Watch.c leaves it alone) */
+byte Ui_ClientKeeps(const struct cEntity *e);
 /* the conversor's pick on the client (cls "": Escape): to the instance, the interface closes; 0 when no interface of
  * the instance is open (single player goes on) */
 byte Ui_ClientConv(const char *cls);

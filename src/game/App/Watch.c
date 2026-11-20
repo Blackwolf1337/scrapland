@@ -614,6 +614,10 @@ static void Watch_Place(int slot, WatchProxy *p, double rt, float dt) {
 	uint16_t act[NETREP_LAYERS];
 	const WatchSample *a, *b;
 
+	if (Ui_ClientKeeps(e)) {
+		/* the platform of the ship editor shown here plays the editor's animations (include/scrap/uichan.h) */
+		return;
+	}
 	Watch_Pick(p, rt, &a, &b, &f, &ext);
 	const NetRepState *sa = &a->st, *sb = &b->st;
 	float span = (float)(b->t - a->t);

@@ -444,7 +444,9 @@ static byte Se_RustyOnPlatform(const nativeVal_t *rusty, nativeVal_t *out) {
 
 /* rusty and RustyOnPlatform(rusty): 1, 0, -1 */
 static int Se_RustyOn(const nativeVal_t *rusty) {
-	if (!Native_True(rusty)) {
+	/* not in the original: the editor of a -mp2 instance on its player's client leaves Rusty to the instance (he is
+	 * its character, include/scrap/uichan.h) */
+	if (!Native_True(rusty) || Ui_ClientIn(UI_K_SHIPEDIT)) {
 		return 0;
 	}
 	nativeVal_t v = { 0 };
