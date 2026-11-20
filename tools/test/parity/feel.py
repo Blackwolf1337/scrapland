@@ -407,17 +407,37 @@ def player_car(ents, near):
     return cars[0] if cars else None
 
 
+def own_ship(inst_dir, player):
+    """-mp2: the player's own ship of single player's flows (the instance's log line "player <i>'s own ship <name>")"""
+    try:
+        with open(inst_dir.log, errors='replace') as f:
+            found = re.findall(r"instance: player %d's own ship (\S+)" % player, f.read())
+    except OSError:
+        found = []
+    return found[-1] if found else None
+
+
 def board_mp2(a, g, inst_dir, side):
-    """-mp2: the player's switch through the instance's test line "switch <player>" into a parked ship of the level
-    (Parked<n>, the nearest to its character anywhere: the instance puts the player beside it first), with single
-    player's boarding flow. Not a called ship: one called to a joined player's spawn stood on a parking box and parked
-    again at once (Parking.OnPark: the pilot gets out); nor the use of its own PlayerShip<n>, which did not end for a
-    joined player (stage 3.5 hand-back)"""
+    """-mp2: the player boards its own ship as single player does (PlayerShip<n> of Parking.PlayerJoin, the use of its
+    arrow through the instance's test line "use <player> <ship>": Parking.UseShip as single player's feel side calls
+    it); without one the switch ("switch <player>") into the nearest parked ship of the level (Parked<n>: the instance
+    puts the player beside it first). Not a called ship: one called to a joined player's spawn stood on a parking box
+    and parked again at once (Parking.OnPark: the pilot gets out)"""
     rows = read_log(os.path.join(a.scratch, 'feel-%s%s.csv' % (side, '-' + a.cell if a.cell else '')))
     if not rows:
         return
     p = rows[-1]['pos']
     _, player = player_char(a, inst_dir, p)
+    ship = own_ship(inst_dir, player) if player is not None else None
+    # a joined player's own ship can be inactive (Parking.OnParkingOccupied hid PlayerShip<n> right after it was made,
+    # stage 3.5b hand-back): it would not fly, the parked ship then
+    if ship and "('Active', 1)" in (inst_dir.try_ask('ent %s Active' % ship, inst=a.level, timeout=10) or ''):
+        inst_dir.ask('iline goto %d %s 600 0' % (player, ship), inst=a.level)
+        time.sleep(3.0)
+        inst_dir.ask('iline use %d %s' % (player, ship), inst=a.level)
+        return
+    if ship:
+        print('feel %s: the own ship %s is inactive, a parked ship instead' % (side, ship), flush=True)
     ents = parity.parse_ents(inst_dir.try_ask('entinfo', inst=a.level, timeout=20))
     ships = sorted((e for e in ents if e['cls'] == 'Car' and re.match(r'^Parked\d+$', e['name'])),
                    key=lambda e: dist(e['pos'], p))
@@ -464,22 +484,29 @@ def lift(a, g, inst_dir, side):
 
 
 def bump(a, g, inst_dir, side):
-    """the own ship put still where a rail traffic ship of this game will be in BUMP_AHEAD s; the window's start (ns),
-    the ship's name and the own speed before, or None without one near"""
+    """the own ship put still where a rail traffic ship will be in BUMP_AHEAD s (single player's and the old path's
+    client's own rail traffic; -mp2: the instance's, the client has replicas of it); the window's start (ns), the ship's
+    name and the own speed before, or None without one near"""
     rows = read_log(os.path.join(a.scratch, 'feel-%s%s.csv' % (side, '-' + a.cell if a.cell else '')))
     if not rows:
         return None
     p = rows[-1]['pos']
-    ents = parity.parse_ents(g.try_ask('entinfo %.0f %.0f %.0f 60000' % p, timeout=10))
+    if a.mp2 and side != 'sp':
+        def look(line, timeout=20):
+            return inst_dir.try_ask(line, inst=a.level, timeout=timeout)
+    else:
+        def look(line, timeout=20):
+            return g.try_ask(line, timeout=timeout)
+    ents = parity.parse_ents(look('entinfo %.0f %.0f %.0f 60000' % p, timeout=10))
     rail = sorted((e for e in ents if e['list'] in parity.RAIL and e['active']), key=lambda e: dist(e['pos'], p))
     for r in rail[:8]:
-        m = re.search(r"\('Vel', \(([-\d.e]+), ([-\d.e]+), ([-\d.e]+)\)\)", g.ask('ent %s Vel' % r['name']) or '')
+        m = re.search(r"\('Vel', \(([-\d.e]+), ([-\d.e]+), ([-\d.e]+)\)\)", look('ent %s Vel' % r['name']) or '')
         if not m:
             continue
         v = tuple(float(x) for x in m.groups())
         if dist(v, (0.0, 0.0, 0.0)) < 500.0:
             continue
-        m = re.search(r"\('Pos', \(([-\d.e]+), ([-\d.e]+), ([-\d.e]+)\)\)", g.ask('ent %s Pos' % r['name']) or '')
+        m = re.search(r"\('Pos', \(([-\d.e]+), ([-\d.e]+), ([-\d.e]+)\)\)", look('ent %s Pos' % r['name']) or '')
         if not m:
             continue
         at = tuple(float(x) for x in m.groups())
