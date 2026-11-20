@@ -260,8 +260,14 @@ const char *Pres_ModSite(void) {
 	if (!pres.calls) {
 		return "-";
 	}
-	int k = pres.calls > PRES_CALLS ? PRES_CALLS - 1 : pres.calls - 1;
-	Str_PrintfQuiet(pres.site, sizeof(pres.site), "%s.%s", pres.callMod[k], pres.callFunc[k]);
+	/* the innermost three, the caller first: the engine's own natives (Scrap.SetCam) say little alone */
+	int top = pres.calls > PRES_CALLS ? PRES_CALLS : pres.calls;
+	int len = 0;
+	pres.site[0] = 0;
+	for (int k = top > 3 ? top - 3 : 0; k < top && len < (int)sizeof(pres.site); k++) {
+		len += Str_PrintfQuiet(pres.site + len, sizeof(pres.site) - (size_t)len, "%s%s.%s", len ? ">" : "",
+			pres.callMod[k], pres.callFunc[k]);
+	}
 	return pres.site;
 }
 

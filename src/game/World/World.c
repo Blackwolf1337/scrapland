@@ -1000,21 +1000,23 @@ int cWorld_SetCam(cWorld *world, int i, const char *name) {
 	cEntity *cam = NULL;
 
 	CHECK(name != NULL);
-	if (i == 0) {
-		Players_NoteCam(name);
-		/* the client's camera is its own (Play.c); the scripts' cameras of a player are stage 4.5's scenes */
-		if (g_Mp2 && !InitSteps_Entering()) {
-			Pres_NoRoute(NA_CAMERA, "pres.unforwarded:camera:", Pres_ModSite());
-		}
-	}
 	if (*name) {
 		cPtrItem *it = PtrTable_Find(&world->entities, name, HashTable_Slot(&world->entities, name));
 		if (it) {
 			cam = it->value;
 		}
-		if (!cam || !Entity_IsType(cam, "Cam")) {
-			return 2;
+	}
+	if (i == 0) {
+		Players_NoteCam(name);
+		/* the client's camera is its own (Play.c); a camera path of the scripts (boarding, parking) is a scene of a
+		 * player, stage 4.5's: counted apart */
+		if (g_Mp2 && !InitSteps_Entering()) {
+			byte path = cam && Entity_IsType(cam, TYEN_CAMPATH);
+			Pres_NoRoute(NA_CAMERA, path ? "pres.scene:camera:" : "pres.unforwarded:camera:", Pres_ModSite());
 		}
+	}
+	if (*name && (!cam || !Entity_IsType(cam, "Cam"))) {
+		return 2;
 	}
 	char *key = world->camName[i];
 	if (*key) {
