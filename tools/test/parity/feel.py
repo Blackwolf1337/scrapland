@@ -539,8 +539,8 @@ def analyse(rows, presses, hold, auto=False, within=None):
 def table(results, out):
     lines = ['| side | start on foot | walk input / move ms (median, mean) | walk jitter entity / camera (rms, p95) | walk corr | '
              'fly input / move ms | fly jitter entity / camera (rms, p95) | fly corr | bump hits/tries, corr | '
-             'frame ms p50/p95/p99/max | fps | boost move ms (mean, p95) | corr/min |',
-             '|---|---|---|---|---|---|---|---|---|---|---|---|---|']
+             'frame ms p50/p95/p99/max | fps | boost move ms (mean, p95) | fire ms (mean, p95) | corr/min |',
+             '|---|---|---|---|---|---|---|---|---|---|---|---|---|---|']
 
     def j(x):
         return '%.2f/%.2f' % (x['rms'], x['p95']) if x else '-'
@@ -550,7 +550,7 @@ def table(results, out):
             continue
         w, f, fr = r.get('walk') or {}, r.get('fly') or {}, r.get('frames') or {}
         b = r.get('bump') or {}
-        lines.append('| %s | %s (%s%s) | %s / %s, %s | %s ; %s | %s | %s / %s | %s ; %s | %s | %s | %s/%s/%s/%s | %s | %s | %s |' % (
+        lines.append('| %s | %s (%s%s) | %s / %s, %s | %s ; %s | %s | %s / %s | %s ; %s | %s | %s | %s/%s/%s/%s | %s | %s | %s | %s |' % (
             r['side'], 'yes' if r.get('start_on_foot') and r.get('after_click_kind', 'C') == 'C' else 'NO',
             r.get('start_kind'), ', after a click %s' % r['after_click_kind'] if 'after_click_kind' in r else '',
             w.get('input_ms'),
@@ -559,6 +559,7 @@ def table(results, out):
             f.get('corrections'), '%s/%s, %s' % (b.get('hits'), b.get('tries'), b.get('corrections')) if b else '-',
             fr.get('p50'), fr.get('p95'), fr.get('p99'), fr.get('max'), fr.get('fps'),
             '%s, %s' % ((r.get('boost') or {}).get('latency_mean'), (r.get('boost') or {}).get('latency_p95')),
+            '%s, %s' % ((r.get('fire') or {}).get('latency_mean'), (r.get('fire') or {}).get('latency_p95')),
             r.get('corr_per_min')))
     lines += ['', 'Frame time histogram (ms buckets <8, 8-12, 12-17.5, 17.5-20, 20-25, 25-34, 34-50, >50):', '']
     for r in results:

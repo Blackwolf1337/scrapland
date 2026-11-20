@@ -494,7 +494,7 @@ float NetRepPredHist_Error(const NetRepPredHist *h, uint32_t tick, const float *
  * Wire: 'R', tick u32, kind u8, moved u8, flags u8, count u8, the floats (u32 bits), layers u8, each act u16,
  * defLoop u16 */
 #define NETREP_MSG_OWN 'R'
-#define NETREP_OWN_F 48				/* floats at most */
+#define NETREP_OWN_F 64				/* floats at most */
 #define NETREP_OWN_LAYERS 4
 #define NETREP_OWN_MAX (10 + NETREP_OWN_F * 4 + 1 + NETREP_OWN_LAYERS * 2 + 2)	/* bytes of a message */
 

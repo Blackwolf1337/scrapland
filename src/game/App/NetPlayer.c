@@ -3,9 +3,11 @@
  * of a correction, see include/scrap/play.h. Not in the original.
  */
 #include <math.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "scrap/actions.h"
+#include "scrap/console.h"
 #include "scrap/global.h"
 #include "scrap/mathlib.h"
 #include "scrap/input.h"
@@ -120,7 +122,41 @@ void NetPl_Slot(cEntity *e, const NetRepInput *in, byte local, byte replay, int 
 		InputTape_SoloApply(e, part);
 		iv = InputTape_SoloInterval(part, iv);
 	}
+	float hit0 = NetPl_Kind(e) == NETREP_SHIP ? Veh(e)->hitTime : 0.0f;
+	vec3_t from0 = e->pos;
 	Obj_Tick(e, iv);
+	{	/* DIAG s35 (temporary) */
+		static int diag = -1;
+		if (diag < 0) {
+			const char *d = getenv("SCRAP_OWNDIAG");
+			diag = d && *d == '1';
+		}
+		if (diag && NetPl_Kind(e) == NETREP_SHIP) {
+			cVehicleEntity *v = Veh(e);
+			Con_Printf("owndiag %s t%u p%d r%d iv %.5f acc %.3f str %.3f vs %.3f hr %.3f vr %.3f b%d f%d thr %.1f frw %.1f fric %.4f am %.1f sp %.1f ms %.1f vel %.1f %.1f %.1f pos %.1f %.1f %.1f push %.2f hit %.4f tr %d/%d/%d %.1f r %.1f/%.1f\n",
+				e->name, in->tick, part, replay, (double)iv, (double)v->controls.acc, (double)v->controls.str,
+				(double)v->controls.vStr, (double)v->controls.hRot, (double)v->controls.vRot, v->controls.boostKey,
+				v->controls.fullThrust, (double)v->thrust, (double)v->frwTrust, (double)v->friction, (double)v->acMass,
+				(double)v->speed, (double)v->maxSpeed, (double)Obj(e)->vel.x, (double)Obj(e)->vel.y, (double)Obj(e)->vel.z,
+				(double)e->pos.x, (double)e->pos.y, (double)e->pos.z, (double)v->pushTime, (double)v->hitTime, v->traffic.active, v->traffic.off, v->traffic.outside, (double)v->traffic.speed, (double)v->wRadius, (double)v->wl.prim.radius);
+			if (in->tick >= 508 && in->tick <= 520) {
+				for (cEntity *o = cWorld_GetFirstEntity(g_pWorld); o; o = cEntity_Next(o)) {
+					float dx = o->pos.x - from0.x, dy = o->pos.y - from0.y, dz = o->pos.z - from0.z;
+					float dd = sqrtf(dx * dx + dy * dy + dz * dz);
+					if (o != e && dd < 2500.0f) {
+						Con_Printf("owndiag near %s mask %x d %.0f act %d\n", o->name, Entity_Mask(o), (double)dd, o->active);
+					}
+				}
+			}
+			if (v->hitTime != hit0) {
+				cEntity *t = NULL;
+				cWorld_TestSphereEntities(g_pWorld, e, 1, &from0, v->wl.prim.radius * 1.5f, &t, 0, NULL);
+				Con_Printf("owndiag hit %s by %s (%s) at %.0f %.0f %.0f\n", e->name, t ? t->name : "world",
+					t ? t->vftable == NULL ? "?" : "ent" : "-", t ? (double)t->pos.x : 0.0, t ? (double)t->pos.y : 0.0,
+					t ? (double)t->pos.z : 0.0);
+			}
+		}
+	}
 	if (taped) {
 		InputTape_SlotDone(e);
 	}
@@ -428,6 +464,7 @@ void NetPl_OwnOf(cEntity *e, uint32_t tick, uint8_t moved, NetRepOwn *o) {
 	NetPl_PutV(f + NETPL_O_VEL, &ob->vel);
 	NetPl_PutV(f + NETPL_O_ANG, &ob->ang);
 	NetPl_PutV(f + NETPL_O_ROTVEL, &ob->rotVel);
+	f[NETPL_O_LIFE] = (float)WLife(e)->life;
 	if (o->kind == NETREP_CHAR) {
 		cWalkCharEntity *w = WChar(e);
 		NetPl_PutV(f + NETPL_O_VIEW, &w->view);
@@ -467,6 +504,7 @@ void NetPl_OwnOf(cEntity *e, uint32_t tick, uint8_t moved, NetRepOwn *o) {
 		NetPl_PutV(f + NETPL_O_PUSH, &v->push);
 		f[NETPL_O_CLOUD] = v->cloud;
 		f[NETPL_O_EMI] = v->emi;
+		f[NETPL_O_ACMASS] = v->acMass;
 		o->flags |= v->cloudOn ? NETPL_OF_CLOUD : 0;
 		n = NETPL_O_SHIP;
 	} else {
@@ -528,6 +566,9 @@ int NetPl_OwnDiff(const NetRepOwn *a, const NetRepOwn *b) {
 	if (NetPl_AngDist(x + NETPL_O_ANG, y + NETPL_O_ANG) > NETPL_TOL_ANG) {
 		d |= NETPL_D_ANG;
 	}
+	if (x[NETPL_O_LIFE] != y[NETPL_O_LIFE]) {
+		d |= NETPL_D_LIFE;
+	}
 	if ((a->flags ^ b->flags) & (NETPL_OF_FALLING | NETPL_OF_WALKING | NETPL_OF_CLOUD | NETPL_OF_NOCTRL |
 		NETPL_OF_ENERGYBAR)) {
 		d |= NETPL_D_STATE;
@@ -581,6 +622,7 @@ void NetPl_OwnApply(cEntity *e, const NetRepOwn *o) {
 	NetPl_GetV(&ob->vel, f + NETPL_O_VEL);
 	NetPl_GetV(&ob->ang, f + NETPL_O_ANG);
 	NetPl_GetV(&ob->rotVel, f + NETPL_O_ROTVEL);
+	WLife(e)->life = (int)f[NETPL_O_LIFE];
 	if (o->kind == NETREP_CHAR) {
 		cWalkCharEntity *w = WChar(e);
 		NetPl_GetV(&w->view, f + NETPL_O_VIEW);
