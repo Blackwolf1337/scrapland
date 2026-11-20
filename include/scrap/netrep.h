@@ -365,6 +365,10 @@ int NetRep_ReadAck(const uint8_t *data, int size, uint16_t *newest, uint32_t *bi
 #define NETREP_IN_BOOST 0x0010		/* ship: boost */
 #define NETREP_IN_SWITCH 0x0020		/* get into the nearest parked ship, out of the ship (on its press) */
 #define NETREP_IN_FULL 0x0040		/* ship: the full thrust (its second accelerate key) */
+/* -mp2: the high byte has the buttons first pressed after the tick's first slot was taken: its second slot takes them
+ * too (as single player's slot takes the controls of its frame) */
+#define NETREP_IN_LATE 8
+#define NETREP_IN_SLOT(b, part) ((uint16_t)(((b) | ((part) ? (b) >> NETREP_IN_LATE : 0)) & 0xff))
 
 /* the input of one tick: the controls of a character (walk, strafe, jump; the view turn) or a ship (acceleration,
  * strafe, vertical strafe; the turn) */

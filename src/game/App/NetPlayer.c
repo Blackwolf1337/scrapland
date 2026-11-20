@@ -113,6 +113,7 @@ void NetPl_Slot(cEntity *e, const NetRepInput *in, byte local, byte replay, int 
 	if (part) {
 		memcpy(slot.move, in->move2, sizeof(slot.move));
 	}
+	slot.buttons = NETREP_IN_SLOT(in->buttons, part);
 	NetPl_Apply(e, &slot, local, replay);
 	/* the solo instance: the exact controls and slot lengths of the input tape (include/scrap/inputtape.h) */
 	byte taped = g_InputTape == INPUTTAPE_SOLO && !local;
@@ -153,6 +154,7 @@ void NetPl_StepPart(cEntity *e, const NetRepInput *in, byte local, byte replay, 
 		if (part) {
 			memcpy(slot.move, in->move2, sizeof(slot.move));
 		}
+		slot.buttons = NETREP_IN_SLOT(in->buttons, part);
 		NetPl_Apply(e, &slot, local, replay);
 		return;
 	}
@@ -242,6 +244,9 @@ void NetPl_InputSlot(const NetPlAccum *a, NetRepInput *out) {
 	}
 	for (int i = 0; i < 3; i++) {
 		out->move2[i] = NetRep_QMove(a->move[i]);
+	}
+	if (g_Mp2) {
+		out->buttons |= (uint16_t)((a->buttons & ~out->buttons & 0xff) << NETREP_IN_LATE);
 	}
 }
 

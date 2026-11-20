@@ -529,6 +529,7 @@ static void Play_StepPart(uint32_t tick, int part) {
 	}
 	if (part && play.live) {
 		NetPl_InputSlot(&play.acc, &play.input);
+		play.input.buttons &= (uint16_t)~(play.held << NETREP_IN_LATE);
 	}
 	NetPl_StepPart(e, &play.input, 1, 0, part);
 	Watch_ProxiesBack();
