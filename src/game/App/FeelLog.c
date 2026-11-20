@@ -23,6 +23,8 @@ static struct {
 	FILE *f;
 	uint64_t last;
 	uint32_t fires;
+	uint64_t drawn;					/* the time the frame before was drawn (FeelLog_Render), 0: not yet */
+	char line[256];					/* the values of the frame before, written with that time */
 } feel;
 
 /* the own entity: the client's, single player's of slot 0 */
@@ -58,9 +60,14 @@ void FeelLog_Frame(void) {
 	if (!feel.f || !g_pWorld) {
 		return;
 	}
-	uint64_t now = Feel_Monotonic();
-	double dt = feel.last ? (double)(now - feel.last) / 1e6 : 0.0;
-	feel.last = now;
+	/* the line of the frame before, at the time it was drawn in this frame (or now, when it was not drawn) */
+	if (feel.line[0]) {
+		uint64_t at = feel.drawn ? feel.drawn : Feel_Monotonic();
+		double dt = feel.last ? (double)(at - feel.last) / 1e6 : 0.0;
+		feel.last = at;
+		fprintf(feel.f, "%llu,%.3f,%s\n", (unsigned long long)at, dt, feel.line);
+	}
+	feel.drawn = 0;
 	cEntity *e = Feel_Own();
 	char kind = '-';
 	float in = 0.0f;
@@ -82,7 +89,13 @@ void FeelLog_Frame(void) {
 		c = ((cCamControl *)cam)->cam.pos;
 		yaw = ((cCamControl *)cam)->cam.rot.y;
 	}
-	fprintf(feel.f, "%llu,%.3f,%c,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.4f,%.3f,%u,%u\n", (unsigned long long)now, dt, kind,
-		(double)p.x, (double)p.y, (double)p.z, (double)c.x, (double)c.y, (double)c.z, (double)yaw, (double)in,
+	snprintf(feel.line, sizeof(feel.line), "%c,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.4f,%.3f,%u,%u", kind, (double)p.x,
+		(double)p.y, (double)p.z, (double)c.x, (double)c.y, (double)c.z, (double)yaw, (double)in,
 		g_Play ? Play_Corrections() : 0u, feel.fires);
+}
+
+void FeelLog_Render(void) {
+	if (feel.f) {
+		feel.drawn = Feel_Monotonic();
+	}
 }

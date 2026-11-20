@@ -50,9 +50,22 @@
  * that only set its layers run in both, the rest (script calls, the classes' logic, voices) is the server's
  * (Play_OwnEvent, pred.server:<event>). A move of the entity by the scripts (Pos, Ang, ViewAng or MoveTime set:
  * Rep_OwnMoved) counts in the state's moved: the client takes the next state as a jump, not smoothed and not a
- * correction (the hand-over of a flow: boarding, parking, possession, an elevator). The first state of a new own
- * entity hands it over. A difference of the life alone is taken, not counted as a correction. Corrections by what
- * differed: pred.corr:<pos|vel|ang|act|state|move>.
+ * correction (the hand-over of a flow: boarding, parking, possession, an elevator); a move the client made the same
+ * itself changes nothing drawn. The first state of a new own entity hands it over. A difference that comes with one
+ * of the life (the server's damage: a hit and its push) is taken, not counted as a correction (pred.took:life|hit).
+ * Corrections by what differed: pred.corr:<pos|vel|ang|act|state|move>.
+ *
+ * Stage 3.5b: a player's ship touches the parking boxes in its step (every third slot, the 0.05 s of the box's own
+ * slot; the box's own touch leaves such a ship alone): the server runs the box's OnTake (Parking.OnPark), the client
+ * predicts what it does with the boxes it has as replicas: the brake of a fast ship (0.6 of its velocity) or the
+ * start of the parking's move (Parking_PredictPark), so a take-off and a landing on a box cost no correction. The
+ * prediction collides with the ships of no player near it where they are at the predicted tick (position and
+ * velocity of their samples; the fights), the players' as before. The use pressed with the arrow on a parked ship
+ * starts the boarding's camera path at once (Play_FlowStart: Parking.SetCameraStart's path to the camera behind the
+ * ship, pred.flow:board); the server's hand-over (the own ship of the player message) ends it, without one in
+ * PLAY_FLOW_SECS the client gives it up (pred.flow:cancel). The controls of the own entity are read after the frame's
+ * input update, before its step (Watch_FrameInput, Play_PreFrame), not in the entity's frame after the step: a press
+ * steps in the frame that saw it, the frame after it draws it (single player draws it a frame later).
  *
  * Controls: those of single player. The switch: Use (Walk set) on foot, Mission info (Racer set) in a ship.
  * SCRAP_PLAYLOG=<file>: a CSV line per server state of the own entity (tick, error, correction, ...). SCRAP_PLAYBOT=1:
@@ -62,8 +75,9 @@
  * SCRAP_PLAYBOT_WEAPONS=1 (or weapon names): it fires each weapon for 6 s of aiming in turn and stays in the ship;
  * SCRAP_PLAYBOT_CM=1: it also holds the countermeasure of the weapon now and then;
  * SCRAP_PLAYBOT_BOOST=1: in a ship it also holds the boost for 0.4 s every 12 s;
- * SCRAP_PLAYAHEAD=0: the prediction collides with the others where they are drawn, =all: the characters near it at
- * the predicted tick too (tests). SCRAP_NET2_LOSS (percent) and SCRAP_NET2_DELAY (ms, each way, +
+ * SCRAP_PLAYAHEAD=0: the prediction collides with the others where they are drawn, =players: only the players at the
+ * predicted tick (the ships of no player where they are drawn), =all: the characters near it at the predicted tick too
+ * (tests). SCRAP_NET2_LOSS (percent) and SCRAP_NET2_DELAY (ms, each way, +
  * SCRAP_NET2_JITTER ms) on either side: a test link.
  */
 #ifndef SCRAP_PLAY_H
@@ -196,6 +210,11 @@ void NetPl_OwnApply(struct cEntity *e, const NetRepOwn *o);
  * its client (from the tick and part of the step and the draws before: a random relax or idle of the own character is
  * no correction); 0 when e is not stepped there now (the game's random then) */
 byte NetPl_StepRand(const struct cEntity *e, int *r);
+/* -mp2: e is a player's ship whose step touches the parking boxes (Parking.OnPark at fixed slots of its step, the
+ * brake and the start of a parking predicted by its client; the box's own touch leaves it alone) */
+byte NetPl_StepBrakes(const struct cEntity *e);
+/* a parking box: an item with the parking model (on the server and as a replica alike) */
+byte NetPl_IsParkBox(struct cEntity *e);
 /* the client fires weapon w of its own ship itself for the effects at once (the instant-hit weapons; the hits it
  * makes stay local, the server's count): Vulcan, Laser, Tesla, ATPC, Devastator */
 byte NetPl_LocalWeapon(int w);
@@ -284,6 +303,8 @@ byte Play_DeathCamOn(void);
 void Play_Start(void);
 /* the player's camera of view 0, made when missing (at x y z) */
 struct cEntity *Play_ViewCamera(float x, float y, float z);
+/* the own player's step of the frame after its input update (Watch_FrameInput): its controls read, the ticks the
+ * clock passed stepped, the drawn place set */
 void Play_PreFrame(double now, double rtt, double rttVar, float loss);
 /* 1 when an ack with the inputs is due now: its inputs (newest first) and the shown server time */
 int Play_TakeInputs(NetRepInput *in, int *n, uint32_t *shownMs);

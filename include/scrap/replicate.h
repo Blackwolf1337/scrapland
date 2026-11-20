@@ -115,14 +115,19 @@ extern byte g_Watch;
 byte Watch_ParseParam(const char *param, const char *ext);
 /* before and after App_Frame in the main loop of a watcher */
 void Watch_PreFrame(void);
+/* after the frame's input update (CApp_FrameRun): the own player's step of the frame, its controls read first
+ * (Play_PreFrame); Watch_PostFrame runs it when the frame had none */
+void Watch_FrameInput(void);
 void Watch_PostFrame(void);
 void Watch_Close(void);
 /* an entity of a look string (S|model|pilot|motor 0..3|class or C|class) at the position of st: a proxy, or the
  * player's own entity (include/scrap/play.h) */
 struct cEntity *Watch_Build(const char *name, int kind, const char *look, const NetRepState *st, byte proxy);
-/* the proxies at server time t for the own prediction of a tick (the players' and the other characters within
- * WATCH_AHEAD_RADIUS of the own entity, or only the players' with players), then back where they are drawn */
-void Watch_ProxiesAt(double t, byte players);
+/* the proxies at server time t for the own prediction of a tick (the players', and those of also within
+ * WATCH_AHEAD_RADIUS of the own entity), then back where they are drawn */
+#define WATCH_AT_CHARS 1			/* the other characters (and the objects of -mp2) */
+#define WATCH_AT_SHIPS 2			/* the ships of no player (-mp2: the fights collide with them where they are then) */
+void Watch_ProxiesAt(double t, int also);
 void Watch_ProxiesBack(void);
 /* the client's own entity of a slot it no longer drives becomes the proxy of that slot (a dead player's wreck stays
  * in view: the death camera follows it) */

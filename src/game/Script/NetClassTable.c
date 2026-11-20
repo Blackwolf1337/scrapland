@@ -1147,6 +1147,7 @@ static const netClassRow_t nc_module[] = {
 	{ "PCMenu", NC_UI },
 	{ "Parking", NC_SIM },
 	{ "Parking.DoorInitializator", NC_DEF },
+	{ "Parking.SetCameraStart", NC_UI },
 	{ "PhoneCab", NC_UI },
 	{ "Police", NC_DEF },
 	{ "PoliceBoss", NC_DEF },

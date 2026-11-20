@@ -18,6 +18,7 @@
 
 #include "scrap/arena.h"
 #include "scrap/camcontrol.h"
+#include "scrap/chartype.h"
 #include "scrap/console.h"
 #include "scrap/coop.h"
 #include "scrap/crt.h"
@@ -43,6 +44,8 @@
 #include "scrap/world.h"
 
 #define PLAY_CAM "PlayCam"
+#define PLAY_FLOW_CAM "PlayFlowCam"		/* the camera path of a flow the client started for the eye */
+#define PLAY_FLOW_SECS 12.0				/* s it waits for the server's hand-over of such a flow, then gives it up */
 #define PLAY_DEATH_CAM "PlayDeathCam"
 #define PLAY_DEATH_DIST 1800.0f			/* units of the death camera from the place of the death */
 #define PLAY_DEATH_HIGH 900.0f
@@ -56,14 +59,16 @@
 #define PLAY_BOT_IDLE 5					/* the bot gives no input (the tests drive it from the instance) */
 #define PLAY_BOT_USE 6					/* the bot stands and presses use every few seconds (doors) */
 #define PLAY_BOT_FACE 7					/* the bot stands and turns to the nearest other player (screenshots) */
+#define PLAY_BOT_KEEP 2500.0f			/* units the fighting bot keeps from its target */
 #define PLAY_BOT_FACE_SIDE 0.45f		/* radians it looks past it: the camera behind the own character is on the
 										   line to the other one, which the own character would hide */
 #define PLAY_ERRS 16384					/* errors kept for the percentiles of the status */
 #define PLAY_HINTS 3					/* times the switch key's hint shows for each kind of own entity */
 #define PLAY_HINT_SECS 8.0				/* s a hint stays on the message line */
 
-/* what the prediction collides with at the predicted tick (SCRAP_PLAYAHEAD=0; the players, the default; =all: the
- * characters near it too, which made the error of characters in a crowd larger: p95 5.6 to 9.0 with 32 bots) */
+/* what the prediction collides with at the predicted tick (SCRAP_PLAYAHEAD=0: nothing; the players, the default,
+ * and -mp2 the ships of no player near it (the fights); =players: only the players; =all: the characters near it too,
+ * which made the error of characters in a crowd larger: p95 5.6 to 9.0 with 32 bots) */
 enum { PLAY_AHEAD_NONE, PLAY_AHEAD_PLAYERS, PLAY_AHEAD_ALL };
 
 byte g_Play;
@@ -102,6 +107,7 @@ static struct {
 	byte half;							/* the first slot of tick tick + 1 ran (with input) */
 	byte live;							/* that tick took the frames' input (its second slot takes the newest moves) */
 	double clockNow;					/* the local time of its last step */
+	double readNow;						/* of the last read of the controls */
 	vec3_t lastServer;
 	int pending;						/* ticks stepped since the last ack */
 	byte catchup;						/* the new own entity steps up to the input tick with no input */
@@ -122,9 +128,13 @@ static struct {
 	byte botCm;							/* SCRAP_PLAYBOT_CM=1: also the countermeasure of the weapon now and then */
 	byte botBoost;						/* SCRAP_PLAYBOT_BOOST=1: in a ship also the boost for 0.4 s every 12 s, from 3 s on */
 	byte ahead;							/* SCRAP_PLAYAHEAD: PLAY_AHEAD_ */
+	int aheadAlso;						/* and the WATCH_AT_ of Watch_ProxiesAt */
 	double botNear;						/* s the bot aimed at its target from close by (the weapon turns) */
 	double botStart;					/* local time the own entity of now came */
 	uint32_t hintFor;					/* the own entity (made) whose hint showed */
+	uint32_t flowMade;					/* -mp2: a boarding started for the eye with own entity made, 0 none */
+	double flowAt;						/* local time it started */
+	uint16_t lastButtons;				/* of the input of the tick before */
 	byte hints[2];						/* hints shown on foot, in a ship */
 	/* -mp2 (stage 3.5): the rollback state of each tick as the server sends it, its moves outside the step */
 	NetRepOwn own[NETREP_PRED];
@@ -132,6 +142,7 @@ static struct {
 	byte haveMoved;						/* 0 for a new own entity: its first state hands it over (smoothed, no correction) */
 	uint32_t jumps;						/* the server's moves taken as jumps */
 	uint32_t handovers;
+	uint32_t hits;						/* of the lives taken: with more than the life differing (the hit's push) */
 	uint32_t corrBy[NETPL_D_BITS];		/* corrections by NETPL_D_ bit */
 } play = { .slot = -1, .player = -1 };
 
@@ -223,6 +234,15 @@ cEntity *Play_ViewCamera(float x, float y, float z) {
 	return c;
 }
 
+/* the camera path of a started flow away */
+static void Play_FlowEnd(void) {
+	cEntity *path = World_FindEntity(PLAY_FLOW_CAM);
+	if (path) {
+		cEntity_Del(path);
+	}
+	play.flowMade = 0;
+}
+
 static void Play_Camera(void) {
 	cEntity *e = play.e;
 	char *s;
@@ -231,6 +251,7 @@ static void Play_Camera(void) {
 	if (!e) {
 		return;
 	}
+	Play_FlowEnd();
 	play.dead = 0;
 	play.cam = Play_ViewCamera(e->pos.x, e->pos.y + 500.0f, e->pos.z);
 	if (!play.cam) {
@@ -292,9 +313,16 @@ void Play_SetOwn(int player, int slot, int kind, uint32_t tick, const float *phy
 			(double)play.deathAt.z);
 	}
 	if (play.e && play.slot >= 0 && World_FindEntity(play.e->name) == play.e) {
-		play.e->pos = play.truePos;
-		Watch_Adopt(play.slot, play.e, play.kind);
-		play.e = NULL;
+		if (g_Mp2) {
+			/* -mp2: the slot's replica is made again as the server's (its name, its journal with the variables the
+			 * prediction left out: a wreck of the own ship showed the predicted entity's stale angles and move) */
+			Play_OwnRemove();
+			ReplicaEnt_Want(play.slot);
+		} else {
+			play.e->pos = play.truePos;
+			Watch_Adopt(play.slot, play.e, play.kind);
+			play.e = NULL;
+		}
 	}
 	Play_OwnRemove();
 	play.slot = slot;
@@ -456,6 +484,8 @@ void Play_Start(void) {
 	const char *ahead = getenv("SCRAP_PLAYAHEAD");
 	play.ahead = !ahead || !*ahead ? PLAY_AHEAD_PLAYERS : *ahead == '0' ? PLAY_AHEAD_NONE : *ahead == 'a' ?
 		PLAY_AHEAD_ALL : PLAY_AHEAD_PLAYERS;
+	play.aheadAlso = (play.ahead == PLAY_AHEAD_ALL ? WATCH_AT_CHARS : 0) |
+		(g_Mp2 && (!ahead || !*ahead || *ahead == 'a' || *ahead == 's') ? WATCH_AT_SHIPS : 0);
 	const char *cycle = getenv("SCRAP_PLAYBOT_WEAPONS");
 	play.botCycle = cycle && *cycle && *cycle != '0';
 	const char *cm = getenv("SCRAP_PLAYBOT_CM");
@@ -532,7 +562,7 @@ static void Play_StepPart(uint32_t tick, int part) {
 
 	e->pos = play.truePos;
 	if (play.ahead != PLAY_AHEAD_NONE) {
-		Watch_ProxiesAt(((double)tick - 0.5 * (1 - part)) / NETREP_TICK_HZ, play.ahead == PLAY_AHEAD_PLAYERS);
+		Watch_ProxiesAt(((double)tick - 0.5 * (1 - part)) / NETREP_TICK_HZ, play.aheadAlso);
 	}
 	if (part && play.live) {
 		NetPl_InputSlot(&play.acc, &play.input);
@@ -560,6 +590,64 @@ static void Play_StepPart(uint32_t tick, int part) {
 	Play_Draw();
 }
 
+/* the ship the use of the own character boards: the parked ship its arrow is on, usable (ArrowCanUse, the option
+ * of Parking's arrow: Sputnik.UseShip), else NULL */
+static cEntity *Play_FlowShip(void) {
+	cEntity *v = play.kind == NETREP_CHAR && play.e ? WChar_Victim(play.e) : NULL;
+	int can = 0;
+	char *opt = NULL;
+	if (!v || NetPl_Kind(v) != NETREP_SHIP || !Entity_VarI(v, "ArrowCanUse", &can, 0) || !can ||
+		!Entity_VarS(v, "ArrOpt0", &opt, 0) || !opt || strncmp(opt, "UseShip:", 8)) {
+		return NULL;
+	}
+	return v;
+}
+
+/* -mp2: the boarding's visible part at once (plan's Own character: a flow of the scripts starts on the client for the
+ * eye, the server hands over at a named tick): the camera path of Parking.UseShip from beside the ship to the camera
+ * behind it, as the server's script makes it for single player; the server's boarding runs as before and its hand-over
+ * (the own ship from the player message's tick, Play_OwnCreate) ends the path; without one in PLAY_FLOW_SECS the
+ * client gives it up (the server did not board: the camera back on the own character) */
+static void Play_FlowStart(cEntity *ship, double now) {
+	nativeVal_t cp = { 0 }, v = { 0 }, pos = { 0 }, dist = { 0 };
+	char *s = ship->name;
+
+	Play_FlowEnd();
+	cEntity *path = cWorld_CreateEntity(g_pWorld, PLAY_FLOW_CAM, ship->pos.x, ship->pos.y, ship->pos.z, TYEN_CAMPATH);
+	if (!path || !play.cam) {
+		return;
+	}
+	int two = 2, one = 1, zero = 0;
+	double t = 1.0;
+	char *cam = PLAY_CAM;
+	Entity_VarI(path, "nWayPoint", &two, 1);
+	Entity_VarS(path, "TgtCam01", &cam, 1);
+	Entity_VarF(path, "Time00", &t, 1);
+	Entity_VarI(path, "FadeIn00", &one, 1);
+	Entity_VarI(path, "FadeOut00", &zero, 1);
+	byte ok = Mode_Import("Parking") && Native_SetEnt(&cp, PLAY_FLOW_CAM) && Native_SetEnt(&v, ship->name) &&
+		Mode_VObjRead(&v, "Pos", &pos) && PORT_CALL(Parking, SetCameraStart, NULL, "vvvii", &cp, &v, &pos, 1L, 1L);
+	if (ok) {
+		Entity_VarS(play.cam, "MainTarget", &s, 1);
+		Entity_VarS(play.cam, "Target", &s, 1);
+		if (Native_GVarGet("VehicleCamDist", &dist) && dist.type == NV_FLOAT) {
+			double d = dist.f;
+			Entity_VarF(play.cam, "CamDist", &d, 1);
+		}
+		cWorld_SetCam(g_pWorld, 0, PLAY_FLOW_CAM);
+		play.flowMade = play.made;
+		play.flowAt = now;
+		NetAudit_Name(NA_PREDICT, "pred.flow:", "board");
+	} else {
+		Play_FlowEnd();
+	}
+	Native_Free(&cp);
+	Native_Free(&v);
+	Native_Free(&pos);
+	Native_Free(&dist);
+	Native_ErrClear();
+}
+
 /* the input of tick (the frames' controls since the tick before, none: no input) and its first slot */
 static void Play_Step(uint32_t tick, byte none) {
 	if (!none) {
@@ -576,6 +664,14 @@ static void Play_Step(uint32_t tick, byte none) {
 	}
 	play.input.tick = tick;
 	play.input.slot = (uint16_t)play.slot;
+	/* the use pressed with the arrow on a parked ship: the boarding's camera at once */
+	if (g_Mp2 && !play.flowMade && (play.input.buttons & NETREP_IN_ACT3) && !(play.lastButtons & NETREP_IN_ACT3)) {
+		cEntity *ship = Play_FlowShip();
+		if (ship) {
+			Play_FlowStart(ship, play.clockNow);
+		}
+	}
+	play.lastButtons = play.input.buttons;
 	Play_StepPart(tick, 0);
 }
 
@@ -716,7 +812,11 @@ static void Play_Bot(double now) {
 	float dy = best->pos.y - e->pos.y;
 	/* the pitch against the ship's own (an absolute one turned it on over the top) */
 	float dyaw = NetPl_Aim(e, &best->pos, play.acc.rot, 1);
-	play.acc.move[0] = bestD > 8000.0f * 8000.0f ? 0.8f : 0.1f;
+	/* closer than PLAY_BOT_KEEP it backs off (it crept on into its target and stayed pinned against it, bouncing:
+	 * a fight of hundreds of collisions), not while it climbs from where it took off (back onto the parking box: it
+	 * parked again) */
+	play.acc.move[0] = bestD > 8000.0f * 8000.0f ? 0.8f : bestD < PLAY_BOT_KEEP * PLAY_BOT_KEEP && t > 8.0 ? -0.6f :
+		0.1f;
 	/* trying the weapons: stops about 4000 units away and fires in bursts of 1.5 s (the missiles fly at a release) */
 	if (play.botCycle) {
 		/* level with the target (the narrow aim cones of some weapons) */
@@ -742,15 +842,26 @@ void Play_PreFrame(double now, double rtt, double rttVar, float loss) {
 		Play_DeathCam((float)(now - play.tickLocal));
 		play.tickLocal = now;
 	}
+	if (play.flowMade && now - play.flowAt > PLAY_FLOW_SECS) {
+		/* the server did not board (the use came to nothing there): the camera back */
+		NetAudit_Name(NA_PREDICT, "pred.flow:", "cancel");
+		Play_FlowEnd();
+		Play_Camera();
+	}
 	if (!play.e || !Watch_ClockReady()) {
 		return;
 	}
-	/* -mp2: the ship's fire and boost as the input has them now, not only from the controls of the last frame (they
-	 * are read after this step in the frame: a press would wait a frame more than in single player) */
-	if (g_Mp2 && !play.bot && play.kind == NETREP_SHIP) {
-		byte fire, boost;
-		cVehicleControls_Held(cVehicleEntity_GetOwnerSlot(play.e), &fire, &boost);
-		play.acc.buttons |= (uint16_t)((fire ? NETREP_IN_ACT : 0) | (boost ? NETREP_IN_BOOST : 0));
+	/* the controls of this frame's input (Watch_FrameInput runs this after the input update): read here, before the
+	 * step, not in the entity's frame after it, so a press steps in the frame that saw it */
+	float fdt = play.readNow > 0.0 && now > play.readNow ? (float)(now - play.readNow) : 0.0f;
+	play.readNow = now;
+	if (!play.bot && !g_HeadlessPlay && fdt > 0.0f) {
+		if (play.kind == NETREP_SHIP) {
+			cVehicleEntity_ReadControls(play.e, fdt);
+		} else {
+			cWalkCharEntity_ReadControls(play.e, fdt);
+		}
+		NetPl_Accumulate(play.e, &play.acc, fdt);
 	}
 	double want = Watch_InputTime(now, rtt, PLAY_LEAD + rttVar + (loss > 0.01f ? PLAY_LOSS_LEAD : 0.0));
 	double tt = NetRepFollow_Step(&play.clock, want, play.clock.have ? now - play.clockNow : 0.0);
@@ -806,9 +917,7 @@ static void Play_Hint(void) {
 }
 
 void Play_PostFrame(float dt) {
-	if (play.e && !play.bot) {
-		NetPl_Accumulate(play.e, &play.acc, dt);
-	}
+	(void)dt;
 	if (play.e && play.started && play.hintFor != play.made) {
 		Play_Hint();
 	}
@@ -894,7 +1003,7 @@ static float Play_Rollback(uint32_t tick, const NetRepState *st, const NetRepOwn
 		}
 		NetRepInput x = *in;
 		if (play.ahead != PLAY_AHEAD_NONE) {
-			Watch_ProxiesAt((double)t / NETREP_TICK_HZ, play.ahead == PLAY_AHEAD_PLAYERS);
+			Watch_ProxiesAt((double)t / NETREP_TICK_HZ, play.aheadAlso);
 		}
 		NetPl_Step(e, &x, 1, 1);
 		Watch_ProxiesBack();
@@ -905,7 +1014,7 @@ static float Play_Rollback(uint32_t tick, const NetRepState *st, const NetRepOwn
 	/* and the first slot of the tick under way */
 	if (play.half) {
 		if (play.ahead != PLAY_AHEAD_NONE) {
-			Watch_ProxiesAt(((double)play.tick + 0.5) / NETREP_TICK_HZ, play.ahead == PLAY_AHEAD_PLAYERS);
+			Watch_ProxiesAt(((double)play.tick + 0.5) / NETREP_TICK_HZ, play.aheadAlso);
 		}
 		NetPl_StepPart(e, &part, 1, 1, 0);
 		Watch_ProxiesBack();
@@ -916,13 +1025,15 @@ static float Play_Rollback(uint32_t tick, const NetRepState *st, const NetRepOwn
 	g_PlayReplaying = 0;
 	Play_KeepWeapons(e, &keep, 1);
 	play.truePos = e->pos;
-	if (jump) {
+	float dx = before.x - play.truePos.x, dy = before.y - play.truePos.y, dz = before.z - play.truePos.z;
+	if (!jump) {
+		NetRepSmooth_Correct(&play.smooth, &before.x, &play.truePos.x);
+	} else if (dx * dx + dy * dy + dz * dz > PLAY_CORRECT_MIN * PLAY_CORRECT_MIN) {
+		/* a move of the server the prediction did not make: drawn there at once (one it made, a flow the client
+		 * started itself, changes nothing drawn) */
 		memset(play.smooth.off, 0, sizeof(play.smooth.off));
 		play.drawn = play.prevDrawn = play.truePos;
-	} else {
-		NetRepSmooth_Correct(&play.smooth, &before.x, &play.truePos.x);
 	}
-	float dx = before.x - play.truePos.x, dy = before.y - play.truePos.y, dz = before.z - play.truePos.z;
 	e->pos = (vec3_t){ play.truePos.x + play.smooth.off[0], play.truePos.y + play.smooth.off[1],
 		play.truePos.z + play.smooth.off[2] };
 	return sqrtf(dx * dx + dy * dy + dz * dz);
@@ -1004,16 +1115,21 @@ void Play_OwnState(const uint8_t *data, int size) {
 		play.handovers++;
 		NetAudit_Name(NA_PREDICT, "pred.handover:", play.kind == NETREP_SHIP ? "ship" : "char");
 	} else {
-		/* the server's damage alone is taken as it is (a hit the client could not know), not a correction */
-		if (d & ~NETPL_D_LIFE) {
+		/* the server's damage is taken as it is (a hit the client could not know), not a correction, and with it what
+		 * else differs in that tick (the hit's push), counted apart (pred.took:hit) */
+		if (d & NETPL_D_LIFE) {
+			play.corrBy[6]++;
+			NetAudit_Name(NA_PREDICT, "pred.took:", d & ~NETPL_D_LIFE ? "hit" : "life");
+			play.hits += (d & ~NETPL_D_LIFE) != 0;
+		} else {
 			play.st.corr[play.st.nc++ % PLAY_ERRS] = corr;
 			play.st.corrections++;
 			play.corrTotal++;
-		}
-		for (int k = 0; k < NETPL_D_BITS; k++) {
-			if (d & (1 << k)) {
-				play.corrBy[k]++;
-				NetAudit_Name(NA_PREDICT, k == 6 ? "pred.took:" : "pred.corr:", why[k]);
+			for (int k = 0; k < NETPL_D_BITS; k++) {
+				if (d & (1 << k)) {
+					play.corrBy[k]++;
+					NetAudit_Name(NA_PREDICT, "pred.corr:", why[k]);
+				}
 			}
 		}
 	}
@@ -1073,9 +1189,9 @@ void Play_Status(void) {
 		play.tick, play.st.states, play.st.unknown, (double)e[0], (double)e[1], (double)e[2], (double)e[3],
 		play.st.corrections, (double)c[0], (double)c[1], (double)c[2], (double)c[3], play.st.replayed);
 	if (g_Mp2) {
-		Con_Printf("play: -mp2 corrections by pos %u vel %u ang %u act %u state %u move %u, life taken %u, %u jumps, "
-			"%u handovers\n", play.corrBy[0], play.corrBy[1], play.corrBy[2], play.corrBy[3], play.corrBy[4],
-			play.corrBy[5], play.corrBy[6], play.jumps, play.handovers);
+		Con_Printf("play: -mp2 corrections by pos %u vel %u ang %u act %u state %u move %u, life taken %u (%u with a "
+			"push), %u jumps, %u handovers\n", play.corrBy[0], play.corrBy[1], play.corrBy[2], play.corrBy[3],
+			play.corrBy[4], play.corrBy[5], play.corrBy[6], play.hits, play.jumps, play.handovers);
 	}
 }
 

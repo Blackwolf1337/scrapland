@@ -761,6 +761,13 @@ static void cVehicleEntity_Tick(cEntity *elem, float dt) {
 
 static void cVehicleEntity_UpdateSounds(cVehicleEntity *self, float dt);
 
+void cVehicleEntity_ReadControls(cEntity *base, float dt) {
+	cVehicleEntity *self = (cVehicleEntity *)base;
+	if (Veh_IsPlayerSlot(self->slot) && Obj_Advances(base)) {
+		cVehicleControls_Tick(&self->controls, Veh_Ent(self), dt);
+	}
+}
+
 static void cVehicleEntity_Update(cEntity *base) {
 	cVehicleEntity *self = (cVehicleEntity *)base;
 	cObjEntity_UpdateTimer(Veh_Ent(self));
@@ -769,8 +776,9 @@ static void cVehicleEntity_Update(cEntity *base) {
 		return;
 	}
 	cVehicleEffects_UpdateState(&self->effects, dt);
-	if (Veh_IsPlayerSlot(self->slot) && Obj_Advances(base)) {
-		cVehicleControls_Tick(&self->controls, Veh_Ent(self), dt);
+	/* not in the original: a client's own ship read them before its step (Play_PreFrame) */
+	if (!(g_Play && self->wl.obj.netStep)) {
+		cVehicleEntity_ReadControls(base, dt);
 	}
 	cWithLifeEntity_Update(Veh_Ent(self));
 	cVehicleEntity_UpdateSounds(self, dt);

@@ -774,12 +774,6 @@ static void Ctl_PadRumble(cVehicleControls *c, cEntity *v, int slot) {
 	cPad_Rumble(&g_Pads[slot], a + h, b + shake, 0.25f);
 }
 
-void cVehicleControls_Held(int slot, byte *fire, byte *boost) {
-	cActionSet *set = TABLE_AT(g_ActionSets, ACTSET_RACER);
-	*fire = Ctl_Value(set, CTL_FIRE, slot) > 0.5f;
-	*boost = Ctl_Value(set, CTL_BOOST, slot) > 0.5f;
-}
-
 void cVehicleControls_Tick(cVehicleControls *c, cEntity *v, float dt) {
 	int slot = cVehicleEntity_GetOwnerSlot(v);
 	cActionSet *set = TABLE_AT(g_ActionSets, ACTSET_RACER);

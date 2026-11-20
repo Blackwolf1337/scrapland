@@ -487,6 +487,33 @@ static int Pk_Valid(const nativeVal_t *v) {
 	return ok;
 }
 
+/* the move of a ship v that parks on the box at iPos: still, then down onto the ground under the box in 2.5 s, its
+ * yaw kept (vAng, the angles of the move) */
+static byte Pk_ParkMove(const nativeVal_t *v, const nativeVal_t *iPos, nativeVal_t *vAng) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *newPos = Mode_V(&t), *ang = Mode_V(&t), *x = Mode_V(&t), *y = Mode_V(&t), *rot = Mode_V(&t);
+	nativeVal_t *x0 = Mode_V(&t), *x2 = Mode_V(&t), *p3 = Mode_V(&t);
+	if (!LvN_SetInts3(v, "Vel", 0, 0, 0) || !Pk_Ground(iPos, newPos) || !Mode_VObjRead(v, "Ang", ang) ||
+		!Pk_Yaw(ang, '+', NULL, vAng) || !Pk_Item(newPos, 1, x) || !Mode_VObjRead(v, "WRadius", y) ||
+		!Native_Arith('+', x, y, rot) || !Pk_Item(newPos, 0, x0) || !Pk_Item(newPos, 2, x2)) {
+		return Mode_Done(&t, 0);
+	}
+	Pk_Tuple3(p3, x0, rot, x2);
+	return Mode_Done(&t, Mode_VSet(v, "MovePos", p3) && Mode_VSet(v, "MoveAng", vAng) && LvN_SetF(v, "MoveTime", 2.5));
+}
+
+byte Parking_PredictPark(cEntity *box, cEntity *ship) {
+	nativeVal_t v = { 0 }, iPos = { 0 }, vAng = { 0 }, b = { 0 };
+	byte ok = Native_SetEnt(&v, ship->name) && Native_SetEnt(&b, box->name) && Mode_VObjRead(&b, "Pos", &iPos) &&
+		Pk_ParkMove(&v, &iPos, &vAng);
+	Native_Free(&v);
+	Native_Free(&b);
+	Native_Free(&iPos);
+	Native_Free(&vAng);
+	Native_ErrClear();
+	return ok;
+}
+
 /* OnPark(ItemName, VehicleName): a ship slow enough on a parking box parks there: the pilot gets out, the camera
  * path shows it; 1 when it parked */
 static byte Pk_OnParkN(const nativeVal_t *itemName, const nativeVal_t *vehName, nativeVal_t *out) {
@@ -537,13 +564,7 @@ static byte Pk_OnParkN(const nativeVal_t *itemName, const nativeVal_t *vehName, 
 		return Mode_Done(&t, 0);
 	}
 	/* the ship stops and parks */
-	if (!LvN_SetI(v, "UsrControl", -1) || !LvN_SetInts3(v, "Vel", 0, 0, 0) || !Pk_Ground(iPos, newPos) ||
-		!Mode_VObjRead(v, "Ang", ang) || !Pk_Yaw(ang, '+', NULL, vAng) || !Pk_Item(newPos, 1, x) || !Mode_VObjRead(v, "WRadius", y) ||
-		!Native_Arith('+', x, y, rot) || !Pk_Item(newPos, 0, x0) || !Pk_Item(newPos, 2, x2)) {
-		return Mode_Done(&t, 0);
-	}
-	Pk_Tuple3(p3, x0, rot, x2);
-	if (!Mode_VSet(v, "MovePos", p3) || !Mode_VSet(v, "MoveAng", vAng) || !LvN_SetF(v, "MoveTime", 2.5) || !Pk_UseArrow(v) ||
+	if (!LvN_SetI(v, "UsrControl", -1) || !Pk_ParkMove(v, iPos, vAng) || !Pk_UseArrow(v) ||
 		!PORT_OWN(Parking, SetInvunerable, NULL, "v", v) || !Pk_NoBlur()) {
 		return Mode_Done(&t, 0);
 	}
