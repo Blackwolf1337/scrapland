@@ -13,6 +13,9 @@ The first form, per use "<npc> use <k>":
     against InitAns3) counts as a variant, and the text spoken with that voice may differ then.
   - callbacks: single player's against the instance's lines of the player's context (p<player>).
   - money: the change of the use as talkbot.py marked it in single player and on the client.
+  A use that differs where one game started no talk (still refused after talkbot.py's retries: a busy cop, a walking
+  character), and every later use of that character, is "refused" (the arrow's options of the games part there), not
+  a difference; the exit code counts only "DIFF".
   Lines of another player's context in the instance's segment are counted ("foreign").
 The second form counts the client's conversation lines that match the forbidden regex (another player's talk) and,
 with an instance log, the instance's lines matching the player's regex in another context than p<player>.
@@ -142,7 +145,7 @@ def main_cmp(argv):
     spl, cll = parse(sp_log), parse(cl_log)
     sps, cls, ins = segments(spl), segments(cll), segments(parse(in_log))
     spm, clm = moneys(spl), moneys(cll)
-    rows, bad = [], 0
+    rows, bad, refused = [], 0, {}
     for key in sorted(set(sps) | set(cls), key=lambda k: (list(sps).index(k) if k in sps else 999, k[1])):
         npc, use = key
         r = {'npc': npc, 'use': use}
@@ -164,8 +167,14 @@ def main_cmp(argv):
         r['money'] = (spm.get(key), clm.get(key))
         if r['money'][0] != r['money'][1]:
             r['callbacks_diff'] = r.get('callbacks_diff', '') + ' money %s against %s' % r['money']
+        talked = [any(op == 'speech' and not f.startswith('0.00') for op, f in x) for x in (a, b)]
         r['state'] = 'ok' if eq and cba == cbi and not foreign and r['money'][0] == r['money'][1] else 'DIFF'
-        bad += r['state'] != 'ok'
+        if r['state'] != 'ok' and (refused.get(npc) or not all(talked)):
+            # one of the games could not talk at this use or an earlier one of the character (a busy or walking
+            # character after the retries of talkbot.py): the arrow's options of the two games part there
+            r['state'] = 'refused'
+        refused[npc] = refused.get(npc) or not all(talked) and any(talked)
+        bad += r['state'] == 'DIFF'
         rows.append(r)
     for r in rows:
         if 'lines' not in r:
@@ -175,8 +184,9 @@ def main_cmp(argv):
             r['npc'], r['use'], r['state'], r['lines'], r['client_lines'], r['variants'], r['callbacks'],
             'eq' if r['callbacks_equal'] else 'DIFF', r['foreign'], r['diff'], ' ' + r.get('callbacks_diff', '')))
     done = [r for r in rows if 'lines' in r]
-    print('uses compared %d, equal %d, with variants %d, speech lines %d, skipped %d' % (
+    print('uses compared %d, equal %d, with variants %d, refused %d, differ %d, speech lines %d, skipped %d' % (
         len(done), sum(r['state'] == 'ok' for r in done), sum(r['variants'] > 0 for r in done),
+        sum(r['state'] == 'refused' for r in done), sum(r['state'] == 'DIFF' for r in done),
         sum(len(r['speech']) for r in done), len(rows) - len(done)))
     if jout:
         with open(jout, 'w') as f:

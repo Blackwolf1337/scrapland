@@ -5,7 +5,7 @@
   talkbot.py mp <instance game> <level> <client game> <player> <npc>[:<nexts>,...] ...
 
 Per character: the player is kept next to it (test verb "talk follow" of single player or of the instance) until its
-arrow selects it, then for each entry of the list (default "0,0,0": three uses) it presses the next option that many times
+arrow selects it (the follow stops for the presses), then for each entry of the list (default "0,0,0": three uses) it presses the next option that many times
 and then use, each through the input (test verb "tape key Walk.<action> 1": single player's input, or a client's input
 that goes to the server), WAIT seconds apart (env, default 12). With TALKLOG (env: the log of the game that has the
 player's talk trace, single player's or the client's) a use that started no talk but only a message (a busy cop, a
@@ -120,24 +120,27 @@ def main():
     for spec in s.npcs:
         npc, _, plan = spec.partition(':')
         nexts = [int(x) for x in (plan or '0,0,0').split(',')]
-        s.follow(npc)
         for u, nx in enumerate(nexts):
-            sel = ''
-            for attempt in range(12):
-                sel = s.selected()
-                if sel == npc:
-                    break
-                if attempt in (4, 8):
-                    s.follow(npc, (90, 150)[attempt // 4 - 1])
-                time.sleep(0.8)
-            if sel != npc:
-                s.mark('%s use %d: not selected (%s)' % (npc, u, sel))
-                continue
-            for _ in range(nx):
-                s.key('NextAction', 0.15)
-                time.sleep(0.3)
             m0 = s.money()
             for attempt in range(RETRY + 1):
+                s.follow(npc)
+                sel = ''
+                for k in range(12):
+                    sel = s.selected()
+                    if sel == npc:
+                        break
+                    if k in (4, 8):
+                        s.follow(npc, (90, 150)[k // 4 - 1])
+                    time.sleep(0.8)
+                if sel != npc:
+                    break
+                # the presses without the follow: a move of the player while its input is on the way can drop it
+                s.follow('-')
+                time.sleep(0.3)
+                if attempt == 0:
+                    for _ in range(nx):
+                        s.key('NextAction', 0.15)
+                        time.sleep(0.3)
                 s.mark('%s use %d' % (npc, u))
                 s.key('Use')
                 time.sleep(2.0)
@@ -147,6 +150,9 @@ def main():
                 # the character could not talk just now (a busy cop, a crazy one): the same use again a while later
                 s.mark('%s retry %d: %s' % (npc, u, why))
                 time.sleep(RETRY_WAIT)
+            if sel != npc:
+                s.mark('%s use %d: not selected (%s)' % (npc, u, sel))
+                continue
             time.sleep(WAIT - 2.0)
             s.mark('%s money %d %d' % (npc, u, s.money() - m0))
         s.follow('-')
