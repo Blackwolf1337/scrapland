@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "scrap/ai.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/game.h"
@@ -491,7 +492,10 @@ void RepEnt_Gather(NetRepServer *srv, uint32_t tick) {
 		re.rec[s].look = id;
 		RepEnt_State(e, kind, &st);
 		st.x[REPX_GEN] = (int32_t)re.rec[s].gen;
-		NetRepSrv_SetEx(srv, s, kind, id, &st, kind >= NETREP_ITEM ? NETREP_SET_LEVEL : 0);
+		/* the level scope: the things of the level, and on an indoor map its ships too (the few traffic ships
+		 * behind the windows, seen from farther than the interest radius) */
+		NetRepSrv_SetEx(srv, s, kind, id, &st, kind >= NETREP_ITEM || (kind == NETREP_SHIP && !g_IsMapOutDoor) ?
+			NETREP_SET_LEVEL : 0);
 	}
 	NetRepSrv_End(srv);
 }

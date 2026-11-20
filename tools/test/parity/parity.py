@@ -28,10 +28,13 @@ end of each level's route also the mirror diff (mirror.py: the declared state of
 against the joined client) and the positional sound census (census.py, joined client against single player and the
 instance) at the last point, as the columns mirror and census. The moment of a point is the server's then (stage
 4.2): single player runs its own simulation, so its traffic, police and NPCs near a point, its fights and passing
-ships are of its own moment. With --mp2 the kinds of the moment (LOOSE) are compared against the instance's count,
-a sound single player plays counts when the instance had a source of it near the point (sounds src) or played it near
-a player (census snd.near), a particle system when the instance dropped it near a player (census debris.near); a
-positional set is the census column's. What that leaves out is listed per point as single player's moment.
+ships are of its own moment. With --mp2 the kinds of the moment (LOOSE) are compared against the instance's count
+and the other kinds against the smaller of single player's and the instance's (the free world leaves the story's
+things of a place out on purpose), a sound single player plays counts when the instance had a source of it near the
+point (sounds src) or played it near a player (census snd.near), a particle system when the instance dropped it near a
+player (census debris.near), a HUD item when the instance's world scorer or the other client has it; a positional set
+is the census column's and a radar icon the mirror column's (RadarShow, the arrow and its view cone of every
+replica). What that leaves out is listed per point as single player's moment.
 
 Default levels: every level a free world hosts (the city and the listed places of data/places/places.def, the coop
 story's levels among them) in free roam, and the PvP maps of the original in --pvp-mode (dm). Network only on
@@ -652,6 +655,7 @@ def instance_evidence(host, level, pos, radius):
             src |= {f[1], f[2]}
         elif f[0] == 'es' and len(f) > 3:
             src.add(f[3])
+    hud = sorted(set(re.findall(r"\[\s*'([^']*)'", host.try_ask('menu', level, 20) or '')))
     near = {'snd': set(), 'debris': set()}
     a = audit(host, level, 'json') or {}
     for r in a.get('rows', []):
@@ -659,7 +663,7 @@ def instance_evidence(host, level, pos, radius):
         for what in near:
             if k.startswith(what + '.near:'):
                 near[what].add(k.split(':', 1)[1])
-    return {'src': sorted(src), 'snd_near': sorted(near['snd']), 'debris_near': sorted(near['debris'])}
+    return {'src': sorted(src), 'snd_near': sorted(near['snd']), 'debris_near': sorted(near['debris']), 'hud': hud}
 
 
 def mirror_census(a, tag, level, host, sp, join):
@@ -738,6 +742,10 @@ def gaps(res):
             # what the instance has there now; single player's count is of its own moment (-mp2: every kind of the
             # moment, the traffic, the police, the NPCs, against the server the clients replicate)
             a_sp = ik.get(k, {}).get('active', 0)
+        elif res.get('mp2'):
+            # -mp2: what the free world leaves out on purpose (the story's things of a place, data/places/places.def)
+            # the instance has none of either: the clients replicate the server
+            a_sp = min(a_sp, ik.get(k, {}).get('active', 0))
         if loose:
             gap = a_sp > 0 and (worst == 0 or worst < a_sp * 0.5)
         else:
@@ -816,8 +824,15 @@ def moment(res):
     plain = dict(res, mp2=False)
     due = {k for k, _ in sound_gaps(res)}
     out += ['sound %s' % k for k, _ in sound_gaps(plain) if k not in due]
-    dfx = {k for k, _ in lacks(res, 'fx')}
-    out += ['fx %s' % k for k, _ in lacks(plain, 'fx') if k not in dfx]
+    for key in ('fx', 'radar'):
+        due = {k for k, _ in lacks(res, key)}
+        out += ['%s %s' % (key, k) for k, _ in lacks(plain, key) if k not in due]
+    due = set(hud_lacks(res))
+    out += ['hud %s' % k for k in hud_lacks(plain) if k not in due]
+    ik = norm_kinds(res.get('instance', {}).get('kinds', {}))
+    due = {r[0] for r in gaps(res) if r[4]}
+    out += ['entity %s (instance %d)' % (r[0], ik.get(r[0], {}).get('active', 0)) for r in gaps(plain)
+            if r[4] and r[0] not in due]
     return out
 
 
@@ -835,6 +850,10 @@ def lacks(res, key):
     """the names of a histogram (radar icons, particle systems) a client shows none of or less than half as many as
     single player (the most over the samples), only the steady ones of single player (seen in at least half of the
     samples: the icons of passing traffic and the effects of a fight come and go): [(name, [sp, host, join])]"""
+    if res.get('mp2') and key == 'radar':
+        # -mp2: the icons are the replicas' (RadarShow, the arrow and its view cone are fields of the mirror column);
+        # an icon single player shows for a thing the server has not, or of its moment, is no client's gap
+        return []
     seen = res.get('sp', {}).get(key + '_seen')
     # -mp2: a particle system of single player's moment (a fight, a passing ship) is due on the clients when the
     # instance dropped it near a player (instance_evidence)
@@ -845,6 +864,10 @@ def lacks(res, key):
 
 def hud_lacks(res):
     sp = set(res.get('sp', {}).get('hud', []))
+    if res.get('mp2'):
+        # -mp2: the HUD items of the world's scorer of the instance (the story's items of single player that the free
+        # world has not are no client's gap; a player's own HUD is the client's own code)
+        sp &= set(res.get('instance', {}).get('hud', [])) | set(res.get('host', {}).get('hud', []))
     out = set()
     for s in ('host', 'join'):
         if s in res:
