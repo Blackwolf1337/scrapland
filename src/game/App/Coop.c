@@ -1005,18 +1005,40 @@ void Coop_StandIn(byte on) {
 		Con_Printf("coop: the level's start deleted %d entities so far (told to the clients)\n", g_Coop.ngone);
 	}
 	if (!on) {
-		if (g_Coop.standIn && World_FindEntity(COOP_STANDIN) == g_Coop.standIn) {
-			cEntity_Del(g_Coop.standIn);
-		}
+		/* the stand-in stays in the world (the scripts keep its name) but is no player now (also after the
+		 * MissionsFuncs.Init inside the level's Init, as before) */
 		g_Coop.standIn = NULL;
+		/* the outer start ends: inactive, no step, no fall and no sound of its own near the members who come (it is
+		 * not replicated: a member heard its fall at the spawn beside its own, pres.double:caida-dtritus) */
+		if (!g_Coop.starting && g_Coop.standInKept && World_FindEntity(g_Coop.standInName) == g_Coop.standInKept) {
+			Entity_SetActive(g_Coop.standInKept, 0);
+		}
 		return;
 	}
-	if (!Coop_On() || Players_Any() || !Coop_StartPos(&p, &yaw)) {
+	if (g_Coop.standIn || !Coop_On() || Players_Any()) {
 		return;
 	}
-	g_Coop.standIn = cWorld_CreateEntity(g_pWorld, COOP_STANDIN, p.x, p.y, p.z, TYEN_WALKCHAR);
+	/* the one of an earlier start of this level again (the world numbers a second one's name: CoopStandIn17) */
+	if (g_Coop.standInKept && World_FindEntity(g_Coop.standInName) == g_Coop.standInKept) {
+		g_Coop.standIn = g_Coop.standInKept;
+		Entity_SetActive(g_Coop.standIn, 1);
+		return;
+	}
+	if (!Coop_StartPos(&p, &yaw)) {
+		return;
+	}
+	/* inside the box of the level's grid of points: a level started without the story's way point (an instance kept up
+	 * before the story came) took a far spawn dummy, and the AI's paths to the stand-in failed the grid's check (QF) */
+	const cGridElements *g = g_NodesWorld ? g_NodesWorld->sup.grid : NULL;
+	if (g) {
+		p.x = p.x < g->min.x ? g->min.x : p.x > g->max.x ? g->max.x : p.x;
+		p.y = p.y < g->min.y ? g->min.y : p.y > g->max.y ? g->max.y : p.y;
+		p.z = p.z < g->min.z ? g->min.z : p.z > g->max.z ? g->max.z : p.z;
+	}
+	g_Coop.standIn = g_Coop.standInKept = cWorld_CreateEntity(g_pWorld, COOP_STANDIN, p.x, p.y, p.z, TYEN_WALKCHAR);
 	if (g_Coop.standIn) {
 		vec3_t ang = { 0.0f, yaw, 0.0f };
+		Str_Copy(g_Coop.standInName, g_Coop.standIn->name, sizeof(g_Coop.standInName));
 		Faction_EnsureClass("Dtritus");
 		WithLife_SetActCtrl(g_Coop.standIn, "Dtritus");
 		Obj_SetAng(g_Coop.standIn, &ang);

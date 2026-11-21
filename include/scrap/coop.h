@@ -345,7 +345,8 @@ byte Coop_Warning(const char *text);
 /* Sputnik's hangar screen (SputnikInterface.EnterSputnikInterface): 1 when it opened on the client of the member the
  * scripts act for (its money and hangar come back into the story, then EndSputnikCallBack runs here) */
 byte Coop_SputnikOpen(void);
-/* the editor of the member the scripts act for is on its client (its tutorial runs there) */
+/* the editor of the member the scripts act for is on its client (its tutorial runs there; -mp2: of the current
+ * player, any mode) */
 byte Coop_ShipEditAway(void);
 /* the save variables of the hangar (Hangar.*) into a message and back, as the menus of the hangar carry them (also the
  * Sputniks of the sandbox and freeroam, include/scrap/sputniks.h) */

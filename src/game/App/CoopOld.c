@@ -53,6 +53,7 @@
 #include "scrap/text.h"
 #include "scrap/texts.h"
 #include "scrap/travel.h"
+#include "scrap/uichan.h"
 #include "scrap/vehicleattack.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
@@ -761,6 +762,10 @@ void Coop_GetHangar(NetRepReader *r) {
 }
 
 byte Coop_ShipEditAway(void) {
+	/* -mp2: the editor went to the client by the UI channel (its tutorial runs there, not on the instance) */
+	if (Ui_Open(UI_K_SHIPEDIT)) {
+		return 1;
+	}
 	int i = Coop_On() ? Cp_Player() : -1;
 	return i >= 0 && g_Coop.pl[i].menu == COOP_MENU_SHIPEDIT;
 }

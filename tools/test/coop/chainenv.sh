@@ -65,3 +65,41 @@ export AUTO_PRE_Mission_DestroyHumphrey='switch $a;switch $b'
 # GoWithHuman: the human waits at the entrance and follows D-Tritus once he is near (CheckMaxDist), to the machine's
 # switch; he stops when D-Tritus is too far: pa goes to him first, then walks (test line walk)
 export AUTO_PRE_Mission_GoWithHuman='goto $a Human_Entrance 0 300;wait 5;walk $a 1 Human_Entrance'
+# Part 1 of the story (stage 5b), the intro's levels by their steps, as single player plays them (no mission targets):
+# Orbit: the gatekeeper's talk, the decontamination, the check-in, the fall to Fake
+export AUTO_A_MapDecont='-' AUTO_B_MapDecont='-'
+export AUTO_MID_MapDecont='@|inst @ use $a Decontamination_keyboard|scene Decontamination ended|120|the decontamination;;@|inst @ use $a Functionary_00|scene Functionary ended|200|the check-in;;@|inst @ use $a DownPanel_keyboard||||'
+# Fake: its scene chain plays by itself and ends in the Junkyard
+export AUTO_A_Fake='-' AUTO_B_Fake='-'
+# RustyFirstContact: Berto's scene, Rusty's talk, the keypad: the tutorial question and the ship editor on pa's client
+# (SCRAP_COOP_ANSWER, SCRAP_COOP_SHIPEDIT), the platform: Rusty's farewell, the elevator to Outskirts
+export AUTO_A_Mission_RustyFirstContact='-' AUTO_B_Mission_RustyFirstContact='-'
+export AUTO_MID_Mission_RustyFirstContact='@|-|scene Mecanic ended|300|Berto'"'"'s scene (any time);;@|inst @ goto $a Rusty_0 0 250||||;;@|wait 2||||;;@|inst @ use $a Rusty_0|player $a uses Rusty_0|10|pa talks to Rusty;;@|wait 25||||;;@|inst @ goto $a DM_EditKeyboard 0 250||||;;@|wait 3||||;;@|inst @ use $a DM_EditKeyboard|ui: the yesno opens on the client of player $a|20|the keypad asks pa;;@|-|ui: player $a closed the ship editor|120|pa'"'"'s editor closes;;@|inst @ goto $a DM_Door_EditShip_00 0 150||||;;@|wait 3||||;;@|inst @ use $a DM_Door_EditShip_00|scene MecanicFinal plays|30|Rusty'"'"'s farewell'
+# MeetBoss: after the gambler's talk on the desktop the possession of Berto is the task (SpecialActionActive 2): pa
+# possesses him (the possession key), hides by the metro station until the alarm the possession raised falls (as the
+# single player does), then the auto player goes on as Berto (the conversor back to D-Tritus, Humphrey)
+export AUTO_MID_Mission_MeetBoss='@|poll inst @ story get SpecialActionActive|SpecialActionActive = 2|1200|the possession task;;@|inst @ auto $a 0||||;;@|wait 3||||;;@|inst @ possess $a Berto_Default|player $a goes to possess|5|pa goes to possess Berto;;@|-|possession of Berto_Default done|120|pa possessed Berto (any time);;@|wait 5||||;;@|inst @ goto $a DM_Door_Metro_Press 0 400||||;;@|poll inst @ status|player $a \(NetPlayer[0-9_c]+\):.*alarm 0.00|400|the alarm of pa (Berto) fell by the metro station;;@|inst @ auto $a 1|player $a plays|5|pa plays on as Berto'
+# PoliceBossCheats: pa a policeman by the conversor (Ficus' friend wants it), the photo of the boss cheating at poker
+# (the use key when he cheats), the fight scene, then the auto player again
+export AUTO_ENV_Mission_PoliceBossCheats="SCRAP_COOP_CONV=Police" AUTO_PRE_Mission_PoliceBossCheats='conv'
+export AUTO_MID_Mission_PoliceBossCheats='@|poll inst @ story get Mission_PoliceBossCheats|Mission_PoliceBossCheats = BossCheats|900|Ficus'"'"' friend: the boss cheats at poker (a photo);;@|inst @ auto $a 0||||;;@|wait 10||||;;@|inst @ goto $a DM_Mission_PoliceBoss_BossCheater 0 200|player $a next to|20|pa at the poker table;;@|wait 3||||;;@|poll inst @ press $a act3 -150|scene PoliFight|600|pa photographs the boss cheating: the fight scene;;@|-|scene PoliFight ended|600|the scene ends (any time);;@|wait 10||||;;@|inst @ auto $a|player $a plays|5|pa plays the mission'"'"'s targets again'
+# FunctionaryHunting: in a stolen police ship (Ficus' disguise) to the meeting point, where the police friends come
+export AUTO_PRE_Mission_FunctionaryHunting='board $a POLI;wait 5;goto $a DM_Mission_FunctionaryHunting 0 0;wait 30'
+# SheriffMayor: the police boss is paid (the money of the party's member, as the earlier chains)
+export AUTO_PRE_Mission_SheriffMayor='money $a 50000'
+# CatchTrurl: after Trurl's talk the functionaries with his maps are possessed one after the other (their maps drop),
+# then D-Tritus again by the conversor, the auto player photographs the maps and talks to Trurl
+export AUTO_MID_Mission_CatchTrurl='@|poll inst @ story get CatchTrurlMissionData|CatchTrurlMissionData = KillFunctionaries|900|Trurl'"'"'s talk: the functionaries with his maps;;@|inst @ auto $a 0||||;;@|wait 5||||;;@|inst @ possess $a Functionary_10|the possession of Functionary_10 done|150|pa possesses Functionary_10;;@|inst @ possess $a Functionary_23|the possession of Functionary_23 done|150|pa possesses Functionary_23;;@|inst @ possess $a Functionary_25|the possession of Functionary_25 done|150|pa possesses Functionary_25;;@|wait 5||||;;'"$CONV_A"';;@|inst @ auto $a|player $a plays|5|pa photographs the maps and talks to Trurl again'
+# StealMayorShip: in the mayor's ship twenty police ships of the level to destroy, then the call once the alarm fell
+export AUTO_MID_Mission_StealMayorShip='@|wait 60||||;;@|inst @ auto $a 1 @OutCop|player $a plays|10|pa fights the police ships of the level;;@|poll inst @ show Mission_StealMayorShip.numCopsKilled|numCopsKilled = 20|2400|twenty police ships destroyed;;@|inst @ auto $a 0||||;;@|inst @ auto $b 0||||;;@|poll inst @ status|player $a \(.*alarm 0\.00|900|pa'"'"'s alarm falls before the call;;@|inst @ auto $a 1||||;;@|inst @ auto $b 2||||'
+# StealMayorShip: only the kills of the mayor's ship count: the other members stay out of the fight (their kills of
+# the police would not count; alive they keep the party alive while pa fights)
+export AUTO_B_Mission_StealMayorShip='-'
+# the CTF super deals (FZ): pa flies onto the waypoint's item (the flag) as a player follows its arrow, the others fight
+export AUTO_PRE_SuperDeal_Fifth='switch $a;switch $b;waypoint $a 1' AUTO_PRE_SuperDeal_Ninth='switch $a;switch $b;waypoint $a 1'
+# the Domination super deals (OM): pa flies onto the waypoint's item (the baton, then the zones), the others fight
+export AUTO_PRE_SuperDeal_Sixth='switch $a;switch $b;waypoint $a 1' AUTO_PRE_SuperDeal_Tenth='switch $a;switch $b;waypoint $a 1'
+# the automatic player does not win a Domination deal (it does not hunt the enemy's baton carrier): after its try the
+# deal's victory is called as the campaign chain of round 8o does (the story goes on to the next deal)
+export AUTO_MID_SuperDeal_Sixth='@|wait 150||||;;@|inst @ call SuperDeal_Sixth.Victory|coop: call SuperDeal_Sixth.Victory: done|10|the deal'"'"'s victory (test line)'
+export AUTO_MID_SuperDeal_Tenth='@|wait 150||||;;@|inst @ call SuperDeal_Tenth.Victory|coop: call SuperDeal_Tenth.Victory: done|10|the deal'"'"'s victory (test line)'

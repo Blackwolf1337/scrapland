@@ -306,6 +306,11 @@ byte Ui_ShipEdit(void) {
 	return Ui_Send(&w, i, UI_K_SHIPEDIT);
 }
 
+byte Ui_Open(int k) {
+	int i = g_Mp2 && g_Instance ? Players_Current() : PLAYERS_NONE;
+	return i >= 0 && i < PLAYERS_MAX && ui.pl[i].ui == k;
+}
+
 void Ui_NewsHead(int on) {
 	uint8_t buf[4] = { UI_MSG, UI_S_NEWS, (uint8_t)(on != 0), 0 };
 	int i = g_Mp2 && g_Instance ? Players_Current() : PLAYERS_NONE;
@@ -780,6 +785,15 @@ static void Ui_ClientAnswer(int yes) {
 	NetRep_PutU8(&w, (uint32_t)yes);
 	Ui_ClientSend(buf, w.size, UI_K_YESNO);
 	Con_Printf("ui: the answer %s to the instance\n", yes ? "yes" : "no");
+}
+
+byte Ui_ClientYesNo(int yes) {
+	if (!Ui_ClientIn(UI_K_YESNO)) {
+		return 0;
+	}
+	Con_Printf("ui: test: the answer %s\n", yes ? "yes" : "no");
+	Ui_ClientAnswer(yes);
+	return 1;
 }
 
 static void Ui_MenuYes(cAbstractFile *params) {
