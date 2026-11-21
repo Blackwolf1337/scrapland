@@ -312,6 +312,9 @@ void Coop_TestInput(int i, struct NetRepInput *in, double back);
  * 0); Coop_StandInEntity: it, NULL */
 void Coop_StandIn(byte on);
 struct cEntity *Coop_StandInEntity(void);
+/* e is a stand-in of a level's start (the world numbers their names: CoopStandIn0, ...; it stays in the world for the
+ * names the scripts kept): no player sees it, the -mp2 replication leaves it out */
+byte Coop_IsStandIn(const struct cEntity *e);
 /* where the single player would start in the level on a coop instance (the way point's spawn, else the level's start),
  * its heading; 0 elsewhere */
 byte Coop_StartPos(vec3_t *p, float *yaw);

@@ -144,7 +144,9 @@ static void VM_Haze(cVehicleMotors *self, VMUpdate *u) {
 	cDebris *d = cDebrisSys_GetIdle(sys);
 	d->life = 1.0f;
 	if (!cDebrisSys_IsIdle(sys, d)) {
+		Pres_Derive();
 		cDebrisSys_Drop(sys, d);
+		Pres_Underive();
 	}
 	cObjElementFXParticleSystem *el = Debris_Element(d);
 	if (!el) {
@@ -244,8 +246,11 @@ void cVehicleMotors_Update(cVehicleMotors *self) {
 		CGameModel_SetPos(Debris_Model(d), &cam);
 		CGameModel_SetSortZ(Debris_Model(d), -0.1f, 0.0f);
 		d->life = 0.5f;
+		/* the motors' smoke at the camera: a -mp2 client's replica of the ship makes its own (include/scrap/pres.h) */
 		if (!cDebrisSys_IsIdle(sys, d)) {
+			Pres_Derive();
 			cDebrisSys_Drop(sys, d);
+			Pres_Underive();
 		}
 		cObjElementFXParticleSystem *el = Debris_Element(d);
 		u.smokePs = &el->particles;

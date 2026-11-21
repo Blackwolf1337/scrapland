@@ -184,3 +184,6 @@ Bp_SetThugsState	PARTY	BeatPickus (Police): the thugs follow the player, the act
 Gd_UsrThere	PARTY	IntoTheGDB (GDB): the player at the restore point, the acting member in coop
 GoWithHuman_Init	PARTY	GoWithHuman (Press): the human follows the player, the acting member in coop
 Speech_ScheduledVoiceCallback_E	PARTY	a Speech entry in the world's context (a scheduled voice's end): the acting member in coop
+Scrap_AlarmLock	ALL	Scrap.SetLockAlarm of a mission: the lock of every member's alarm in coop (Party_All), else the nearest player's
+Speech_RemoteComunication_E	PARTY	a Speech entry in the world's context (a mission's remote call): the acting member in coop
+Hud_Controlled	PARTY	the HUD of the controlled entity read by a mission: the acting member in coop

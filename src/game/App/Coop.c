@@ -1025,6 +1025,10 @@ void Coop_StandIn(byte on) {
 	}
 }
 
+byte Coop_IsStandIn(const cEntity *e) {
+	return Coop_On() && e && e->name && !strncmp(e->name, COOP_STANDIN, sizeof(COOP_STANDIN) - 1);
+}
+
 cEntity *Coop_StandInEntity(void) {
 	return g_Coop.standIn;
 }

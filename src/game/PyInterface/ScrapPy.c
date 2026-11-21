@@ -693,13 +693,18 @@ API_FN(Scrap, SetLanguage) {
 	return Mode_Parse(a, n, "s|i", &lang, &flag) && Api_Build(out, "i", Lang_Set(lang, flag != 0) != 0);
 }
 
-/* SetLockAlarm(lock) */
+static byte Scrap_AlarmLock(void *lock) {
+	Alarm_SetLock(Players_CurAlarm(), *(const int *)lock != 0);
+	return 1;
+}
+
+/* SetLockAlarm(lock); not in the original: a coop party's every member (include/scrap/party.h) */
 API_FN(Scrap, SetLockAlarm) {
 	int lock;
 	if (!Mode_Parse(a, n, "i", &lock)) {
 		return 0;
 	}
-	Alarm_SetLock(Players_CurAlarm(), lock != 0);
+	Party_All(Scrap_AlarmLock, &lock);
 	return 1;
 }
 
