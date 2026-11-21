@@ -1505,7 +1505,15 @@ static byte Pk_Arrive(const nativeVal_t *comeFrom, const nativeVal_t *spawn) {
 	nativeVal_t *pos = Mode_V(&t), *l = Mode_V(&t), *p = Mode_V(&t), *xyz = Mode_V(&t), *y = Mode_V(&t), *z = Mode_V(&t);
 	nativeVal_t *ca = Mode_V(&t), *at = Mode_V(&t), *ang = Mode_V(&t), *name = Mode_V(&t);
 	const char *s;
-	if (!Mode_UsrHandle(usrPlay) || !LvN_SetI(usrPlay, "Active", 0) || !Native_ArgStr(spawn, 1, &s) ||
+	if (!Mode_UsrHandle(usrPlay)) {
+		return Mode_Done(&t, 0);
+	}
+	/* not in the original: a coop instance's level start has no player yet (its members arrive by their own join and
+	 * travel); the party story's ComeFrom of a member's flight out of a level made the start fail here */
+	if (!Native_True(usrPlay) && Coop_On()) {
+		return Mode_Done(&t, 1);
+	}
+	if (!LvN_SetI(usrPlay, "Active", 0) || !Native_ArgStr(spawn, 1, &s) ||
 		!Mode_DummyStartSeam(s, 0) || !Mode_DummyNextSeam(dummy)) {
 		return Mode_Done(&t, 0);
 	}

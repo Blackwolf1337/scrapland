@@ -3242,6 +3242,7 @@ static const netClassRow_t nc_playerread[] = {
 	{ "Parking_Think", NC_ANY },
 	{ "PhoneCab.audioComEntity", NC_PARTY },
 	{ "PhoneCab_Free", NC_PARTY },
+	{ "Pk_Arrive", NC_PARTY },
 	{ "Pk_BrowseItemPos", NC_WORLD },
 	{ "Pk_ParkedDeatN", NC_NEAREST },
 	{ "Play_OwnStatus", NC_NEAREST },
