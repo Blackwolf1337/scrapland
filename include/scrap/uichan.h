@@ -88,6 +88,8 @@ byte Ui_Conv(void);
 byte Ui_Metro(const char *usr, const char *door);
 byte Ui_Sputnik(void);
 byte Ui_ShipEdit(void);
+/* interface ui is open on the client of the current player (a -mp2 instance) */
+byte Ui_Open(int ui);
 /* the news head of the monitor on the current player's HUD (NewsPanel.UseNewsPanel, EndOfNews) */
 void Ui_NewsHead(int on);
 /* a use of the machine named by the current player on a -mp2 instance: 1 when another player holds it (the use is
@@ -116,6 +118,8 @@ byte Ui_ClientKeeps(const struct cEntity *e);
 /* the conversor's pick on the client (cls "": Escape): to the instance, the interface closes; 0 when no interface of
  * the instance is open (single player goes on) */
 byte Ui_ClientConv(const char *cls);
+/* test (SCRAP_COOP_ANSWER on -mp2): the answer to the instance's question shown on the client; 0 when none shows */
+byte Ui_ClientYesNo(int yes);
 /* Sputnik's screen or the ship editor closed on the client: the hangar and money to the instance; 0 when no such
  * interface of the instance is open */
 byte Ui_ClientHangar(int ui);

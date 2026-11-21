@@ -669,6 +669,12 @@ static byte Pk_SetDtritusPlateN(const nativeVal_t *v, const nativeVal_t *active)
 	if (t > 0) {
 		t = Native_True(v);
 	}
+	/* not in the original: on an instance the world's ship of the scripts may be gone (the coop party's ship destroyed,
+	 * a respawned ship's plate then had a dead handle's Name read: an error every respawn) */
+	if (t > 0 && Players_Net()) {
+		t = Pk_G("PlayerShip", &plate) ? plate.type != NV_ENT || Native_Ent(&plate) != NULL : -1;
+		Native_Free(&plate);
+	}
 	if (t > 0) {
 		t = Pk_G("PlayerShip", &plate) && Mode_VObjRead(&plate, "Name", &a) && Mode_VObjRead(v, "Name", &b) ? Mode_Cmp(&a, "==", &b) : -1;
 	}

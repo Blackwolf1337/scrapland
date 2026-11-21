@@ -95,9 +95,11 @@ int NetScene_Player(void);
 void NetScene_Started(const char *cls, const char *ent);
 /* EndOfScene of the scene begins (before its callback): the end record */
 void NetScene_Ending(void);
-/* view 0 of the current player's context shows camera cam (cWorld_SetCam): a camera path of the scripts (boarding,
- * parking, a race's start) is sent to that player with the records of the frame (NetScene_Flush) */
-void NetScene_CamSet(struct cEntity *cam);
+/* view 0 of the current player's context (coop: the world's, every member's) shows camera cam (cWorld_SetCam): a
+ * camera path of the scripts (boarding, parking, a race's start) is sent to that player with the records of the frame
+ * (NetScene_Flush), a fixed camera (a super deal's scores) as a path at its place that holds; when the follow camera
+ * comes back after either, the client's own camera again; 1 when cam goes to the clients so */
+byte NetScene_CamSet(struct cEntity *cam);
 /* the scripts set a variable of a follow camera (FollowCamEntity.c: CamDist, CamAng, CamRot, AddTurn, Target,
  * MainTarget; s the entity name of Target and MainTarget, else d the number as the scripts gave it): when it is the
  * camera of a player's view (its own camera, also while a camera path of the player shows it) the setting goes to

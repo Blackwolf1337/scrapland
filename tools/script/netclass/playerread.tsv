@@ -192,3 +192,34 @@ Parking.SwitchVehicleMissionCallback	WORLD	a mission's callback of the world's c
 Parking.SwitchCharMissionCallback	WORLD	a mission's callback of the world's context; a player's own is read in its context
 Alarm.AbortMissionCallback	WORLD	a mission's callback of the world's context; a player's own is read in its context
 Menu.MissionScorerCall	WORLD	the HUD callback of the world's context; a player's own HUD reads it in its context
+# stage 5b part 1 (story chapters 1-36): the sites the chapters met
+Speech_OffVoice_E	PARTY	a Speech entry in the world's context (a voice turned off): the acting member in coop
+Rusty_StartInitialScene	PARTY	RustyFirstContact (Junkyard): the player put at Berto's scene, the acting member in coop
+Speech_RestoreMoveTime_E	PARTY	a Speech entry in the world's context (the talk's end gives the moves back): the acting member in coop
+Ui_For	MENU	an interface the scripts open in the world's context (a question after a scene): the acting member's client
+Rm_NearestDummy	PARTY	HumphreyRace (DownTown): the race's start place nearest to the player, the acting member in coop
+Rm_OnRaceStart	PARTY	HumphreyRace (DownTown): the race starts for the player who takes its start, the acting member in coop
+Rm_Racer	PARTY	HumphreyRace (DownTown): a racer placed around the player, the acting member in coop
+Plus_InitRace	PARTY	MultiplusRace (DownTown): the race against the police starts for the player, the acting member in coop
+Plus_EndOfRace	PARTY	MultiplusRace (DownTown): the race's winner against the player's ship, the acting member in coop
+Mf_TryMsg	PARTY	MissionsFuncs.TryMsg: a level's start message when the player walks or flies (a super deal's end), the acting member in coop
+Mr_OnRaceStartC	PARTY	a MortalRace super deal or mission: the race starts for the player, the acting member in coop
+Mr_OnCheckPointC	PARTY	a MortalRace super deal or mission: the player's checkpoint, the acting member in coop
+Mr_RacerDamagedC	PARTY	a MortalRace super deal or mission: a racer hit by the player, the acting member in coop
+Mr_RacersAttackShipC	PARTY	a MortalRace super deal or mission: the racers attack the player's ship, the acting member in coop
+Mr_TakeBatonC	PARTY	a MortalRace super deal or mission: the baton taken by the player, the acting member in coop
+Dm_OnEnemyDeathC	PARTY	a DeathMatch super deal: an enemy's death by the player, the acting member in coop
+Tdm_Death	PARTY	a TeamDeathMatch super deal: a death against the player's team, the acting member in coop
+Ctf_OnVehicleDeathCallbackC	PARTY	a CTF super deal: a ship's death and the player's flag, the acting member in coop
+Ctf_TakeFlagC	PARTY	a CTF super deal: a flag taken by the player, the acting member in coop
+Steal_CreateMissionShip	PARTY	StealMayorShip (DownTown): the mayor's ship made for the player, the acting member in coop
+Dom_TakeBatonC	PARTY	a Domination super deal: the baton taken by the player, the acting member in coop
+Dom_TakeZoneC	PARTY	a Domination super deal: a zone taken with the player's baton, the acting member in coop
+Rudolph_InitRace	PARTY	CatchRudolph, KillRudolph: Rudolph's race starts for the player, the acting member in coop
+Mr_RespawnRacerC	PARTY	a MortalRace super deal or mission: a racer again near the player, the acting member in coop
+Steal_OnPoliceDeath	PARTY	StealMayorShip (DownTown): a police ship's death and the player's mayor's ship, the acting member in coop
+Sd_UsrSafe	ALL	a super deal's end (a win): every member's life full and invulnerable in coop (Party_All)
+Sd_UsrInvulnerable	ALL	a super deal's end (a defeat): every member invulnerable in coop (Party_All)
+Sd_SetVulnerableC	ALL	a super deal's ship can be hit again (boarded): every member's in coop (Party_All)
+Dom_CreateTeam	PARTY	a Domination super deal: a team made around the player, the acting member in coop
+Speech_ForceRemoteCom_E	PARTY	a Speech entry in the world's context (a forced remote talk: a deal's end): the acting member in coop
