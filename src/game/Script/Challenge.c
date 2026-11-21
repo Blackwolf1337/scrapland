@@ -22,6 +22,7 @@
 #include <limits.h>
 #include <string.h>
 
+#include "scrap/players.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -549,7 +550,10 @@ static byte Chal_CancelChallenge(const nativeVal_t *type) {
 	}
 	byte ok = 1;
 	if (Native_IsStr(type, "Race")) {
-		ok = Mode_EntitySeam(Mode_S(&t, "CheckPoint"), cp) &&
+		char name[96];
+		/* not in the original: the player's own checkpoint on a -mp2 free world (include/scrap/players.h) */
+		Players_OwnName("CheckPoint", name, sizeof(name));
+		ok = Mode_EntitySeam(Mode_S(&t, name), cp) &&
 			(!Native_True(cp) || (LvN_SetS(cp, "OnTake", "") && Mode_VDel(cp))) &&
 			LvN_ModGet("RaceMaker", "Players", list) && Chal_Release(list);
 	} else if (Native_IsStr(type, "Combat")) {

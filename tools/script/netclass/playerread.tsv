@@ -219,3 +219,7 @@ Sd_UsrInvulnerable	ALL	a super deal's end (a defeat): every member invulnerable 
 Sd_SetVulnerableC	ALL	a super deal's ship can be hit again (boarded): every member's in coop (Party_All)
 Dom_CreateTeam	PARTY	a Domination super deal: a team made around the player, the acting member in coop
 Speech_ForceRemoteCom_E	PARTY	a Speech entry in the world's context (a forced remote talk: a deal's end): the acting member in coop
+Parking.SwitchVehicleMissionCallback	WORLD	a mission's callback of the world's context (a super deal's level start sets it for the group); a player's own is read in its context
+Parking.SwitchCharMissionCallback	WORLD	a mission's callback of the world's context; a player's own is read in its context
+Alarm.AbortMissionCallback	WORLD	a mission's callback of the world's context; a player's own is read in its context
+Menu.MissionScorerCall	WORLD	the HUD callback of the world's context; a player's own HUD reads it in its context

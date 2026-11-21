@@ -26,6 +26,7 @@ typedef struct RepSlot {
 	uint32_t liveSnap;				/* the snapshot that set it last */
 	uint8_t kind;
 	uint16_t look;
+	uint8_t only;					/* 0: every client; else the tag of the clients that get it */
 	float x, y, z;
 } RepSlot;
 
@@ -44,6 +45,7 @@ typedef struct RepSent {
 struct NetRepClient {
 	int index;
 	int own;						/* the slot of its player, -1 */
+	int tag;						/* NetRepSrv_SetTag, 0 */
 	float view[3];
 	float radius;
 	uint32_t rate;
@@ -180,6 +182,7 @@ void NetRepSrv_SetEx(NetRepServer *s, int slot, int kind, int look, const NetRep
 	e->liveSnap = s->snap;
 	e->kind = (uint8_t)kind;
 	e->look = (uint16_t)look;
+	e->only = (uint8_t)(flags >> 8);
 	e->x = NetRep_UPos(st->pos[0]);
 	e->y = NetRep_UPos(st->pos[1]);
 	e->z = NetRep_UPos(st->pos[2]);
@@ -234,6 +237,10 @@ void NetRepSrv_RemoveClient(NetRepServer *s, NetRepClient *c) {
 	s->clients[i] = s->clients[--s->numClients];
 	s->clients[i]->index = i;
 	free(c);
+}
+
+void NetRepSrv_SetTag(NetRepClient *c, int tag) {
+	c->tag = tag;
 }
 
 void NetRepSrv_SetView(NetRepClient *c, float x, float y, float z, float radius) {
@@ -381,7 +388,7 @@ int NetRepSrv_Build(NetRepServer *s, NetRepClient *c, uint8_t msgs[][NETREP_MSG_
 	for (int i = 0; i < nq + s->nlevel; i++) {
 		int slot = s->query[i];
 		const RepSlot *e = &s->slot[slot];
-		if (e->liveSnap != snap) {
+		if (e->liveSnap != snap || (e->only && e->only != c->tag)) {
 			continue;
 		}
 		float dx = e->x - c->view[0], dy = e->y - c->view[1], dz = e->z - c->view[2];

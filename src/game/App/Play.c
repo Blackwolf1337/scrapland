@@ -177,6 +177,10 @@ int Play_OwnSlot(void) {
 	return play.slot;
 }
 
+int Play_Player(void) {
+	return play.player;
+}
+
 cEntity *Play_Entity(void) {
 	return play.e;
 }
