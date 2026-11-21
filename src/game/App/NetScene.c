@@ -39,6 +39,8 @@
 #define NS_HIDE 256					/* entities a client hides for itself in a scene */
 #define NS_SHOTS 8
 #define NS_GONE_NS 2000000000ull	/* the scene entity's replica gone that long without an end: the end here */
+#define NS_CAMWAITS 4				/* camera targets that wait for their replica */
+#define NS_CAMWAIT_NS 2000000000ull	/* that long at most */
 
 enum { NS_SKIP_ALL, NS_SKIP_ANY, NS_SKIP_HOST, NS_SKIP_NONE };
 
@@ -56,7 +58,14 @@ static struct {
 	int flags;
 	int rule;						/* NS_SKIP_, -1 before the rules were read */
 	char path[PLAYERS_MAX][NS_NAME];	/* the camera path each player's view 0 shows now, to send */
+	uint32_t fadeFrom, fadeTo;		/* the last fade of the scene (fadeAt < 0: none) */
+	float fadeTime;
+	double fadeAt;					/* Instance_Time it started */
 	/* client */
+	struct {
+		char name[16], value[NS_NAME];
+		uint64_t ns;				/* when it came, 0 free */
+	} camWait[NS_CAMWAITS];
 	byte pathOn;
 	byte cOn, linked, seen;
 	char cCls[NS_NAME], cEnt[NS_NAME];
@@ -69,6 +78,7 @@ static struct {
 	char shotDir[256];
 	float shotT[NS_SHOTS];
 	int nshots, shotsDone;
+	byte shotNow;					/* a shot is taken in this frame */
 	char shotScene[NS_NAME];
 } ns = { .player = PLAYERS_NONE, .rule = -1 };
 
@@ -159,6 +169,7 @@ void NetScene_Started(const char *cls, const char *ent) {
 	Native_ErrClear();
 	ns.flags = (coop ? 0 : NETSCENE_F_LOCALHIDE) | (outdoor ? NETSCENE_F_OUTDOOR : 0);
 	ns.told = ns.mask & NetScene_Online();
+	ns.fadeAt = -1.0;
 	NetScene_Record(ns.told);
 	NetAudit_Name(NA_HUD, "scene.start:", cls);
 	if (ns.player == PLAYERS_NONE) {
@@ -179,6 +190,38 @@ void NetScene_Ending(void) {
 	ns.on = 0;
 	NetAudit_Name(NA_HUD, "scene.end:", ns.cls);
 	Con_Printf("scene: %s ends\n", ns.cls);
+}
+
+byte NetScene_Timed(int i) {
+	return NetScene_On() && i >= 0 && i < PLAYERS_MAX && (ns.mask >> i & 1);
+}
+
+void NetScene_FadeSent(uint32_t from, uint32_t to, float time) {
+	if (NetScene_On()) {
+		ns.fadeFrom = from;
+		ns.fadeTo = to;
+		ns.fadeTime = time;
+		ns.fadeAt = Instance_Time();
+	}
+}
+
+/* the last fade of the scene as far as it is now, to the players of mask (a joiner: its screen as the others') */
+static void NetScene_FadeNow(uint64_t mask) {
+	if (ns.fadeAt < 0.0 || !Pres_BeginMask(mask, PRES_O_FADE)) {
+		return;
+	}
+	float left = ns.fadeTime - (float)(Instance_Time() - ns.fadeAt);
+	float f = ns.fadeTime > 0.0f && left > 0.0f ? left / ns.fadeTime : 0.0f;
+	uint32_t now = 0;
+	/* the colour of ScorerFade_Draw at this point: f of the start, 1 - f of the end, per byte */
+	for (int sh = 0; sh < 32; sh += 8) {
+		float a = (float)(ns.fadeFrom >> sh & 0xff), b = (float)(ns.fadeTo >> sh & 0xff);
+		now |= (uint32_t)(int)(b * (1.0f - f) + a * f) << sh;
+	}
+	Pres_PutInt((int)now);
+	Pres_PutInt((int)ns.fadeTo);
+	Pres_PutFloat(left > 0.001f ? left : 0.001f);
+	Pres_Send();
 }
 
 void NetScene_Joined(int i) {
@@ -243,6 +286,46 @@ void NetScene_CamSet(cEntity *cam) {
 	Str_Copy(ns.path[i], cam->name, sizeof(ns.path[i]));
 }
 
+/* cam is the camera of player i's view 0, or one a camera path there shows */
+static byte NetScene_OwnCam(const cEntity *cam, int i) {
+	const char *view = i == PLAYERS_NONE ? cWorld_GetCamName(g_pWorld, 0) : Players_Ctx(i) ? Players_Ctx(i)->camName : "";
+	if (!view || !*view || !cam->name) {
+		return 0;
+	}
+	if (!strcmp(view, cam->name)) {
+		return 1;
+	}
+	cEntity *v = World_FindEntity(view);
+	if (v && Entity_IsType(v, TYEN_CAMPATH)) {
+		const cCamPathEntity *p = (const cCamPathEntity *)v;
+		for (int k = 0; k < p->numPoints; k++) {
+			if (!strcmp(p->points[k].cam, cam->name)) {
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+void NetScene_CamVar(cEntity *cam, const char *name, double d, const char *s) {
+	int i = Players_Current();
+	if (!Pres_Out() || !cam || (i == PLAYERS_NONE && !Coop_On()) || !NetScene_OwnCam(cam, i)) {
+		return;
+	}
+	if (!Pres_BeginMask(i == PLAYERS_NONE ? ~(uint64_t)0 : (uint64_t)1 << i, PRES_O_CAMVAR)) {
+		return;
+	}
+	Pres_PutStr(name);
+	Pres_PutInt(s != NULL);
+	if (s) {
+		Pres_PutStr(s);
+	} else {
+		Pres_PutFloat((float)d);
+	}
+	Pres_Send();
+	NetAudit_Name(NA_CAMERA, "scene.camvar:", name);
+}
+
 void NetScene_Flush(void) {
 	/* a player of the audience that came while the scene plays joins it at its current time (the replica of the
 	 * scene entity brings the server's action time) */
@@ -251,6 +334,7 @@ void NetScene_Flush(void) {
 		ns.told &= online;
 		if (want) {
 			NetScene_Record(want);
+			NetScene_FadeNow(want);
 			ns.told |= want;
 			for (int i = 0; i < PLAYERS_MAX; i++) {
 				if (want >> i & 1) {
@@ -279,6 +363,7 @@ void NetScene_Flush(void) {
 		Pres_PutStr(e->name);
 		Pres_PutInt(n);
 		Pres_PutFloat(p->time);
+		Pres_PutInt((int)(Instance_Time() * 1000.0));
 		for (int k = 0; k < n; k++) {
 			const cCamPathPoint *pt = &p->points[k];
 			cEntity *c = pt->cam[0] ? World_FindEntity(pt->cam) : NULL;
@@ -323,7 +408,11 @@ void NetScene_ClientPath(const char *name, const netScenePath_t *path) {
 	}
 	cCamPathEntity *p = (cCamPathEntity *)e;
 	p->numPoints = path->n;
-	p->time = path->time;
+	/* the own entity is drawn at its predicted time, ahead of the server's: the path as far as it is at that time,
+	 * so the camera and the own ship it shows (boarded, parked) keep single player's timing */
+	double own = Play_OwnTime();
+	float ahead = own > 0.0 && path->sent > 0.0 && own > path->sent ? (float)(own - path->sent) : 0.0f;
+	p->time = path->time + (ahead < 0.5f ? ahead : 0.5f);
 	for (int k = 0; k < path->n; k++) {
 		cCamPathPoint *pt = &p->points[k];
 		Str_Copy(pt->cam, !strcmp(path->p[k].cam, "@own") ? NS_OWNCAM : path->p[k].cam, sizeof(pt->cam));
@@ -342,6 +431,61 @@ void NetScene_ClientPath(const char *name, const netScenePath_t *path) {
 	NetAudit_Name(NA_CAMERA, "scene.client.path:", name);
 	Con_Printf("scene: the camera path %s of the server (%d points, %.2f s) plays here\n", name, path->n,
 		(double)NetScene_PathLength(p));
+}
+
+/* a camera's target of the server's name: its replica or the own entity here; 0 when it is not here (yet) */
+static byte NetScene_CamTarget(cEntity *cam, const char *name, const char *s) {
+	cEntity *e = *s ? ReplicaEnt_Find(s) : NULL;
+	char *v = e ? e->name : "";
+	if (*s && !e) {
+		return 0;
+	}
+	Entity_VarS(cam, name, &v, 1);
+	return 1;
+}
+
+/* the targets that wait for their replica (a character the scripts made in the same frame) */
+static void NetScene_CamWaits(void) {
+	cEntity *cam = World_FindEntity(NS_OWNCAM);
+	uint64_t now = Plat_RealNs();
+	for (int k = 0; k < NS_CAMWAITS; k++) {
+		if (!ns.camWait[k].ns) {
+			continue;
+		}
+		if (cam && NetScene_CamTarget(cam, ns.camWait[k].name, ns.camWait[k].value)) {
+			ns.camWait[k].ns = 0;
+		} else if (now - ns.camWait[k].ns > NS_CAMWAIT_NS) {
+			Pres_ClientMissing("camvar", ns.camWait[k].value);
+			ns.camWait[k].ns = 0;
+		}
+	}
+}
+
+void NetScene_ClientCamVar(const char *name, const char *s, float f) {
+	cEntity *cam = World_FindEntity(NS_OWNCAM);
+	if (!cam) {
+		return;
+	}
+	if (s) {
+		if (!NetScene_CamTarget(cam, name, s)) {
+			int k = 0;
+			/* the same variable's wait is replaced, else a free one (the oldest given up when there is none) */
+			while (k < NS_CAMWAITS - 1 && ns.camWait[k].ns && strcmp(ns.camWait[k].name, name)) {
+				k++;
+			}
+			if (ns.camWait[k].ns && strcmp(ns.camWait[k].name, name)) {
+				Pres_ClientMissing("camvar", ns.camWait[k].value);
+			}
+			Str_Copy(ns.camWait[k].name, name, sizeof(ns.camWait[k].name));
+			Str_Copy(ns.camWait[k].value, s, sizeof(ns.camWait[k].value));
+			ns.camWait[k].ns = Plat_RealNs();
+			return;
+		}
+	} else {
+		double d = f;
+		Entity_VarF(cam, name, &d, 1);
+	}
+	NetAudit_Name(NA_CAMERA, "scene.client.camvar:", name);
 }
 
 byte NetScene_ClientPathHolds(void) {
@@ -453,6 +597,7 @@ void NetScene_ClientEnd(const char *cls) {
 }
 
 void NetScene_ClientFrame(void) {
+	NetScene_CamWaits();
 	NetScene_PathFrame();
 	if (!ns.cOn) {
 		return;
@@ -545,6 +690,7 @@ byte NetScene_Exact(cEntity *e) {
 }
 
 void NetScene_ClientReset(void) {
+	memset(ns.camWait, 0, sizeof(ns.camWait));
 	ns.cOn = 0;
 	ns.pathOn = 0;
 	ns.nhid = 0;
@@ -609,54 +755,111 @@ static cEntity *NetScene_Playing(void) {
 	return e;
 }
 
-void NetScene_ShotFrame(void) {
-	static cEntity *lastPath;
-	static int paths;
-	char name[512], label[NS_NAME];
-	float t, len;
+#define NS_SHOT_EPS 0.001f
+#define NS_SHOT_BACK 0.5		/* s of server time a shot of the client may go back */
+
+/* the scene or camera path the shots are of now: its label, time and the time of the next shot (s) */
+typedef struct {
+	cEntity *e;						/* the scene entity, NULL for a path */
+	cEntity *cam;					/* the camera path */
+	char label[NS_NAME];
+	float t, at;
+	byte due;						/* a shot left for it */
+} nsShot_t;
+
+static cEntity *ns_lastPath;
+static int ns_paths;
+
+/* the subject of the shots now (count: a camera path seen anew counts as the next "Path<n>") */
+static byte NetScene_ShotSubject(nsShot_t *s, byte count) {
+	float len;
 	if (!ns.shotsRead) {
 		NetScene_ShotsRead();
 	}
 	if (!ns.nshots || !g_pWorld || g_Instance) {
-		return;
+		return 0;
 	}
+	memset(s, 0, sizeof(*s));
 	/* a scene by its entity's action, else a camera path on view 0 by its time ("Path<n>": the n-th of the run) */
 	cEntity *e = NetScene_Playing();
 	cActCtrl *ctrl = e && Entity_IsType(e, TYEN_WITH_LIFE) ? WLife(e)->actCtrl : NULL;
 	cEntity *cam = NetScene_ViewCam();
+	int paths = ns_paths;
 	if (ctrl && ctrl->layers[0].on) {
-		Str_Copy(label, e->name + 9, sizeof(label));
-		t = ctrl->layers[0].time;
+		s->e = e;
+		Str_Copy(s->label, e->name + 9, sizeof(s->label));
+		s->t = ctrl->layers[0].time;
 		len = ctrl->layers[0].action ? ctrl->layers[0].action->anmTotalTime : 0.0f;
 	} else if (cam && Entity_IsType(cam, TYEN_CAMPATH)) {
 		cCamPathEntity *p = (cCamPathEntity *)cam;
-		if (cam != lastPath || p->time < 0.05f) {
-			if (cam != lastPath || ns.shotsDone) {
-				paths++;
-			}
-			lastPath = cam;
+		if ((cam != ns_lastPath || p->time < 0.05f) && (cam != ns_lastPath || ns.shotsDone)) {
+			paths++;
 		}
-		Str_PrintfQuiet(label, sizeof(label), "Path%d", paths);
-		t = p->time;
+		if (count) {
+			ns_lastPath = cam;
+			ns_paths = paths;
+		}
+		s->cam = cam;
+		Str_PrintfQuiet(s->label, sizeof(s->label), "Path%d", paths);
+		s->t = p->time;
 		len = NetScene_PathLength(p);
 	} else {
-		lastPath = NULL;
-		return;
+		if (count) {
+			ns_lastPath = NULL;
+		}
+		return 0;
 	}
-	if (strcmp(ns.shotScene, label)) {
-		Str_Copy(ns.shotScene, label, sizeof(ns.shotScene));
+	byte fresh = strcmp(ns.shotScene, s->label) != 0;
+	int done = fresh ? 0 : ns.shotsDone;
+	if (count && fresh) {
+		Str_Copy(ns.shotScene, s->label, sizeof(ns.shotScene));
 		ns.shotsDone = 0;
 	}
-	float at = ns.shotsDone < ns.nshots ? ns.shotT[ns.shotsDone] : 0.0f;
-	if (at < 0.0f) {
-		at = -at * len;
+	s->due = done < ns.nshots;
+	s->at = s->due ? ns.shotT[done] : 0.0f;
+	if (s->at < 0.0f) {
+		s->at = -s->at * len;
 	}
-	if (ns.shotsDone < ns.nshots && t >= at) {
-		Str_PrintfQuiet(name, sizeof(name), "%s/%s-%d", ns.shotDir, label, ns.shotsDone);
-		Screenshot_Take(name);
-		Con_Printf("scene: shot %s %d at %.3f\n", label, ns.shotsDone, (double)t);
-		ns.shotsDone++;
+	return 1;
+}
+
+void NetScene_ShotFrame(void) {
+	nsShot_t s;
+	char name[512];
+	if (!NetScene_ShotSubject(&s, 1) || !s.due || s.t < s.at - NS_SHOT_EPS) {
+		return;
 	}
+	Str_PrintfQuiet(name, sizeof(name), "%s/%s-%d", ns.shotDir, s.label, ns.shotsDone);
+	Screenshot_Take(name);
+	Con_Printf("scene: shot %s %d at %.3f\n", s.label, ns.shotsDone, (double)s.t);
+	ns.shotsDone++;
+	ns.shotNow = 1;
+}
+
+float NetScene_ShotStep(float dt) {
+	nsShot_t s;
+	/* the frame of the shot is drawn with no time gone, as the scene stands (its fades and bars too) */
+	if (ns.shotNow) {
+		ns.shotNow = 0;
+		return dt < NS_SHOT_EPS ? dt : NS_SHOT_EPS;
+	}
+	/* a path and single player's scene run by the frame's time; the client's scene stands at the server's time
+	 * (NetScene_ShotServerTime), its local presentation runs by this frame's time as well */
+	if (!NetScene_ShotSubject(&s, 0) || !s.due) {
+		return dt;
+	}
+	float left = s.at - s.t;
+	return left > NS_SHOT_EPS && left < dt ? left : dt;
+}
+
+double NetScene_ShotServerTime(double rt) {
+	nsShot_t s;
+	if (!ns.cOn || !NetScene_ShotSubject(&s, 0) || !s.due || !s.e) {
+		return rt;
+	}
+	/* the frames before were drawn before the shot's time (else it was taken): its moment may lie a little back when
+	 * the samples were late */
+	return Watch_ActAt(s.e, 0, s.at, rt - NS_SHOT_BACK, rt);
 }
 
 /* ---- the test verb ---- */
@@ -675,6 +878,11 @@ void NetScene_Verb(tcBuf *b, const char *arg) {
 		} else {
 			TC_Addf(b, "client\t%s\t%s\tlinked %d\thidden %d\n", ns.cOn ? ns.cCls : "-", ns.cOn ? ns.cEnt : "-", ns.linked,
 				ns.nhid);
+			for (int k = 0; k < NS_CAMWAITS; k++) {
+				if (ns.camWait[k].ns) {
+					TC_Addf(b, "camwait\t%s\t%s\n", ns.camWait[k].name, ns.camWait[k].value);
+				}
+			}
 		}
 		cEntity *e = NetScene_Playing();
 		if (!e && g_Instance && ns.on) {

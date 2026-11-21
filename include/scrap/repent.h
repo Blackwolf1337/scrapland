@@ -135,6 +135,8 @@ void ReplicaEnt_Update(int slot, const NetRepState *st);
 /* each frame before the proxies are placed: what the level and the scripts made away, the replicas whose create
  * record and message are both there made */
 void ReplicaEnt_Frame(void);
+/* the action (index + 1, *act) and the time of layer l at part f of the way from state a to b (-1: no action) */
+float ReplicaEnt_LayerTarget(const NetRepState *a, const NetRepState *b, float f, int l, uint32_t *act);
 /* a replica placed from its samples a and b (span s apart, drawn at part f of the way), dt s after the frame before:
  * the class block, the action layers */
 void ReplicaEnt_Present(struct cEntity *e, int kind, const NetRepState *a, const NetRepState *b, float span, float f,

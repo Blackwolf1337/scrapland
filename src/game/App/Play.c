@@ -170,6 +170,10 @@ cEntity *Play_Entity(void) {
 	return play.e;
 }
 
+double Play_OwnTime(void) {
+	return play.e && play.tick ? (double)play.tick / NETREP_TICK_HZ : 0.0;
+}
+
 byte Play_DeathCamOn(void) {
 	return play.dead && !play.e;
 }
