@@ -1139,10 +1139,23 @@ void Ui_Status(tcBuf *b, const char *arg) {
 	if (arg && sscanf(arg, "call %d %n", &i, &at) == 1 && at > 0 && i >= 0 && i < PLAYERS_MAX) {
 		/* "ui call <player> Module.Func|arg|...": a call table line of the scripts in the player's context (an
 		 * interface the scripts open for that player) */
-		const char *one[2] = { arg + at, NULL };
-		char mod[UI_NAME];
+		char line[512], mod[UI_NAME];
+		const char *one[2] = { line, NULL };
 		Str_PrintfQuiet(mod, sizeof(mod), "%.*s", (int)strcspn(arg + at, ".|"), arg + at);
 		int was = Players_Enter(i);
+		/* an argument @me: the name of the player's entity */
+		cEntity *me = Players_Get(i);
+		const char *src = arg + at, *m;
+		int n = 0;
+		while ((m = strstr(src, "|@me")) != NULL && (m[4] == '|' || !m[4])) {
+			int k = Str_PrintfQuiet(line + n, sizeof(line) - n, "%.*s|%s", (int)(m - src), src, me ? me->name : "None");
+			if (k < 0 || n + k >= (int)sizeof(line) - 1) {
+				break;
+			}
+			n += k;
+			src = m + 4;
+		}
+		Str_PrintfQuiet(line + n, sizeof(line) - n, "%s", src);
 		byte ok = Mode_Import(mod) && Mode_Calls(NULL, one);
 		Native_ErrPrint();
 		Players_Leave(was);

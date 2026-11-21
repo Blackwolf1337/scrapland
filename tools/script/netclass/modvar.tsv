@@ -50,6 +50,8 @@ CharAct.TakenPhoto	PARTY	the mission's hook of a photo: the party's in coop, a p
 CharAct.TakenPhotoMap	PARTY	the mission's hook of a photo: the party's in coop, a player's own photo elsewhere (stage 4.4)
 CharAct.onNPCDeath	WORLD	one value for the world (SIM module)
 CharConversor.AvailableChars	WORLD	table or constant of the interface
+CharConversor.AuxInterp	PLAYER	the possession of one player: its camera entity and its NewPlayer (a scheduled call in the player's context)
+CharConversor.Cam	PLAYER	the possession of one player: its camera entity and its NewPlayer (a scheduled call in the player's context)
 CharConversor.CheckConversor	WORLD	table or constant of the interface
 CharConversor.ConversionChars	WORLD	table or constant of the interface
 CharConversor.ConversionPoints	WORLD	table or constant of the interface
