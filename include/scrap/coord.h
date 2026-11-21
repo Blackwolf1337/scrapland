@@ -92,7 +92,12 @@
 #define COORD_STOP_SECS 10				/* an instance asked to stop is killed after this */
 #define COORD_TOKEN_ENV "SCRAP_COORD_TOKEN"
 #define COORD_PATH 260
-#define COORD_MAX_LEVELS 32
+#define COORD_MAX_LEVELS 48				/* the world's levels and the instances of one group (sessions) */
+/* a level name "<map>#<session>" asks for an instance of its own of map for one group (a super deal of single
+ * player, stage 6c): the coordinator starts it with "-instance:<map> -id:<name> -deal:<door>" (the door of the travel
+ * carries the deal: "<type>,<library>,<map>,<reputation>"), ends it once empty; COORD_SESSION_MAPS are the maps it allows */
+#define COORD_SESSION '#'
+#define COORD_SESSION_MAPS "CA,QF,FZ,OM,TUCZONE"
 #define COORD_CITY "DownTown,Outskirts,Police,Bank,Press,Temple,TownHall,GamblinDen,Commercial,Scrapyard,GDB"
 #define COORD_LIST_PORT 28090			/* the default port of a list server (include/scrap/coordlist.h) */
 

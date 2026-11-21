@@ -23,6 +23,7 @@
 #include "scrap/netclass.h"
 #include "scrap/netrep.h"
 #include "scrap/play.h"
+#include "scrap/players.h"
 #include "scrap/replicate.h"
 #include "scrap/pres.h"
 #include "scrap/repent.h"
@@ -506,8 +507,13 @@ void RepEnt_Gather(NetRepServer *srv, uint32_t tick) {
 		st.x[REPX_GEN] = (int32_t)re.rec[s].gen;
 		/* the level scope: the things of the level, and on an indoor map its ships too (the few traffic ships
 		 * behind the windows, seen from farther than the interest radius) */
-		NetRepSrv_SetEx(srv, s, kind, id, &st, kind >= NETREP_ITEM || (kind == NETREP_SHIP && !g_IsMapOutDoor) ?
-			NETREP_SET_LEVEL : 0);
+		int flags = kind >= NETREP_ITEM || (kind == NETREP_SHIP && !g_IsMapOutDoor) ? NETREP_SET_LEVEL : 0;
+		/* a thing without life of a player's activity (a race's checkpoint, count down, camera) is its alone */
+		int owner = Entity_IsType(e, TYEN_WITH_LIFE) ? -1 : Players_OfOwned(e);
+		if (owner >= 0) {
+			flags |= NETREP_SET_ONLY(owner + 1);
+		}
+		NetRepSrv_SetEx(srv, s, kind, id, &st, flags);
 	}
 	NetRepSrv_End(srv);
 }
@@ -751,6 +757,8 @@ void RepEnt_MirrorEnt(tcBuf *b, int n, int slot, uint32_t gen, cEntity *e, const
 	TC_Add(b, ",\"name\":", -1);
 	RepEnt_JsonStr(b, e->name);
 	TC_Addf(b, ",\"replica\":%d", Entity_IsType(e, TYEN_OBJECT) ? Obj(e)->replica : 0);
+	/* the tag of the clients a private thing goes to (Players_OfOwned), 0 every client */
+	TC_Addf(b, ",\"only\":%d", g_Instance && !Entity_IsType(e, TYEN_WITH_LIFE) ? Players_OfOwned(e) + 1 : 0);
 	TC_Addf(b, ",\"pos\":[%d,%d,%d],\"vel\":[%d,%d,%d],\"ang\":[%u,%u,%u],\"view\":[%u,%u],\"life\":%d,\"flags\":%u,"
 		"\"ctrl\":[%d,%d],\"act\":[%u,%u],\"actTime\":[%u,%u],\"weapon\":%u,\"x\":[", st.pos[0], st.pos[1], st.pos[2],
 		st.vel[0], st.vel[1], st.vel[2], st.ang[0], st.ang[1], st.ang[2], st.view[0], st.view[1], st.life, st.flags,

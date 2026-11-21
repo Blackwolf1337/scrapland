@@ -1013,7 +1013,10 @@ int cWorld_SetCam(cWorld *world, int i, const char *name) {
 		 * player, stage 4.5's: counted apart */
 		if (g_Mp2 && !InitSteps_Entering()) {
 			byte path = cam && Entity_IsType(cam, TYEN_CAMPATH);
-			Pres_NoRoute(NA_CAMERA, path ? "pres.scene:camera:" : "pres.unforwarded:camera:", Pres_ModSite());
+			/* the player's own follow camera back after a path (a race's start) is the client's own camera */
+			byte own = cam && Entity_IsType(cam, TYEN_FCAM) && Players_Current() != PLAYERS_NONE;
+			Pres_NoRoute(NA_CAMERA, path ? "pres.scene:camera:" : own ? "cam.own:" : "pres.unforwarded:camera:",
+				Pres_ModSite());
 			/* the path goes to the player as a scene (include/scrap/netscene.h) */
 			NetScene_CamSet(cam);
 		}

@@ -466,7 +466,8 @@ byte ModVar_GetVal(const modVarRef_t *ref, const char *name, nativeVal_t *out) {
 	nativeVal_t own;
 	if ((kind == NO_LIST && NObj_GetSlice(s, 0, NOBJ_END, &own)) || (kind == NO_DICT && NObj_CallMethod(s, "copy", NULL, 0, &own))) {
 		/* a list or dict the player has not written: a copy of its own, so a change in place (Speech.RemoteCom's
-		 * append and delete) stays the player's */
+		 * append and delete) stays the player's; an object like the module's (the slice of a list is a value) */
+		NObj_Share(&own);
 		ModVar_OverSet(pl, mod, key, &own);
 		*out = own;
 		MV_Seen(ref, name);

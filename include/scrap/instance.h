@@ -58,6 +58,9 @@ byte Instance_PvP(void);
 int Instance_StartMoney(void);
 /* the level name of the level path ("Levels/DownTown" -> "DownTown") */
 const char *Instance_Level(void);
+/* the instance's id (-id:, the level by default; a group's instance of the coordinator: "<map>#<session>",
+ * include/scrap/coord.h): its tickets name it */
+const char *Instance_Id(void);
 /* the instance's Net2 server, NULL */
 struct Net2Host *Instance_Host(void);
 /* a line as the standard input takes it: quit, status, the test lines, else a console line */

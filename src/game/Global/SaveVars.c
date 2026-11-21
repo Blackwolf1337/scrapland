@@ -74,7 +74,9 @@ int SaveVar_OverOwner(const char *name) {
 	}
 	memcpy(prefix, name, n);
 	prefix[n] = 0;
-	return NetClass_Find(NCT_SAVEVAR, prefix) == NC_PLAYER ? i : -1;
+	/* PARTY: the coop story's, a player's own in a free world */
+	netTag_t tag = NetClass_Find(NCT_SAVEVAR, prefix);
+	return tag == NC_PLAYER || (tag == NC_PARTY && !Coop_On()) ? i : -1;
 }
 
 static cSaveVar *SV_OverFind(int i, const char *name) {
@@ -293,7 +295,7 @@ void SaveVars_ScriptDelete(const char *prefix) {
 
 /*
  * the crazy deals done: with JackInTheBox.Active "1", deal N counts when CrazyDeal.N.Var names a variable whose
- * value reaches CrazyDeal.N.Tgt
+ * value reaches CrazyDeal.N.Tgt (the current player's on a -mp2 instance: SaveVar_Get)
  */
 static int CrazyDeals_Count(void) {
 	static const char *const deals[3][2] = {
@@ -303,22 +305,22 @@ static int CrazyDeals_Count(void) {
 	};
 	int n = 0;
 
-	cSaveVar *active = SaveVar_Find("JackInTheBox.Active");
-	if (!active || !active->value || strcmp(active->value, "1")) {
+	const char *active = SaveVar_Get("JackInTheBox.Active");
+	if (!active || strcmp(active, "1")) {
 		return 0;
 	}
 	for (int i = 0; i < 3; i++) {
-		cSaveVar *var = SaveVar_Find(deals[i][0]);
-		if (!var || !var->value || !strcmp(var->value, "")) {
+		const char *var = SaveVar_Get(deals[i][0]);
+		if (!var || !strcmp(var, "")) {
 			continue;
 		}
-		cSaveVar *v = SaveVar_Find(var->value);
-		if (!v || !v->value || !strcmp(v->value, "")) {
+		const char *v = SaveVar_Get(var);
+		if (!v || !strcmp(v, "")) {
 			continue;
 		}
-		int value = crt_atoi(v->value);
-		cSaveVar *tgt = SaveVar_Find(deals[i][1]);
-		if (tgt && tgt->value && strcmp(tgt->value, "") && crt_atoi(tgt->value) <= value) {
+		int value = crt_atoi(v);
+		const char *tgt = SaveVar_Get(deals[i][1]);
+		if (tgt && strcmp(tgt, "") && crt_atoi(tgt) <= value) {
 			n++;
 		}
 	}

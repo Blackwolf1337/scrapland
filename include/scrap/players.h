@@ -128,6 +128,18 @@ int Players_EnterEntityAt(struct cEntity *e, const char *site);
 void Players_SetMachine(int i, struct cEntity *e);
 /* the player that uses the machine e, -1 */
 int Players_OfMachine(const struct cEntity *e);
+/* the entities of one player's free activity on a -mp2 sandbox or freeroam instance (stage 6c): a race's rivals,
+ * checkpoints, count down and camera, a combat's foes. Their updates, takes, deaths and hits run in their player's
+ * context; another player neither takes nor hurts them and they never hurt another player (Players_MayHurt); the
+ * ones without life are shown to their player alone (include/scrap/repent.h). Players_OwnNew makes e the current
+ * player's (nothing in single player, coop or the world's context); Players_OfOwned gives its player, -1;
+ * Players_OwnedDel deletes player i's (it leaves the level) */
+void Players_OwnNew(struct cEntity *e);
+int Players_OfOwned(const struct cEntity *e);
+void Players_OwnedDel(int i);
+/* name, or name + "_P<i>" in the context of player i where Players_OwnNew owns: the entity names of an activity two
+ * players run at once (the race's "CheckPoint") */
+void Players_OwnName(const char *name, char *out, int size);
 /* Players_Enter for the player whose owner slot e has, also while e is not one of the players found (made inactive by
  * the scripts), else the owner of the ship e */
 int Players_EnterOwnerAt(struct cEntity *e, const char *site);

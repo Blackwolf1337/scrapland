@@ -419,10 +419,11 @@ static void WL_RunFunc(cEntity *self, cPy_Function *own, size_t listOff, const i
 	cWithLifeEntity *w = WLife(self);
 	int was = PLAYERS_NONE;
 
-	/* the instance: the scripts' player is the attacker when it is a player, else the entity when it is one */
+	/* the instance: the scripts' player is the attacker when it is a player, else the entity when it is one; an
+	 * entity of a player's activity is that player's whoever hit it (Players_OwnNew) */
 	if (g_Instance) {
 		cEntity *by = w->attack.hitBy.target ? World_FindEntity(Nto1Node_TargetName(&w->attack.hitBy)) : NULL;
-		was = Players_EnterEntity(Players_Is(by) ? by : self);
+		was = Players_EnterEntity(Players_Is(by) && Players_OfOwned(self) < 0 ? by : self);
 		Faction_Crime(self, by, damage == NULL);
 	}
 	cPy_Function_AddParamS(own, self->name);

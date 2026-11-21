@@ -48,7 +48,7 @@ TABLES = collections.OrderedDict([
 		'a script module: Module, or level/Module for a module of a level; Module.func for a function of a mixed module')),
 	('modvar', (['WORLD', 'PLAYER', 'PARTY', 'PLAYER_SHARED', 'PARTY_SHARED', 'CLIENT'],
 		'a script module variable: Module.name')),
-	('savevar', (['STORY', 'PLAYER'], 'a save variable prefix (the name up to its first dot)')),
+	('savevar', (['STORY', 'PLAYER', 'PARTY'], 'a save variable prefix (the name up to its first dot)')),
 	('initstep', (['WORLD', 'PLAYER_ENTER', 'DEF', 'GROUP'], 'a step of the level start: File:call')),
 	('playerread', (['NEAREST', 'ANY', 'PARTY', 'WORLD'],
 		'a read of "the player" in the world context: C function or Module.variable')),

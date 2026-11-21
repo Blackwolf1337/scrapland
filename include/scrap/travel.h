@@ -82,6 +82,15 @@ byte Travel_Request(const char *rider, const char *level, const char *entrance, 
 /* the travel of player i (the level change of Travel_Request; party: the story takes the members of its party
  * along, include/scrap/coop.h): 1 when it was handed to the coordinator or refused with the player given back */
 byte Travel_Go(int i, const char *level, const char *entrance, const char *door, byte party);
+/* single player's own level change (SaveGame.QLoad: a challenge, a super deal and its end) in the current player's
+ * context on a -mp2 sandbox or freeroam instance: the player travels to map ("Levels/<level>") at its way point
+ * (Spawn, ComeFrom); a super deal's map is an instance of its own for the player's group (TRAVEL_SESSION in the
+ * level's name); 1 when it was such a change */
+byte Travel_QLoad(const char *map);
+/* the super deal of a group's instance ended (MissionsFuncs.OnSuperDealFinish): each member gets the result in its
+ * context (single player's score table and its button: the victory's or the abort's code, no retry) and goes back;
+ * 0 on any other instance */
+byte Travel_SessionEnd(byte won);
 /* the player of a key, -1 */
 int Travel_PlayerOfKey(const uint8_t key[NET2_KEY_SIZE]);
 /* the key of player i (a ticket's), NULL */
@@ -108,6 +117,8 @@ struct cEntity *Travel_OwnShip(int player, const vec3_t *pos, float yaw);
 /* tests (the instance's standard input): a player uses an entity with an option of its arrow, goes next to it, or
  * goes next to it (dx, dz units away, facing it) */
 void Travel_TestUse(int player, const char *entity, const char *option);
+/* tests: the entity dies, hit by player (its death runs as a kill of that player's) */
+void Travel_TestKill(int player, const char *entity);
 void Travel_TestGoto(int player, const char *entity, float dx, float dz);
 
 /* the parts of the scripts: the metro's stations (Metro.c), the text of a ship as a hangar save variable keeps it

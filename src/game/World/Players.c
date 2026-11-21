@@ -42,6 +42,7 @@ static cEntity *g_Runner;		/* the entity the world's context runs for (Players_R
 static byte Players_Tracing(void);
 static void Players_TraceLook(void);
 static int g_Turn;				/* frames: the rule ANY takes the next player each frame */
+static void Players_OwnedForget(int i);
 
 #define g_Bound ((int)(g_Cur - g_Pl))
 #define g_NetPlayer(i) (g_Pl[i].ent)
@@ -252,6 +253,7 @@ void Players_Join(int i, int money) {
 	s->machine = NULL;
 	s->machineName[0] = 0;
 	s->used = 1;
+	Native_GVarOverClear(i);
 	ModVar_OverClearPlayer(i);
 	SaveVar_OverClear(i);
 	Ui_PlayerGone(i);
@@ -267,6 +269,8 @@ void Players_Part(int i) {
 	}
 	g_Pl[i].used = 0;
 	g_Pl[i].machine = NULL;
+	Players_OwnedForget(i);
+	Native_GVarOverClear(i);
 	ModVar_OverClearPlayer(i);
 	SaveVar_OverClear(i);
 	Ui_PlayerGone(i);
@@ -373,7 +377,102 @@ int Players_EnterEntityAt(cEntity *e, const char *site) {
 	if (i < 0) {
 		i = Players_OfMachine(e);
 	}
+	if (i < 0) {
+		i = Players_OfOwned(e);
+	}
 	return Players_Switch(i, site);
+}
+
+/* ---- the entities of a player's free activity (stage 6c) ---- */
+
+#define PLAYERS_OWNED 512
+
+static struct {
+	cEntity *e;						/* compared, read while World_FindEntity(name) is it */
+	char name[64];
+	int8_t pl;
+} g_Owned[PLAYERS_OWNED];
+static int g_NumOwned;
+
+/* the activities are single player's flows of a free world (Rep_SpFlows) on -mp2 */
+static byte Players_Owns(void) {
+	return g_Mp2 && Rep_SpFlows() && g_Cur != &g_Pl[PLAYERS_NONE];
+}
+
+/* entry k still names its entity */
+static byte Players_OwnedLive(int k) {
+	cEntity *e = g_Owned[k].e;
+	return e && World_FindEntity(g_Owned[k].name) == e && !e->deadNode.target;
+}
+
+void Players_OwnNew(cEntity *e) {
+	if (!e || !e->name || !Players_Owns()) {
+		return;
+	}
+	int free = -1;
+	for (int k = 0; k < g_NumOwned; k++) {
+		if (g_Owned[k].e == e) {
+			free = k;
+			break;
+		}
+		if (free < 0 && !Players_OwnedLive(k)) {
+			free = k;
+		}
+	}
+	if (free < 0) {
+		if (g_NumOwned >= PLAYERS_OWNED) {
+			Con_Printf("instance: no room for the activity entity %s\n", e->name);
+			return;
+		}
+		free = g_NumOwned++;
+	}
+	g_Owned[free].e = e;
+	Str_Copy(g_Owned[free].name, e->name, sizeof(g_Owned[free].name));
+	g_Owned[free].pl = (int8_t)g_Bound;
+}
+
+int Players_OfOwned(const cEntity *e) {
+	if (!g_NumOwned || !e) {
+		return -1;
+	}
+	for (int k = 0; k < g_NumOwned; k++) {
+		if (g_Owned[k].e == e) {
+			return Players_OwnedLive(k) && Players_Used(g_Owned[k].pl) ? g_Owned[k].pl : -1;
+		}
+	}
+	return -1;
+}
+
+/* player i's entries go (del: their entities too) */
+static void Players_OwnedDrop(int i, byte del) {
+	for (int k = 0; k < g_NumOwned; k++) {
+		if (g_Owned[k].pl != i || !g_Owned[k].e) {
+			continue;
+		}
+		if (del && Players_OwnedLive(k)) {
+			cEntity_Del(g_Owned[k].e);
+		}
+		g_Owned[k].e = NULL;
+	}
+	while (g_NumOwned && !g_Owned[g_NumOwned - 1].e) {
+		g_NumOwned--;
+	}
+}
+
+void Players_OwnedDel(int i) {
+	Players_OwnedDrop(i, 1);
+}
+
+static void Players_OwnedForget(int i) {
+	Players_OwnedDrop(i, 0);
+}
+
+void Players_OwnName(const char *name, char *out, int size) {
+	if (Players_Owns()) {
+		Str_PrintfQuiet(out, size, "%s_P%d", name, g_Bound);
+	} else {
+		Str_Copy(out, name, size);
+	}
 }
 
 void Players_SetMachine(int i, cEntity *e) {
@@ -656,7 +755,18 @@ const cAlarm *Players_Alarm(int i) {
 }
 
 byte Players_MayHurt(cEntity *attacker, cEntity *victim) {
-	if (!Players_Net() || attacker == victim || Players_Of(attacker) < 0 || Players_Of(victim) < 0) {
+	if (!Players_Net() || attacker == victim) {
+		return 1;
+	}
+	/* an activity's entity and a player of another one leave each other alone (Players_OwnNew) */
+	if (g_NumOwned) {
+		int a = Players_Of(attacker), v = Players_Of(victim);
+		int oa = Players_OfOwned(attacker), ov = Players_OfOwned(victim);
+		if ((a >= 0 && ov >= 0 && a != ov) || (v >= 0 && oa >= 0 && v != oa)) {
+			return 0;
+		}
+	}
+	if (Players_Of(attacker) < 0 || Players_Of(victim) < 0) {
 		return 1;
 	}
 	/* the members of the coop story's party never hurt each other (the single player's one player); else the

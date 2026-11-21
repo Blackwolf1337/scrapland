@@ -21,6 +21,7 @@
 #include "scrap/net.h"
 #include "scrap/scheduler.h"
 #include "scrap/scorer.h"
+#include "scrap/pres.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -438,7 +439,10 @@ static void Hud_CharCreate(int id) {
 	}
 	/* OBJLIB 5 (9c): the callback variable of Menu */
 	Coop_ScorerBase((int)id);
+	/* not in the original: the mission's part goes to a -mp2 player's client, which makes the rest itself */
+	int skel = Pres_SkelPause();
 	Mode_CallVarIf("Menu", "MissionScorerCall", id);
+	Pres_SkelResume(skel);
 }
 
 /* ---- the functions of CharScorer (entries) ---- */
@@ -508,7 +512,10 @@ static void Racer_CreateRacerCore(int id) {
 	Native_Free(&camName);
 	/* OBJLIB 5 (9c): the callback variable of Menu */
 	Coop_ScorerBase((int)id);
+	/* not in the original: the mission's part goes to a -mp2 player's client, which makes the rest itself */
+	int skel = Pres_SkelPause();
 	Mode_CallVarIf("Menu", "MissionScorerCall", id);
+	Pres_SkelResume(skel);
 }
 
 /* the data of the scores while ShowScorer runs: (score, name, (r, g, b), (r, g, b, a), entity) per player */
