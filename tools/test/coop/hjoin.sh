@@ -11,7 +11,7 @@ cmp -s "$build/ScrapC" "$g/Bin/ScrapC" || { cp -a "$build/ScrapC" "$g/Bin/ScrapC
 for l in "$build"/ffmpeg/install/lib/lib*.so*; do [ -e "$g/Bin/$(basename "$l")" ] || cp -a "$l" "$g/Bin/" || exit 1; done
 cd "$g/Bin" || exit 1
 env -u DISPLAY -u WAYLAND_DISPLAY XDG_DATA_HOME=$g/xdg-data SCRAP_NO_MSGBOX=1 PULSE_SERVER=unix:/nonexistent \
-	PIPEWIRE_REMOTE=/nonexistent SDL_AUDIODRIVER=dummy SDL_VIDEODRIVER=dummy ${HJOIN_GDB:+gdb -q -batch -nx -ex "break CheckFailed" -ex run -ex "bt 30" --args} ./ScrapC -join:127.0.0.1 -port:$port \
+	PIPEWIRE_REMOTE=/nonexistent SDL_AUDIODRIVER=dummy SDL_VIDEODRIVER=dummy ${HJOIN_GDB:+gdb -q -batch -nx -ex "break CheckFailed" -ex run -ex "bt ${HJOIN_BT:-30}" --args} ./ScrapC -join:127.0.0.1 -port:$port \
 	-name:${PLAYER_NAME:-${name//-/_}} -headless "$@" < /dev/null >> "$S/$name.log" 2>&1 &
 echo $! > "$S/$name.pid"
 echo "headless player $name pid $!"

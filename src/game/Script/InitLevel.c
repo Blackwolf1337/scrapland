@@ -28,6 +28,7 @@
 #include "scrap/modvars.h"
 #include "scrap/nativeobj.h"
 #include "scrap/places.h"
+#include "scrap/repent.h"
 #include "scrap/scrap.h"
 #include "scrap/replicate.h"
 #include "scrap/script.h"
@@ -100,6 +101,11 @@ static int In_IsMission(void) {
 	/* not in the original: no story in the levels of a sandbox or freeroam world (include/scrap/places.h), but the
 	 * mission of the super deal a group's instance plays (include/scrap/instance.h) */
 	if (Places_On() && !Instance_Deal()) {
+		return 0;
+	}
+	/* nor on a -mp2 client: the mission's code is the instance's (its client knows Mission.Map for the metro's map, not
+	 * the story's Mission.Library: the preload of a stale library left the scripts' pack open) */
+	if (g_Mp2 && g_Watch) {
 		return 0;
 	}
 	if (!Mode_Import("string")) {
