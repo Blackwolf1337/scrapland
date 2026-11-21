@@ -135,7 +135,7 @@ static struct {
 	PresRecent recent[PRES_RECENT];
 	int fxKind;						/* of the PRES_O_FXENT record played */
 	int recOp;						/* the record being played */
-	byte recHasPos;					/* the place of the sound record being played */
+	byte recHasPos;					/* the place of the sound or effect record being played */
 	vec3_t recPos;
 	char lastText[64];				/* the text of the last message, label or speech record (the test verb) */
 	int nextRecent;
@@ -1184,7 +1184,7 @@ void Pres_ClientSound(const char *name) {
 	vec3_t at = { 0.0f, 0.0f, 0.0f };
 	byte hasPos = 0;
 	cEntity *own = msg == 0 ? Players_Local() : NULL;
-	if (msg == 1 && pres.recHasPos) {
+	if ((msg == 1 || (msg == 2 && pres.recOp == PRES_O_FXENT)) && pres.recHasPos) {
 		at = pres.recPos;
 		hasPos = 1;
 	} else if (own) {
@@ -1275,6 +1275,13 @@ static void Pres_FxPlay(NetRepReader *r) {
 	}
 	cEntity *ea, *eb;
 	pres.fxKind = kind;
+	/* the place of the effect's sounds: its first entity's (two characters that die at once in one place are two
+	 * deaths, no double: Pres_ClientSound) */
+	cEntity *at = *a ? Pres_EventEnt(a) : NULL;
+	pres.recHasPos = at != NULL;
+	if (at) {
+		pres.recPos = at->pos;
+	}
 	switch (kind) {
 	case PRES_FX_CONVERSOR:
 		if ((ea = Pres_Ent(PRES_O_FXENT, a, TYEN_WALKCHAR)) && (eb = Pres_Ent(PRES_O_FXENT, b, TYEN_WITH_LIFE))) {

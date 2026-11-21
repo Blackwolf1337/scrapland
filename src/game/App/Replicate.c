@@ -1033,16 +1033,22 @@ static cEntity *Rep_CallShip(int i, cEntity *ch, byte side) {
 /* test: the own ship of player i on foot (character e): a parked one it owns near it with half its life at least, else
  * a called one (the coop story's: the party's hangar ship), else NULL (the nearest parked one) */
 static cEntity *Rep_TestOwnShip(int i, cEntity *e) {
+	cEntity *low = NULL;
 	for (int k = 0; k < rep.pl[i].nships; k++) {
 		cEntity *s = Rep_OwnedShip(&rep.pl[i], k);
 		float dx = s ? s->pos.x - e->pos.x : 0.0f, dz = s ? s->pos.z - e->pos.z : 0.0f;
 		int most = 0;
-		if (s && Rep_IsParked(s, i) && dx * dx + dz * dz < REP_OWN_NEAR * REP_OWN_NEAR &&
-			!(Entity_VarI(s, "MaxLife", &most, 0) && WLife(s)->life * 2.0f < (float)most)) {
+		if (!s || !Rep_IsParked(s, i) || dx * dx + dz * dz >= REP_OWN_NEAR * REP_OWN_NEAR) {
+			continue;
+		}
+		if (!(Entity_VarI(s, "MaxLife", &most, 0) && WLife(s)->life * 2.0f < (float)most)) {
 			return s;
 		}
+		low = s;
 	}
-	return Rep_CallShip(i, e, 0);
+	/* (the one low on life when no ship can be called here: it stayed on foot) */
+	cEntity *called = Rep_CallShip(i, e, 0);
+	return called ? called : low;
 }
 
 /* the switch: into want (else the nearest parked ship, a new one when none is near), out of the ship */

@@ -3180,6 +3180,7 @@ static const netClassRow_t nc_playerread[] = {
 	{ "Ctf_TakeFlagC", NC_PARTY },
 	{ "Cw_SetCrazy", NC_NEAREST },
 	{ "Data_AddTransportToList", NC_PARTY },
+	{ "Data_Init", NC_PARTY },
 	{ "Data_OnTransportsDamage", NC_PARTY },
 	{ "Debtors_CheckMercsFreezed", NC_PARTY },
 	{ "Debtors_DropTreasure", NC_PARTY },

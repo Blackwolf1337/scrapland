@@ -80,11 +80,14 @@
 #define CP_FIGHT_RANGE 8000.0f		/* test: it fires at a target this near and ahead */
 #define CP_FIGHT_MAX 64				/* test: the targets looked at */
 #define CP_AMMO_GAP 4.0				/* test: s between two ammo boxes */
+#define CP_WORLD_OUT 2000.0f		/* test: units out of that box a test player is put back */
 #define CP_WORLD_EDGE 200.0f		/* test: units a placed player keeps from the box of the level's grid of points */
-#define CP_LIFE_LOW 50				/* test: percent of its most life under which a ship takes a life box */
+#define CP_LIFE_LOW 60				/* test: percent of its most life under which a ship takes a life box */
 #define CP_HIDE_SECS 90.0			/* test: s a character low on life hides from the police at most */
 #define CP_HIDE_FAR 6000.0f			/* test: units a hiding place is from the character at least */
-#define CP_SWAP_GAP 20.0			/* test: s between two changes of a ship low on life without a life box */
+#define CP_SWAP_FLOOR 3000.0f		/* test: units below such a ship a floor is looked for (a called ship's drop) */
+#define CP_SWAP_GAP 12.0
+#define CP_SHIPLESS 20.0			/* test: s on foot without the ship it asks for before it is put at a spawn */			/* test: s between two changes of a ship low on life without a life box */
 #define CP_FIGHT_USELESS 10.0		/* test: s a weapon fires at a target near ahead that loses no life: not taken again */
 #define CP_FIGHT_RED "red"			/* test: the fight list of all the red ones (or enemies) of the level */
 #define CP_POSSESS_SECS 90.0		/* test: a possession is given up after this */
@@ -290,13 +293,17 @@ static void Cp_InWorld(vec3_t *p);
  * it (the story's levels have none), as a player gets into another ship: a parked one or a called one (the own one
  * low on life stays, Replicate.c Rep_TestOwnShip); once in CP_SWAP_GAP s; 1 when it gets out */
 static byte Cp_NewShip(int i, cEntity *e, double now, const char *why) {
-	/* not outside the box of the level's grid (no floor and no place for a called ship there: it stayed on foot) */
-	vec3_t in = e->pos;
+	/* only over a floor near below (out of the level, over no floor, it fell and no ship could be called for it: it
+	 * stayed on foot) */
+	vec3_t in = e->pos, down = { e->pos.x, e->pos.y - CP_SWAP_FLOOR, e->pos.z };
 	Cp_InWorld(&in);
-	if (now - g_Coop.pl[i].swapAt < CP_SWAP_GAP || in.x != e->pos.x || in.z != e->pos.z) {
+	/* (still in it a second later: the switch again, a ship too fast to leave is stopped again) */
+	if (now - g_Coop.pl[i].swapAt < (g_Coop.pl[i].swapOf == e ? 1.0 : CP_SWAP_GAP) || in.x != e->pos.x ||
+		in.z != e->pos.z || !Engine_TestLine(&e->pos, &down, NULL, NULL)) {
 		return 0;
 	}
 	g_Coop.pl[i].swapAt = now;
+	g_Coop.pl[i].swapOf = e;
 	Obj_SetVel(e, &(vec3_t){ 0.0f, 0.0f, 0.0f });
 	g_Coop.pl[i].press = NETREP_IN_SWITCH;
 	g_Coop.pl[i].pressTicks = 1;
@@ -430,6 +437,41 @@ static void Cp_TestMelee(int i, NetRepInput *in, cEntity *t, float d, double now
 	}
 }
 
+/* test: player i on foot gets no ship for CP_SHIPLESS s (left a ship over a floor far below or out of the level: no
+ * place for a called ship, no parked one): put at the player spawn of the level nearest to it, as a player walks back
+ * to the streets */
+static void Cp_Shipless(int i, cEntity *e, double now) {
+	if (g_Coop.pl[i].shiplessSince <= 0.0) {
+		g_Coop.pl[i].shiplessSince = now;
+		return;
+	}
+	if (now - g_Coop.pl[i].shiplessSince < CP_SHIPLESS) {
+		return;
+	}
+	g_Coop.pl[i].shiplessSince = 0.0;
+	char name[CP_NAME], best[CP_NAME];
+	vec3_t pos, ang, at = e->pos;
+	float bestD = 0.0f;
+	best[0] = 0;
+	DummySearch_Start("DM_Player_Spawn*", 1);
+	while (DummySearch_NextEuler(name, sizeof(name), &pos, &ang)) {
+		float dx = pos.x - e->pos.x, dy = pos.y - e->pos.y, dz = pos.z - e->pos.z, d = dx * dx + dy * dy + dz * dz;
+		if ((!best[0] || d < bestD) && strcmp(name, "DM_Player_Spawn_Junkyard")) {
+			bestD = d;
+			at = pos;
+			Str_Copy(best, name, sizeof(best));
+		}
+	}
+	if (!best[0]) {
+		return;
+	}
+	Con_Printf("coop: player %d gets no ship at %.0f %.0f %.0f: put at %s\n", i, (double)e->pos.x, (double)e->pos.y,
+		(double)e->pos.z, best);
+	e->pos = (vec3_t){ at.x, at.y + 50.0f, at.z };
+	Obj(e)->vel = (vec3_t){ 0.0f, 0.0f, 0.0f };
+	Rep_Placed(i);
+}
+
 /* test: player i fights the nearest of its targets through its input, as a player at the keys: turns to it and fires
  * when it is ahead and near (the weapon's own shots and damage, the target's OnDeath with the member as the winner);
  * a target further than CP_FIGHT_FAR: the member is put CP_FIGHT_NEAR from it (once a second at most, as a pilot that
@@ -473,8 +515,10 @@ static void Cp_Fight(int i, NetRepInput *in, double back) {
 	if (kind == NETREP_CHAR && Entity_IsType(t, TYEN_CAR)) {
 		/* a ship to fight a ship: the switch (into the nearest parked ship, else a called one) */
 		in->buttons |= fmod(now, 2.0) < 1.0 / INSTANCE_TICK_HZ ? NETREP_IN_SWITCH : 0;
+		Cp_Shipless(i, e, now);
 		return;
 	}
+	g_Coop.pl[i].shiplessSince = 0.0;
 	if (strcmp(g_Coop.pl[i].fightAt, t->name)) {
 		Str_Copy(g_Coop.pl[i].fightAt, t->name, sizeof(g_Coop.pl[i].fightAt));
 		Con_Printf("coop: player %d fights %s (%.0f away)\n", i, t->name, (double)d);
@@ -1655,9 +1699,33 @@ byte Coop_TestOwnShip(int i) {
 	return i >= 0 && i < PLAYERS_MAX && (g_Coop.pl[i].autoOn || g_Coop.pl[i].fight);
 }
 
+/* test: a test player's entity that flew or was pushed out of the box of the level's grid (a fight's chase: no floor
+ * and no place for a ship there, the traffic AI took its camera far outside) is put back at the box's edge, as a pilot
+ * turns back at the level's border */
+static void Cp_BackInWorld(int i) {
+	cEntity *e = Players_Get(i);
+	if (!e || !NetPl_Kind(e)) {
+		return;
+	}
+	vec3_t in = e->pos;
+	Cp_InWorld(&in);
+	float dx = in.x - e->pos.x, dy = in.y - e->pos.y, dz = in.z - e->pos.z;
+	if (dx * dx + dy * dy + dz * dz < CP_WORLD_OUT * CP_WORLD_OUT) {
+		return;
+	}
+	Con_Printf("coop: player %d out of the level at %.0f %.0f %.0f: back at its edge\n", i, (double)e->pos.x, (double)e->pos.y,
+		(double)e->pos.z);
+	e->pos = in;
+	Obj(e)->vel = (vec3_t){ 0.0f, 0.0f, 0.0f };
+	Rep_Placed(i);
+}
+
 void Coop_TestInput(int i, NetRepInput *in, double back) {
 	if (i < 0 || i >= PLAYERS_MAX) {
 		return;
+	}
+	if (g_Coop.pl[i].autoOn || g_Coop.pl[i].fight) {
+		Cp_BackInWorld(i);
 	}
 	if (g_Coop.pl[i].possess[0]) {
 		Cp_TestPossess(i, in);
@@ -1938,7 +2006,10 @@ byte Coop_Command(const char *line) {
 			}
 		}
 		if (best) {
-			Travel_TestGoto(i, best->name, 0.0f, 250.0f);
+			/* on a side with a floor (beside the hidden human of TalkToBoss the member fell to its death) */
+			float dx, dz;
+			Cp_Approach(e, best, 250.0f, &dx, &dz);
+			Travel_TestGoto(i, best->name, dx, dz);
 			Travel_TestUse(i, best->name, "");
 		} else {
 			Con_Printf("coop: no %s for player %d\n", name, i);

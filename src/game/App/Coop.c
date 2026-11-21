@@ -193,11 +193,16 @@ void Coop_LevelChar(const char *level) {
 }
 
 void Coop_EnterChar(int i) {
-	if (Coop_On() && g_Instance && g_Mp2 && g_Coop.levelChar[0]) {
+	if (!Coop_On() || !g_Instance || !g_Mp2 || i < 0 || i >= PLAYERS_MAX) {
+		return;
+	}
+	if (g_Coop.levelChar[0]) {
 		Con_Printf("coop: player %d enters as %s, the character the level's scripts made the player\n", i,
 			g_Coop.levelChar);
 		Faction_SetChar(i, g_Coop.levelChar);
 	}
+	const char *cls = Faction_CharClass(i);
+	Str_Copy(g_Coop.pl[i].entryChar, cls ? cls : "", sizeof(g_Coop.pl[i].entryChar));
 }
 
 void Coop_SetChar(const char *cls) {
@@ -737,9 +742,17 @@ static void Cp_Reset(const char *map) {
 	Travel_SendCoord(buf, 1);
 	Con_Printf("coop: the level again (QLoad %s): the instance starts again for its members\n", map);
 	for (int i = 0; i < PLAYERS_MAX; i++) {
-		if (Rep_PlayerConn(i) >= 0) {
-			Travel_Go(i, Instance_Level(), spawn ? spawn : "", "", 0);
+		if (Rep_PlayerConn(i) < 0) {
+			continue;
 		}
+		/* with the character it came in with, as single player's restart loads the level's start (TalkToMayor's banker
+		 * of a lost try died again at once at every start) */
+		const char *cls = Faction_CharClass(i);
+		if (g_Coop.pl[i].entryChar[0] && (!cls || strcmp(cls, g_Coop.pl[i].entryChar))) {
+			Con_Printf("coop: player %d starts again as %s\n", i, g_Coop.pl[i].entryChar);
+			Faction_SetChar(i, g_Coop.pl[i].entryChar);
+		}
+		Travel_Go(i, Instance_Level(), spawn ? spawn : "", "", 0);
 	}
 }
 

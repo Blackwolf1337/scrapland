@@ -109,7 +109,7 @@ export AUTO_MID_Mission_StealMayorShip='@|wait 60||||;;@|inst @ auto $a 1 @OutCo
 export AUTO_B_Mission_StealMayorShip='-'
 # a member's death in the mayor's ship: the ship goes (Replicate.c: a ship of the scripts a member died in, as single
 # player's death loads the level again) and the mission makes a new one; pa boards a mayor's ship again after a death
-export AUTO_REARM_Mission_StealMayorShip='instance: player [0-9]+ died' AUTO_REARM_LINES_Mission_StealMayorShip='board $a MAYOR;auto $a 1 @OutCop'
+export AUTO_REARM_Mission_StealMayorShip='instance: player [0-9]+ died' AUTO_REARM_LINES_Mission_StealMayorShip='board $a MAYOR;auto $a 1'
 # the CTF super deals (FZ): pa flies onto the waypoint's item (the flag) as a player follows its arrow, the others fight
 export AUTO_PRE_SuperDeal_Fifth='switch $a;switch $b;waypoint $a 1' AUTO_PRE_SuperDeal_Ninth='switch $a;switch $b;waypoint $a 1'
 # ApologizeMayor: pb plays nothing (its helper's punches at the sentinels and gears of the town hall draw a fight the mayor

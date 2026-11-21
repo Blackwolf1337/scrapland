@@ -128,7 +128,10 @@ typedef struct CoopState {
 		int ammoNext;
 		double ammoAt;				/* when it was put at a box last */
 		double lifeBoxAt;			/* when it was put at a life box last */
+		double shiplessSince;		/* since when it asks for a ship it does not get (0 none) */
+		char entryChar[64];			/* the class it came into the level with (a failed mission's restart gives it back) */
 		double swapAt;				/* when it left a ship low on life for a new one last */
+		const struct cEntity *swapOf;	/* that ship (compared only: the switch again while it is still in it) */
 		int lifeWeap;				/* the weapon of the watch of the target's life (-1 none) */
 		float lifeMark;				/* the target's life when that watch began */
 		double lifeSince;			/* when */
