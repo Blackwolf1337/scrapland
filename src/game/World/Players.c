@@ -643,6 +643,10 @@ cPlayer *Players_Ctx(int i) {
 	return Players_Used(i) ? &g_Pl[i] : NULL;
 }
 
+cPlayer *Players_State(int i) {
+	return i >= 0 && i < PLAYERS_MAX ? &g_Pl[i] : NULL;
+}
+
 int Players_VarOwnerAt(const char *module, const char *name) {
 	if (!Players_Net()) {
 		return -1;
