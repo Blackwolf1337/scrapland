@@ -17,6 +17,7 @@
 #include <poll.h>
 #include <pthread.h>
 #include <stdio.h>
+#include <time.h>
 #include <unistd.h>
 #endif
 
@@ -1010,6 +1011,24 @@ uint32_t Plat_RealTicks(void) {
 
 uint64_t Plat_RealNs(void) {
 	return Plat_Ns();
+}
+
+uint64_t Plat_ThreadCpuNs(void) {
+#ifdef _WIN32
+	FILETIME created, ended, kernel, user;
+	if (!GetThreadTimes(GetCurrentThread(), &created, &ended, &kernel, &user)) {
+		return 0;
+	}
+	uint64_t k = ((uint64_t)kernel.dwHighDateTime << 32) | kernel.dwLowDateTime;
+	uint64_t u = ((uint64_t)user.dwHighDateTime << 32) | user.dwLowDateTime;
+	return (k + u) * 100u * (uint64_t)Plat_TimeScale();
+#else
+	struct timespec ts;
+	if (clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts)) {
+		return 0;
+	}
+	return ((uint64_t)ts.tv_sec * 1000000000u + (uint64_t)ts.tv_nsec) * (uint64_t)Plat_TimeScale();
+#endif
 }
 
 /* the counter in 100 ns ticks (10 MHz) on every system, as QueryPerformanceCounter on Windows: the game's integer

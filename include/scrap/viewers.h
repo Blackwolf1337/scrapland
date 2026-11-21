@@ -95,5 +95,6 @@ int Viewers_NeediestLeader(int quota, int (*count)(int leader, void *ctx), void 
 
 /* the instance's test lines: "viewers" (the set), "viewers fake <n> [seed]", "viewers clear"; 1 if it was one */
 byte Viewers_Command(const char *line);
+int Viewers_Spread(int n, unsigned seed, vec3_t *pos, float *yaw);
 
 #endif

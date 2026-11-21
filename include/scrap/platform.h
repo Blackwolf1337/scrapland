@@ -118,6 +118,9 @@ uint32_t Plat_Ticks(void);
 uint32_t Plat_RealTicks(void);
 /* the real time in ns since the start (times SCRAP_TIMESCALE), never the clock of the deterministic test mode */
 uint64_t Plat_RealNs(void);
+/* the CPU time of the calling thread in ns (times SCRAP_TIMESCALE, like Plat_RealNs), 0 if unknown: the tick times of
+ * the instance on a busy machine without the time it waited for a CPU */
+uint64_t Plat_ThreadCpuNs(void);
 int Plat_Counter(int64_t *out);
 int Plat_Frequency(int64_t *out);
 

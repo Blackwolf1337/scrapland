@@ -219,6 +219,7 @@ typedef struct NetRepCand {
 	float prio;
 	uint16_t slot;
 	uint8_t op;
+	uint32_t mask;					/* a delta's fields (NetRep_Diff against the client's base) */
 } NetRepCand;
 /* by priority, highest first, then by slot */
 void NetRep_SortCands(NetRepCand *c, int n);

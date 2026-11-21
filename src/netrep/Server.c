@@ -24,6 +24,7 @@ typedef struct RepHist {
 
 typedef struct RepSlot {
 	uint32_t liveSnap;				/* the snapshot that set it last */
+	uint32_t chgSnap;				/* the first snapshot of its state now (the same state in every one since) */
 	uint8_t kind;
 	uint16_t look;
 	uint8_t only;					/* 0: every client; else the tag of the clients that get it */
@@ -59,6 +60,9 @@ struct NetRepClient {
 	uint32_t removeSent[NETREP_MAX_ENTS];
 	uint32_t removeAck[NETREP_MAX_ENTS];
 	uint32_t mark[NETREP_MAX_ENTS];		/* the snapshot it was in the interest */
+	uint16_t held[NETREP_MAX_ENTS];		/* the slots it may hold (Rep_Exists), in no order */
+	uint16_t heldAt[NETREP_MAX_ENTS];	/* the index in held + 1, 0 not there */
+	int nheld;
 	float accum[NETREP_MAX_ENTS];
 	uint8_t lookKnown[NETREP_MAX_LOOKS / 8];
 	uint16_t lookMsg[NETREP_MAX_LOOKS];	/* the message of this build that carries the string, + 1 */
@@ -138,6 +142,27 @@ static int Rep_Exists(const NetRepClient *c, int slot) {
 	return c->lastSent[slot] > c->removeAck[slot];
 }
 
+/* a record of slot sent in snapshot snap: the client may hold it */
+static void Rep_Sent(NetRepClient *c, int slot, uint32_t snap) {
+	c->lastSent[slot] = snap;
+	if (!c->heldAt[slot]) {
+		c->held[c->nheld++] = (uint16_t)slot;
+		c->heldAt[slot] = (uint16_t)c->nheld;
+	}
+}
+
+/* a remove of slot acked: out of the held slots once nothing newer is out */
+static void Rep_Unheld(NetRepClient *c, int slot) {
+	int i = c->heldAt[slot] - 1;
+	if (i < 0 || Rep_Exists(c, slot)) {
+		return;
+	}
+	int last = c->held[--c->nheld];
+	c->held[i] = (uint16_t)last;
+	c->heldAt[last] = (uint16_t)(i + 1);
+	c->heldAt[slot] = 0;
+}
+
 int NetRepSrv_SlotFree(const NetRepServer *s, int slot) {
 	if (slot < 0 || slot >= NETREP_MAX_ENTS || (s->slot[slot].liveSnap && s->slot[slot].liveSnap + 1 >= s->snap)) {
 		return 0;
@@ -186,6 +211,10 @@ void NetRepSrv_SetEx(NetRepServer *s, int slot, int kind, int look, const NetRep
 	e->x = NetRep_UPos(st->pos[0]);
 	e->y = NetRep_UPos(st->pos[1]);
 	e->z = NetRep_UPos(st->pos[2]);
+	const RepHist *prev = &s->hist[slot][(s->snap - 1) % NETREP_HIST];
+	if (prev->snap + 1 != s->snap || memcmp(&prev->st, st, sizeof(*st))) {
+		e->chgSnap = s->snap;
+	}
 	RepHist *h = &s->hist[slot][s->snap % NETREP_HIST];
 	h->snap = s->snap;
 	h->tick = s->tick;
@@ -279,6 +308,7 @@ static void Rep_AckOne(NetRepServer *s, NetRepClient *c, uint16_t seq) {
 		if (op == NETREP_OP_REMOVE) {
 			if (snap > c->removeAck[slot]) {
 				c->removeAck[slot] = snap;
+				Rep_Unheld(c, slot);
 			}
 			continue;
 		}
@@ -321,9 +351,8 @@ static void Rep_WriteRecord(NetRepServer *s, NetRepClient *c, NetRepBuf *w, cons
 		const NetRepState *base = &c->base[slot];
 		NetRep_PutU8(w, NETREP_OP_DELTA);
 		NetRep_PutVar(w, s->snap - c->baseSnap[slot]);
-		uint32_t mask = NetRep_Diff(base, cur);
-		NetRep_PutVar(w, mask);
-		NetRep_WriteFields(w, base, cur, mask);
+		NetRep_PutVar(w, k->mask);
+		NetRep_WriteFields(w, base, cur, k->mask);
 		return;
 	}
 	case NETREP_OP_FULL:
@@ -406,8 +435,10 @@ int NetRepSrv_Build(NetRepServer *s, NetRepClient *c, uint8_t msgs[][NETREP_MSG_
 			k->op = NETREP_OP_CREATE;
 			k->prio = NetRep_Priority(d, c->radius, 0.0f, NETREP_OP_CREATE);
 		} else {
-			/* the own entity every snapshot: its prediction needs the server's state of each one */
-			if (!NetRep_Diff(&c->base[slot], cur) && slot != c->own) {
+			/* the own entity every snapshot: its prediction needs the server's state of each one; a state the same
+			 * since the base's snapshot needs no compare */
+			k->mask = c->baseSnap[slot] >= e->chgSnap ? 0 : NetRep_Diff(&c->base[slot], cur);
+			if (!k->mask && slot != c->own) {
 				c->accum[slot] = 0.0f;
 				continue;
 			}
@@ -421,7 +452,8 @@ int NetRepSrv_Build(NetRepServer *s, NetRepClient *c, uint8_t msgs[][NETREP_MSG_
 		nc++;
 	}
 	/* the removes: held by the client and out of the interest or gone */
-	for (int slot = 0; slot < s->maxSlot; slot++) {
+	for (int h = 0; h < c->nheld; h++) {
+		int slot = c->held[h];
 		if (c->mark[slot] == snap || !Rep_Exists(c, slot)) {
 			continue;
 		}
@@ -490,15 +522,15 @@ int NetRepSrv_Build(NetRepServer *s, NetRepClient *c, uint8_t msgs[][NETREP_MSG_
 			break;
 		case NETREP_OP_CREATE:
 			c->st.creates++;
-			c->lastSent[k->slot] = snap;
 			c->created[c->ncreated++] = k->slot;
+			Rep_Sent(c, k->slot, snap);
 			break;
 		case NETREP_OP_FULL:
 			c->st.fulls++;
-			c->lastSent[k->slot] = snap;
+			Rep_Sent(c, k->slot, snap);
 			break;
 		default:
-			c->lastSent[k->slot] = snap;
+			Rep_Sent(c, k->slot, snap);
 			break;
 		}
 		if (k->op == NETREP_OP_REMOVE) {

@@ -39,6 +39,9 @@
 #define INST_SLOTS 256				/* Net2ServerInfo counts players in a byte */
 #define INST_LINE 256
 #define INST_HIST 2000				/* buckets of 0.1 ms of the tick time histogram */
+#define INST_NET_HIST 1024			/* buckets of INST_NET_STEP bytes of the bytes a client got in a second */
+#define INST_NET_STEP 256
+#define INST_JOIN_SECS 10			/* s after a connect that count as its join (the creates), not as steady load */
 
 byte g_Instance;
 
@@ -60,10 +63,22 @@ static struct {
 	uint32_t busyTicks;
 	uint32_t hist[INST_HIST + 1];	/* run time of the ticks since "ticks reset" by 0.1 ms, the last all longer */
 	uint64_t histMax, histNs;
+	uint32_t cpuHist[INST_HIST + 1];	/* the same of the CPU time of the main thread in the ticks */
+	uint64_t cpuMax, cpuNs;
 	uint64_t lastStatus, lastQuitCheck;	/* ns */
 	int players;
 	byte live[INST_SLOTS];
 	uint64_t since[INST_SLOTS];		/* ms of the connect */
+	/* "netload": the bytes each client got in each second (all channels, Net2's count with the headers) */
+	uint64_t netAt;					/* ns of the last sample */
+	uint64_t netSent[INST_SLOTS];	/* bytesSent at the last sample */
+	uint64_t joinBytes[INST_SLOTS];	/* bytes of the join so far */
+	uint32_t joinMax[INST_SLOTS];	/* most bytes of one second of the join */
+	uint64_t joinAt[INST_SLOTS];	/* ms of the first sample as a watcher, 0 before */
+	byte joinDone[INST_SLOTS];
+	uint32_t netHist[INST_NET_HIST + 1];
+	uint64_t netSum, netMax, netClientSecs;
+	uint64_t joinSum, joinPeak, joins;
 	byte stdinEnd;
 	char line[INST_LINE];
 	int lineLen;
@@ -247,6 +262,11 @@ static void Instance_NetIn(uint64_t ms) {
 			Con_Printf("instance %s: connect %d from %s\n", inst.id, ev.conn, addr);
 			inst.live[ev.conn] = 1;
 			inst.since[ev.conn] = ms;
+			inst.joinBytes[ev.conn] = 0;
+			inst.joinMax[ev.conn] = 0;
+			inst.joinDone[ev.conn] = 0;
+			inst.joinAt[ev.conn] = 0;
+			inst.netSent[ev.conn] = 0;
 			inst.players++;
 			Instance_SetInfo();
 			break;
@@ -292,6 +312,95 @@ static void Instance_NetIn(uint64_t ms) {
 	}
 }
 
+/* once a second: the bytes each connection got since the last sample into the histogram of "netload"; the first
+ * INST_JOIN_SECS of a connection are its join (the creates of the level), counted apart */
+static void Instance_NetSample(uint64_t now, uint64_t ms) {
+	Net2Stats st;
+
+	if (!inst.host || now - inst.netAt < INST_NS) {
+		return;
+	}
+	double secs = (double)(now - inst.netAt) / INST_NS;
+	inst.netAt = now;
+	for (int i = 0; i < INST_SLOTS; i++) {
+		if (!inst.live[i] || !Net2_GetStats(inst.host, i, &st)) {
+			continue;
+		}
+		if (st.bytesSent < inst.netSent[i]) {
+			inst.netSent[i] = 0;
+		}
+		uint64_t delta = st.bytesSent - inst.netSent[i];
+		uint32_t b = (uint32_t)((double)delta / secs);
+		inst.netSent[i] = st.bytesSent;
+		if (!Rep_IsWatcher(i)) {
+			continue;
+		}
+		if (!inst.joinAt[i]) {
+			inst.joinAt[i] = ms;
+		}
+		if (!inst.joinDone[i]) {
+			inst.joinBytes[i] += delta;
+			inst.joinMax[i] = b > inst.joinMax[i] ? b : inst.joinMax[i];
+			if (ms - inst.joinAt[i] >= INST_JOIN_SECS * 1000u) {
+				Con_Printf("instance %s: join of connection %d: %llu bytes in %d s, at most %u in a second\n", inst.id, i,
+					(unsigned long long)inst.joinBytes[i], INST_JOIN_SECS, inst.joinMax[i]);
+				inst.joinSum += inst.joinBytes[i];
+				inst.joinPeak = inst.joinMax[i] > inst.joinPeak ? inst.joinMax[i] : inst.joinPeak;
+				inst.joins++;
+				inst.joinDone[i] = 1;
+			}
+			continue;
+		}
+		inst.netHist[b / INST_NET_STEP < INST_NET_HIST ? b / INST_NET_STEP : INST_NET_HIST]++;
+		inst.netSum += b;
+		inst.netMax = b > inst.netMax ? b : inst.netMax;
+		inst.netClientSecs++;
+	}
+}
+
+/* "netload": per client and second the mean, p50, p99 and max bytes since "netload reset", and the joins */
+static void Instance_NetLoad(void) {
+	uint64_t n = inst.netClientSecs, want50 = (n + 1) / 2, want99 = (uint64_t)((double)n * 0.99 + 0.999999), sum = 0;
+	uint32_t p50 = 0, p99 = 0;
+	for (int i = 0; i <= INST_NET_HIST && n; i++) {
+		sum += inst.netHist[i];
+		if (!p50 && sum >= want50) {
+			p50 = i == INST_NET_HIST ? (uint32_t)inst.netMax : (uint32_t)(i + 1) * INST_NET_STEP;
+		}
+		if (sum >= want99) {
+			p99 = i == INST_NET_HIST ? (uint32_t)inst.netMax : (uint32_t)(i + 1) * INST_NET_STEP;
+			break;
+		}
+	}
+	Con_Printf("instance %s: netload %llu client seconds, bytes a second per client avg %.0f p50 %u p99 %u max %llu; "
+		"%llu joins, avg %.0f bytes in %d s, peak %llu in a second\n", inst.id, (unsigned long long)n,
+		n ? (double)inst.netSum / (double)n : 0.0, p50, p99, (unsigned long long)inst.netMax,
+		(unsigned long long)inst.joins, inst.joins ? (double)inst.joinSum / (double)inst.joins : 0.0, INST_JOIN_SECS,
+		(unsigned long long)inst.joinPeak);
+}
+
+/* "spread [seed]": the players on foot or in their ships to points of the level's ground graph as far apart as the
+ * graph allows (the load tests) */
+static void Instance_Spread(unsigned seed) {
+	vec3_t at[PLAYERS_MAX];
+	int n = Viewers_Spread(PLAYERS_MAX, seed, at, NULL), k = 0;
+	for (int i = 0; i < PLAYERS_MAX && k < n; i++) {
+		cEntity *e = Players_Get(i);
+		if (!e) {
+			continue;
+		}
+		byte ship = NetPl_Kind(e) == NETREP_SHIP;
+		e->pos = (vec3_t){ at[k].x, at[k].y + (ship ? 1500.0f : 100.0f), at[k].z };
+		k++;
+		if (ship) {
+			Obj(e)->vel = (vec3_t){ 0.0f, 0.0f, 0.0f };
+			Obj(e)->rotVel = (vec3_t){ 0.0f, 0.0f, 0.0f };
+		}
+		Rep_Placed(i);
+	}
+	Con_Printf("instance %s: %d players spread\n", inst.id, k);
+}
+
 static void Instance_Status(void) {
 	double avg = inst.busyTicks ? (double)inst.busyNs / inst.busyTicks / 1e6 : 0.0;
 
@@ -303,28 +412,32 @@ static void Instance_Status(void) {
 	inst.busyTicks = 0;
 }
 
-/* the tick time of the share q (0..1) of the ticks in the histogram, ms (the upper bound of its bucket) */
-static double Instance_TickPart(uint64_t n, double q) {
+/* the tick time of the share q (0..1) of the ticks in a histogram, ms (the upper bound of its bucket) */
+static double Instance_TickPart(const uint32_t *hist, uint64_t max, uint64_t n, double q) {
 	uint64_t want = (uint64_t)((double)n * q + 0.999999), sum = 0;
 	for (int i = 0; i <= INST_HIST; i++) {
-		sum += inst.hist[i];
+		sum += hist[i];
 		if (sum >= want && sum) {
-			return i == INST_HIST ? (double)inst.histMax / 1e6 : (i + 1) * 0.1;
+			return i == INST_HIST ? (double)max / 1e6 : (i + 1) * 0.1;
 		}
 	}
 	return 0.0;
 }
 
-/* "ticks": tick count, p50, p99, max and mean of the run times since "ticks reset" */
+/* "ticks": tick count, p50, p99, max and mean of the run times since "ticks reset" (the real time, then the CPU time
+ * of the main thread: on a busy machine the difference is the wait for a CPU) */
 static void Instance_Ticks(void) {
 	uint64_t n = 0;
 	for (int i = 0; i <= INST_HIST; i++) {
 		n += inst.hist[i];
 	}
-	Con_Printf("instance %s: ticks %llu p50 %.1f p99 %.1f max %.2f avg %.2f ms, %llu dropped, %d viewers, %d leaders\n",
-		inst.id, (unsigned long long)n, Instance_TickPart(n, 0.5), Instance_TickPart(n, 0.99), (double)inst.histMax / 1e6,
-		n ? (double)inst.histNs / (double)n / 1e6 : 0.0, (unsigned long long)inst.dropped, Viewers_Count(),
-		Viewers_Leaders());
+	Con_Printf("instance %s: ticks %llu p50 %.1f p99 %.1f max %.2f avg %.2f ms, cpu p50 %.1f p99 %.1f max %.2f avg %.2f ms, "
+		"%llu dropped, %d viewers, %d leaders\n", inst.id, (unsigned long long)n,
+		Instance_TickPart(inst.hist, inst.histMax, n, 0.5), Instance_TickPart(inst.hist, inst.histMax, n, 0.99),
+		(double)inst.histMax / 1e6, n ? (double)inst.histNs / (double)n / 1e6 : 0.0,
+		Instance_TickPart(inst.cpuHist, inst.cpuMax, n, 0.5), Instance_TickPart(inst.cpuHist, inst.cpuMax, n, 0.99),
+		(double)inst.cpuMax / 1e6, n ? (double)inst.cpuNs / (double)n / 1e6 : 0.0, (unsigned long long)inst.dropped,
+		Viewers_Count(), Viewers_Leaders());
 }
 
 void Instance_Line(char *line) {
@@ -345,9 +458,26 @@ void Instance_Line(char *line) {
 		Instance_Ticks();
 		return;
 	}
+	if (!crt_stricmp(line, "netload")) {
+		Instance_NetLoad();
+		return;
+	}
+	if (!crt_stricmp(line, "netload reset")) {
+		memset(inst.netHist, 0, sizeof(inst.netHist));
+		inst.netSum = inst.netMax = inst.netClientSecs = 0;
+		inst.joinSum = inst.joinPeak = inst.joins = 0;
+		Con_Printf("instance %s: netload reset\n", inst.id);
+		return;
+	}
+	unsigned spreadSeed = 1;
+	if (!strncmp(line, "spread", 6) && (!line[6] || sscanf(line + 6, "%u", &spreadSeed) == 1)) {
+		Instance_Spread(spreadSeed);
+		return;
+	}
 	if (!crt_stricmp(line, "ticks reset")) {
 		memset(inst.hist, 0, sizeof(inst.hist));
-		inst.histMax = inst.histNs = 0;
+		memset(inst.cpuHist, 0, sizeof(inst.cpuHist));
+		inst.histMax = inst.histNs = inst.cpuMax = inst.cpuNs = 0;
 		inst.dropped = 0;
 		Con_Printf("instance %s: ticks reset\n", inst.id);
 		return;
@@ -480,7 +610,9 @@ void Instance_Pass(void) {
 		inst.baseTick = inst.ticks;
 	}
 	inst.ticks++;
+	uint64_t cpu0 = Plat_ThreadCpuNs();
 	Instance_Commands(now);
+	Instance_NetSample(now, now / 1000000);
 	Travel_InstancePass(now / 1000000);
 	if (inst.host) {
 		Instance_NetIn(now / 1000000);
@@ -498,6 +630,7 @@ void Instance_Pass(void) {
 		Rep_Tick(inst.host, inst.ticks);
 	}
 	uint64_t end = Instance_Ns();
+	uint64_t cpu = Plat_ThreadCpuNs() - cpu0;
 	if (inst.host) {
 		Net2_Flush(inst.host, end / 1000000);
 	}
@@ -508,6 +641,9 @@ void Instance_Pass(void) {
 	inst.hist[busy / 100000 < INST_HIST ? busy / 100000 : INST_HIST]++;
 	inst.histMax = busy > inst.histMax ? busy : inst.histMax;
 	inst.histNs += busy;
+	inst.cpuHist[cpu / 100000 < INST_HIST ? cpu / 100000 : INST_HIST]++;
+	inst.cpuMax = cpu > inst.cpuMax ? cpu : inst.cpuMax;
+	inst.cpuNs += cpu;
 	if (end - inst.lastStatus >= INSTANCE_STATUS_SECS * INST_NS) {
 		inst.lastStatus = end;
 		Instance_Status();

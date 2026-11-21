@@ -37,12 +37,19 @@
 #include "../Global/testchannel.h"
 
 #define RE_CONNS 1024				/* NET2_MAX_CONNS */
-#define RE_JOURNAL 65536			/* journal entries of all entities */
+#define RE_JOURNAL (1 << 19)		/* journal entries of all entities (the pool grows to it in chunks) */
 #define RE_EVENTS 1024				/* events between two snapshots */
 #define RE_MSG 8192					/* a reliable message is sent when it is this long */
 #define RE_REC (NET2_MAX_MESSAGE - 16)	/* the longest record */
 #define RE_RESYNC 32				/* entities whose journal numbers are read back per snapshot */
 #define RE_DROPS 1024				/* slots freed between two flushes */
+#define RE_TEMPLATES 1024			/* journals that clients keep as templates (REPENT_K_TSTORE) */
+#define RE_TPL_HASH 2048			/* the open hash of their digests */
+#define RE_TPL_MIN 8				/* fewer journal entries go as they are */
+#define RE_TPL_MAX 512				/* more, too */
+#define RE_LOOK_EVERY 8				/* snapshots between two looks of an entity whose journal did not change (the load
+									   stage: the look strings of 2000 traffic ships each snapshot were a third of the
+									   gather) */
 
 byte g_Mp2;
 
@@ -51,6 +58,7 @@ typedef struct ReRec {
 	uint32_t gen;
 	int look;						/* the look id of the last snapshot, -1 */
 	byte dirty;						/* journal entries changed since the last flush */
+	byte lookAge;					/* snapshots since its look was made */
 } ReRec;
 
 typedef struct ReEvent {
@@ -76,6 +84,11 @@ static struct {
 	int ndrop;
 	uint32_t lostDrops;
 	uint32_t *jsent[RE_CONNS];		/* per connection and slot: the generation whose create message it got */
+	uint8_t *jtpl[RE_CONNS];		/* per connection a bit per template it keeps */
+	uint64_t tplHash[RE_TEMPLATES];	/* the digest of each template's journal */
+	int16_t tplAt[RE_TPL_HASH];		/* template + 1 by digest, 0 free */
+	int ntpl;
+	uint32_t tplStores, tplUses;	/* create records sent with a template stored or used */
 	uint32_t lostSlots, lostLooks, lostEvents, longNames, cutTexts, bigRecords;
 	uint32_t creates, updates, events;	/* records sent */
 	uint64_t bytes;
@@ -263,6 +276,7 @@ static int RepEnt_SlotFor(cEntity *e) {
 		re.rec[s].gen = ++re.gen;
 		re.rec[s].look = -1;
 		re.rec[s].dirty = 0;
+		re.rec[s].lookAge = (byte)(s % RE_LOOK_EVERY);
 		e->netSlot = (uint16_t)(s + 1);
 		return s;
 	}
@@ -502,11 +516,18 @@ void RepEnt_Gather(NetRepServer *srv, uint32_t tick) {
 		if (s < 0) {
 			continue;
 		}
-		RepEnt_Look(e, kind, look, sizeof(look));
-		int id = NetRepSrv_Look(srv, look);
-		if (id < 0) {
-			re.lostLooks++;
-			continue;
+		/* the look again when the scripts set a variable of it (a pilot, a motor, a model), every frame for a player's
+		 * entity, else every RE_LOOK_EVERY snapshots (what the C code changes: the weapons, the traffic flag) */
+		int id = re.rec[s].look;
+		if (id < 0 || re.rec[s].dirty || (Entity_IsType(e, TYEN_OBJECT) && Obj(e)->netStep) ||
+			++re.rec[s].lookAge >= RE_LOOK_EVERY) {
+			RepEnt_Look(e, kind, look, sizeof(look));
+			id = NetRepSrv_Look(srv, look);
+			if (id < 0) {
+				re.lostLooks++;
+				continue;
+			}
+			re.rec[s].lookAge = 0;
 		}
 		if (re.rec[s].look >= 0 && re.rec[s].look != id) {
 			/* built otherwise now (another model, action class): a new entity for the clients, with its journal */
@@ -557,7 +578,37 @@ void RepEnt_Drop(int conn) {
 	if (conn >= 0 && conn < RE_CONNS) {
 		free(re.jsent[conn]);
 		re.jsent[conn] = NULL;
+		free(re.jtpl[conn]);
+		re.jtpl[conn] = NULL;
 	}
+}
+
+/* the template of a journal's digest (a new one while there is room), -1 */
+static int RepEnt_Template(uint64_t h) {
+	for (int k = 0; k < RE_TPL_HASH; k++) {
+		int i = (int)((h + (uint64_t)k) % RE_TPL_HASH);
+		int t = re.tplAt[i] - 1;
+		if (t >= 0 && re.tplHash[t] == h) {
+			return t;
+		}
+		if (t < 0) {
+			if (re.ntpl >= RE_TEMPLATES) {
+				return -1;
+			}
+			re.tplHash[re.ntpl] = h;
+			re.tplAt[i] = (int16_t)(re.ntpl + 1);
+			return re.ntpl++;
+		}
+	}
+	return -1;
+}
+
+static uint64_t RepEnt_Digest(const uint8_t *p, int n) {
+	uint64_t h = 14695981039346656037ull;
+	for (int i = 0; i < n; i++) {
+		h = (h ^ p[i]) * 1099511628211ull;
+	}
+	return h;
 }
 
 /* a message of records: started with the kind, sent when long */
@@ -586,7 +637,9 @@ static void RepEnt_MsgAdd(ReMsg *m, const uint8_t *rec, int n) {
 	m->size += n;
 }
 
-static int RepEnt_JournalRec(int s, byte create, byte dirtyOnly) {
+/* the record of slot s into re.rec1: the create's (class, name, all entries) or the changed entries; *at (or NULL)
+ * the offset of its count, *count the entries */
+static int RepEnt_JournalRec(int s, byte create, byte dirtyOnly, int *at, int *count) {
 	NetRepBuf w;
 	NetRepBuf_Init(&w, re.rec1, sizeof(re.rec1));
 	NetRep_PutVar(&w, (uint32_t)s);
@@ -594,6 +647,9 @@ static int RepEnt_JournalRec(int s, byte create, byte dirtyOnly) {
 	if (create) {
 		NetRep_PutStr(&w, Entity_GetClassName(re.rec[s].e));
 		NetRep_PutStr(&w, re.rec[s].e->name);
+	}
+	if (at) {
+		*at = w.size;
 	}
 	int n = 0;
 	for (int k = NetRepJ_First(re.j, s); k >= 0; k = NetRepJ_Next(re.j, k)) {
@@ -608,6 +664,9 @@ static int RepEnt_JournalRec(int s, byte create, byte dirtyOnly) {
 	if (w.bad) {
 		re.bigRecords++;
 		return 0;
+	}
+	if (count) {
+		*count = n;
 	}
 	return w.size;
 }
@@ -631,7 +690,7 @@ void RepEnt_Flush(Net2Host *host, int conns) {
 			if (!re.rec[s].e || !re.rec[s].dirty || sent[s] != re.rec[s].gen) {
 				continue;
 			}
-			int n = RepEnt_JournalRec(s, 0, 1);
+			int n = RepEnt_JournalRec(s, 0, 1, NULL, NULL);
 			if (n) {
 				RepEnt_MsgAdd(&m, re.rec1, n);
 				re.updates++;
@@ -691,18 +750,56 @@ void RepEnt_Sent(Net2Host *host, int conn, NetRepClient *c) {
 	if (!sent) {
 		return;
 	}
+	if (!re.jtpl[conn]) {
+		re.jtpl[conn] = calloc(RE_TEMPLATES / 8, 1);
+	}
+	uint8_t *have = re.jtpl[conn];
 	RepEnt_MsgFlush(&m);
 	for (int i = 0; i < n; i++) {
 		int s = slots[i];
 		if (!re.rec[s].e || sent[s] == re.rec[s].gen) {
 			continue;
 		}
-		int size = RepEnt_JournalRec(s, 1, 0);
-		if (size) {
-			RepEnt_MsgAdd(&m, re.rec1, size);
-			sent[s] = re.rec[s].gen;
-			re.creates++;
+		int at, count;
+		int size = RepEnt_JournalRec(s, 1, 0, &at, &count);
+		if (!size) {
+			continue;
 		}
+		sent[s] = re.rec[s].gen;
+		re.creates++;
+		/* a journal the same as one the client keeps (the traffic ships of a kind): its template; else the record,
+		 * and the client keeps it as a template when it is long */
+		int t = have && count >= RE_TPL_MIN && count <= RE_TPL_MAX ? RepEnt_Template(RepEnt_Digest(re.rec1 + at,
+			size - at)) : -1;
+		int kind = t < 0 ? REPENT_K_CREATE : have[t >> 3] & (1 << (t & 7)) ? REPENT_K_TUSE : REPENT_K_TSTORE;
+		if (kind != m.kind) {
+			RepEnt_MsgFlush(&m);
+			m.kind = kind;
+			RepEnt_MsgFlush(&m);
+		}
+		if (kind == REPENT_K_CREATE) {
+			RepEnt_MsgAdd(&m, re.rec1, size);
+			continue;
+		}
+		uint8_t tail[RE_REC];
+		int tailSize = size - at;
+		memcpy(tail, re.rec1 + at, (size_t)tailSize);
+		NetRepBuf w;
+		NetRepBuf_Init(&w, re.rec1 + at, (int)sizeof(re.rec1) - at);
+		NetRep_PutVar(&w, (uint32_t)t);
+		if (kind == REPENT_K_TSTORE) {
+			if (w.size + tailSize > w.cap) {
+				re.bigRecords++;
+				continue;
+			}
+			memcpy(re.rec1 + at + w.size, tail, (size_t)tailSize);
+			w.size += tailSize;
+			have[t >> 3] |= (uint8_t)(1 << (t & 7));
+			re.tplStores++;
+		} else {
+			re.tplUses++;
+		}
+		RepEnt_MsgAdd(&m, re.rec1, at + w.size);
 	}
 	RepEnt_MsgFlush(&m);
 }
@@ -711,10 +808,11 @@ void RepEnt_Status(void) {
 	if (!re.j) {
 		return;
 	}
-	Con_Printf("repent: %d journal entries (%u lost), %u creates %u updates %u events sent, %llu bytes, %u slots %u looks "
-		"%u events %u drops lost, %u long names, %u cut texts, %u big records\n", NetRepJ_Used(re.j), NetRepJ_Lost(re.j),
-		re.creates, re.updates, re.events, (unsigned long long)re.bytes, re.lostSlots, re.lostLooks, re.lostEvents, re.lostDrops,
-		re.longNames, re.cutTexts, re.bigRecords);
+	Con_Printf("repent: %d journal entries (%u lost), %u creates (%u templates kept, %u used, %d known) %u updates %u "
+		"events sent, %llu bytes, %u slots %u looks %u events %u drops lost, %u long names, %u cut texts, %u big records\n",
+		NetRepJ_Used(re.j), NetRepJ_Lost(re.j), re.creates, re.tplStores, re.tplUses, re.ntpl, re.updates, re.events,
+		(unsigned long long)re.bytes, re.lostSlots, re.lostLooks, re.lostEvents, re.lostDrops, re.longNames, re.cutTexts,
+		re.bigRecords);
 }
 
 /* ---- the mirror (both sides) ---- */

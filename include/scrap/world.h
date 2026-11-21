@@ -162,5 +162,8 @@ byte cWorld_SphereCallF(cWorld *self, uint32_t mask, const vec3_t *center, float
 /* fn(e, ctx) for every entity of mask in the sphere (as cWorld_SphereCallF); 1 if there was one */
 byte cWorld_SphereEach(cWorld *self, uint32_t mask, const vec3_t *center, float radius, int noWall,
 	void (*fn)(cEntity *e, void *ctx), void *ctx);
+/* fn(e, ctx) for every active entity whose cell of the world's grid is within radius plus Max_Rad_Obj of center (no
+ * test of the entity itself: the caller's) */
+void cWorld_NearEach(cWorld *self, const vec3_t *center, float radius, void (*fn)(cEntity *e, void *ctx), void *ctx);
 
 #endif

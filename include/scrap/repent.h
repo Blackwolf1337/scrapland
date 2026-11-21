@@ -34,6 +34,11 @@
  *   REPENT_K_DROP    records: slot varint, generation varint: the entity of that generation is gone on the server,
  *                    the client forgets its journal (a client that saw many entities come and go kept the journals of
  *                    all of them and its pool ran full)
+ *   REPENT_K_TSTORE  records as REPENT_K_CREATE with a template number varint before the count: the client also keeps
+ *                    the values as that template
+ *   REPENT_K_TUSE    records: slot varint, generation varint, class, name, template number varint: the journal is the
+ *                    template's (stage 9: the traffic ships of a kind have the same journal of about 180 entries,
+ *                    most of them their sound items; the creates of a join were 1 MB)
  *
  * Test verb "mirror json" (both sides): every replicated entity with slot, generation, class, name, the declared
  * state (the state the server would send of it now, made by the same function on both sides), its journal, and the
@@ -96,6 +101,8 @@ enum {
 #define REPENT_K_VARS 'v'
 #define REPENT_K_EVENT 'e'
 #define REPENT_K_DROP 'd'
+#define REPENT_K_TSTORE 't'
+#define REPENT_K_TUSE 'u'
 
 /* -mp2 on the command line */
 extern byte g_Mp2;

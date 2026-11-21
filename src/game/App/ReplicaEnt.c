@@ -34,7 +34,9 @@
 
 #include "../Global/testchannel.h"
 
-#define RC_JOURNAL 65536
+#define RC_JOURNAL (1 << 18)		/* journal entries of the replicas (the pool grows to it in chunks) */
+#define RC_TEMPLATES 1024			/* the server's RE_TEMPLATES */
+#define RC_TPL_JOURNAL (1 << 19)	/* their entries (the pool grows to it in chunks) */
 #define RC_NAME 128					/* an entity name with its end (cEntity_ctor takes less than 0x7c) */
 #define RC_CLASS 16
 #define RC_LINKS 64					/* LinkModel values waiting for the entity they name */
@@ -54,6 +56,8 @@ typedef struct RcSlot {
 static struct {
 	RcSlot s[NETREP_MAX_ENTS];
 	NetRepJournal *j;
+	NetRepJournal *tj;				/* the templates the server named (REPENT_K_TSTORE), owner = template */
+	uint32_t tplStores, tplUses, tplMissing;
 	byte creating;					/* the replication makes an entity now: not counted */
 	int applying;					/* a journal value goes into an entity now */
 	uint32_t made, waits, fails, purged, messages, events, simCalls;
@@ -406,7 +410,8 @@ void ReplicaEnt_Message(const uint8_t *data, int size) {
 			}
 			continue;
 		}
-		if (kind == REPENT_K_CREATE) {
+		int tpl = -1;
+		if (kind == REPENT_K_CREATE || kind == REPENT_K_TSTORE || kind == REPENT_K_TUSE) {
 			char cls[RC_CLASS], name[RC_NAME];
 			NetRep_GetStr(&r, cls, sizeof(cls));
 			NetRep_GetStr(&r, name, sizeof(name));
@@ -416,14 +421,48 @@ void ReplicaEnt_Message(const uint8_t *data, int size) {
 			}
 			Str_Copy(s->cls, cls, sizeof(s->cls));
 			Str_Copy(s->name, name, sizeof(s->name));
+			if (kind != REPENT_K_CREATE) {
+				tpl = (int)NetRep_GetVar(&r);
+				if (r.bad || tpl >= RC_TEMPLATES) {
+					break;
+				}
+				if (!rc.tj) {
+					rc.tj = NetRepJ_Create(RC_TEMPLATES, RC_TPL_JOURNAL);
+				}
+				if (!rc.tj) {
+					break;
+				}
+			}
 		} else if (kind != REPENT_K_VARS) {
 			break;
 		}
-		uint32_t n = NetRep_GetVar(&r);
 		cEntity *e = gen == s->gen && gen == s->madeGen ? ReplicaEnt_Entity((int)slot) : NULL;
+		if (kind == REPENT_K_TUSE) {
+			/* the journal of the template, as if its values came in this record */
+			if (!NetRepJ_Count(rc.tj, tpl)) {
+				rc.tplMissing++;
+			}
+			rc.tplUses++;
+			for (int k = NetRepJ_First(rc.tj, tpl); k >= 0; k = NetRepJ_Next(rc.tj, k)) {
+				const NetRepJVal *tv = NetRepJ_Get(rc.tj, k);
+				NetRepJ_Set(j, (int)slot, tv);
+				if (e) {
+					ReplicaEnt_Apply(e, tv);
+				}
+			}
+			continue;
+		}
+		if (kind == REPENT_K_TSTORE) {
+			NetRepJ_Clear(rc.tj, tpl);
+			rc.tplStores++;
+		}
+		uint32_t n = NetRep_GetVar(&r);
 		for (uint32_t i = 0; i < n && !r.bad; i++) {
 			if (!NetRep_GetJVal(&r, &v)) {
 				break;
+			}
+			if (tpl >= 0) {
+				NetRepJ_Set(rc.tj, tpl, &v);
 			}
 			if (gen != s->gen) {
 				continue;		/* the changes of an entity this client no longer has the create message of */
@@ -790,9 +829,11 @@ void ReplicaEnt_Mirror(tcBuf *b) {
 		view[2] = own->pos.z;
 	}
 	TC_Addf(b, "{\"side\":\"client\",\"view\":[%.0f,%.0f,%.0f],\"own\":%d,\"tag\":%d,\"made\":%u,\"waits\":%u,\"fails\":%u,"
-		"\"purged\":%u,\"simcalls\":%u,\"linkwaits\":%u,\"linklost\":%u,\"jused\":%d,\"jlost\":%u,\"ents\":[",
+		"\"purged\":%u,\"simcalls\":%u,\"linkwaits\":%u,\"linklost\":%u,\"jused\":%d,\"jlost\":%u,\"tstores\":%u,"
+		"\"tuses\":%u,\"tmissing\":%u,\"tused\":%d,\"tlost\":%u,\"ents\":[",
 		(double)view[0], (double)view[1], (double)view[2], Play_OwnSlot(), Play_Player() + 1, rc.made, rc.waits, rc.fails,
-		rc.purged, rc.simCalls, rc.linkWaits, rc.linkLost, rc.j ? NetRepJ_Used(rc.j) : 0, rc.j ? NetRepJ_Lost(rc.j) : 0u);
+		rc.purged, rc.simCalls, rc.linkWaits, rc.linkLost, rc.j ? NetRepJ_Used(rc.j) : 0, rc.j ? NetRepJ_Lost(rc.j) : 0u,
+		rc.tplStores, rc.tplUses, rc.tplMissing, rc.tj ? NetRepJ_Used(rc.tj) : 0, rc.tj ? NetRepJ_Lost(rc.tj) : 0u);
 	int n = 0;
 	for (int s = 0; s < NETREP_MAX_ENTS; s++) {
 		cEntity *e = rc.s[s].made && s != Play_OwnSlot() ? Watch_SlotEntity(s) : NULL;

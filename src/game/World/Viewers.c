@@ -295,8 +295,8 @@ int Viewers_NeediestLeader(int quota, int (*count)(int leader, void *ctx), void 
 /* ---- the test viewers ---- */
 
 /* n points of the ground graph (else the flying graph), each the node farthest from those taken (the first a random
- * one), so the viewers spread over the level's streets as far apart as they can */
-static int Viewers_Spread(int n, unsigned seed) {
+ * one), so the viewers spread over the level's streets as far apart as they can; yaw (or NULL) a random heading each */
+int Viewers_Spread(int n, unsigned seed, vec3_t *pos, float *yaw) {
 	CNodesWorld *nw = g_NodesWorld2D && NW2D_SUP(g_NodesWorld2D)->sup.numNodes > 0 ? NW2D_SUP(g_NodesWorld2D) :
 		g_NodesWorld;
 	int nodes = nw ? nw->sup.numNodes : 0;
@@ -316,9 +316,11 @@ static int Viewers_Spread(int n, unsigned seed) {
 	}
 	for (int i = 0; i < n; i++) {
 		const vec3_t *p = &nw->sup.nodes[k].pos;
-		g_Fake.pos[i] = (vec3_t){ p->x, p->y + VIEWERS_FAKE_EYE, p->z };
+		pos[i] = *p;
 		r = r * 1664525u + 1013904223u;
-		g_Fake.yaw[i] = (float)((r >> 8) % 6283u) / 1000.0f;
+		if (yaw) {
+			yaw[i] = (float)((r >> 8) % 6283u) / 1000.0f;
+		}
 		int far = -1;
 		float farD = -1.0f;
 		for (int j = 0; j < nodes; j++) {
@@ -343,7 +345,10 @@ byte Viewers_Command(const char *line) {
 	}
 	if (sscanf(line, "viewers fake %d %u", &n, &seed) >= 1) {
 		n = n < 0 ? 0 : (n > VIEWERS_FAKE_MAX ? VIEWERS_FAKE_MAX : n);
-		g_Fake.n = Viewers_Spread(n, seed);
+		g_Fake.n = Viewers_Spread(n, seed, g_Fake.pos, g_Fake.yaw);
+		for (int i = 0; i < g_Fake.n; i++) {
+			g_Fake.pos[i].y += VIEWERS_FAKE_EYE;
+		}
 		Con_Printf("viewers: %d test viewers\n", g_Fake.n);
 		return 1;
 	}

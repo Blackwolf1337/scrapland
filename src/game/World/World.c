@@ -1222,6 +1222,16 @@ byte cWorld_SphereEach(cWorld *self, uint32_t mask, const vec3_t *center, float 
 	return found;
 }
 
+void cWorld_NearEach(cWorld *self, const vec3_t *center, float radius, void (*fn)(cEntity *e, void *ctx), void *ctx) {
+	vec3_t lo, hi;
+
+	CHECK(Grid_IsOk(&self->grid));
+	World_SphereBox(center, radius, &lo, &hi);
+	for (cEntity *e = Grid_FirstInBox(&self->grid, &lo, &hi); e; e = Grid_NextInBox(&self->grid)) {
+		fn(e, ctx);
+	}
+}
+
 static void World_SphereFunc(cEntity *e, void *func) {
 	cPy_Function_AddParamS(func, e->name);
 	cPy_Function_Execute(func, 0);

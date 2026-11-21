@@ -8,8 +8,10 @@
 #include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/objentity.h"
+#include "scrap/players.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/withlifeentity.h"
+#include "scrap/world.h"
 #include "scrap/staticinit.h"
 
 #define g_ArrowNearDist (GVar_ArrowViewRadius.value.f)	/* shown nearer */
@@ -225,6 +227,9 @@ void GameModelList_Free(void) {
 }
 
 void ArrowIndicator_ClearSel(void) {
+	if (Players_Net()) {
+		return;
+	}
 	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
 		if (e->active && Entity_IsType(e, TYEN_WITH_LIFE)) {
 			WLife(e)->arrow.selected = 0;
@@ -241,10 +246,31 @@ void cArrowIndicator_ClearOpts(cArrowIndicator *self) {
 	}
 }
 
+/* the selection of a player of the network (include/scrap/players.h): the entities near it in the world's grid, no
+ * marks (shown and selected are what one player's arrows draw; the instance draws none, and with 64 players the scans
+ * of all entities were an eighth of its tick) */
+typedef struct ArrowNetSel {
+	cEntity *self, *sel;
+	float ang, best;
+} ArrowNetSel;
+
+static void Arrow_NetSelOne(cEntity *e, void *ctx) {
+	ArrowNetSel *q = ctx;
+	if (Entity_IsType(e, TYEN_WITH_LIFE) && ArrowIndicator_Visible(q->self, e, q->ang, q->best, &q->best, 0, 1)) {
+		q->sel = e;
+	}
+}
+
 cEntity *ArrowIndicator_FindSel(cEntity *self, float ang) {
 	vec3_t pos;
 	cEntity *sel = NULL;
 
+	if (Players_Net()) {
+		ArrowNetSel q = { self, NULL, ang, g_ArrowMaxDist };
+		cWorld_NearEach(g_pWorld, Entity_GetPos(self, &pos), g_ArrowMaxDist + WLife(self)->prim.radius, Arrow_NetSelOne,
+			&q);
+		return q.sel;
+	}
 	Entity_GetPos(self, &pos);
 	WLife(self)->arrow.shown = 0;
 	WLife(self)->arrow.selected = 0;
