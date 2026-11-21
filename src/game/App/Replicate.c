@@ -103,6 +103,7 @@ typedef struct RepPlayer {
 	int lives;						/* lives left (-lives), 0 with infinite lives */
 	int rebuild;					/* the price of its own ship that died: the next call costs it (-rebuild) */
 	byte dead;						/* died, no new character yet (the player message says so) */
+	byte wreckGoes;					/* coop: the ship of the scripts it died in goes with its death (Rep_DropOwn) */
 	cEntity *corpse;				/* its dead character (compared, read while World_FindEntity(corpseName) is it) */
 	char corpseName[REP_NAME];
 	int spawnAt;					/* the spawn point of its character, -1 */
@@ -1027,13 +1028,15 @@ static cEntity *Rep_CallShip(int i, cEntity *ch, byte side) {
 	return ship && Rep_IsParked(ship, i) ? ship : NULL;
 }
 
-/* test: the own ship of player i on foot (character e): a parked one it owns near it, else a called one (the coop
- * story's: the party's hangar ship), else NULL (the nearest parked one) */
+/* test: the own ship of player i on foot (character e): a parked one it owns near it with half its life at least, else
+ * a called one (the coop story's: the party's hangar ship), else NULL (the nearest parked one) */
 static cEntity *Rep_TestOwnShip(int i, cEntity *e) {
 	for (int k = 0; k < rep.pl[i].nships; k++) {
 		cEntity *s = Rep_OwnedShip(&rep.pl[i], k);
 		float dx = s ? s->pos.x - e->pos.x : 0.0f, dz = s ? s->pos.z - e->pos.z : 0.0f;
-		if (s && Rep_IsParked(s, i) && dx * dx + dz * dz < REP_OWN_NEAR * REP_OWN_NEAR) {
+		int most = 0;
+		if (s && Rep_IsParked(s, i) && dx * dx + dz * dz < REP_OWN_NEAR * REP_OWN_NEAR &&
+			!(Entity_VarI(s, "MaxLife", &most, 0) && WLife(s)->life * 2.0f < (float)most)) {
 			return s;
 		}
 	}
@@ -1141,7 +1144,7 @@ static void Rep_DropOwn(int i) {
 	Obj(e)->netStep = 0;
 	if (NetPl_Kind(e) == NETREP_SHIP) {
 		Rep_SetSlot(e, -1);
-		if (WLife(e)->life > 0 && Arena_On()) {
+		if ((WLife(e)->life > 0 && Arena_On()) || (WLife(e)->life <= 0 && pl->wreckGoes)) {
 			cEntity_Del(e);
 		} else if (WLife(e)->life > 0 && Rep_NearFloor(e)) {
 			PORT_CALL(Parking, SetShipAsParked, NULL, "s", e->name);
@@ -1158,6 +1161,18 @@ static void Rep_DropOwn(int i) {
 		}
 	}
 	Players_Leave(was);
+}
+
+/* e is the coop party's own ship (the world's Parking.PlayerShip, made from the party's hangar at the level's start) */
+static byte Rep_PartyShip(const cEntity *e) {
+	nativeVal_t v;
+	Native_SetNone(&v);
+	int was = Players_Enter(PLAYERS_NONE);
+	byte is = Mode_ModGet("Parking", "PlayerShip", &v) && v.type == NV_ENT && Native_Ent(&v) == e;
+	Players_Leave(was);
+	Native_Free(&v);
+	Native_ErrClear();
+	return is;
 }
 
 /* the game's cost of a death (MissionsFuncs.SinglePlayerDeath and Vehicles.OnDeath of single player): the alarm
@@ -1197,6 +1212,9 @@ static void Rep_Death(int i, cEntity *e) {
 	}
 	Con_Printf("instance: player %d died in %s (%d lives left, ship cost %d)\n", i, e->name, sand.lives ? pl->lives : -1,
 		pl->rebuild);
+	/* coop: a ship of the scripts it died in (not one it called: StealMayorShip's mayor's ship) goes, as single player's
+	 * death loads the level again; the mission makes its ship again where it looks for it gone */
+	pl->wreckGoes = Coop_On() && NetPl_Kind(e) == NETREP_SHIP && Rep_ShipOwner(e) < 0 && !Rep_PartyShip(e);
 	/* the coop story's own ship that died is the member's no more (Parking.PlayerShip would name a gone entity: the
 	 * parking's scripts fail on it; single player's death loads the level again) */
 	for (int k = 0; Coop_On() && k < pl->nships; k++) {

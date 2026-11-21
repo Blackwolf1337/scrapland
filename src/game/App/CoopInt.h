@@ -128,6 +128,7 @@ typedef struct CoopState {
 		int ammoNext;
 		double ammoAt;				/* when it was put at a box last */
 		double lifeBoxAt;			/* when it was put at a life box last */
+		double swapAt;				/* when it left a ship low on life for a new one last */
 		int lifeWeap;				/* the weapon of the watch of the target's life (-1 none) */
 		float lifeMark;				/* the target's life when that watch began */
 		double lifeSince;			/* when */
@@ -138,6 +139,9 @@ typedef struct CoopState {
 		char autoList[CP_NAME];		/* what it fights when the mission shows nothing to do ("" nothing; as fightList) */
 		double autoSince, autoUse;	/* when, when it uses it (0 done) */
 		double alarmSince, deafSince;	/* test: since when it waits before a use: its alarm, its deaf character (0 none) */
+		double hideSince;			/* test: since when its character hides from the police (0 none) */
+		float lifeTop;				/* test: the most life its character had (characters have no MaxLife) */
+		const struct cEntity *lifeOf;	/* test: the character of lifeTop (compared only) */
 		double autoTold;			/* when its new target was told last */
 		int autoTurn;				/* its uses so far: the next of several targets */
 		uint16_t purseJoined;		/* the join whose money is the party's purse (Cp_Purse) */

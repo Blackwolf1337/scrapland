@@ -3169,6 +3169,7 @@ static const netClassRow_t nc_playerread[] = {
 	{ "CharConversor.afterExitConversor", NC_PARTY },
 	{ "CharConversor.newChar", NC_PARTY },
 	{ "CharConversor.prevChar", NC_PARTY },
+	{ "Char_Usr0", NC_PARTY },
 	{ "Cm_UsrNameIs", NC_PARTY },
 	{ "Coop_StandIn", NC_ANY },
 	{ "Cp_ClientHangarBack", NC_NEAREST },

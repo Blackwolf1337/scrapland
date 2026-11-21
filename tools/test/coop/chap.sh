@@ -116,8 +116,9 @@ while IFS='|' read -r lg line pat secs what; do
 				echo "again: the test lines after the level started again"
 			fi
 			# CHAP_ABORT: a pattern that ends the chapter at once (the mission failed: the instance restarted without the
-			# test lines of the steps)
-			if [ -n "$CHAP_ABORT" ] && tail -n +$((mark + 1)) "$f" | grep -qE "$CHAP_ABORT"; then
+			# test lines of the steps); also from before the poll (a death during the steps before it) unless CHAP_REARM
+			# sends the lines again
+			if [ -n "$CHAP_ABORT" ] && tail -n +$((${CHAP_REARM:+mark} + 1)) "$f" | grep -qE "$CHAP_ABORT"; then
 				echo "FAIL: $what (aborted: '$CHAP_ABORT' in $(basename "$f"))"; fail=$((fail + 1)); break 2
 			fi
 		done

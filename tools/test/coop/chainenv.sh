@@ -103,13 +103,12 @@ export AUTO_PRE_Mission_SheriffMayor='money $a 50000'
 # then D-Tritus again by the conversor, the auto player photographs the maps and talks to Trurl
 export AUTO_MID_Mission_CatchTrurl='@|poll inst @ story get CatchTrurlMissionData|CatchTrurlMissionData = KillFunctionaries|900|Trurl'"'"'s talk: the functionaries with his maps;;@|inst @ auto $a 0||||;;@|wait 5||||;;@|inst @ possess $a Functionary_10|the possession of Functionary_10 done|150|pa possesses Functionary_10;;@|inst @ possess $a Functionary_23|the possession of Functionary_23 done|150|pa possesses Functionary_23;;@|inst @ possess $a Functionary_25|the possession of Functionary_25 done|150|pa possesses Functionary_25;;@|wait 5||||;;'"$CONV_A"';;@|inst @ auto $a|player $a plays|5|pa photographs the maps and talks to Trurl again'
 # StealMayorShip: in the mayor's ship twenty police ships of the level to destroy, then the call once the alarm fell
-export AUTO_MID_Mission_StealMayorShip='@|wait 60||||;;@|inst @ auto $a 1 @OutCop|player $a plays|10|pa fights the police ships of the level;;@|inst @ life $a 20000||||;;@|poll inst @ show Mission_StealMayorShip.numCopsKilled|numCopsKilled = 20|2400|twenty police ships destroyed;;@|inst @ auto $a 0||||;;@|inst @ auto $b 0||||;;@|poll inst @ status|player $a \(.*alarm 0\.00|900|pa'"'"'s alarm falls before the call;;@|inst @ auto $a 1||||;;@|inst @ auto $b 2||||'
+export AUTO_MID_Mission_StealMayorShip='@|wait 60||||;;@|inst @ auto $a 1 @OutCop|player $a plays|10|pa fights the police ships of the level;;@|poll inst @ show Mission_StealMayorShip.numCopsKilled|numCopsKilled = 20|2400|twenty police ships destroyed;;@|inst @ auto $a 0||||;;@|inst @ auto $b 0||||;;@|poll inst @ status|player $a \(.*alarm 0\.00|900|pa'"'"'s alarm falls before the call;;@|inst @ auto $a 1||||;;@|inst @ auto $b 2||||'
 # StealMayorShip: only the kills of the mayor's ship count: the other members stay out of the fight (their kills of
 # the police would not count; alive they keep the party alive while pa fights)
 export AUTO_B_Mission_StealMayorShip='-'
-# the mayor's ship's life is raised: with 2 and 8 players under load pa died in it, and a member's ship stays as a
-# wreck (single player's death loads the level again), so the mission makes no new mayor's ship; after a death pa
-# takes a mayor's ship again if there is one
+# a member's death in the mayor's ship: the ship goes (Replicate.c: a ship of the scripts a member died in, as single
+# player's death loads the level again) and the mission makes a new one; pa boards a mayor's ship again after a death
 export AUTO_REARM_Mission_StealMayorShip='instance: player [0-9]+ died' AUTO_REARM_LINES_Mission_StealMayorShip='board $a MAYOR;auto $a 1 @OutCop'
 # the CTF super deals (FZ): pa flies onto the waypoint's item (the flag) as a player follows its arrow, the others fight
 export AUTO_PRE_SuperDeal_Fifth='switch $a;switch $b;waypoint $a 1' AUTO_PRE_SuperDeal_Ninth='switch $a;switch $b;waypoint $a 1'

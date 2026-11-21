@@ -264,7 +264,9 @@ const char *Parking_Find(void *parking, int flag, const vec3_t *pos, vec3_t *out
 		}
 	}
 	list->iter = saved;
-	if (name && out) {
+	/* not in the original: on an instance the zone's place also without a ship or an item in it (a coop member took
+	 * the farthest zone's ship: StealMayorShip's new mayor's ship came at the origin, out of the AI's grid) */
+	if (out && best && (name || Players_Net())) {
 		*out = best->pos;
 	}
 	return name;

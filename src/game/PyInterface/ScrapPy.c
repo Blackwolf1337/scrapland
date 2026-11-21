@@ -1133,7 +1133,9 @@ static byte FindParked(const nativeVal_t *a, int n, nativeVal_t *out, int farest
 	vec3_t found = pos;
 	const char *name = Parking_Find(&g_pWorld->logic.parking, flag != 0, &pos, &found, farest);
 	if (!name) {
-		return Api_Build(out, "s(fff)", "", 0.0, 0.0, 0.0);
+		/* not in the original: an instance gives the empty zone's place (Parking_Find), not the origin */
+		byte zone = Players_Net() && (found.x != pos.x || found.y != pos.y || found.z != pos.z);
+		return Api_Build(out, "s(fff)", "", zone ? (double)found.x : 0.0, zone ? (double)found.y : 0.0, zone ? (double)found.z : 0.0);
 	}
 	return Api_Build(out, "s(fff)", name, (double)found.x, (double)found.y, (double)found.z);
 }

@@ -14,6 +14,7 @@
 #include "scrap/camcontrol.h"
 #include "scrap/chartype.h"
 #include "scrap/console.h"
+#include "scrap/collisiongrid.h"
 #include "scrap/coop.h"
 #include "scrap/coord.h"
 #include "scrap/crt.h"
@@ -81,6 +82,9 @@
 #define CP_AMMO_GAP 4.0				/* test: s between two ammo boxes */
 #define CP_WORLD_EDGE 200.0f		/* test: units a placed player keeps from the box of the level's grid of points */
 #define CP_LIFE_LOW 50				/* test: percent of its most life under which a ship takes a life box */
+#define CP_HIDE_SECS 90.0			/* test: s a character low on life hides from the police at most */
+#define CP_HIDE_FAR 6000.0f			/* test: units a hiding place is from the character at least */
+#define CP_SWAP_GAP 20.0			/* test: s between two changes of a ship low on life without a life box */
 #define CP_FIGHT_USELESS 10.0		/* test: s a weapon fires at a target near ahead that loses no life: not taken again */
 #define CP_FIGHT_RED "red"			/* test: the fight list of all the red ones (or enemies) of the level */
 #define CP_POSSESS_SECS 90.0		/* test: a possession is given up after this */
@@ -280,6 +284,27 @@ static void Cp_FightUseless(int i, cEntity *t, int w, byte firing, double now) {
 	Con_Printf("coop: player %d: weapon %d does not hurt %s\n", i, w, t->name);
 }
 
+static void Cp_InWorld(vec3_t *p);
+
+/* test: player i's ship e (low on life or on the ammo that hurts) is left for a new one where the level has no box of
+ * it (the story's levels have none), as a player gets into another ship: a parked one or a called one (the own one
+ * low on life stays, Replicate.c Rep_TestOwnShip); once in CP_SWAP_GAP s; 1 when it gets out */
+static byte Cp_NewShip(int i, cEntity *e, double now, const char *why) {
+	/* not outside the box of the level's grid (no floor and no place for a called ship there: it stayed on foot) */
+	vec3_t in = e->pos;
+	Cp_InWorld(&in);
+	if (now - g_Coop.pl[i].swapAt < CP_SWAP_GAP || in.x != e->pos.x || in.z != e->pos.z) {
+		return 0;
+	}
+	g_Coop.pl[i].swapAt = now;
+	Obj_SetVel(e, &(vec3_t){ 0.0f, 0.0f, 0.0f });
+	g_Coop.pl[i].press = NETREP_IN_SWITCH;
+	g_Coop.pl[i].pressTicks = 1;
+	g_Coop.pl[i].pressPulse = 0;
+	Con_Printf("coop: player %d: no %s box: out of %s (life %.0f) for a new ship\n", i, why, e->name, (double)WLife(e)->life);
+	return 1;
+}
+
 /* test: the weapons that hurt the target are all out of ammo: player i's ship is put at the nearest ammo box of the
  * level it did not take lately (its pickup radius takes it, as a player flies through it); 1 while it goes for ammo */
 static byte Cp_FightAmmo(int i, cEntity *e, double now) {
@@ -315,7 +340,10 @@ static byte Cp_FightAmmo(int i, cEntity *e, double now) {
 		}
 	}
 	if (!box) {
-		/* every one taken lately: the oldest again next time */
+		/* every one taken lately: the oldest again next time; none at all: a new ship (its ammo) */
+		if (!g_Coop.pl[i].ammoTried[0][0]) {
+			return Cp_NewShip(i, e, now, "ammo");
+		}
 		g_Coop.pl[i].ammoTried[g_Coop.pl[i].ammoNext][0] = 0;
 		g_Coop.pl[i].ammoNext = (g_Coop.pl[i].ammoNext + 1) % CP_AMMO_TRIED;
 		return 0;
@@ -353,7 +381,9 @@ static byte Cp_FightLife(int i, cEntity *e, double now) {
 		}
 	}
 	if (!box) {
-		return 0;
+		/* no life box (the story's levels have none): out of the ship, as a player gets into a new one (a parked or a
+		 * called ship; the own one low on life is left, Replicate.c Rep_TestOwnShip) */
+		return Cp_NewShip(i, e, now, "life");
 	}
 	g_Coop.pl[i].lifeBoxAt = now;
 	e->pos = (vec3_t){ box->pos.x, box->pos.y + 200.0f, box->pos.z };
@@ -495,7 +525,10 @@ static void Cp_Fight(int i, NetRepInput *in, double back) {
 		in->weapon = (uint8_t)(gentle ? Cp_GentleWeapon(e) : Cp_FightWeapon(e, d, g_Coop.pl[i].useless));
 		Cp_FightUseless(i, t, in->weapon, d < CP_FIGHT_RANGE && !g_Coop.pl[i].follow, now);
 		/* closer while far, else its speed (behind it, turning with it) */
-		float tv = sqrtf(v->x * v->x + v->y * v->y + v->z * v->z), want = d > near * 1.5f ? tv + 1500.0f : tv;
+		/* (too near it brakes, so the target gets ahead again: at its speed beside it the ship circled it for good,
+		 * DistractHumphrey's traffic) */
+		float tv = sqrtf(v->x * v->x + v->y * v->y + v->z * v->z), want = d > near * 1.5f ? tv + 1500.0f :
+			d < near * 0.4f && !g_Coop.pl[i].follow ? tv * 0.5f : tv;
 		in->move[0] = NetRep_QMove(Veh(e)->speed > want + 200.0f ? -1.0f : Veh(e)->speed < want ? 1.0f : 0.0f);
 		in->move[2] = NetRep_QMove(dy > 500.0f ? 0.8f : dy < -500.0f ? -0.8f : dy / 625.0f);
 	} else {
@@ -1201,6 +1234,53 @@ static cEntity *Cp_Conversor(const cEntity *e) {
 	return best;
 }
 
+/* test: player i's character e low on life (CP_LIFE_LOW percent of the most it had) while the police is after it hides
+ * as a player runs off: at a player spawn of the level far from it (put there, as a walker that knows the way) until
+ * its alarm falls, CP_HIDE_SECS at most; 1 while it hides */
+static byte Cp_Hide(int i, cEntity *e, double now) {
+	const cAlarm *al = Players_Alarm(i);
+	float life = WLife(e)->life;
+	if (g_Coop.pl[i].lifeOf != e || life > g_Coop.pl[i].lifeTop) {
+		g_Coop.pl[i].lifeOf = e;
+		g_Coop.pl[i].lifeTop = life;
+	}
+	if (g_Coop.pl[i].hideSince > 0.0) {
+		if (al && al->on && now - g_Coop.pl[i].hideSince < CP_HIDE_SECS) {
+			return 1;
+		}
+		Con_Printf("coop: player %d (auto) comes out (alarm %s)\n", i, al && al->on ? "on" : "off");
+		g_Coop.pl[i].hideSince = 0.0;
+		g_Coop.pl[i].lifeTop = life;
+		return 0;
+	}
+	if (!al || !al->on || al->locked || (al->hasGuaranteed && al->notGuaranteed) || life * 100.0f >= g_Coop.pl[i].lifeTop * CP_LIFE_LOW) {
+		return 0;
+	}
+	char name[CP_NAME], best[CP_NAME];
+	vec3_t pos, ang, at = e->pos;
+	float bestD = CP_HIDE_FAR * CP_HIDE_FAR;
+	best[0] = 0;
+	DummySearch_Start("DM_Player_Spawn*", 1);
+	while (DummySearch_NextEuler(name, sizeof(name), &pos, &ang)) {
+		float dx = pos.x - e->pos.x, dz = pos.z - e->pos.z, d = dx * dx + dz * dz;
+		if (d > bestD && strcmp(name, "DM_Player_Spawn_Junkyard")) {
+			bestD = d;
+			at = pos;
+			Str_Copy(best, name, sizeof(best));
+		}
+	}
+	if (!best[0]) {
+		return 0;
+	}
+	g_Coop.pl[i].hideSince = now;
+	e->pos = (vec3_t){ at.x, at.y + 50.0f, at.z };
+	Obj(e)->vel = (vec3_t){ 0.0f, 0.0f, 0.0f };
+	Rep_Placed(i);
+	Con_Printf("coop: player %d (auto): life %.0f of %.0f with the police after it: hides at %s\n", i, (double)life,
+		(double)g_Coop.pl[i].lifeTop, best);
+	return 1;
+}
+
 /* test: the member whose ship carries the baton of the mission MortalRace or of a MortalRace deal (the race counts
  * that ship's checkpoints), -1 for none or a racer */
 static int Cp_BatonCarrier(void) {
@@ -1241,6 +1321,10 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 		/* its talk of a phone cab plays, or may start after its use: it listens, as the single player's talk holds its
 		 * input (a boarding during MeetBerto's call left the talk's end on a ship: AutoSelect, the call's callback and
 		 * the talk's end lost) */
+		g_Coop.pl[i].autoSince = now;
+		return;
+	}
+	if (kind == NETREP_CHAR && Cp_Hide(i, e, now)) {
 		g_Coop.pl[i].autoSince = now;
 		return;
 	}

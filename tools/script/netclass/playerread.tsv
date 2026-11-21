@@ -300,3 +300,5 @@ Ambush_CreateProbeN	PARTY	a probe far from the player: from the party's member (
 Escort_MadGuyDamage	PARTY	the mercenary the player hits turns on him: the party's member (an OnDamage without a member in context)
 # stage 5b part 1, phase 2
 Chal_SetRevenge	PARTY	HumphreyRace (DownTown), a challenge: the lost race's revenge call at the phone cab nearest to the player, the acting member in coop
+# stage 5c, TalkToMayor (64) alone: a policeman bribed by the player (the end of his bribe talk)
+Char_Usr0	PARTY	the police bribe talk ends: the policeman watches the player, the acting member in coop (the talk's member)
