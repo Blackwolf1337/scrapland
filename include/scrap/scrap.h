@@ -208,6 +208,11 @@ void SaveGame_CoopNewGame(void);
  * in the current context, -1 for the world's */
 void SaveVar_OverClear(int i);
 int SaveVar_OverOwner(const char *name);
+/* -mp2 instance: the player variables the level's start sets in the world's context (from SaveVar_LevelBegin at the
+ * level's start to the first join) are given to each player that joins (SaveVar_LevelGive, after its clear), as
+ * single player's level sets them for its player (GDB: Char Bishop) */
+void SaveVar_LevelBegin(void);
+void SaveVar_LevelGive(int i);
 /* each variable as the current context reads it (SaveVars_Each with a player's own values; its deleted ones left
  * out) */
 void SaveVars_EachSeen(void (*fn)(const char *name, const char *value, void *u), void *u);
