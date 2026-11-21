@@ -3163,6 +3163,7 @@ static const netClassRow_t nc_playerread[] = {
 	{ "ChType_SentinelTarget", NC_NEAREST },
 	{ "ChType_Steal", NC_NEAREST },
 	{ "Chal_SetRevenge", NC_PARTY },
+	{ "CharAct.TakenPhotoMap", NC_WORLD },
 	{ "CharConversor.PrevConv", NC_NEAREST },
 	{ "CharConversor._charName", NC_PARTY },
 	{ "CharConversor._usrName", NC_PARTY },
