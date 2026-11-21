@@ -25,6 +25,7 @@
 #include "scrap/modvars.h"
 #include "scrap/nativeobj.h"
 #include "scrap/netclass.h"
+#include "scrap/play.h"
 #include "scrap/players.h"
 #include "scrap/script.h"
 
@@ -151,8 +152,12 @@ static int MV_Tag(int file, const modVar_t *e) {
 
 /* the player whose overlay holds name of ref now, -1 for the module (single player, a namespace, a module the file is
  * not bound to, a variable of the world, the world's context); *mod and *key the static texts of the registry */
+/* the depth of the module codes running (ModVar_Making to ModVar_Made or ModVar_Unmade) */
+static int mv_making;
+
 static int MV_Owner(const modVarRef_t *ref, const char *name, const char **mod, const char **key) {
-	if (!Players_Net() || ref->file < 0 || MV_File(ref->file)->vars != ref->vars) {
+	/* a module's code makes its own values (an import in the world's context of an instance), no player's */
+	if (!Players_Net() || mv_making || ref->file < 0 || MV_File(ref->file)->vars != ref->vars) {
 		return -1;
 	}
 	const modVar_t *e = MV_Known(ref->file, name);
@@ -278,6 +283,9 @@ static void MV_Made(const char *module, const char *level, const nativeVal_t *mo
 }
 
 void ModVar_Made(const char *module, const char *level, const nativeVal_t *mod) {
+	if (mv_making > 0) {
+		mv_making--;
+	}
 	MV_Made(module, level, mod);
 }
 
@@ -293,9 +301,13 @@ void ModVar_Making(const char *module, const char *level, const nativeVal_t *mod
 	}
 	MV_Made(module, level, mod);
 	ModVar_OfVal(mod, ref);
+	mv_making++;
 }
 
 void ModVar_Unmade(const char *module, const modVarRef_t *was) {
+	if (mv_making > 0) {
+		mv_making--;
+	}
 	int first = MV_FirstFile(module);
 	for (int i = first; first >= 0 && i < g_ModVarModuleCount && !strcmp(g_ModVarModules[i].module, module); i++) {
 		MV_File(i)->vars = NULL;
@@ -478,6 +490,10 @@ int ModVar_SetVal(const modVarRef_t *ref, const char *name, const nativeVal_t *v
 	int pl = MV_Owner(ref, name, &mod, &k);
 	if (pl >= 0) {
 		ModVar_OverSet(pl, mod, k, &x);
+		/* single player's flows on an instance: the own ship of a player its scripts make (Sputnik's hangar, a lost ship) */
+		if (pl < PLAYERS_MAX && Rep_SpFlows() && !strcmp(k, "PlayerShip") && !strcmp(mod, "Parking")) {
+			Players_NoteShip(pl, x.type == NV_ENT ? Native_Ent(&x) : NULL);
+		}
 		Native_Free(&x);
 		return 0;
 	}

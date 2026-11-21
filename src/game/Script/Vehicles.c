@@ -20,6 +20,7 @@
  */
 #include <string.h>
 
+#include "scrap/play.h"
 #include "scrap/players.h"
 #include "scrap/pres.h"
 #include "scrap/scrap.h"
@@ -615,20 +616,33 @@ static byte Veh_DeathSingle(const nativeVal_t *v, const nativeVal_t *looser, con
 		(!Native_True(parked) && (!Mode_Import("MisItems") || !PORT_CALL(MisItems, OnVehicleDeat, NULL, "v", v)))) {
 		return Mode_Done(&t, 0);
 	}
-	if (!LvN_ModGet("Parking", "PlayerShip", ship)) {
-		return Mode_Done(&t, 0);
+	/* the instance: the cost of a player's own ship lost is the instance's (src/game/App/Replicate.c Rep_Death); with
+	 * single player's flows (Rep_SpFlows) its owner's hangar loses it as single player's does, in the owner's context */
+	int owner = Players_Net() && Rep_SpFlows() && v->type == NV_ENT ? Players_ShipOwner(Native_Ent(v)) : -1;
+	byte none = Players_Net() && owner < 0;
+	int was = Players_Current();
+	if (owner >= 0) {
+		Players_Enter(owner);
 	}
-	/* the instance: the cost of a player's own ship lost is the instance's (src/game/App/Replicate.c Rep_Death) */
-	byte none = Players_Net();
-	if (!none && (!Mode_VObj(ship, "Name", sname) || !Mode_VObj(v, "Name", vname))) {
-		return Mode_Done(&t, 0);
+	int mine = LvN_ModGet("Parking", "PlayerShip", ship) ? 0 : -1;
+	if (!mine && !none && (!Mode_VObj(ship, "Name", sname) || !Mode_VObj(v, "Name", vname))) {
+		mine = -1;
 	}
-	int mine = none ? 0 : Mode_Cmp(sname, "==", vname);
+	if (!mine && !none) {
+		mine = Mode_Cmp(sname, "==", vname);
+	}
 	if (mine > 0) {
 		mine = Mode_G(VEH, "DelPlayerShipOnDeath", del) ? Native_True(del) : -1;
 	}
-	return Mode_Done(&t, mine >= 0 && (!mine || Veh_LosePlayerShip()) && Veh_CoinForAttacker(v, winner) &&
-		Veh_FreeHunters(looser, winner) && Veh_Taunt(v, winner));
+	/* the owner in it dies with it before single player's loss deletes it */
+	if (mine > 0 && owner >= 0) {
+		Rep_OwnDied(owner);
+	}
+	byte lost = mine >= 0 && (!mine || Veh_LosePlayerShip());
+	if (owner >= 0) {
+		Players_Leave(was);
+	}
+	return Mode_Done(&t, lost && Veh_CoinForAttacker(v, winner) && Veh_FreeHunters(looser, winner) && Veh_Taunt(v, winner));
 }
 
 /* the lost engines of each of the four engine kinds (NEng<k> of model MEng<k>, at PEng<k><A..>, AEng<k><A..>) */

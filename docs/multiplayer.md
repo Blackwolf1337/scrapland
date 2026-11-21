@@ -60,6 +60,8 @@ PvP is a setting of the world. With PvP off, players cannot hurt each other. Aft
 
 The server saves money, alarm, character, owned ship and the faction state of each player (see Saved progress). Each player also has a Sputnik beside the called ship in the outdoor levels. Use it for the hangar screen and change to the spare ship.
 
+A world of the `-mp2` server gives each player single player's own ship, Sputnik and plate (the plate on the own ship). The player's own Sputnik opens its hangar screen on the player's client, rebuilds a lost ship and makes the picked ship where the old one stood. It follows the own ship when the player parks it on another parking box. Another player's Sputnik and own ship cannot be used. In Rusty's Junkyard the keypad opens the ship editor on the player's client, and one player at a time uses it. The platform rides up to Outskirts, where the built ship waits on the junker parking. A pickup (a coin, a box of a ship) goes to one player when two reach it, and comes back after its time as in single player. The lives of the GDB (`Player.NumLives`) are each player's own and show on its HUD. They count only where the story counts them (`Player.InfiniteLives` 0): a death then costs a life, and with none left a player of a world with a coordinator goes to the jail of the Police level. After a death the player comes back with its own ship and Sputnik beside it, and a lost own ship is lost in its hangar as in single player. The hangar, the lives and the money are saved with the player's progress and come back when it joins again.
+
 ## Free roam
 
 Sandbox plus six factions. The factions are the six groups of the game (`data/modules/challenge.mod`) and they are defined in `data/factions/factions.def`, which also holds the numbers (cooldowns, prices, ranges). The actions are not in the original.
@@ -252,7 +254,7 @@ Coop story.
 - Chat and the original's server messages are not ported, there is no text chat in any mode.
 
 Free roam and Sandbox.
-- No inventory, shop or price in the sandbox. One owned ship per player by default, no hangar of several ships. The player's character is Dtritus unless a faction changes it.
+- Without `-mp2`: no inventory, shop or price in the sandbox. One owned ship per player by default, no hangar of several ships. The player's character is Dtritus unless a faction changes it.
 - Relations of factions have an effect only on who may hurt whom. Hits between hostile factions count as crimes.
 - The news panels of the levels are not filled, the headlines are a HUD line. Contracts list only the players of the same level. The Press elevator took no rider in one test world and was not looked into.
 - The desk arrow shows no text on the clients (the use works, the text is missing). The Sputnik has no use arrow text either.

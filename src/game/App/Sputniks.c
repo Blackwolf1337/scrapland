@@ -450,12 +450,14 @@ void Sputniks_ClientDummy(void) {
 	byte have = Mode_ModGet("ShipEdit", "editShipPosDummy", &d) && d.type != NV_NONE;
 	Native_Free(&d);
 	Native_ErrClear();
-	if (!e || have) {
+	if (have || !g_pWorld) {
 		return;
 	}
-	Native_SetFloat(&c[0], e->pos.x);
-	Native_SetFloat(&c[1], e->pos.y);
-	Native_SetFloat(&c[2], e->pos.z);
+	/* the player is hidden while Sputnik's interface animation plays (no own entity): the camera's place */
+	const vec3_t *at = e ? &e->pos : &g_pWorld->camPos[0];
+	Native_SetFloat(&c[0], at->x);
+	Native_SetFloat(&c[1], at->y);
+	Native_SetFloat(&c[2], at->z);
 	Mode_Tuple3(&pos, &c[0], &c[1], &c[2]);
 	Native_SetFloat(&zero, 0.0);
 	Mode_Tuple3(&ang, &zero, &zero, &zero);

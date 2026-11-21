@@ -90,6 +90,7 @@ enum {
 									 * to a player a scene plays for: its client plays them at that time drawn) */
 	PRES_O_CAMVAR,					/* name, kind (svarint: 0 number, 1 entity name), value (f32 or str): a setting
 									 * the scripts gave the player's follow camera (include/scrap/netscene.h) */
+	PRES_O_SAVEVAR,					/* name, value: a save variable of the player its client reads (Pres_SaveVar) */
 	PRES_O_COUNT
 };
 
@@ -212,6 +213,9 @@ void Pres_GVar(const char *name);
 /* the server's scripts loaded the character class name (Chars.LocalLoadRes: the class, its sounds and their engine
  * variables): every player and those that join later load it too (Chars.LoadRes) */
 void Pres_CharRes(const char *name);
+/* player i's own save variable name changed on the instance (SaveVars.c): one the client reads itself (the lives of
+ * its HUD) goes to its client; also at its join */
+void Pres_SaveVar(int i, const char *name, const char *value);
 void Pres_ShipExplosion(const vec3_t *pos, const vec3_t *vel, float scale, float time, int flames, int collision);
 void Pres_FxEnt(int kind, const char *a, const char *b, float f, int i, const vec3_t *v);
 void Pres_MsgText(const char *text, float time, const char *font);

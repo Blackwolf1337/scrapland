@@ -257,6 +257,9 @@ void Rep_PreFrame(uint64_t tick);
  * the solo instance and -mp2, not in coop (its own rules) nor the PvP modes; the old path keeps the instance's stand-ins
  * (the switch into the nearest parked ship, a called ship, Sputniks.c) */
 byte Rep_SpFlows(void);
+/* single player's flows: player i's own entity (its own ship) dies and the scripts delete it in its death
+ * (Vehicles.OnDeath losing the hangar's ship): the instance's death of the player now, while the entity is there */
+void Rep_OwnDied(int i);
 /* the frame of a player's own entity (cWithLifeEntity_Update, in the world's entity loop where single player steps
  * its player; dt its frame time): the step Rep_PreFrame gave it for this frame, NetPl_Step of the tick's input; the
  * solo instance on a tape of single player's frames: the actions of the frame and the frame's slots */

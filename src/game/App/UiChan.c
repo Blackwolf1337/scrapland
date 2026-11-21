@@ -819,6 +819,8 @@ static void Ui_ClientEditor(const char *via) {
 	if (ok && Native_SetEnt(&plt, UI_PLATFORM)) {
 		ok = Mode_SetModVar("ShipEdit", "editPlatform", &plt);
 		Native_Free(&plt);
+		/* the place of the ship on it (since the level split of stage 4.2 its initializer runs on the server only) */
+		ok = ok && ShipEdit_ClientPlatform(World_FindEntity(UI_PLATFORM));
 	}
 	/* its Change animation and the events of it (ShipEdit.ChangeShip, VerifyChangeShip) run here while the editor is
 	 * open: the replica advances as an entity of the client's own */
@@ -1034,7 +1036,8 @@ void Ui_ClientControls(const char *set) {
 	/* the end of the machine's scene (CharConversor.EndOfScene) builds the HUD skeleton the instance does not send
 	 * (include/scrap/pres.h): the client's own, as Play.c builds it */
 	byte racer = !strcmp(set, "Racer");
-	if (!ui.hudBack || (!racer && strcmp(set, "Walk"))) {
+	/* an interface shown here (Sputnik.EnterInterface gives the walk controls with its screen) keeps its menu */
+	if (!ui.hudBack || ui.cui || (!racer && strcmp(set, "Walk"))) {
 		return;
 	}
 	ui.hudBack = 0;
@@ -1054,6 +1057,14 @@ byte Ui_ClientAsk(int k) {
 
 /* ---- the test verb ---- */
 
+/* a save variable of the hangar (not the ones Ui_State lists) or of the blueprints */
+static void Ui_StateVar(const char *name, const char *value, void *u) {
+	if ((!strncmp(name, "Hangar.", 7) && strncmp(name, "Hangar.HangarShip", 17) && strcmp(name, "Hangar.iHangarShip") &&
+		strcmp(name, "Hangar.DestroyedShips")) || !strncmp(name, "Parked.", 7)) {
+		TC_Addf(u, "%s\t%s\n", name, value);
+	}
+}
+
 /* "ui state [player]": the values the interfaces change, as the player's context reads them */
 static void Ui_State(tcBuf *b, int i) {
 	static const char *const vars[] = { "Char", "Conversor.AvailableChars", "Conversor.FirstConversion", "Hangar.iHangarShip",
@@ -1067,6 +1078,12 @@ static void Ui_State(tcBuf *b, int i) {
 	}
 	TC_Addf(b, "money\t%d\n", *Players_CurMoney());
 	TC_Addf(b, "class\t%s\n", cls);
+	TC_Addf(b, "entity\t%s\n", !e ? "none" : Entity_IsType(e, TYEN_CAR) ? "ship" : Entity_IsType(e, TYEN_WALKCHAR) ?
+		"char" : "other");
+	TC_Addf(b, "life\t%d\n", e && Entity_IsType(e, TYEN_WITH_LIFE) ? (int)WLife(e)->life : -1);
+	if (e) {
+		TC_Addf(b, "pos\t%.0f %.0f %.0f\n", (double)e->pos.x, (double)e->pos.y, (double)e->pos.z);
+	}
 	for (int k = 0; vars[k]; k++) {
 		const char *v = SaveVar_Get(vars[k]);
 		TC_Addf(b, "%s\t%s\n", vars[k], v ? v : "(none)");
@@ -1082,6 +1099,34 @@ static void Ui_State(tcBuf *b, int i) {
 	Native_ErrClear();
 	Native_Free(&v);
 	Native_Free(&r);
+	/* the free activities (stage 6a): lives, the player's ship and its text, its Sputnik, the other hangar and
+	 * blueprint variables */
+	const char *lives = SaveVar_Get("Player.NumLives");
+	TC_Addf(b, "Player.NumLives\t%s\n", lives ? lives : "(none)");
+	SaveVars_EachSeen(Ui_StateVar, b);
+	static const char *const ents[][2] = { { "Parking", "PlayerShip" }, { "Sputnik", "spt" } };
+	cEntity *pair[2] = { NULL, NULL };
+	for (int k = 0; k < 2; k++) {
+		char text[512];
+		cEntity *x = NULL;
+		Native_SetNone(&v);
+		if (Mode_Import(ents[k][0]) && Mode_ModGet(ents[k][0], ents[k][1], &v) && v.type == NV_ENT) {
+			x = Native_Ent(&v);
+		}
+		Native_ErrClear();
+		Native_Free(&v);
+		text[0] = 0;
+		if (x && k == 0) {
+			ShipEdit_ShipText(x, text, sizeof(text));
+		}
+		TC_Addf(b, "%s.%s\t%s %d %s\n", ents[k][0], ents[k][1], x ? x->name : "None", x ? x->active : -1, text);
+		pair[k] = x;
+	}
+	/* Sputnik beside the player's ship (both shown, within 2000 units) */
+	float dx = pair[0] && pair[1] ? pair[0]->pos.x - pair[1]->pos.x : 1e9f;
+	float dz = pair[0] && pair[1] ? pair[0]->pos.z - pair[1]->pos.z : 0.0f;
+	TC_Addf(b, "Sputnik.beside\t%d\n", pair[0] && pair[1] && pair[0]->active && pair[1]->active && dx * dx + dz * dz <
+		2000.0f * 2000.0f);
 	Players_Leave(was);
 }
 

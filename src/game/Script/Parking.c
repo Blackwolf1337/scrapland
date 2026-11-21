@@ -37,6 +37,7 @@
 #include "scrap/replicate.h"
 #include "scrap/world.h"
 #include "scrap/scrap.h"
+#include "scrap/modvars.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
 #include "game/Script/levels/Levels.h"
@@ -286,6 +287,10 @@ static byte Pk_UseShipN(const nativeVal_t *const *a, nativeVal_t *out) {
 	nativeVal_t *lcam = Mode_V(&t), *vPos = Mode_V(&t), *y = Mode_V(&t), *box = Mode_V(&t), *now = Mode_V(&t);
 	nativeVal_t parking;
 	(void)out;
+	/* not in the original: another player's own ship on an instance is not for this player */
+	if (Players_Net() && a[1]->type == NV_STR && Players_OthersOwn(Native_Text(a[1]))) {
+		return Mode_Done(&t, 1);
+	}
 	/* BoxName="Parking" */
 	Native_SetStr(&parking, "Parking");
 	const nativeVal_t *boxName = a[4] ? a[4] : &parking;
@@ -643,6 +648,16 @@ static byte Pk_SetDtritusPlateN(const nativeVal_t *v, const nativeVal_t *active)
 	if (!Mode_Import("Init")) {
 		return 0;
 	}
+	/* not in the original: single player's flows on an instance: the plate of the ship's owner (its context), none
+	 * for a ship no player owns */
+	int owner = Rep_SpFlows() && v->type == NV_ENT ? Players_ShipOwner(Native_Ent(v)) : -1;
+	if (Rep_SpFlows() && owner < 0) {
+		return 1;
+	}
+	int was = Players_Current();
+	if (owner >= 0) {
+		Players_Enter(owner);
+	}
 	int t = Mode_ModTrue("Init", "MultiPlayer");
 	t = t < 0 ? -1 : !t;
 	if (t > 0) {
@@ -659,6 +674,9 @@ static byte Pk_SetDtritusPlateN(const nativeVal_t *v, const nativeVal_t *active)
 	}
 	if (t > 0) {
 		t = Pk_G("DtritusPlate", &plate) && Mode_VSet(&plate, "Active", active) ? 1 : -1;
+	}
+	if (owner >= 0) {
+		Players_Leave(was);
 	}
 	Native_Free(&a);
 	Native_Free(&b);
@@ -1109,6 +1127,12 @@ static byte Pk_BrowseItemPos(byte join) {
 	 * made one there */
 	if (join && (!Pk_Item(nearest, 0, dname) || !Pk_ParkNames(dname, box, zone) || !Pk_Ent(box, l) ||
 		(Native_True(l) && !Mode_VDel(l)))) {
+		return Mode_Done(&t, 0);
+	}
+	/* not in the original: on an instance each player's ship has its own plate (Parking.DtritusPlate per player) */
+	const nativeVal_t *own = NULL;
+	if (join && ModVar_OverGet(Players_Current(), PK, "DtritusPlate", &own) <= 0 && !PORT_OWN(Parking, CreateDtritusPlate, NULL,
+		"")) {
 		return Mode_Done(&t, 0);
 	}
 	if (!Mode_Import("ShipEdit") || !Mode_SetModVar("ShipEdit", "editShipPosDummy", nearest) || !Pk_Item(nearest, 1, x) ||
