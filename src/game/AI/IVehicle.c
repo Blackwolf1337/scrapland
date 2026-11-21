@@ -1571,6 +1571,12 @@ static byte cAIVehicle_ReposTraffic(cAIVehicle *self, vec3_t *out, float minVis,
 		return 0;
 	}
 	vec3_t camPos = view.pos, dir = view.dir;
+	/* not in the original: an instance's viewer (a player's camera) can stand outside the traffic grid (a member's
+	 * camera far outside the level made the node search fail the grid's CHECK: FunctionaryHunting with 8); no repos
+	 * around it (single player's camera, the only viewer there, has always been inside, or the CHECK stopped it) */
+	if (AIV_Outdoor() && AIV_Outdoor()->grid && !GridElems_IsInside(AIV_Outdoor()->grid, &camPos)) {
+		return 0;
+	}
 	if (view.slow && !self->reposBehind) {
 		vis = crt_rand() % 2 == 0;
 	}
