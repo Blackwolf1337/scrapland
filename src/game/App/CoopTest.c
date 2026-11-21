@@ -655,6 +655,42 @@ static cEntity *Cp_RadarItem(const cEntity *e) {
 	return t;
 }
 
+/* test: the living leader of a Domination deal's enemies (the engine variable LeaderName) or the racer that carries
+ * a MortalRace deal's baton (MortalRace.shipWithBaton, no member's ship) into out; 0 for another mode or none */
+static byte Cp_DealLeader(char *out, int size) {
+	const char *mode = SaveVar_Get("SuperDealType");
+	nativeVal_t v;
+	byte dom = mode && !strcmp(mode, "Domination");
+	if (!dom && (!mode || strcmp(mode, "MortalRace"))) {
+		return 0;
+	}
+	Native_SetNone(&v);
+	byte ok = (dom ? Native_GVarGet("LeaderName", &v) : Mode_ModGet("MortalRace", "shipWithBaton", &v)) &&
+		v.type == NV_STR && Native_Text(&v)[0];
+	cEntity *e = ok ? World_FindEntity(Native_Text(&v)) : NULL;
+	ok = e && !e->deadNode.target && Entity_IsType(e, TYEN_WITH_LIFE) && WLife(e)->life > 0 && (dom || Players_Of(e) < 0);
+	if (ok) {
+		Str_Copy(out, e->name, size);
+	}
+	Native_Free(&v);
+	Native_ErrClear();
+	return ok;
+}
+
+/* test: entity e carries a MortalRace deal's baton (MortalRace.shipWithBaton) */
+static byte Cp_BatonCarrier(const cEntity *e) {
+	const char *mode = SaveVar_Get("SuperDealType");
+	nativeVal_t v;
+	if (!mode || strcmp(mode, "MortalRace")) {
+		return 0;
+	}
+	Native_SetNone(&v);
+	byte is = Mode_ModGet("MortalRace", "shipWithBaton", &v) && v.type == NV_STR && !strcmp(Native_Text(&v), e->name);
+	Native_Free(&v);
+	Native_ErrClear();
+	return is;
+}
+
 /* test: no floor within CP_AIR under entity v (DistractHumphrey's meeting point: a ship takes it, the scripts' camera
  * travel moves a ship) */
 static byte Cp_InAir(const cEntity *v) {
@@ -1187,8 +1223,22 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	/* in a super deal the mode's items (Domination's baton and zones) come before its red ones, so does the mission
 	 * MortalRace's baton (dropped again at a member's death) */
 	const char *lib = SaveVar_Get("Mission.Library");
-	byte dealItem = g_Coop.pl[i].autoOn != 2 && lib && (!strncmp(lib, "SuperDeal_", 10) || !strcmp(lib, "Mission_MortalRace")) &&
-		Cp_RadarItem(e);
+	byte deal = lib && !strncmp(lib, "SuperDeal_", 10);
+	byte dealItem = g_Coop.pl[i].autoOn != 2 && lib && (deal || !strcmp(lib, "Mission_MortalRace")) && Cp_RadarItem(e);
+	/* a Domination deal without a baton or a zone to take: the enemies' leader carries the baton, he is fought (his
+	 * death drops it); a MortalRace deal's racer with the baton too */
+	char leader[CP_NAME];
+	if (deal && !dealItem && g_Coop.pl[i].autoOn != 2 && Cp_DealLeader(leader, sizeof(leader))) {
+		Str_Copy(g_Coop.pl[i].fightList, leader, sizeof(g_Coop.pl[i].fightList));
+		Cp_TestFight(i, in, back);
+		return;
+	}
+	/* a helper that took a MortalRace deal's baton (flown over it where a member died) races with it: only the
+	 * carrier's checkpoints count */
+	if (deal && g_Coop.pl[i].autoOn == 2 && kind == NETREP_SHIP && Cp_BatonCarrier(e) && World_FindEntity(CP_CHECKPOINT)) {
+		Cp_TestRace(i);
+		return;
+	}
 	byte other = Cp_FightTargets("", all, 1, 0) || arrow || dealItem;
 	const char *foes = Cp_FightTargets("", all, CP_FIGHT_MAX, 1) ? "" : arrow && Cp_ShipFoe(arrow) && !Cp_Scanned(i, arrow) ? arrow->name : (escort ? Cp_RedNear(escort) :
 		(g_Coop.pl[i].autoOn == 2 || !other) && Cp_FightTargets(CP_FIGHT_RED, all, CP_FIGHT_MAX, 1)) ? CP_FIGHT_RED : NULL;
@@ -1379,6 +1429,15 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 		g_Coop.pl[i].autoUse = 0.0;
 		g_Coop.pl[i].autoTurn++;
 		cEntity *v = WChar_Victim(e);
+		if (WLife(t)->arrow.canPhoto && v && v != t) {
+			/* its arrow on another thing near it (CatchTrurl's map by the conversor: the photo's button entered the
+			 * conversor): to the side of the target away from that thing, then the photo again */
+			float dx = t->pos.x - v->pos.x, dz = t->pos.z - v->pos.z, d = sqrtf(dx * dx + dz * dz);
+			Con_Printf("coop: player %d (auto) has its arrow on %s, not on %s: goes round it\n", i, v->name, t->name);
+			Travel_TestGoto(i, t->name, d > 1.0f ? dx / d * 250.0f : 250.0f, d > 1.0f ? dz / d * 250.0f : 0.0f);
+			g_Coop.pl[i].autoUse = now + 1.0;
+			return;
+		}
 		Con_Printf("coop: player %d (auto) %s %s (its arrow on %s)\n", i, WLife(t)->arrow.canPhoto ? "photographs" : "uses",
 			t->name, v ? v->name : "nothing");
 		if (WLife(t)->arrow.canPhoto) {
