@@ -644,6 +644,28 @@ byte Script_LevelSection(const char *module, const char *section) {
 	return ok;
 }
 
+byte Script_LevelClientSection(const char *module, const char *section, const nativeVal_t *path) {
+	nativeVal_t f, vars;
+	int i = Level_File(module);
+	if (i < 0 || !Script_LevelDataFunction(module, section, &f)) {
+		return 1;
+	}
+	Native_Free(&f);
+	/* a function the level's C table puts over the section is the C level's (its own client part) */
+	if (Script_LevelTableFunction(module, section, &f)) {
+		Native_Free(&f);
+		return 1;
+	}
+	Native_ErrClear();
+	Native_SetNone(&vars);
+	Script_DefVar(&vars, "LevelPath", path);
+	Script_DefClient(1);
+	byte ok = Level_Run(i, section, &vars);
+	Script_DefClient(0);
+	Native_Free(&vars);
+	return ok;
+}
+
 /* the data file of module in the level that loads, -1 if none */
 static int Level_File(const char *module) {
 	char level[LEVEL_NAME];

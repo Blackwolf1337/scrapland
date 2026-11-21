@@ -30,6 +30,7 @@
 #include "scrap/play.h"
 #include "scrap/players.h"
 #include "scrap/replicate.h"
+#include "scrap/repent.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -1781,9 +1782,10 @@ void Faction_ClientFrame(void) {
 	if (!frc.have || !(frc.flags & 4)) {
 		return;
 	}
-	/* the use point of the office's desk, as the instance has it */
+	/* the use point of the office's desk, as the instance has it (a -mp2 client has the instance's desk as a
+	 * replica, include/scrap/repent.h) */
 	double now = Fr_RealNow();
-	if (now >= frc.deskLook) {
+	if (!g_Mp2 && now >= frc.deskLook) {
 		frc.deskLook = now + 1.0;
 		Fr_MakeDesk(Fr_OfficeHere());
 	}

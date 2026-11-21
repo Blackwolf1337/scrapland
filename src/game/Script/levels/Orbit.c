@@ -138,9 +138,13 @@ static byte Ob_PlayThen(const char *scene, const char *module, const char *func)
 
 /* InitStatus(LevelPath): an indoor map */
 static byte Orbit_InitStatusN(void) {
-	nativeVal_t zero = { 0 };
-	Native_SetInt(&zero, 0);
-	return Mode_Import("Init") && Mode_SetModVar("Init", "Outdoor", &zero);
+	return Mode_Import("Init") && Lv_Flags(0, NULL);
+}
+
+/* the client part (Levels.h): an indoor map (the music comes with the server's, include/scrap/pres.h) */
+byte Orbit_ClientStatus(const nativeVal_t *path) {
+	(void)path;
+	return Orbit_InitStatusN();
 }
 
 /* Init(LevelPath): the teleporters linked, the back doors of the entrance, the music */

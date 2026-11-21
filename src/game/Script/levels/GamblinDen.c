@@ -376,8 +376,7 @@ static byte Den_InitStatusC(const nativeVal_t *a, nativeVal_t *out) {
 	if (!LvN_ModGet("Init", "isDemo", v) || (Native_True(v) && !Den_NotAvailable("BankMaster"))) {
 		return Mode_Done(&t, 0);
 	}
-	if (!Mode_SetModVar("Init", "Outdoor", Mode_I(&t, 0)) || !Mode_SetModVar("Init", "OutArea", Mode_S(&t, "Outskirts")) ||
-		!LvN_GObj("Map", "AfterBrowseNPC", fn) || !LvN_ModAppend("CharsNPC", "AfterBrowseNPC", fn)) {
+	if (!Lv_Flags(0, "Outskirts") || !LvN_GObj("Map", "AfterBrowseNPC", fn) || !LvN_ModAppend("CharsNPC", "AfterBrowseNPC", fn)) {
 		return Mode_Done(&t, 0);
 	}
 	if (LvN_SaveIs("LonelyMercInGamblinDen", "1")) {
@@ -1016,6 +1015,12 @@ static byte Den_StartContractC(const nativeVal_t *a, nativeVal_t *out) {
 		Mode_VObj(&a[0], "Name", &n) && PORT_CALL(Speech, RestoreState, NULL, "v", &n);
 	Native_Free(&n);
 	return ok;
+}
+
+/* the client part (Levels.h): an indoor map next to Outskirts */
+byte GamblinDen_ClientStatus(const nativeVal_t *path) {
+	(void)path;
+	return Lv_Flags(0, "Outskirts");
 }
 
 LV_FN(Den, InitStatus, 1, Den_InitStatusC)

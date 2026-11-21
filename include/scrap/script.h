@@ -127,7 +127,10 @@ void Script_ModuleExtras(const char *name, const struct nativeVal_s *module, con
 byte Script_LevelName(char *out, int size);
 /* the data section of a level module of this level run without arguments (a scene's load on a coop client): 1 ok */
 byte Script_LevelSection(const char *module, const char *section);
-/* the C function name of the level table of module in this level into *out (Script_FunctionOf): 1, 0 with *out None
+/* not in the original: a -mp2 client's run of the data section <section>(LevelPath) of a level module of this level
+ * with the definitions only (Script_DefClient); 1 also when the level has no such section or its C table puts a
+ * function over it */
+byte Script_LevelClientSection(const char *module, const char *section, const struct nativeVal_s *path);/* the C function name of the level table of module in this level into *out (Script_FunctionOf): 1, 0 with *out None
  * (an error set when making it failed) */
 byte Script_LevelTableFunction(const char *module, const char *name, struct nativeVal_s *out);
 /* the data function name of the level file of module in this level into *out: a native function (a callback whose
@@ -171,6 +174,11 @@ void Script_DefVar(struct nativeVal_s *vars, const char *name, const struct nati
  */
 byte Script_RunFileTry(int id, const char *name, const char *section, const char *builtin, const scriptStep_t *steps,
 	const struct nativeVal_s *vars);
+/* not in the original (stage 4.2 of the second multiplayer design): while on, a .def run makes the definitions only:
+ * the setvar and do lines and the call lines of a function the netclass tables give the client (an engine function
+ * tagged DEF, CLIENT or QUERY, Scrap.Set of a WORLD_SETTING, STATE or CLIENT_ONLY engine variable, a DEF function of
+ * a script module); every other line is skipped and counted (audit client.def.skip:<what>) */
+void Script_DefClient(byte on);
 
 /* OBJLIB 7: the calls of the call lines of .def files since the start (or the last reset) by path, for the test
  * channel's "native ports": through the registry (the port's or the engine's entry while the module attribute is its

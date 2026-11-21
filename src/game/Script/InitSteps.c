@@ -35,7 +35,7 @@ void InitSteps_Begin(const char *path) {
 	is.client = g_Mp2 && g_Watch && path ? Lv_Client(slash ? slash + 1 : path) : NULL;
 	if (g_Mp2 && g_Watch) {
 		Con_Printf("initsteps: %s: %s\n", path ? path : "?", is.client ? "the client's steps" :
-			"every step (no client part of the level yet)");
+			"every step (no client part of the level)");
 	}
 }
 

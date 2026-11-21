@@ -84,6 +84,8 @@ enum {
 	PRES_O_SCENEEND,				/* name: it ends */
 	PRES_O_CAMPATH,					/* a camera path of the scripts for the player (include/scrap/netscene.h) */
 	PRES_O_FXCALL,					/* name, the parameter bytes: a C effect function the scripts call (Scrap.Execute) */
+	PRES_O_GVAR,					/* name, kind u8 (1 text, 2 number), value: an engine variable (Pres_GVar) */
+	PRES_O_CHARRES,					/* name: a character class the server's scripts loaded (Pres_CharRes) */
 	PRES_O_COUNT
 };
 
@@ -149,6 +151,14 @@ byte Pres_BeginMask(uint64_t mask, int op);
 void Pres_Flush(struct Net2Host *host);
 /* player i's own entity steps (its client steps it too: what it starts is not sent to i); -1 after */
 void Pres_OwnStep(int player);
+/* a script of the simulation runs (an entity's OnDeath and OnDamage): the clients run none, so what it presents is
+ * sent also inside a derived presentation (a missile's hit that kills) or a player's own step; Pres_SimScript gives
+ * the state Pres_SimScriptEnd puts back */
+typedef struct {
+	int derived, own;
+} presSaved_t;
+presSaved_t Pres_SimScript(void);
+void Pres_SimScriptEnd(presSaved_t saved);
 /* a call of the scripts' module.func begins / ends (Port_Entry): the HUD skeleton modules the client makes itself;
  * Pres_ModSite is the innermost call running ("module.func", "-" outside the scripts) for the audit keys */
 void Pres_ModCall(const char *module, const char *func);
@@ -187,6 +197,16 @@ void Pres_Talk(const char *file, const char *speaker, int arg);
 void Pres_VoicePlay(int voice);
 void Pres_VoiceStop(int voice);
 void Pres_Music(const char *name, const char *cmd, float volume);
+/* player i joined: the world's music (its volume and the last file played outside a player's context, the level's
+ * own music of its Map.Init) as records to that player */
+void Pres_Joined(int i);
+/* the scripts set the engine variable name (Native_GVarStore): one the gvar table tags STATE or WORLD_SETTING goes to
+ * the players as a record, in the world's context to every player and kept for those that join later, in a player's
+ * context to that player */
+void Pres_GVar(const char *name);
+/* the server's scripts loaded the character class name (Chars.LocalLoadRes: the class, its sounds and their engine
+ * variables): every player and those that join later load it too (Chars.LoadRes) */
+void Pres_CharRes(const char *name);
 void Pres_ShipExplosion(const vec3_t *pos, const vec3_t *vel, float scale, float time, int flames, int collision);
 void Pres_FxEnt(int kind, const char *a, const char *b, float f, int i, const vec3_t *v);
 void Pres_MsgText(const char *text, float time, const char *font);

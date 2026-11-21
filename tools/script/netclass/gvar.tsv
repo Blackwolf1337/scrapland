@@ -198,7 +198,7 @@ ActionMusicTimeFade	CLIENT_ONLY	sound and music of the client
 MusicTimeChange	CLIENT_ONLY	sound and music of the client
 NewsPanelActive	STATE	HUD or mission state the players' clients show
 NewsPanelShowHead	STATE	HUD or mission state the players' clients show
-RemainTalkTime	STATE	HUD or mission state the players' clients show
+RemainTalkTime	CLIENT_ONLY	the time of a talk on the HUD: a client times its own talk from the speech records (stage 4.3)
 FirstPhotoMessage	STATE	HUD or mission state the players' clients show
 AbortSelectDistance	SIM	AI, logic or rule value of the server simulation
 AfterDrawCallback	CLIENT_ONLY	a key or chat event of the client
@@ -306,7 +306,7 @@ iTrafficNumber	SIM	AI, logic or rule value of the server simulation
 VehicleEditingMode	STATE	HUD or mission state the players' clients show
 PilotModel	CLIENT_ONLY	view, video, input or configuration of the client
 iHangarShip	CLIENT_ONLY	view, video, input or configuration of the client
-FullTalkTime	STATE	HUD or mission state the players' clients show
+FullTalkTime	CLIENT_ONLY	the time of a talk on the HUD: a client times its own talk from the speech records (stage 4.3)
 CurrentWaypointName2	STATE	HUD or mission state the players' clients show
 LeaderFlag	STATE	HUD or mission state the players' clients show
 PlayerCTFTeamIsWinning	STATE	HUD or mission state the players' clients show

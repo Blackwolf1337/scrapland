@@ -75,6 +75,8 @@ int Rep_EntitySlot(struct cEntity *e);
 /* the players of the instance for the travel (include/scrap/travel.h): the connection of player i (-1), the player
  * of a connection (-1), player i back at the players' spawn ring */
 int Rep_PlayerConn(int i);
+/* player i's client has the slot's entity (it is in its interest and was sent) */
+byte Rep_PlayerHolds(int i, int slot);
 /* player i died and has no new character yet */
 byte Rep_PlayerDead(int i);
 int Rep_ConnPlayer(int conn);

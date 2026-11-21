@@ -341,6 +341,7 @@ MisItems.Init	DEF	the preloads of the models of the coins and mission items
 MisItems.GetMoneyModel	DEF	the model of a coin (a name)
 MisItems.GetObjModel	DEF	the model of a mission item (a name)
 Sputnik.Init	DEF	the action class of the Sputnik character (chars/sputnik.def)
+SputnikJunkyard.Init	DEF	the action class of the junkyard's Sputnik (chars/sputnikjunkyard.def), run by Chars.LocalLoadRes
 VehiclesNPC.Init	DEF	the ship classes of the traffic and the standard ships (ShipMaker.Init); the hired mercenaries are the server's
 VehiclesNPC.InitStdShips	DEF	the standard ships of the characters, the scrapyard and the traffic (data)
 Traffic.SetPath	DEF	the model path of the ship classes (ShipPathFmt) while VehiclesNPC.Init defines them

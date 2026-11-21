@@ -67,11 +67,41 @@ typedef struct {
 	byte (*init)(const nativeVal_t *path);		/* in place of Map.Init, NULL for nothing */
 } lvClient_t;
 
-/* the client part of level (its name as in "Levels/<level>", any case), NULL for a level without one yet */
+/* the client part of level (its name as in "Levels/<level>", any case), NULL for a level without one (the menu) */
 const lvClient_t *Lv_Client(const char *level);
 byte DownTown_ClientStatus(const nativeVal_t *path);
+byte Outskirts_ClientStatus(const nativeVal_t *path);
+byte Outskirts_ClientInit(const nativeVal_t *path);
+byte Commercial_ClientStatus(const nativeVal_t *path);
+byte Commercial_ClientInit(const nativeVal_t *path);
+byte Scrapyard_ClientStatus(const nativeVal_t *path);
+byte Scrapyard_ClientInit(const nativeVal_t *path);
+byte GDB_ClientStatus(const nativeVal_t *path);
+byte GDB_ClientInit(const nativeVal_t *path);
 byte Police_ClientStatus(const nativeVal_t *path);
 byte Police_ClientInit(const nativeVal_t *path);
+byte Bank_ClientStatus(const nativeVal_t *path);
+byte Press_ClientStatus(const nativeVal_t *path);
+byte Temple_ClientStatus(const nativeVal_t *path);
+byte Townhall_ClientStatus(const nativeVal_t *path);
+byte GamblinDen_ClientStatus(const nativeVal_t *path);
+byte Orbit_ClientStatus(const nativeVal_t *path);
+byte Junkyard_ClientStatus(const nativeVal_t *path);
+byte Junkyard_ClientInit(const nativeVal_t *path);
+byte AB_ClientStatus(const nativeVal_t *path);
+byte AB_ClientInit(const nativeVal_t *path);
+byte ABIndoor_ClientStatus(const nativeVal_t *path);
+byte ABIndoor_ClientInit(const nativeVal_t *path);
+/* the client part of a level whose Map.InitStatus or Map.Init is data: the section with the definitions only
+ * (Script_LevelClientSection) */
+byte Lv_DataStatus(const nativeVal_t *path);
+byte Lv_DataInit(const nativeVal_t *path);
+/* what the client parts and their levels' Map functions share: the flags Init.Outdoor and (not NULL) Init.OutArea;
+ * the colour of the clouds (CameraCloudRed, Green, Blue); Chars.AddNewCharRes of each name (the character classes of
+ * the level's mission characters) */
+byte Lv_Flags(long outdoor, const char *outArea);
+byte Lv_Clouds(long r, long g, long b);
+byte Lv_CharRes(const char *const *names, int n);
 
 /* ---- whole functions and data the level scripts share (src/game/Script/levels/LevelCommon.c) */
 

@@ -1239,6 +1239,7 @@ static int Rep_Join(int conn) {
 		Con_Printf("instance: player %d on connection %d (%s)\n", i, conn, pl->ownName);
 		Travel_Joined(i);
 		Coop_Joined(i);
+		Pres_Joined(i);
 		/* single player's own ship and Sputnik at the parking; the old path: the sandbox and freeroam's player who
 		 * arrives on foot in an outdoor level finds its own ship beside it (include/scrap/sputniks.h) */
 		if (Rep_SpFlows()) {
@@ -1354,6 +1355,11 @@ int Rep_EntitySlot(cEntity *e) {
 
 int Rep_PlayerConn(int i) {
 	return i >= 0 && i < PLAYERS_MAX && rep.pl[i].used ? rep.pl[i].conn : -1;
+}
+
+byte Rep_PlayerHolds(int i, int slot) {
+	int c = Rep_PlayerConn(i);
+	return c >= 0 && c < REP_CONNS && rep.conn[c].c && slot >= 0 && NetRepSrv_Base(rep.conn[c].c, slot) != NULL;
 }
 
 int Rep_ConnPlayer(int conn) {

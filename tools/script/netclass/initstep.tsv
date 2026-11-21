@@ -16,6 +16,7 @@ InitLevel:SuperDealModule.InitStatus	WORLD	the state of the super deal
 InitLevel:Places_LevelStatus	WORLD	the places of a free world
 InitLevel:Init.SetArrowSize	DEF	the size of the mission arrows
 InitLevel:SAI.IniAI	WORLD	the AI graphs, traffic and groups (server)
+InitLevel:GVar.IsMapOutDoor	DEF	a -mp2 client: the outdoor flag of the engine SAI.IniAI sets (dynamic music, effects)
 InitLevel:GVar.EscapeEvent	DEF	the menu key of the client
 InitLevel:Menu.Initialize	DEF	the HUD and menu skeleton
 InitLevel:GVar.MainMissionEvent	DEF	the mission info key of the client

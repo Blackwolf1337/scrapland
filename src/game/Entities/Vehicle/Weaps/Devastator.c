@@ -717,6 +717,7 @@ static void EMI_Fire(cAbstractFile *params) {
 	cPy_Function_Execute(g_SetUpEMIFunc, 0);
 	cMissileEntity_SetLifeTime((cMissileEntity *)emi, g_EMILifeTime - 0.2f);
 	cPy_Function_SetFunc(&Missile(emi)->onHit, "!EMIOnHit");
+	Missile(emi)->weap = MISSILE_WEAP_COUNTER;
 	cWeaponManager_SetAmmo(wm, g_EMIIDAmmo, (float)(ammo - Missile(emi)->swarmCount));
 }
 

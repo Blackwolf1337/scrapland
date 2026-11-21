@@ -21,7 +21,34 @@ const int lv_black[4] = { 0, 0, 0, 255 }, lv_clear[4] = { 0, 0, 0, 0 };
 
 static const lvClient_t lv_clients[] = {
 	{ "DownTown", DownTown_ClientStatus, NULL },
+	{ "Outskirts", Outskirts_ClientStatus, Outskirts_ClientInit },
+	{ "Commercial", Commercial_ClientStatus, Commercial_ClientInit },
+	{ "Scrapyard", Scrapyard_ClientStatus, Scrapyard_ClientInit },
+	{ "GDB", GDB_ClientStatus, GDB_ClientInit },
 	{ "Police", Police_ClientStatus, Police_ClientInit },
+	{ "Bank", Bank_ClientStatus, NULL },
+	{ "Press", Press_ClientStatus, NULL },
+	{ "Temple", Temple_ClientStatus, NULL },
+	{ "TownHall", Townhall_ClientStatus, NULL },
+	{ "GamblinDen", GamblinDen_ClientStatus, NULL },
+	{ "Orbit", Orbit_ClientStatus, NULL },
+	{ "Fake", Lv_DataStatus, NULL },
+	{ "Junkyard", Junkyard_ClientStatus, Junkyard_ClientInit },
+	{ "AB", AB_ClientStatus, AB_ClientInit },
+	{ "ABIndoor", ABIndoor_ClientStatus, ABIndoor_ClientInit },
+	/* the levels whose Map is data (data/levels/<level>/map.def): its sections with the definitions only */
+	{ "QF", Lv_DataStatus, Lv_DataInit },
+	{ "FZ", Lv_DataStatus, Lv_DataInit },
+	{ "OM", Lv_DataStatus, Lv_DataInit },
+	{ "CA", Lv_DataStatus, Lv_DataInit },
+	{ "MCA", Lv_DataStatus, Lv_DataInit },
+	{ "MCB", Lv_DataStatus, Lv_DataInit },
+	{ "MDA", Lv_DataStatus, Lv_DataInit },
+	{ "MDB", Lv_DataStatus, Lv_DataInit },
+	{ "MOA", Lv_DataStatus, Lv_DataInit },
+	{ "MOB", Lv_DataStatus, Lv_DataInit },
+	{ "MSA", Lv_DataStatus, Lv_DataInit },
+	{ "MSB", Lv_DataStatus, Lv_DataInit },
 };
 
 const lvClient_t *Lv_Client(const char *level) {
@@ -31,6 +58,41 @@ const lvClient_t *Lv_Client(const char *level) {
 		}
 	}
 	return NULL;
+}
+
+byte Lv_DataStatus(const nativeVal_t *path) {
+	return Script_LevelClientSection("Map", "InitStatus", path);
+}
+
+byte Lv_DataInit(const nativeVal_t *path) {
+	return Script_LevelClientSection("Map", "Init", path);
+}
+
+byte Lv_Flags(long outdoor, const char *outArea) {
+	nativeVal_t v;
+	if (!LvN_ModSetI("Init", "Outdoor", outdoor)) {
+		return 0;
+	}
+	if (!outArea) {
+		return 1;
+	}
+	LvN_Str(&v, outArea);
+	byte ok = Mode_SetModVar("Init", "OutArea", &v);
+	Native_Free(&v);
+	return ok;
+}
+
+byte Lv_Clouds(long r, long g, long b) {
+	return Mode_GVarSetI("CameraCloudRed", r) && Mode_GVarSetI("CameraCloudGreen", g) && Mode_GVarSetI("CameraCloudBlue", b);
+}
+
+byte Lv_CharRes(const char *const *names, int n) {
+	for (int i = 0; i < n; i++) {
+		if (!PORT_CALL(Chars, AddNewCharRes, NULL, "s", names[i])) {
+			return 0;
+		}
+	}
+	return 1;
 }
 
 /* ---- whole functions the level tables share (native: docs/objlib-plan.md, stage 2) ---- */

@@ -24,7 +24,9 @@
 #include "scrap/game.h"
 #include "scrap/initsteps.h"
 #include "scrap/players.h"
+#include "scrap/pres.h"
 #include "scrap/replicate.h"
+#include "scrap/repent.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -280,8 +282,13 @@ static byte Ch_LocalLoadRes(const nativeVal_t *cr) {
 		return Mode_Done(&t, 0);
 	}
 	Native_Free(name);
-	return Mode_Done(&t, LvN_Item(cr, 0, name) && Mode_SActV("GetClass", name, r) && LvN_Item(cr, 1, disc) &&
-		LvN_SetCls("Discardable", disc));
+	byte ok = LvN_Item(cr, 0, name) && Mode_SActV("GetClass", name, r) && LvN_Item(cr, 1, disc) &&
+		LvN_SetCls("Discardable", disc);
+	/* not in the original: the players of a -mp2 instance load the class too (include/scrap/pres.h) */
+	if (ok && g_Mp2 && name->type == NV_STR) {
+		Pres_CharRes(Native_Text(name));
+	}
+	return Mode_Done(&t, ok);
 }
 
 /* LoadRes(cls): a discardable class, loaded when it is new (LocalLoadRes through the global of the module) */

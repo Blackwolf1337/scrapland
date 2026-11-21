@@ -15,9 +15,9 @@
  * src/game/Script/levels/Levels.h, stage 3.3) runs only the DEF steps, the GROUP steps (a group whose own steps have
  * rows); WORLD and PLAYER_ENTER steps are the server's (the traffic and the rail traffic too, stage 2.2) and come by
  * replication. In place of the level's Map.InitStatus and Map.Init (SIM) it runs the level's client part: the
- * definitions those make (the flags of Init, classes). Every
- * other process, and a -mp2 client of a level without a client part, runs every step (the stage 3.2 client then
- * deletes what it made, ReplicaEnt_Purge).
+ * definitions those make (the flags of Init, classes; every world level has one since stage 4.2, a level whose Map is
+ * data runs its sections with the definitions only). Every other process, and a -mp2 client of a level without a
+ * client part (the menu), runs every step (the stage 3.2 client then deletes what it made, ReplicaEnt_Purge).
  */
 #ifndef SCRAP_INITSTEPS_H
 #define SCRAP_INITSTEPS_H

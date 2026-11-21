@@ -357,7 +357,8 @@ static byte In_InitN(const nativeVal_t *path) {
 	/* the size of the mission arrows, the AI */
 	int menu = In_Flag("inMainMenu"), edit = menu == 0 ? In_Flag("isShipEdit") : 0;
 	if (menu < 0 || edit < 0 || (!menu && !edit && !PORT_OWN(Init, SetArrowSize, NULL, "")) ||
-		!Mode_G(IN, "Outdoor", out) || (InitStep_Now("InitLevel:SAI.IniAI") && !PORT_CALL(SAI, IniAI, NULL, "vv", path, out))) {
+		!Mode_G(IN, "Outdoor", out) || (InitStep_Now("InitLevel:SAI.IniAI") ? !PORT_CALL(SAI, IniAI, NULL, "vv", path, out) :
+		InitStep_Now("InitLevel:GVar.IsMapOutDoor") && !Mode_GVarSet("IsMapOutDoor", out))) {
 		return Mode_Done(&t, 0);
 	}
 	/* the menus, the mission info, the chat, the sound, the decoration */

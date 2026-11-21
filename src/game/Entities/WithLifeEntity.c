@@ -14,9 +14,11 @@
 #include "scrap/mathlib.h"
 #include "scrap/missileentity.h"
 #include "scrap/net.h"
+#include "scrap/netaudit.h"
 #include "scrap/faction.h"
 #include "scrap/play.h"
 #include "scrap/players.h"
+#include "scrap/pres.h"
 #include "scrap/repent.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
@@ -428,6 +430,13 @@ static void WL_RunFunc(cEntity *self, cPy_Function *own, size_t listOff, const i
 	if (damage) {
 		cPy_Function_AddParamI(own, *damage);
 	}
+	/* not in the original: what the scripts present goes to the players (include/scrap/pres.h); a shot's death (a
+	 * mine that explodes) is its replica's own */
+	byte shot = cMissileEntity_IsShot(self);
+	presSaved_t pres = { 0, 0 };
+	if (!shot) {
+		pres = Pres_SimScript();
+	}
 	cPy_Function_Execute(own, 0);
 	byte *list = self->listNode.node.target;
 	if (list) {
@@ -438,6 +447,9 @@ static void WL_RunFunc(cEntity *self, cPy_Function *own, size_t listOff, const i
 			cPy_Function_AddParamI(f, *damage);
 		}
 		cPy_Function_Execute(f, 0);
+	}
+	if (!shot) {
+		Pres_SimScriptEnd(pres);
 	}
 	Players_Leave(was);
 }
@@ -484,6 +496,10 @@ void cWithLifeEntity_SetActCtrl(cEntity *self, const char *cls) {
 	cActClass *c = cActClassList_Get(g_pActClassList, cls);
 	if (!c) {
 		Con_Warnf(WL_NOCTRL_WARN, cls);
+		/* not in the original: a class a -mp2 client's level start did not define (include/scrap/repent.h) */
+		if (g_Mp2 && (Obj(self)->replica || ReplicaEnt_Busy())) {
+			NetAudit_Name(NA_CREATE, "client.noclass:", cls);
+		}
 	} else {
 		cActCtrl *mem = operator_new(sizeof(cActCtrl));
 		w->actCtrl = mem ? cActCtrl_ctor(mem, self, c) : NULL;
