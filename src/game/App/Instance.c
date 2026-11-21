@@ -379,6 +379,53 @@ static void Instance_NetLoad(void) {
 		(unsigned long long)inst.joinPeak);
 }
 
+/* "census": the entities of the world by class and name without digits, the most first (the soak's growth checks) */
+static void Instance_Census(void) {
+	enum { CENSUS_MAX = 256, CENSUS_KEY = 64 };
+	static char key[CENSUS_MAX][CENSUS_KEY];
+	static int count[CENSUS_MAX];
+	int n = 0, total = 0, other = 0;
+	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
+		char k[CENSUS_KEY];
+		int len = Str_PrintfQuiet(k, sizeof(k), "%s:", Entity_GetClassName(e));
+		for (const char *c = e->name ? e->name : "-"; *c && len < CENSUS_KEY - 1; c++) {
+			if (*c < '0' || *c > '9') {
+				k[len++] = *c;
+			}
+		}
+		k[len < CENSUS_KEY ? len : CENSUS_KEY - 1] = 0;
+		total++;
+		int i = 0;
+		while (i < n && strcmp(key[i], k)) {
+			i++;
+		}
+		if (i == n) {
+			if (n == CENSUS_MAX) {
+				other++;
+				continue;
+			}
+			Str_Copy(key[n], k, CENSUS_KEY);
+			count[n++] = 0;
+		}
+		count[i]++;
+	}
+	Con_Printf("instance %s: census %d entities, %d kinds%s\n", inst.id, total, n, other ? " (more not listed)" : "");
+	for (int shown = 0; shown < 24 && shown < n; shown++) {
+		int best = shown;
+		for (int i = shown + 1; i < n; i++) {
+			best = count[i] > count[best] ? i : best;
+		}
+		char tk[CENSUS_KEY];
+		int tc = count[best];
+		Str_Copy(tk, key[best], CENSUS_KEY);
+		Str_Copy(key[best], key[shown], CENSUS_KEY);
+		count[best] = count[shown];
+		Str_Copy(key[shown], tk, CENSUS_KEY);
+		count[shown] = tc;
+		Con_Printf("  census %5d %s\n", tc, tk);
+	}
+}
+
 /* "spread [seed]": the players on foot or in their ships to points of the level's ground graph as far apart as the
  * graph allows (the load tests) */
 static void Instance_Spread(unsigned seed) {
@@ -467,6 +514,10 @@ void Instance_Line(char *line) {
 		inst.netSum = inst.netMax = inst.netClientSecs = 0;
 		inst.joinSum = inst.joinPeak = inst.joins = 0;
 		Con_Printf("instance %s: netload reset\n", inst.id);
+		return;
+	}
+	if (!crt_stricmp(line, "census")) {
+		Instance_Census();
 		return;
 	}
 	unsigned spreadSeed = 1;

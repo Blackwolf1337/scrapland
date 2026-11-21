@@ -292,6 +292,14 @@ void Players_Part(int i) {
 	if (g_Bound == i) {
 		Players_Enter(PLAYERS_NONE);
 	}
+	/* its follow camera of the player steps (MainCam_<i>): the next player of the slot makes another (the soak of
+	 * stage 9 counted one more camera per join) */
+	char cam[32];
+	snprintf(cam, sizeof(cam), "MainCam_%d", i);
+	cEntity *c = World_FindEntity(cam);
+	if (c && !c->deadNode.target) {
+		cEntity_Del(c);
+	}
 	g_Pl[i].used = 0;
 	Players_Claim(&g_Pl[i].machine, NULL);
 	Players_OwnedForget(i);
