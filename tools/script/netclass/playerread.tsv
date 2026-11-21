@@ -209,3 +209,13 @@ Tdm_Death	PARTY	a TeamDeathMatch super deal: a death against the player's team, 
 Ctf_OnVehicleDeathCallbackC	PARTY	a CTF super deal: a ship's death and the player's flag, the acting member in coop
 Ctf_TakeFlagC	PARTY	a CTF super deal: a flag taken by the player, the acting member in coop
 Steal_CreateMissionShip	PARTY	StealMayorShip (DownTown): the mayor's ship made for the player, the acting member in coop
+Dom_TakeBatonC	PARTY	a Domination super deal: the baton taken by the player, the acting member in coop
+Dom_TakeZoneC	PARTY	a Domination super deal: a zone taken with the player's baton, the acting member in coop
+Rudolph_InitRace	PARTY	CatchRudolph, KillRudolph: Rudolph's race starts for the player, the acting member in coop
+Mr_RespawnRacerC	PARTY	a MortalRace super deal or mission: a racer again near the player, the acting member in coop
+Steal_OnPoliceDeath	PARTY	StealMayorShip (DownTown): a police ship's death and the player's mayor's ship, the acting member in coop
+Sd_UsrSafe	ALL	a super deal's end (a win): every member's life full and invulnerable in coop (Party_All)
+Sd_UsrInvulnerable	ALL	a super deal's end (a defeat): every member invulnerable in coop (Party_All)
+Sd_SetVulnerableC	ALL	a super deal's ship can be hit again (boarded): every member's in coop (Party_All)
+Dom_CreateTeam	PARTY	a Domination super deal: a team made around the player, the acting member in coop
+Speech_ForceRemoteCom_E	PARTY	a Speech entry in the world's context (a forced remote talk: a deal's end): the acting member in coop

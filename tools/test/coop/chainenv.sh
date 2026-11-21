@@ -95,3 +95,7 @@ export AUTO_MID_Mission_StealMayorShip='@|wait 60||||;;@|inst @ auto $a 1 @OutCo
 # StealMayorShip: only the kills of the mayor's ship count: the other members stay out of the fight (their kills of
 # the police would not count; alive they keep the party alive while pa fights)
 export AUTO_B_Mission_StealMayorShip='-'
+# the CTF super deals (FZ): pa flies onto the waypoint's item (the flag) as a player follows its arrow, the others fight
+export AUTO_PRE_SuperDeal_Fifth='switch $a;switch $b;waypoint $a 1' AUTO_PRE_SuperDeal_Ninth='switch $a;switch $b;waypoint $a 1'
+# the Domination super deals (OM): pa flies onto the waypoint's item (the baton, then the zones), the others fight
+export AUTO_PRE_SuperDeal_Sixth='switch $a;switch $b;waypoint $a 1' AUTO_PRE_SuperDeal_Tenth='switch $a;switch $b;waypoint $a 1'
