@@ -941,7 +941,30 @@ static int Elv_RiderEnter(const nativeVal_t *name) {
 	return e ? Players_EnterEntity(e) : Players_Current();
 }
 
+/* not in the original: on an instance the rider of a level's start (Chars.CreateStartupPlayer's Player0, linked to
+ * the arrival's elevator before the instance gave its players their own characters) can be gone: the elevator is
+ * free again without it (the attribute set on None raised and the elevator's hook did not run) */
+static int Elv_RiderGone(const nativeVal_t *name) {
+	nativeVal_t linked = { 0 }, rg = { 0 }, rider = { 0 };
+	int gone = 0;
+	if (Players_Net() && Dr_G(ELV, "LinkedElevator", &linked) && Mode_Sub(&linked, name, &rg) && LvN_Item(&rg, 0, &rider) &&
+		rider.type == NV_STR) {
+		gone = !World_FindEntity(Native_Text(&rider));
+	}
+	Native_ErrClear();
+	Native_Free(&linked);
+	Native_Free(&rg);
+	Native_Free(&rider);
+	return gone;
+}
+
 static byte Elv_UnlinkFromElevator(const nativeVal_t *name) {
+	if (Elv_RiderGone(name)) {
+		nativeVal_t el = { 0 };
+		byte ok = Mode_EntitySeam(name, &el) && LvN_SetI(&el, "ArrowCanUse", 1) && Mode_DictDel(ELV, "LinkedElevator", NULL, name);
+		Native_Free(&el);
+		return ok;
+	}
 	int was = Elv_RiderEnter(name);
 	byte ok = Elv_UnlinkIn(name);
 	Players_Leave(was);

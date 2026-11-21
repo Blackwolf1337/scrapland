@@ -298,3 +298,5 @@ Pk_Arrive	PARTY	a level's start after an arrival from another outdoor level: the
 Ambush_CreateProbeN	PARTY	a probe far from the player: from the party's member (a timer of the level, no member in context)
 # stage 5b part 2, Mission_ProtectMayorTransport (49) a mercenary hit from a ship
 Escort_MadGuyDamage	PARTY	the mercenary the player hits turns on him: the party's member (an OnDamage without a member in context)
+# stage 5b part 1, phase 2
+Chal_SetRevenge	PARTY	HumphreyRace (DownTown), a challenge: the lost race's revenge call at the phone cab nearest to the player, the acting member in coop
