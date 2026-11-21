@@ -91,6 +91,8 @@
 #define CP_FLY_STUCK 8.0			/* test: s, else it is placed CP_FIGHT_NEAR from its goal (as before) */
 #define CP_AUTO_SHIP 8000.0f		/* test: outdoors a target on foot further than this is flown to */
 #define CP_SHIP_ASK 12.0			/* test: s it asks for a ship (the switch) before it walks */
+#define CP_ALARM_WAIT 40.0			/* test: s it waits for its alarm to fall before a use (a forbidden area keeps it on) */
+#define CP_DEAF_WAIT 15.0			/* test: s it waits for its character to listen again before a use */
 #define CP_MSG_CARRY 600.0f			/* test: a messenger farther from its pack's goal is put next to it */
 #define CP_MSG_NEAR 700.0f			/* test: a messenger this near the pack's carrier is shot first */
 #define CP_MSG_SHOT 1500.0f			/* test: a messenger fires its lightning at a messenger this near (it reaches 2000) */
@@ -1262,19 +1264,41 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 		g_Coop.pl[i].autoSince = now;
 		return;
 	}
+	/* its character does not listen (a radio talk runs, Speech.ForceRemoteComunication): the arrow is off for its
+	 * player but on the ones always to use (WalkCharEntity's use); a use then cut the talk before its RestoreSpeech and
+	 * the character listened no more (ReinsertOwnMatrix's next message never came); CP_DEAF_WAIT s at most */
+	if (kind == NETREP_CHAR && !WChar(e)->listenOn && Entity_IsType(t, TYEN_WITH_LIFE) && !WLife(t)->arrow.alwaysUse) {
+		if (g_Coop.pl[i].deafSince <= 0.0) {
+			g_Coop.pl[i].deafSince = now;
+		}
+		if (now - g_Coop.pl[i].deafSince < CP_DEAF_WAIT) {
+			g_Coop.pl[i].autoUse = 0.0;
+			return;
+		}
+	} else {
+		g_Coop.pl[i].deafSince = 0.0;
+	}
 	/* a phone cab, a desktop or a character to talk to while the police is after it: it waits for the alarm to fall, as
 	 * the single player does after the call's "the police is still after you" (PhoneCab.UseAudioCom, the missions'
-	 * UsePhoneCab; ApologizeMayor's mayor only warns while the alarm of a stapler's death is on) */
+	 * UsePhoneCab; ApologizeMayor's mayor only warns while the alarm of a stapler's death is on), CP_ALARM_WAIT s at most
+ * (the forbidden area at ApologizeMayor's start keeps it on until the mayor's talk) */
 	char *fn = NULL;
 	const cAlarm *al = Players_Alarm(i);
 	if (al && al->on && ((Entity_VarS(t, "UseFunc", &fn, 0) && fn && (strstr(fn, "Phone") || strstr(fn, "AudioCom") ||
-		strstr(fn, "Desktop"))) || (Entity_IsType(t, TYEN_WALKCHAR) && !Cp_Foe(t)))) {
+		strstr(fn, "Desktop"))) || (Entity_IsType(t, TYEN_WALKCHAR) && !Cp_Foe(t))) &&
+		(g_Coop.pl[i].alarmSince <= 0.0 || now - g_Coop.pl[i].alarmSince < CP_ALARM_WAIT)) {
+		if (g_Coop.pl[i].alarmSince <= 0.0) {
+			g_Coop.pl[i].alarmSince = now;
+		}
 		if (now - g_Coop.pl[i].autoTold >= 10.0) {
 			g_Coop.pl[i].autoTold = now;
 			Con_Printf("coop: player %d (auto) waits for its alarm to fall before %s\n", i, t->name);
 		}
 		g_Coop.pl[i].autoUse = 0.0;
 		return;
+	}
+	if (!al || !al->on) {
+		g_Coop.pl[i].alarmSince = 0.0;
 	}
 	if (g_Coop.pl[i].autoUse > 0.0 && now >= g_Coop.pl[i].autoUse) {
 		/* the use of its arrow, as the test line use (the option its client chose) */

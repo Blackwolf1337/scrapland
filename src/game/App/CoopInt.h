@@ -134,6 +134,7 @@ typedef struct CoopState {
 		char autoAt[CP_NAME];		/* the target it went to last */
 		char autoList[CP_NAME];		/* what it fights when the mission shows nothing to do ("" nothing; as fightList) */
 		double autoSince, autoUse;	/* when, when it uses it (0 done) */
+		double alarmSince, deafSince;	/* test: since when it waits before a use: its alarm, its deaf character (0 none) */
 		double autoTold;			/* when its new target was told last */
 		int autoTurn;				/* its uses so far: the next of several targets */
 		uint16_t purseJoined;		/* the join whose money is the party's purse (Cp_Purse) */
