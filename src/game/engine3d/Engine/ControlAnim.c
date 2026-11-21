@@ -84,6 +84,25 @@ byte CAnimCtrl_GetPosRot(CAnimCtrl *self, float frame, vec3_t *pos, quat_t *rot)
 	return CAnimNode_GetPosRot(self->node, pos, rot, i, frame - (float)i);
 }
 
+void CAnimCtrl_SeekFrame(CAnimCtrl *self, float frame) {
+	self->frame = frame;
+	if (!self->event) {
+		return;
+	}
+	CAnimEvent *e = self->events ? *self->events : NULL;
+	while (e && e->next && e->t < frame) {
+		e = e->next;
+	}
+	if (e) {
+		self->event = e;
+		/* a frame past the animation's last event (the server's frame of a longer animation of the same action):
+		 * at that event */
+		if (e->t < frame) {
+			self->frame = e->t;
+		}
+	}
+}
+
 void CAnimCtrl_Stop(CAnimCtrl *self) {
 	self->state = ANIM_END;
 }

@@ -847,7 +847,14 @@ void Pres_FxEnt(int kind, const char *a, const char *b, float f, int i, const ve
 		RepEnt_Note(e, REPENT_J_FX, b ? b : "");
 		return;
 	}
-	if (!Pres_Begin(PRES_NEAR, Entity_GetPos(e, &pos), PRES_O_FXENT)) {
+	/* D-Tritus' kill goes to his own player too (its client's punch hurts nobody) */
+	int own = pres.own;
+	if (kind == PRES_FX_KILL) {
+		pres.own = -1;
+	}
+	byte begun = Pres_Begin(PRES_NEAR, Entity_GetPos(e, &pos), PRES_O_FXENT);
+	pres.own = own;
+	if (!begun) {
 		return;
 	}
 	Pres_PutInt(kind);
@@ -1111,8 +1118,11 @@ static void Pres_FxPlay(NetRepReader *r) {
 	case PRES_FX_STEAL:
 	case PRES_FX_SUCTION:
 	case PRES_FX_FLASH:
+	case PRES_FX_KILL:
 		if ((ea = Pres_Ent(PRES_O_FXENT, a, TYEN_WITH_LIFE)) && (eb = Pres_Ent(PRES_O_FXENT, b, TYEN_WITH_LIFE))) {
-			if (kind == PRES_FX_STEAL) {
+			if (kind == PRES_FX_KILL) {
+				FX_DtritusKill(ea, eb);
+			} else if (kind == PRES_FX_STEAL) {
 				FX_BankerSteal(ea, eb);
 			} else if (kind == PRES_FX_SUCTION) {
 				FX_BankMasterSuction(ea, eb);

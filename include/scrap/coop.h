@@ -117,6 +117,15 @@
  *
  * Client: the coordinator's cue (COORD_MSG_CUE) of a new party's start plays the intro video before the first level
  * of the world; its notices show on the screen.
+ *
+ * The second multiplayer design (-mp2, stage 5 of plan mp2): the instance keeps the story's sync, the party and the
+ * travel above (Coop.c); "the player" of the scripts in the world's context is the party by the rules of
+ * include/scrap/party.h and data/coop/rules.def; the texts, voices, heads, fades, HUD items, targets' marks and
+ * cutscenes go by include/scrap/pres.h and NetScene.c, the menus, the ship editor, Sputnik's screen and the conversor by
+ * the UI channel (include/scrap/uichan.h), the answers of a talk are the member's input (Speech.c); the old path's
+ * forwarding and menus of this comment (CoopOld.c, CoopClient.c) stay quiet there. Files: Coop.c (story, party,
+ * travel), CoopOld.c and CoopClient.c (the old path, deleted with it), CoopTest.c (the automatic test player),
+ * src/game/App/CoopInt.h (their shared state).
  */
 #ifndef SCRAP_COOP_H
 #define SCRAP_COOP_H
@@ -303,6 +312,9 @@ void Coop_TestInput(int i, struct NetRepInput *in, double back);
  * 0); Coop_StandInEntity: it, NULL */
 void Coop_StandIn(byte on);
 struct cEntity *Coop_StandInEntity(void);
+/* e is a stand-in of a level's start (the world numbers their names: CoopStandIn0, ...; it stays in the world for the
+ * names the scripts kept): no player sees it, the -mp2 replication leaves it out */
+byte Coop_IsStandIn(const struct cEntity *e);
 /* where the single player would start in the level on a coop instance (the way point's spawn, else the level's start),
  * its heading; 0 elsewhere */
 byte Coop_StartPos(vec3_t *p, float *yaw);

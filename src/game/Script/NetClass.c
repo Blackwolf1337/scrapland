@@ -14,7 +14,7 @@
 static const char *const nc_tagNames[NC_TAGS] = {
 	"untagged", "SIM", "DEF", "PRES_STATE", "PRES_EVENT", "UI", "QUERY", "CLIENT", "NET_OLD", "STATE", "EVENT",
 	"SERVER_ONLY", "CLIENT_ONLY", "WORLD_SETTING", "SCENE", "WORLD", "PLAYER", "PARTY", "STORY", "PLAYER_ENTER",
-	"NEAREST", "ANY", "PLAYER_SHARED", "PARTY_SHARED", "GROUP",
+	"NEAREST", "ANY", "PLAYER_SHARED", "PARTY_SHARED", "GROUP", "MENU", "DEAD", "ALL",
 };
 
 static const netClassRow_t *NC_Search(const netClassTable_t *t, const char *name) {

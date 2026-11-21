@@ -1,9 +1,37 @@
-# The rules of the coop story on a -mp2 instance (the second multiplayer design; src/game/App/NetScene.c reads
-# SceneSkip). One rule a line: its name, a space, its value. A line that starts with # is a comment.
-#
-# SceneSkip: who ends a scene for every member with Escape.
+# The rules of the coop story (src/game/App/Party.c, include/scrap/party.h; embedded into the game). One rule a line:
+# its name, then its words. A word that starts with # ends the line.
+
+# SceneSkip: who ends a scene for every member with Escape (src/game/App/NetScene.c, -mp2).
 #   all   every member who sees the scene asked (the default)
 #   any   the first member who asks
 #   host  player 0 alone
 #   none  nobody, the scene plays to its end
 SceneSkip all
+
+# The save variables that are a member's own, not the story's (where it goes on, its character, money and alarm,
+# its time): they stay out of the party's story.
+local Map Spawn ComeFrom PrevMap Char AcBatteries Money Alarm GameplayTime
+# The variables of the story the HUD shows: the clients get them and their globals of the same name (old path).
+hud EnergyBarActive SpecialActionActive
+# The variables of the story the clients' copies leave out: the mission (a client's level start would run it), the
+# auto save of a level's start, the instance's level start message (old path).
+clientnot Mission.Map Mission.Library AutoSaveGameOnLoad InitialMessage
+# The way point of a chapter's travel, given to the start of the target level as single player's start has it.
+entry Map Spawn ComeFrom PrevMap
+
+# The mission callbacks of boarding and leaving a ship (Parking.SwitchVehicleMissionCallback and the others):
+#   first  single player has one pilot: they run for the first member in a ship, leaving for that member
+#   each   for every member
+pilot first
+# Seconds until a failed mission's level starts again (single player's game over), a super deal's scores stand
+# before their Continue, units between the members placed next to the member of a scene after it.
+failsecs 5
+dealsecs 8
+gather 160
+
+# "The player" of the scripts in the world's context of a coop instance: read <site> <rule> [<mission>]. The site is
+# the C function that asks (Mode_Usr*, Players_Any, the money and the alarm of the context) or Module.variable for a
+# module variable of a player; the rule PARTY (the acting member, else the nearest), MENU (the acting member), DEAD
+# (a living member first: "dead" means every member dead), ALL (a setter for every member), NEAREST, ANY or WORLD.
+# Without a mission the line is the site's rule in every mission; with one only while the story's Mission.Library is
+# that mission. A site without a line has the rule of its row of tools/script/netclass/playerread.tsv.

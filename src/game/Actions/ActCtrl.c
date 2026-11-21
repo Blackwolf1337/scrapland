@@ -8,6 +8,7 @@
 #include "scrap/actions.h"
 #include "scrap/console.h"
 #include "scrap/coop.h"
+#include "scrap/netaudit.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
 #include "scrap/staticinit.h"
@@ -470,6 +471,16 @@ static void cActCtrl_UpdateShip(cActCtrl *self, float dt) {
 	}
 }
 
+/* the model of a -mp2 client's replica can play the action's animation (a scene's actor whose model the client has
+ * not swapped like the server's: the action is left out, counted as client.noanim:<action>) */
+static byte Net_AnimOk(CGameModel *m, const cAction *a) {
+	if (CGameModel_HasAnim(m, Action_Anim(a))) {
+		return 1;
+	}
+	NetAudit_Name(NA_CREATE, "client.noanim:", a->name);
+	return 0;
+}
+
 /* the events of the layer chan up to t that pass fire (a replica's: the others are the server's) */
 static void cActCtrl_NetEvents(cActCtrl *self, int chan, float t, actEventFilter_t fire) {
 	cActLayer *l = &self->layers[chan];
@@ -492,6 +503,9 @@ void cActCtrl_NetDrive(cActCtrl *self, const uint16_t *act, const float *rate, c
 		cAction *a = act[k] ? self->cls->first : NULL;
 		for (int i = 1; a && i < act[k]; i++) {
 			a = a->next;
+		}
+		if (a && !Net_AnimOk(m, a)) {
+			continue;
 		}
 		/* the same action that is no loop started again on the network (its time far back): started again here */
 		byte again = a && a == l->action && target && target[k] >= 0.0f && !a->isLoop &&
@@ -570,6 +584,9 @@ void cActCtrl_NetExact(cActCtrl *self, const uint16_t *act, const float *target,
 		cAction *a = act[k] ? self->cls->first : NULL;
 		for (int i = 1; a && i < act[k]; i++) {
 			a = a->next;
+		}
+		if (a && !Net_AnimOk(m, a)) {
+			continue;
 		}
 		float t = target[k];
 		if (a != l->action || (a && !a->isLoop && t + NETDRIVE_RESTART < l->time)) {
@@ -683,19 +700,9 @@ static void Ctrl_SetFrame(cActCtrl *self, int k, float f) {
 	if (!c || !c->anim) {
 		return;
 	}
-	CAnimCtrl *ac = &c->anim->ctrl;
-	ac->frame = f;
-	/* the animation's own next event from the frame too: an event behind the frame fails its check at the next update
-	 * (a library with events inside its animations, Bishop's) */
-	ac->event = ac->events ? *ac->events : NULL;
-	while (ac->event && ac->event->t < f && ac->event->next) {
-		ac->event = ac->event->next;
-	}
-	if (ac->event && ac->event->t < f) {
-		/* beyond the animation's end: a frame of another animation (an action index of a class the server's entity
-		 * no longer has) */
-		ac->frame = ac->event->t;
-	}
+	/* the animation's next event from the frame on (its frame alone left an event behind it: the check t >= f1 of
+	 * the next update) */
+	CAnimCtrl_SeekFrame(&c->anim->ctrl, f);
 	CGameModel_ChanTime(Ctrl_Model(self), k, &l->time);
 	l->event = l->action->events;
 	while (l->event && l->event->time < l->time) {
@@ -716,6 +723,9 @@ void cActCtrl_NetSet(cActCtrl *self, const uint16_t *act, const float *t, const 
 	for (int k = 0; k < layers && k < ACT_LAYERS; k++) {
 		cActLayer *l = &self->layers[k];
 		cAction *a = cActCtrl_ActionAt(self, act[k]);
+		if (a && !Net_AnimOk(m, a)) {
+			continue;
+		}
 		if (!a) {
 			if (k > 0 && l->on) {
 				CGameModel_StopAnim(m, k);

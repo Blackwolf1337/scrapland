@@ -229,6 +229,9 @@ void MissionArrows_Switch(const char *a, const char *b);
 byte Lang_Set(const char *lang, byte force);
 const char *Version_Get(void);
 int cWorld_SetCam(cWorld *world, int i, const char *name);
+/* not in the original: cWorld_SetCam of the instance's own camera of a view (the coop world's context: no player
+ * sees it), not counted by the network audit as presentation */
+int cWorld_SetCamOwn(cWorld *world, int i, const char *name);
 cEntity *cWorld_GetUsrEntity(cWorld *world, int player);
 
 int Video_GetCurrentMode(void);
