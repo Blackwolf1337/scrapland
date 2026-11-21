@@ -15,6 +15,7 @@
 #include "scrap/players.h"
 #include "scrap/replicate.h"
 #include "scrap/repent.h"
+#include "scrap/scrap.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/scriptnative.h"
 #include "game/Script/levels/Levels.h"
@@ -32,6 +33,7 @@ static struct {
 void InitSteps_Begin(const char *path) {
 	const char *slash = path ? strrchr(path, '/') : NULL;
 	is.n = 0;
+	SaveVar_LevelBegin();
 	is.client = g_Mp2 && g_Watch && path ? Lv_Client(slash ? slash + 1 : path) : NULL;
 	if (g_Mp2 && g_Watch) {
 		Con_Printf("initsteps: %s: %s\n", path ? path : "?", is.client ? "the client's steps" :

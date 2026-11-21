@@ -28,6 +28,7 @@
 #include "scrap/replicate.h"
 #include "scrap/repent.h"
 #include "scrap/play.h"
+#include "scrap/scenelist.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -276,6 +277,12 @@ static byte Ch_LocalLoadRes(const nativeVal_t *cr) {
 	nativeVal_t *name = Mode_V(&t), *head = Mode_V(&t), *code = Mode_V(&t), *r = Mode_V(&t), *disc = Mode_V(&t);
 	if (!LvN_Item(cr, 0, name) || !Mode_Cat(&t, head, 2, Mode_S(&t, "import "), name)) {
 		return Mode_Done(&t, 0);
+	}
+	/* not in the original: a -mp2 instance whose level makes its players a character its start did not load the
+	 * library of (GDB's Bishop: single player came there as the bishop, Init preloaded it) preloads it here, and so
+	 * do its clients (the class of PRES_O_CHARRES) */
+	if (g_Mp2 && (g_Instance || g_Watch) && name->type == NV_STR) {
+		SceneList_CharLib(Native_Text(name));
 	}
 	Native_Free(name);
 	if (!LvN_Item(cr, 0, name) || !Mode_Cat(&t, code, 4, head, Mode_S(&t, ";"), name, Mode_S(&t, ".Init()")) ||
