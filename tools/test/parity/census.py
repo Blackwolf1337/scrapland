@@ -29,7 +29,8 @@ thing with life, else the model, else the name without digits) on the instance, 
   missing  an entity of the instance in the client's interest (the level scope: every object, item, thing with life
            and plain entity; ships, characters and missiles within --interest of the client's own entity) that the
            client has no entity of the same name and class of
-  state    a replica that differs from the instance's entity in active, model, action class, team or radar
+  state    a replica that differs from the instance's entity in active, model, action class, team or radar (a model
+           its journal names for its link to the client's own entity, @OwnModel, is no gap)
   extra    an entity of the client that is no replica (it made it itself), but for its own entity and cameras
 The table per class and kind (instance whole level, instance in the interest, client, single player whole level)
 goes into the report; kinds single player has and the instance not are listed (the moment: traffic, NPC types).
@@ -128,6 +129,9 @@ def class_sample(a):
     own = cli.get('own', -1)
     own_names = {e['name'] for e in srv['ents'] if e['slot'] == own}
     replicas = {e['name'] for e in cli['ents']}
+    # the model a replica shows on its link to the client's own entity (the journal's @OwnModel: the mail bag of the PvP
+    # modes on the own ship)
+    own_models = {e['name']: str(j[1]).lower() for e in cli['ents'] for j in e.get('j', []) if j[0] == '@OwnModel'}
     gaps = {}
     table = {}
 
@@ -154,6 +158,8 @@ def class_sample(a):
             continue
         for f in ('active', 'model', 'act', 'tg', 'radar'):
             # a model by the name it was first loaded with (the packs' names are case blind)
+            if f == 'model' and c[f].lower() == own_models.get(e['name']):
+                continue
             if (e[f].lower() != c[f].lower()) if f == 'model' else e[f] != c[f]:
                 gaps[('state', e['cls'], e['name'] + '.' + f)] = '%s %s %s: %r / %r' % (e['cls'], e['name'], f, e[f],
                                                                                        c[f])

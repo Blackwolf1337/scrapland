@@ -216,6 +216,8 @@ cScorerItem *cScorerItem_ctor(cScorerItem *self) {
 	self->focusPivotY = 0.0f;
 	self->delMe = 0;
 	self->visible = 1;
+	/* not in the original (ScrapC's field): an item of the client's own, not of the server's world scorer */
+	self->level = 0;
 	self->next = NULL;
 	cString_Set(&self->down, str_Empty);
 	cString_Assign(&self->up, &self->down);

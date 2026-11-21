@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "scrap/arena.h"
 #include "scrap/console.h"
 #include "scrap/coop.h"
 #include "scrap/coord.h"
@@ -45,7 +46,7 @@
 #include "../Global/testchannel.h"
 
 #define PRES_BUF 4096				/* the records of one player before they are sent */
-#define PRES_REC 1024				/* the longest record */
+#define PRES_REC 4000				/* the longest record (a state of the PvP modes with all members) */
 #define PRES_RECENT 32				/* one-shot sounds the client remembers for the double audit */
 #define PRES_CALLS 16				/* the scripts' calls the instance keeps the names of */
 #define PRES_HOLDS 32				/* effect records a client holds until it has their entities */
@@ -65,7 +66,7 @@ byte g_PresHud;
 static const char *const pres_opNames[PRES_O_COUNT] = { "?", "soundat", "sound3d", "sound2d", "voiceopen", "voiceplay",
 	"voicestop", "music", "shipexpl", "fxent", "msgtext", "labeltext", "speech", "speechcancel", "chat", "head", "fade",
 	"cinema", "actionset", "hudadd", "hudclear", "hudshow", "hudset", "talk", "itemsnd", "scene", "sceneend", "campath",
-	"fxcall", "gvar", "charres", "time", "camvar", "savevar", "faction" };
+	"fxcall", "gvar", "charres", "time", "camvar", "savevar", "faction", "arena" };
 
 /* a voice of a -mp2 instance's model: nothing plays, the file's length and the time it started give what the scripts
  * read (VoiceRemain), the text what the talk voice's checks read */
@@ -830,8 +831,8 @@ void Pres_SaveVar(int i, const char *name, const char *value) {
 	}
 }
 
-void Pres_Faction(uint64_t mask, const uint8_t *data, int size) {
-	if (!g_PresHud || size <= 0 || size > PRES_REC - 8 || !Pres_BeginMask(mask, PRES_O_FACTION)) {
+void Pres_Bytes(int op, uint64_t mask, const uint8_t *data, int size) {
+	if (!g_PresHud || size <= 0 || size > PRES_REC - 8 || !Pres_BeginMask(mask, op)) {
 		return;
 	}
 	NetRep_PutU16(&pres.w, (uint32_t)size);
@@ -944,12 +945,23 @@ void Pres_FxEnt(int kind, const char *a, const char *b, float f, int i, const ve
 	Pres_Send();
 }
 
+/* the end time of a message or label (a time of the world's timer, 0 or less: no end) goes as the seconds left: the
+ * client's world timer is not the instance's (it loaded the level later), Pres_EndTime puts them back on its own */
+static void Pres_PutEnd(float time) {
+	float left = time - Timer_GetTime(&g_pWorld->timer);
+	Pres_PutFloat(time <= 0.0f ? time : left > 0.001f ? left : 0.001f);
+}
+
+static float Pres_EndTime(float left) {
+	return left <= 0.0f ? left : left + Timer_GetTime(&g_pWorld->timer);
+}
+
 void Pres_MsgText(const char *text, float time, const char *font) {
 	if (!Pres_Out() || !Pres_Begin(PRES_PLAYER, NULL, PRES_O_MSGTEXT)) {
 		return;
 	}
 	Pres_PutStr(text);
-	Pres_PutFloat(time);
+	Pres_PutEnd(time);
 	Pres_PutStr(font);
 	Pres_Send();
 }
@@ -959,7 +971,7 @@ void Pres_LabelText(const char *text, float time) {
 		return;
 	}
 	Pres_PutStr(text);
-	Pres_PutFloat(time);
+	Pres_PutEnd(time);
 	Pres_Send();
 }
 
@@ -1459,7 +1471,7 @@ static void Pres_Play(int op, NetRepReader *r) {
 		break;
 	case PRES_O_MSGTEXT: {
 		NetRep_GetStr(r, name, sizeof(name));
-		float time = Pres_GetFloat(r);
+		float time = Pres_EndTime(Pres_GetFloat(r));
 		NetRep_GetStr(r, s2, sizeof(s2));
 		if (!r->bad) {
 			Scorer_SetMsgText(name, time, s2);
@@ -1468,7 +1480,7 @@ static void Pres_Play(int op, NetRepReader *r) {
 	}
 	case PRES_O_LABELTEXT: {
 		NetRep_GetStr(r, name, sizeof(name));
-		float time = Pres_GetFloat(r);
+		float time = Pres_EndTime(Pres_GetFloat(r));
 		if (!r->bad) {
 			Scorer_SetLabelText(name, time);
 		}
@@ -1615,7 +1627,8 @@ static void Pres_Play(int op, NetRepReader *r) {
 		}
 		break;
 	}
-	case PRES_O_FACTION: {
+	case PRES_O_FACTION:
+	case PRES_O_ARENA: {
 		static uint8_t bytes[PRES_REC];
 		int n = (int)NetRep_GetU16(r);
 		if (n > (int)sizeof(bytes)) {
@@ -1623,8 +1636,10 @@ static void Pres_Play(int op, NetRepReader *r) {
 			break;
 		}
 		CoordMsg_GetBytes(r, bytes, n);
-		if (!r->bad) {
+		if (!r->bad && op == PRES_O_FACTION) {
 			Faction_ClientMessage(bytes, n);
+		} else if (!r->bad) {
+			Arena_ClientMessage(bytes, n);
 		}
 		break;
 	}
