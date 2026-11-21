@@ -106,7 +106,6 @@ static struct {
 	int op;
 	int own;						/* the player whose own entity steps, -1 */
 	int skel;						/* depth of the HUD skeleton modules */
-	int skelMission;				/* the skel depth when a mission's module runs inside it (its scorer: no skeleton) */
 	int calls;						/* depth of the scripts' calls */
 	const char *callMod[PRES_CALLS], *callFunc[PRES_CALLS];
 	char site[96];
@@ -347,17 +346,9 @@ static byte Pres_Skeleton(const char *module) {
 	return !strcmp(module, "CharScorer") || !strcmp(module, "RacerScorer");
 }
 
-/* inside the skeleton: the HUD items a mission's scorer adds there (Menu.MissionScorerCall, which the skeleton's
- * CharScorer.Create calls) are the server's, not the client's own skeleton */
-static byte Pres_InSkel(void) {
-	return pres.skel > 0 && pres.skelMission < pres.skel;
-}
-
 void Pres_ModCall(const char *module, const char *func) {
 	if (Pres_Skeleton(module)) {
 		pres.skel++;
-	} else if (pres.skel > 0 && !pres.skelMission && !strncmp(module, "Mission_", 8)) {
-		pres.skelMission = pres.skel;
 	}
 	if (pres.calls < PRES_CALLS) {
 		pres.callMod[pres.calls] = module;
@@ -393,8 +384,6 @@ void Pres_HudMode(const char *mode) {
 void Pres_ModLeave(const char *module) {
 	if (Pres_Skeleton(module) && pres.skel > 0) {
 		pres.skel--;
-	} else if (pres.skelMission && pres.skelMission == pres.skel && !strncmp(module, "Mission_", 8)) {
-		pres.skelMission = 0;
 	}
 	if (pres.calls > 0) {
 		pres.calls--;
@@ -564,7 +553,7 @@ int Pres_HudOwner(const cScorer *sc) {
 /* the audience of a scorer's operation: the model's player (not while the HUD skeleton the client makes itself is
  * built), the world's scorer 0 to all; 0 for none */
 static byte Pres_BeginHud(const cScorer *sc, int op, byte skeleton) {
-	if (!Pres_Out() || (skeleton && Pres_InSkel())) {
+	if (!Pres_Out() || (skeleton && pres.skel)) {
 		return 0;
 	}
 	int i = Pres_HudOwner(sc);
@@ -1020,7 +1009,7 @@ void Pres_Cinema(const cScorer *sc, byte on, float time) {
 
 void Pres_ActionSet(const char *name) {
 	/* the world's context has no player whose input it is */
-	if (Pres_Out() && Players_Current() != PLAYERS_NONE && !Pres_InSkel() && Pres_Begin(PRES_PLAYER, NULL,
+	if (Pres_Out() && Players_Current() != PLAYERS_NONE && !pres.skel && Pres_Begin(PRES_PLAYER, NULL,
 			PRES_O_ACTIONSET)) {
 		Pres_PutStr(name);
 		Pres_Send();
@@ -1053,7 +1042,7 @@ static void Pres_PutHudAdd(const char *item, const char *type, byte append, byte
 
 void Pres_HudAdd(const cScorer *sc, const char *item, const char *type, byte append) {
 	byte world = sc == Scorer_GetWorld(0);
-	if (Pres_Out() && !Pres_InSkel() && world && item && type) {
+	if (Pres_Out() && !pres.skel && world && item && type) {
 		PresWorldItem *w = Pres_WorldItem(item);
 		if (w) {
 			Pres_WorldItemDrop(w);

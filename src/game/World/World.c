@@ -1022,9 +1022,9 @@ int cWorld_SetCam(cWorld *world, int i, const char *name) {
 		 * player, stage 4.5's: counted apart; no camera (a camera entity of view 0 deleted: the coop stand-in's at the
 		 * first member's join) shows nothing to any player */
 		if (g_Mp2 && !InitSteps_Entering() && *name && !world_camOwn) {
-			/* the path (and a fixed camera) goes to the player as a scene (include/scrap/netscene.h); the player's own
-			 * follow camera back after a path (a race's start) is the client's own camera */
+			/* the path (and a fixed camera) goes to the player as a scene (include/scrap/netscene.h) */
 			byte path = NetScene_CamSet(cam);
+			/* the player's own follow camera back after a path (a race's start) is the client's own camera */
 			byte own = cam && Entity_IsType(cam, TYEN_FCAM) && Players_Current() != PLAYERS_NONE;
 			Pres_NoRoute(NA_CAMERA, path ? "pres.scene:camera:" : own ? "cam.own:" : "pres.unforwarded:camera:",
 				Pres_ModSite());

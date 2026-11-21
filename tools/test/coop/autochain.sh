@@ -169,7 +169,10 @@ while [ $n -lt $max ]; do
 	# again from its start, this many times at most (default 3)
 	for ((try = 1; try <= ${AUTO_TRIES:-3}; try++)); do
 		[ $try -gt 1 ] && echo "again: try $try"
-		CHAP_ABORT="${CHAP_ABORT-coop: the mission failed}" CHAP_ENV="$CHAP_ENV ${!envv}" "$T/chap.sh" "$tag$n" "$port" "$data" "$steps" > "$S/$tag$n.out" 2>&1
+		# a lost super deal starts its level again (a new instance without the test lines): played again too
+		ab="${CHAP_ABORT-coop: the mission failed}"
+		[ -n "$arena" ] && [ -z "${CHAP_ABORT+x}" ] && ab="$ab|coop: the level again"
+		CHAP_ABORT="$ab" CHAP_ENV="$CHAP_ENV ${!envv}" "$T/chap.sh" "$tag$n" "$port" "$data" "$steps" > "$S/$tag$n.out" 2>&1
 		cp "$S/$tag$n.out" "$S/$tag$n-try$try.out"
 		grep -E "^(FAIL|chap )" "$S/$tag$n.out"
 		grep -q "ok: the next mission after" "$S/$tag$n.out" && break

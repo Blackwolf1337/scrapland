@@ -263,11 +263,11 @@ static byte Sd_Finish(const char *how, const nativeVal_t *cad, long win, const c
 	return ok;
 }
 
-/* usr = Scrap.UsrEntity(0); if usr: (if usr.IsType("Car"): usr.Life = usr.MaxLife); usr.Invulnerable = 1; not in the
- * original: every member of a coop party (Sd_UsrSafe, Party_All) */
+/* usr = Scrap.UsrEntity(0); if usr: (if usr.IsType("Car"): usr.Life = usr.MaxLife); usr.Invulnerable = 1 (coop: every
+ * member, Party_All) */
 static byte Sd_UsrSafeOne(void *ctx) {
-	nativeVal_t usr, life;
 	(void)ctx;
+	nativeVal_t usr, life;
 	Native_SetNone(&life);
 	if (!Mode_UsrHandle(&usr)) {
 		return 0;
@@ -287,7 +287,7 @@ static byte Sd_UsrSafe(void) {
 	return Party_All(Sd_UsrSafeOne, NULL);
 }
 
-/* usr = Scrap.UsrEntity(0); if usr: usr.Invulnerable = 1 (every member of a coop party) */
+/* usr = Scrap.UsrEntity(0); if usr: usr.Invulnerable = 1 (coop: every member) */
 static byte Sd_UsrInvulnerableOne(void *ctx) {
 	nativeVal_t usr;
 	(void)ctx;
@@ -456,9 +456,11 @@ static byte Sd_AbortRemoteMessagesC(void) {
 	return Mode_Import("Speech") && Mode_SetModVar("Speech", "RemoteCom", &l);
 }
 
-/* SetVulnerable() (TeamDeathMatch: OnVehicle()): the player's ship can be hit again when he boards it */
-static byte Sd_SetVulnerableC(void) {
+/* SetVulnerable() (TeamDeathMatch: OnVehicle()): the player's ship can be hit again when he boards it (coop: every
+ * member's) */
+static byte Sd_SetVulnerableOne(void *ctx) {
 	nativeVal_t usr;
+	(void)ctx;
 	if (!Mode_Import("Parking") || !Mode_UsrHandle(&usr)) {
 		return 0;
 	}
@@ -466,6 +468,10 @@ static byte Sd_SetVulnerableC(void) {
 	byte ok = car >= 0 && (!car || Mode_VSetI(&usr, "Invulnerable", 0)) && Sd_ModSetI("Parking", "PlayerShip", "Invulnerable", 0);
 	Native_Free(&usr);
 	return ok;
+}
+
+static byte Sd_SetVulnerableC(void) {
+	return Party_All(Sd_SetVulnerableOne, NULL);
 }
 
 static byte Sd_SpawnAt(const nativeVal_t *usr) {

@@ -256,6 +256,15 @@ Speech_ForceRemoteCom_E	PARTY	a Speech entry in the world's context (a forced re
 Merc_OnStupidMercDeathN	PARTY	the stupid mercenary died by no member's hand: was it the player (the party's acting member)
 Traitorius_OnTraitoriusDamage	PARTY	Traitorius hit by no member: the player's hint (the party's acting member)
 Merc_ScanShip	PARTY	every second the scan of the lonely mercenary by the player (the party's acting member, its mission's)
+Dom_TakeBatonC	PARTY	a Domination super deal: the baton taken by the player, the acting member in coop
+Dom_TakeZoneC	PARTY	a Domination super deal: a zone taken with the player's baton, the acting member in coop
+Rudolph_InitRace	PARTY	CatchRudolph, KillRudolph: Rudolph's race starts for the player, the acting member in coop
+Mr_RespawnRacerC	PARTY	a MortalRace super deal or mission: a racer again near the player, the acting member in coop
+Steal_OnPoliceDeath	PARTY	StealMayorShip (DownTown): a police ship's death and the player's mayor's ship, the acting member in coop
+Sd_UsrSafe	ALL	a super deal's end (a win): every member's life full and invulnerable in coop (Party_All)
+Sd_UsrInvulnerable	ALL	a super deal's end (a defeat): every member invulnerable in coop (Party_All)
+Sd_SetVulnerableC	ALL	a super deal's ship can be hit again (boarded): every member's in coop (Party_All)
+Dom_CreateTeam	PARTY	a Domination super deal: a team made around the player, the acting member in coop
 Parking.SwitchVehicleMissionCallback	WORLD	a mission's callback of the world's context (a super deal's level start sets it for the group); a player's own is read in its context
 Parking.SwitchCharMissionCallback	WORLD	a mission's callback of the world's context; a player's own is read in its context
 Alarm.AbortMissionCallback	WORLD	a mission's callback of the world's context; a player's own is read in its context

@@ -604,16 +604,21 @@ static cEntity *Cp_ArrowTarget(const cEntity *e) {
 /* test: the nearest item to e the scripts show on the radar with a function of the mission for its taker
  * (ProtectMayorTransport's meeting point: "a yellow arrow on your radar"; not the level's parkings and links), NULL */
 static cEntity *Cp_RadarItem(const cEntity *e) {
-	const char *mission = SaveVar_Get("Mission.Library");
+	const char *mission = SaveVar_Get("Mission.Library"), *deal = SaveVar_Get("SuperDealType");
 	cEntity *t = NULL;
 	float best = 0.0f;
 	for (cEntity *v = cWorld_GetFirstEntity(g_pWorld); v; v = cEntity_Next(v)) {
 		const cItemEntity *it = (const cItemEntity *)v;
+		const char *m = Entity_IsType(v, "item") ? cPy_Function_Module(&it->onTake) : "";
+		/* the mission's, or a super deal mode's (Domination's baton and zones; a race's checkpoint is raced) */
 		if (!v->active || v->deadNode.target || !Entity_IsType(v, "item") || !Obj(v)->radarShow || Obj(v)->replica ||
-			it->respawn > 0.0f || !mission || strcmp(cPy_Function_Module(&it->onTake), mission)) {
+			it->respawn > 0.0f || !mission || (strcmp(m, mission) && !(deal && deal[0] && !strcmp(m, deal) &&
+			strncmp(v->name, CP_CHECKPOINT, sizeof(CP_CHECKPOINT) - 1)))) {
 			continue;
 		}
 		float dx = v->pos.x - e->pos.x, dz = v->pos.z - e->pos.z, d = dx * dx + dz * dz;
+		/* a deal's baton first (Domination's zones count only with it) */
+		d = !strncmp(v->name, "Baton", 5) ? -1.0f : d;
 		if (!t || d < best) {
 			t = v;
 			best = d;
@@ -1114,7 +1119,10 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	/* a mission arrow to take (BankersCombat's blueprints while the bankers attack) before the level's red ones; one on
 	 * a ship to shoot down before the mission's targets to use (Ambush's probes, its phone cab still the target) */
 	cEntity *arrow = Cp_ArrowTarget(e);
-	byte other = Cp_FightTargets("", all, 1, 0) || arrow;
+	/* in a super deal the mode's items (Domination's baton and zones) come before its red ones */
+	const char *lib = SaveVar_Get("Mission.Library");
+	byte dealItem = g_Coop.pl[i].autoOn != 2 && lib && !strncmp(lib, "SuperDeal_", 10) && Cp_RadarItem(e);
+	byte other = Cp_FightTargets("", all, 1, 0) || arrow || dealItem;
 	const char *foes = Cp_FightTargets("", all, CP_FIGHT_MAX, 1) ? "" : arrow && Cp_ShipFoe(arrow) && !Cp_Scanned(i, arrow) ? arrow->name : (escort ? Cp_RedNear(escort) :
 		(g_Coop.pl[i].autoOn == 2 || !other) && Cp_FightTargets(CP_FIGHT_RED, all, CP_FIGHT_MAX, 1)) ? CP_FIGHT_RED : NULL;
 	if (foes) {
@@ -1130,9 +1138,9 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 		}
 		return;
 	}
-	/* a race: the mission's member races, a helper that stays with a ship of the mission does not (eight ships put on
-	 * one checkpoint pushed one out of the level) */
-	if (World_FindEntity(CP_CHECKPOINT) && g_Coop.pl[i].autoOn != 2) {
+	/* a race: the mission's member races (a deal's baton taken first: MortalRace), a helper that stays with a ship of
+	 * the mission does not (eight ships put on one checkpoint pushed one out of the level) */
+	if (World_FindEntity(CP_CHECKPOINT) && g_Coop.pl[i].autoOn != 2 && !dealItem) {
 		if (kind == NETREP_SHIP) {
 			Cp_TestRace(i);
 		} else {
