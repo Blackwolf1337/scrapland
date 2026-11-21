@@ -21,6 +21,8 @@ void FX_BertoFlash(cEntity *from, cEntity *to);
 void FX_DtritusKill(cEntity *dtritus, cEntity *killed);
 void FX_BishopRay(cEntity *bishop, cEntity *target, const vec3_t *hit);
 void FX_MessengerTake(cEntity *messenger, cEntity *dataPack);
+/* the lightning of a messenger's shot at target (NULL none) or the point hit, with its sound */
+void FX_MessengerAttack(cEntity *messenger, cEntity *target, const vec3_t *hit);
 void FX_PoliceSteal(cEntity *attacker, cEntity *attacked);
 void FX_NurseHammer(cEntity *nurse);
 

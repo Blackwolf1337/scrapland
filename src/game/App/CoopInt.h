@@ -48,6 +48,7 @@ typedef struct CpScene {
 typedef struct CoopState {
 	byte on;
 	char story[COORD_PATH];			/* the file of -story */
+	char levelChar[64];				/* the character the level's scripts made the player (Coop_SetChar), "" none */
 	byte applying;					/* the coordinator's story goes in: not sent back */
 	byte synced;					/* the whole story came since the coordinator connected */
 	byte overflow;					/* more changes than the list holds: the whole story goes */
@@ -100,6 +101,8 @@ typedef struct CoopState {
 		byte fight;					/* test: it fights the targets of fightList */
 		byte follow;				/* test: the fight only stays with its target (no shot: an escort, a ship to follow) */
 		int spare;					/* test: no shot at a ship whose life is at or under this percent of its most (0 off) */
+		double carryAt;				/* test: when the messenger last put itself with its pack at the pack's goal */
+		byte tough;					/* test: its entity takes no damage (a party of one against a police wave: TransportKiller) */
 		byte scan;					/* test: the mission's ships that are no foes are followed, not shot (a scan) */
 		byte waypoint;				/* test: the item of the scripts' waypoint is taken before the fights (CTF's flags) */
 		byte walk;					/* test: the automatic player on foot steps to its target (followers keep up) */
@@ -112,6 +115,8 @@ typedef struct CoopState {
 		double walkBack;			/* since when it is next to its last follower that follows no more (0 not) */
 		float walkNear;				/* the nearest it came to its target on its walk */
 		double walkNearAt;			/* when (0 none yet) */
+		double usedAt;				/* when its auto play last used its target (a talk that starts after it) */
+		char walkShort[64];			/* the target its walk ended short of (the goto and the use come next) */
 		char fightList[CP_NAME];	/* "Module.var" (a list of the scripts), an entity, "" the mission's targets */
 		char fightAt[CP_NAME];		/* the target it turned to last */
 		double fightSince;			/* when it was put near a target last (instance time) */

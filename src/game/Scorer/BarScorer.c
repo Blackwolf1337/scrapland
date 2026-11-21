@@ -3,6 +3,7 @@
  */
 #include "scrap/app.h"
 #include "scrap/scoreritems.h"
+#include "scrap/pres.h"
 #include "scrap/staticinit.h"
 
 #define CBARSCORER_VFTABLE (&cBarScorer_vftable.base)
@@ -159,9 +160,19 @@ static void cBarScorer_Count(cBarScorer *self, float dt) {
 }
 
 void cBarScorer_Tick(cScorerItem *base) {
-	if (base->vftable == CBARSCORER_VFTABLE && !base->delMe) {
-		cBarScorer_Count((cBarScorer *)base, cTimer_GetDelta(&g_pWorld->timer));
+	if (base->vftable != CBARSCORER_VFTABLE || base->delMe) {
+		return;
 	}
+	/* not in the original: a -mp2 instance ticks the world's scorer and the HUD model of each player (include/scrap/
+	 * pres.h), all with the same bar: the auto update of its engine variable runs once a frame */
+	if (g_PresHud) {
+		static float s_tickAt = -1.0f;
+		if (s_tickAt == g_pWorld->timer.gameTime) {
+			return;
+		}
+		s_tickAt = g_pWorld->timer.gameTime;
+	}
+	cBarScorer_Count((cBarScorer *)base, cTimer_GetDelta(&g_pWorld->timer));
 }
 
 static void cBarScorer_Draw(cScorerItem *base, int player) {
