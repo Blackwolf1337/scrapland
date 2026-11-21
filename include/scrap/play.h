@@ -162,6 +162,9 @@ enum {
 #define NETPL_OF_MOVE 0x08			/* the scripted move runs (its values follow the kind's) */
 #define NETPL_OF_NOCTRL 0x10		/* character: the scripts took its control (DisableControl, the control off) */
 #define NETPL_OF_ENERGYBAR 0x20		/* the world's EnergyBarActive (the character's energy and action presses read it) */
+#define NETPL_OF_TOUCHED 0x40		/* the server's state: a collision with another ship moved it since the last state
+									   (the rail traffic, a ship of no player, another player: their motion is the
+									   server's, the client takes its result, not compared) */
 /* what differs between two rollback states (NetPl_OwnDiff) */
 #define NETPL_D_POS 0x01
 #define NETPL_D_VEL 0x02
@@ -256,6 +259,9 @@ byte Rep_SpFlows(void);
  * its player; dt its frame time): the step Rep_PreFrame gave it for this frame, NetPl_Step of the tick's input; the
  * solo instance on a tape of single player's frames: the actions of the frame and the frame's slots */
 void Rep_OwnFrame(struct cEntity *e, float dt);
+/* -mp2: the ship e and another ship collided (cVehicleEntity_Touch): when e is a player's entity, its next rollback
+ * state says so (NETPL_OF_TOUCHED) */
+void Rep_OwnTouched(struct cEntity *e);
 /* -mp2: the scripts set the place or the angles of e (RepEnt's variable tap): when it is a player's entity, its
  * client takes the next rollback state as a jump (a velocity they set is a world effect its prediction corrects) */
 void Rep_OwnMoved(struct cEntity *e);

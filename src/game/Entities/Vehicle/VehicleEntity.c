@@ -19,6 +19,7 @@
 #include "scrap/scoreritems.h"
 #include "scrap/missileentity.h"
 #include "scrap/play.h"
+#include "scrap/repent.h"
 #include "scrap/players.h"
 #include "scrap/vehiclemotors.h"
 #include "scrap/vehicletraffic.h"
@@ -280,6 +281,11 @@ static void cVehicleEntity_Touch(cEntity *elem, cEntity *e, const vec3_t *point,
 	self->hitTime = Timer_GetTime(&self->wl.obj.timer);
 	CHECK(Entity_IsType(e, TYEN_VEHICLE));
 	cVehicleEntity *o = Veh(e);
+	/* not in the original: a -mp2 player's client takes the result of a collision with another ship (play.h) */
+	if (g_Mp2 && g_Instance) {
+		Rep_OwnTouched(elem);
+		Rep_OwnTouched(e);
+	}
 	vec3_t selfVel = self->wl.obj.vel;
 	vec3_t otherVel = o->wl.obj.vel;
 	float dvx = self->wl.obj.vel.x - o->wl.obj.vel.x;

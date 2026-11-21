@@ -142,7 +142,8 @@ static struct {
 	byte haveMoved;						/* 0 for a new own entity: its first state hands it over (smoothed, no correction) */
 	uint32_t jumps;						/* the server's moves taken as jumps */
 	uint32_t handovers;
-	uint32_t hits;						/* of the lives taken: with more than the life differing (the hit's push) */
+	uint32_t hits;
+	uint32_t touches;					/* states taken after a collision with another ship (NETPL_OF_TOUCHED) */						/* of the lives taken: with more than the life differing (the hit's push) */
 	uint32_t corrBy[NETPL_D_BITS];		/* corrections by NETPL_D_ bit */
 } play = { .slot = -1, .player = -1 };
 
@@ -1137,6 +1138,11 @@ void Play_OwnState(const uint8_t *data, int size) {
 			play.corrBy[6]++;
 			NetAudit_Name(NA_PREDICT, "pred.took:", d & ~NETPL_D_LIFE ? "hit" : "life");
 			play.hits += (d & ~NETPL_D_LIFE) != 0;
+		} else if (o.flags & NETPL_OF_TOUCHED) {
+			/* a collision with another ship, whose motion the server alone knows: its result taken (plan's Risks:
+			 * the server confirms), counted apart */
+			play.touches++;
+			NetAudit_Name(NA_PREDICT, "pred.took:", "touch");
 		} else {
 			play.st.corr[play.st.nc++ % PLAY_ERRS] = corr;
 			play.st.corrections++;
@@ -1206,8 +1212,9 @@ void Play_Status(void) {
 		play.st.corrections, (double)c[0], (double)c[1], (double)c[2], (double)c[3], play.st.replayed);
 	if (g_Mp2) {
 		Con_Printf("play: -mp2 corrections by pos %u vel %u ang %u act %u state %u move %u, life taken %u (%u with a "
-			"push), %u jumps, %u handovers\n", play.corrBy[0], play.corrBy[1], play.corrBy[2], play.corrBy[3],
-			play.corrBy[4], play.corrBy[5], play.corrBy[6], play.hits, play.jumps, play.handovers);
+			"push), %u after a collision with a ship, %u jumps, %u handovers\n", play.corrBy[0], play.corrBy[1],
+			play.corrBy[2], play.corrBy[3], play.corrBy[4], play.corrBy[5], play.corrBy[6], play.hits, play.touches,
+			play.jumps, play.handovers);
 	}
 }
 

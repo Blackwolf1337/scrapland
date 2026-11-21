@@ -29,7 +29,8 @@ With --mp2 a client boards its own ship as single player does (the use of its sh
 test line "use <player> <ship>"): the switch key of the sandbox is off on that path.
 --delay, --jitter and --loss set SCRAP_NET2_DELAY (ms each way), SCRAP_NET2_JITTER (ms) and SCRAP_NET2_LOSS (percent)
 on the client and the server of a multiplayer side (tools/test/mp2.sh feel runs the matrix of them); --cell names the
-JSON files <side>-<cell>.json.
+JSON files <side>-<cell>.json. FEEL_HOST_DEVICE in the environment puts the hosting game of the join side on another
+Vulkan device than --device (the measured games keep a device to themselves).
 
   feel.py [--sides sp,host,join,menuhost] [--level DownTown] [--port 29960] [--build DIR] [--out DIR] [--scratch DIR]
           [--delay MS] [--jitter MS] [--loss PCT] [--cell NAME] [--no-boost]
@@ -262,8 +263,13 @@ def run_side(a, side):
     elif side == 'menuhost':
         g = parity.Game(a, 'fm', [], env)
     else:
+        # FEEL_HOST_DEVICE: the hosting game of the join side (not measured) on another device, so the measured client
+        # has its device to itself as single player has
+        hostenv = dict(a.net)
+        if os.environ.get('FEEL_HOST_DEVICE'):
+            hostenv['SCRAP_VK_DEVICE'] = os.environ['FEEL_HOST_DEVICE']
         hostg = parity.Game(a, 'fo', ['-host:' + a.level, '-port:%d' % port, '-mode:freeroam', '-name:Host'] + v2,
-                            dict(a.net))
+                            hostenv)
         g = parity.Game(a, 'fj', ['-join:127.0.0.1', '-port:%d' % port, '-name:Join'] + v2, env)
     inst_dir = hostg or g
     try:
