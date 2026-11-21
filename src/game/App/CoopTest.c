@@ -31,6 +31,7 @@
 #include "scrap/party.h"
 #include "scrap/nodesworld.h"
 #include "scrap/nodesworld2d.h"
+#include "scrap/nodesworldsup.h"
 #include "scrap/places.h"
 #include "scrap/platform.h"
 #include "scrap/play.h"
@@ -94,6 +95,8 @@
 #define CP_USE_HOLD 5.0				/* test: s it waits after a use (the talk of a call starts after it) */
 #define CP_SHIP_ITEM 1000.0f		/* test: outdoors an item this wide is a ship's (flown onto) */
 #define CP_SHIP_ASK 12.0			/* test: s it asks for a ship (the switch) before it walks */
+#define CP_ALARM_WAIT 40.0			/* test: s it waits for its alarm to fall before a use (a forbidden area keeps it on) */
+#define CP_DEAF_WAIT 15.0			/* test: s it waits for its character to listen again before a use */
 #define CP_MSG_CARRY 600.0f			/* test: a messenger farther from its pack's goal is put next to it */
 #define CP_MSG_NEAR 700.0f			/* test: a messenger this near the pack's carrier is shot first */
 #define CP_MSG_SHOT 1500.0f			/* test: a messenger fires its lightning at a messenger this near (it reaches 2000) */
@@ -738,6 +741,12 @@ static byte Cp_PathPoint(cEntity *e, const vec3_t *to, vec3_t *next) {
 		return 0;
 	}
 	vec3_t from = e->pos, dest = *to;
+	/* both in the graph's grid: a point outside fails the grid's check (a member pushed off the level by a crowd at one
+	 * place, Police and Temple with 8 players) */
+	CNodesWorld *w = NW2D_SUP(g_NodesWorld2D);
+	if (!CNodesWorldSup_InGrid(w, &from) || !CNodesWorldSup_InGrid(w, &dest)) {
+		return 0;
+	}
 	float r = Obj_GetRadius(e), h = WChar(e)->floorDist, fr = WithLife_GetActCtrl(e)->cls->sRadius;
 	byte noPath = 0, reach = 0, got = 0;
 	int res = 0;
@@ -771,6 +780,10 @@ static byte Cp_FlyPoint(cEntity *e, const vec3_t *to, vec3_t *next) {
 		return 0;
 	}
 	vec3_t from = e->pos, dest = *to;
+	/* both in the graph's grid (as for the walk: a ship pushed over the level's top) */
+	if (!CNodesWorldSup_InGrid(g_NodesWorld, &from) || !CNodesWorldSup_InGrid(g_NodesWorld, &dest)) {
+		return 0;
+	}
 	float r = Obj_GetRadius(e);
 	byte startOk = 0, goalOk = 0, got = 0;
 	int state = 0;
@@ -1234,7 +1247,11 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	}
 	/* the mission's targets one after the other (the right one of three to talk to: ThreeStooges' mercenaries) */
 	int nt = Cp_FightTargets("", all, CP_FIGHT_MAX, 0);
-	if (g_Coop.pl[i].autoOn != 2 && Cp_BankerSlaps(i, in, e, all, nt, now)) {
+	/* a banker robs only the mission's list of targets (TalkToMayor: Corruptus and Porkins), never a single current
+	 * target (the mayor of TalkToMayor2, robbed in the moment before the conversor, talked no more) */
+	cEntity *rob[CP_FIGHT_MAX];
+	int nr = Cp_FightTargets("MissionsFuncs.targetsList", rob, CP_FIGHT_MAX, 0);
+	if (g_Coop.pl[i].autoOn != 2 && Cp_BankerSlaps(i, in, e, rob, nr, now)) {
 		return;
 	}
 	cEntity *t = g_Coop.pl[i].autoOn == 2 ? escort : nt ? all[g_Coop.pl[i].autoTurn % nt] : NULL;
@@ -1351,19 +1368,41 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 		}
 		return;
 	}
+	/* its character does not listen (a radio talk runs, Speech.ForceRemoteComunication): the arrow is off for its
+	 * player but on the ones always to use (WalkCharEntity's use); a use then cut the talk before its RestoreSpeech and
+	 * the character listened no more (ReinsertOwnMatrix's next message never came); CP_DEAF_WAIT s at most */
+	if (kind == NETREP_CHAR && !WChar(e)->listenOn && Entity_IsType(t, TYEN_WITH_LIFE) && !WLife(t)->arrow.alwaysUse) {
+		if (g_Coop.pl[i].deafSince <= 0.0) {
+			g_Coop.pl[i].deafSince = now;
+		}
+		if (now - g_Coop.pl[i].deafSince < CP_DEAF_WAIT) {
+			g_Coop.pl[i].autoUse = 0.0;
+			return;
+		}
+	} else {
+		g_Coop.pl[i].deafSince = 0.0;
+	}
 	/* a phone cab, a desktop or a character to talk to while the police is after it: it waits for the alarm to fall, as
 	 * the single player does after the call's "the police is still after you" (PhoneCab.UseAudioCom, the missions'
-	 * UsePhoneCab; ApologizeMayor's mayor only warns while the alarm of a stapler's death is on) */
+	 * UsePhoneCab; ApologizeMayor's mayor only warns while the alarm of a stapler's death is on), CP_ALARM_WAIT s at most
+	 * (a forbidden area keeps it on until the talk) */
 	char *fn = NULL;
 	const cAlarm *al = Players_Alarm(i);
 	if (al && al->on && Entity_VarS(t, "UseFunc", &fn, 0) && fn && (strstr(fn, "Phone") || strstr(fn, "AudioCom") ||
-		strstr(fn, "Desktop") || strstr(fn, "Speech"))) {
+		strstr(fn, "Desktop") || strstr(fn, "Speech")) &&
+		(g_Coop.pl[i].alarmSince <= 0.0 || now - g_Coop.pl[i].alarmSince < CP_ALARM_WAIT)) {
+		if (g_Coop.pl[i].alarmSince <= 0.0) {
+			g_Coop.pl[i].alarmSince = now;
+		}
 		if (now - g_Coop.pl[i].autoTold >= 10.0) {
 			g_Coop.pl[i].autoTold = now;
 			Con_Printf("coop: player %d (auto) waits for its alarm to fall before %s\n", i, t->name);
 		}
 		g_Coop.pl[i].autoUse = 0.0;
 		return;
+	}
+	if (!al || !al->on) {
+		g_Coop.pl[i].alarmSince = 0.0;
 	}
 	if (g_Coop.pl[i].autoUse > 0.0 && now >= g_Coop.pl[i].autoUse) {
 		/* the use of its arrow, as the test line use (the option its client chose) */
@@ -1407,6 +1446,11 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	float dx = 0.0f, dz = 0.0f;
 	if (use) {
 		Cp_Approach(e, t, CP_AUTO_NEAR, &dx, &dz);
+		/* each use turns a quarter round it: from one side its arrow went to something beside it for good
+		 * (GetAuthorization's gatekeeper and a news panel: his talk never started) */
+		float q = (float)(g_Coop.pl[i].autoTurn % 4) * (M_PI_F / 2.0f), rx = dx * cosf(q) - dz * sinf(q);
+		dz = dx * sinf(q) + dz * cosf(q);
+		dx = rx;
 	}
 	Travel_TestGoto(i, t->name, dx, dz);
 }
