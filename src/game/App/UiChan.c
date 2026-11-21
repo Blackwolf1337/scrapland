@@ -314,6 +314,7 @@ void Ui_NewsHead(int on) {
 	}
 }
 
+static void Ui_Refuse(int i, int k, const char *why, const char *msgKey);
 byte Ui_MachineBusy(const char *machine, const char *msgKey) {
 	if (!g_Mp2 || !g_Instance) {
 		return 0;
@@ -321,14 +322,10 @@ byte Ui_MachineBusy(const char *machine, const char *msgKey) {
 	cEntity *m = machine ? World_FindEntity(machine) : NULL;
 	int i = Players_Current(), user = Players_OfMachine(m);
 	if (user >= 0 && user != i) {
-		/* single player's message of a machine that cannot be used now */
-		if (!Mode_LangMsg(msgKey)) {
-			Native_ErrPrint();
-		}
-		ui.refusals[UI_K_CONV]++;
-		Str_Copy(ui.lastRefusal, "busy", sizeof(ui.lastRefusal));
-		NetAudit_Func(NA_HUD, "ui.refuse:busy:", machine ? "machine" : "-");
+		/* single player's message of a machine that cannot be used now; the client gives up the conversor it started
+		 * for the eye (include/scrap/play.h) */
 		Con_Printf("ui: %s is player %d's, player %d's use refused\n", machine, user, i);
+		Ui_Refuse(i, UI_K_CONV, "busy", msgKey);
 		return 1;
 	}
 	Players_SetMachine(i, m);
@@ -965,8 +962,14 @@ void Ui_ClientMessage(const uint8_t *data, int size) {
 		if (k != UI_K_TEXTBOX && k != UI_K_MISSION) {
 			ui.cseq = (uint16_t)seq;
 		}
+		if (k == UI_K_CONV) {
+			PlayFlow_Took(PLAYFLOW_CONV, NULL);
+		}
 		Ui_ClientOpen(k, &r);
 	} else if (data[1] == UI_S_REFUSE) {
+		if (k == UI_K_CONV) {
+			PlayFlow_Refused();
+		}
 		ui.crefused[k]++;
 		Con_Printf("ui: the instance refused the %s\n", ui_names[k]);
 	} else if (data[1] == UI_S_CLOSE && ui.cui == k && ui.cseq == seq) {

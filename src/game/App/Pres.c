@@ -25,6 +25,7 @@
 #include "scrap/netrep.h"
 #include "scrap/objentity.h"
 #include "scrap/platform.h"
+#include "scrap/play.h"
 #include "scrap/players.h"
 #include "scrap/pres.h"
 #include "scrap/pyfunction.h"
@@ -764,8 +765,9 @@ void Pres_CharRes(const char *name) {
 	}
 }
 
-/* the save variables of a player its client reads itself: the lives of the GDB on its HUD (StatusScorer) */
-static const char *const pres_saveVars[] = { "Player.NumLives", NULL };
+/* the save variables of a player its client reads itself: the lives of the GDB on its HUD (StatusScorer), the mission's
+ * station of the metro's map (a map the client opens at the use, include/scrap/play.h PlayFlow_) */
+static const char *const pres_saveVars[] = { "Player.NumLives", "Mission.Map", NULL };
 
 void Pres_SaveVar(int i, const char *name, const char *value) {
 	int k;
@@ -1342,7 +1344,7 @@ static void Pres_Play(int op, NetRepReader *r) {
 		uint32_t from = (uint32_t)NetRep_GetSVar(r), to = (uint32_t)NetRep_GetSVar(r);
 		float time = Pres_GetFloat(r);
 		cScorer *sc = Scorer_Get(0);
-		if (!r->bad && sc) {
+		if (!r->bad && sc && !PlayFlow_FadeShown(from, to)) {
 			ScorerFade_Start(&sc->fade, from, to, time);
 			/* a held record played after its time: the fade as far as it is at the time drawn */
 			sc->fade.time = sc->fade.time > pres_lag ? sc->fade.time - pres_lag : 0.0f;

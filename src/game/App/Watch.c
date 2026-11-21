@@ -1061,6 +1061,11 @@ static void Watch_Metro(const uint8_t *data, int size) {
 		}
 		return;
 	}
+	/* the map the client opened at the use is the one asked for (include/scrap/play.h) */
+	if (PlayFlow_Pending() == PLAYFLOW_METRO && !strcmp(PlayFlow_Ent(), door)) {
+		PlayFlow_Took(PLAYFLOW_METRO, door);
+		return;
+	}
 	/* a -mp2 client shows it headless too (its tests pick a station of the map: include/scrap/uichan.h) */
 	if ((g_Mp2 || !g_HeadlessPlay) && !PORT_CALL(Metro, OnUse, NULL, "ssss", Play_Entity()->name, door, "Travel", "")) {
 		Native_ErrPrint();

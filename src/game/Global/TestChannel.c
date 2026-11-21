@@ -1738,6 +1738,18 @@ static void TC_Line(tcBuf *b, const char *line) {
 	}
 	/* use <entity> [option]: player 0 uses the entity through its arrow (the instance's "use" line of
 	 * include/scrap/travel.h, here for single player: the same use in both) */
+	if (TC_Verb(line, "press", &arg) && g_Play) {
+		/* a -mp2 client: a button of its own player held a few ticks (include/scrap/play.h) */
+		char w[16];
+		int ticks = 0;
+		TC_Blanks(&arg);
+		if (!TC_Word(&arg, w, sizeof(w)) || (sscanf(arg, "%d", &ticks), !Play_TestPress(w, ticks))) {
+			TC_Add(b, "error: press <act|act2|act3|use|boost> [ticks]\n", -1);
+		} else {
+			TC_Add(b, "pressed\n", -1);
+		}
+		return;
+	}
 	if (TC_Verb(line, "use", &arg)) {
 		char ent[0x40], opt[0x40];
 		opt[0] = 0;

@@ -135,6 +135,8 @@ static struct {
 	uint32_t flowMade;					/* -mp2: a boarding started for the eye with own entity made, 0 none */
 	double flowAt;						/* local time it started */
 	uint16_t lastButtons;				/* of the input of the tick before */
+	uint16_t testPress;					/* buttons of the test verb press, held testTicks ticks */
+	int testTicks;
 	byte hints[2];						/* hints shown on foot, in a ship */
 	/* -mp2 (stage 3.5): the rollback state of each tick as the server sends it, its moves outside the step */
 	NetRepOwn own[NETREP_PRED];
@@ -434,6 +436,8 @@ void Play_OwnCreate(int kind, const char *look, uint32_t tick, const NetRepState
 	play.catchup = 1;
 	play.botStart = 0.0;
 	play.haveMoved = 0;
+	/* a possession started for the eye: the new character is the server's hand-over */
+	PlayFlow_Took(PLAYFLOW_POSS, NULL);
 	Con_Printf("play: own %s %s at %.0f %.0f %.0f (tick %u)\n", kind == NETREP_SHIP ? "ship" : "character", name,
 		(double)e->pos.x, (double)e->pos.y, (double)e->pos.z, tick);
 	if (play.started) {
@@ -692,6 +696,9 @@ static void Play_Step(uint32_t tick, byte none) {
 			Play_FlowStart(ship, play.clockNow);
 		}
 	}
+	if (g_Mp2) {
+		PlayFlow_Press(play.e, play.input.buttons & (uint16_t)~play.lastButtons, play.clockNow);
+	}
 	play.lastButtons = play.input.buttons;
 	Play_StepPart(tick, 0);
 }
@@ -863,6 +870,7 @@ void Play_PreFrame(double now, double rtt, double rttVar, float loss) {
 		Play_DeathCam((float)(now - play.tickLocal));
 		play.tickLocal = now;
 	}
+	PlayFlow_Frame(now);
 	if (play.flowMade && now - play.flowAt > PLAY_FLOW_SECS) {
 		/* the server did not board (the use came to nothing there): the camera back */
 		NetAudit_Name(NA_PREDICT, "pred.flow:", "cancel");
@@ -906,6 +914,10 @@ void Play_PreFrame(double now, double rtt, double rttVar, float loss) {
 				fmod(now - play.botStart, 12.0) < 3.4) {
 				play.acc.buttons |= NETREP_IN_BOOST;
 			}
+		}
+		if (play.testTicks > 0) {
+			play.acc.buttons |= play.testPress;
+			play.testTicks--;
 		}
 		Play_Step(play.tick + 1, play.catchup && play.tick + 1 < target);
 		play.tickLocal = now;
@@ -1222,6 +1234,19 @@ void Play_Status(void) {
 	}
 }
 
+byte Play_TestPress(const char *name, int ticks) {
+	static const struct { const char *name; uint16_t b; } btn[] = { { "act", NETREP_IN_ACT }, { "act2", NETREP_IN_ACT2 },
+		{ "act3", NETREP_IN_ACT3 }, { "use", NETREP_IN_ACT3 }, { "boost", NETREP_IN_BOOST } };
+	for (size_t k = 0; k < sizeof(btn) / sizeof(btn[0]); k++) {
+		if (!strcmp(name, btn[k].name)) {
+			play.testPress = btn[k].b;
+			play.testTicks = ticks > 0 ? ticks : 6;
+			return 1;
+		}
+	}
+	return 0;
+}
+
 void Play_Reset(void) {
 	Play_OwnRemove();
 	NetRepFollow_Init(&play.clock, PLAY_CLOCK_JUMP);
@@ -1232,6 +1257,7 @@ void Play_Reset(void) {
 	play.haveStatus = 0;
 	play.pending = 0;
 	play.cam = NULL;
+	PlayFlow_Reset();
 }
 
 void Play_Close(void) {

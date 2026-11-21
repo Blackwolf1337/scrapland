@@ -494,6 +494,10 @@ void NetScene_ClientCamVar(const char *name, const char *s, float f) {
 		return;
 	}
 	if (s) {
+		/* the camera ride of an elevator the client started for the eye (include/scrap/play.h) */
+		if (!strcmp(name, "EntityLink") && *s) {
+			PlayFlow_Took(PLAYFLOW_ELEV, s);
+		}
 		if (!NetScene_CamTarget(cam, name, s)) {
 			int k = 0;
 			/* the same variable's wait is replaced, else a free one (the oldest given up when there is none) */
