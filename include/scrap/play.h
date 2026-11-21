@@ -298,6 +298,8 @@ byte Play_HeadlessDue(void);
 byte Play_ParseParam(const char *param, const char *ext);
 /* the replication's events of the own slot (Watch.c) */
 int Play_OwnSlot(void);
+/* the client's player index on its instance, -1 */
+int Play_Player(void);
 void Play_SetOwn(int player, int slot, int kind, uint32_t tick, const float *phys, int nphys);
 void Play_OwnCreate(int kind, const char *look, uint32_t tick, const NetRepState *st);
 void Play_OwnUpdate(uint32_t tick, const NetRepState *st);

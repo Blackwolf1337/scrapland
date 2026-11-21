@@ -496,6 +496,9 @@ byte Native_GetEntity(const nativeVal_t *name, cEntity **out);
 /* Scrap.Get(name): the engine variable as the script gets it (a text, an int, a float, "<function>" or "<Script
  * function>"); 0 for an unknown name (the console line of Scrap.Get and Native_NullResult) */
 byte Native_GVarGet(const char *name, nativeVal_t *out);
+/* player i left: the values of the engine variables its scripts set go (a -mp2 free world instance: a variable the
+ * gvar table tags STATE that the scripts set in a player's context reads back as that player's value there) */
+void Native_GVarOverClear(int i);
 /* Scrap.GetLangEntries(name, n) (n < 0: not given, 3) as a list of texts; 0 with the TypeError of its argument for a
  * value that is no text. through the seam (fc-ol2p-charsnpc swaps it), the hook called with the arguments
  * the caller gave */

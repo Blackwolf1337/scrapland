@@ -1078,6 +1078,52 @@ static void Test_LevelScope(void) {
 	NetRepSrv_Destroy(s);
 }
 
+/* the private slots: an entity set with NETREP_SET_ONLY(tag) goes to the clients of that tag alone, the others to
+ * every client */
+static void Test_OnlyScope(void) {
+	static uint8_t msgs[NETREP_MAX_MSGS][NETREP_MSG_MAX];
+	int sizes[NETREP_MAX_MSGS];
+	const uint16_t *made;
+	NetRepState st;
+
+	NetRepServer *s = NetRepSrv_Create();
+	CHECK(s != NULL);
+	if (!s) {
+		return;
+	}
+	int look = NetRepSrv_Look(s, "");
+	NetRepClient *a = NetRepSrv_AddClient(s, NETREP_RATE_MAX), *b = NetRepSrv_AddClient(s, NETREP_RATE_MAX);
+	NetRepSrv_SetTag(a, 1);
+	NetRepSrv_SetTag(b, 2);
+	NetRepSrv_SetView(a, 0.0f, 0.0f, 0.0f, 10000.0f);
+	NetRepSrv_SetView(b, 0.0f, 0.0f, 0.0f, 10000.0f);
+	memset(&st, 0, sizeof(st));
+	st.pos[0] = NetRep_QPos(100.0f);
+	for (uint32_t tick = 1; tick <= 2; tick++) {
+		NetRepSrv_Begin(s, tick);
+		NetRepSrv_SetEx(s, 20, 5, look, &st, NETREP_SET_LEVEL | NETREP_SET_ONLY(1));
+		NetRepSrv_SetEx(s, 21, 1, look, &st, NETREP_SET_ONLY(2));
+		NetRepSrv_SetEx(s, 22, 1, look, &st, 0);
+		NetRepSrv_End(s);
+		if (tick == 1) {
+			NetRepSrv_Build(s, a, msgs, sizes, NETREP_MAX_MSGS);
+			int k = NetRepSrv_Created(a, &made), seen = 0;
+			for (int i = 0; i < k; i++) {
+				seen |= made[i] == 20 ? 1 : made[i] == 21 ? 2 : made[i] == 22 ? 4 : 0;
+			}
+			CHECK(seen == 5);
+			NetRepSrv_Build(s, b, msgs, sizes, NETREP_MAX_MSGS);
+			k = NetRepSrv_Created(b, &made);
+			seen = 0;
+			for (int i = 0; i < k; i++) {
+				seen |= made[i] == 20 ? 1 : made[i] == 21 ? 2 : made[i] == 22 ? 4 : 0;
+			}
+			CHECK(seen == 6);
+		}
+	}
+	NetRepSrv_Destroy(s);
+}
+
 /* the journal: order of the last sets, values, the pool, the wire form */
 static void Test_Journal(void) {
 	NetRepJournal *j = NetRepJ_Create(8, 6);
@@ -1168,6 +1214,7 @@ int main(void) {
 	Test_Priority();
 	Test_ClassBlock();
 	Test_LevelScope();
+	Test_OnlyScope();
 	Test_Journal();
 	printf("simulation:\n");
 	Sim_Run(0, 0, 0, 300, 48 * 1024);

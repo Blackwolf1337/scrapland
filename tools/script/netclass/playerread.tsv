@@ -188,3 +188,7 @@ Speech_RemoteComunication_E	PARTY	a Speech entry in the world's context (a missi
 Hud_Controlled	PARTY	the HUD of the controlled entity read by a mission: the acting member in coop
 Parking.DtritusPlate	WORLD	the world's plate of the level's start (CreateDtritusPlate, BrowseItemPos); a player's own plate is read in its context
 Pk_BrowseItemPos	WORLD	the level's start of an instance: no player's ship there (a player's own is Parking.PlayerJoin in its context)
+Parking.SwitchVehicleMissionCallback	WORLD	a mission's callback of the world's context (a super deal's level start sets it for the group); a player's own is read in its context
+Parking.SwitchCharMissionCallback	WORLD	a mission's callback of the world's context; a player's own is read in its context
+Alarm.AbortMissionCallback	WORLD	a mission's callback of the world's context; a player's own is read in its context
+Menu.MissionScorerCall	WORLD	the HUD callback of the world's context; a player's own HUD reads it in its context

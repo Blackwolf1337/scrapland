@@ -1775,6 +1775,17 @@ static void TC_Line(tcBuf *b, const char *line) {
 		TC_Add(b, "ok\n", -1);
 		return;
 	}
+	/* kill <entity>: the entity dies hit by player 0 (the instance's "kill" line, here for single player) */
+	if (TC_Verb(line, "kill", &arg)) {
+		char ent[0x40];
+		if (!TC_Word(&arg, ent, sizeof(ent))) {
+			TC_Add(b, "error: kill <entity>\n", -1);
+			return;
+		}
+		Travel_TestKill(0, ent);
+		TC_Add(b, "killed\n", -1);
+		return;
+	}
 	/* pres: the records of the presentation interface sent and played (include/scrap/pres.h) */
 	if (TC_Verb(line, "pres", &arg)) {
 		if (arg && !strncmp(arg, "ship ", 5)) {

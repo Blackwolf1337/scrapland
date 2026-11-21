@@ -37,6 +37,7 @@
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
+#include "scrap/travel.h"
 #include "game/Script/levels/Levels.h"
 
 #define MF "MissionsFuncs"
@@ -1191,6 +1192,10 @@ static byte Mf_OnSuperDealFinish(const nativeVal_t *victory, const nativeVal_t *
 	if (k >= 0 && !got) {
 		/* the unbound local of the script for another type */
 		return Mode_Done(&t, Native_Raise(NE_NAME, "data"));
+	}
+	/* not in the original: a group's instance of a -mp2 world ends it for each member (include/scrap/travel.h) */
+	if (k >= 0 && Travel_SessionEnd(k == 1)) {
+		return Mode_Done(&t, 1);
 	}
 	switch (k) {
 	case 0:

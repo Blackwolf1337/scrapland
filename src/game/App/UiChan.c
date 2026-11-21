@@ -1068,6 +1068,32 @@ static void Ui_StateVar(const char *name, const char *value, void *u) {
 	}
 }
 
+/* the save variables of the challenges, races, revenges, crazy deals and super deals (stage 6c), sorted by name */
+#define UI_ACTS 160
+typedef struct {
+	int n;
+	char line[UI_ACTS][192];
+} uiActs_t;
+
+static void Ui_ActVar(const char *name, const char *value, void *u) {
+	static const char *const prefixes[] = { "Challenge.", "Revenge.", "Race.", "Combat.", "Stats.", "CrazyDeal.",
+		"JackInTheBox.", "SuperDeal", "NewBluePrintAvaliable", NULL };
+	uiActs_t *a = u;
+	if (a->n >= UI_ACTS || !strcmp(name, "Challenge.Type")) {
+		return;
+	}
+	for (int k = 0; prefixes[k]; k++) {
+		if (!strncmp(name, prefixes[k], strlen(prefixes[k]))) {
+			Str_PrintfQuiet(a->line[a->n++], sizeof(a->line[0]), "%s\t%s", name, value);
+			return;
+		}
+	}
+}
+
+static int Ui_ActCmp(const void *a, const void *b) {
+	return strcmp(a, b);
+}
+
 /* "ui state [player]": the values the interfaces change, as the player's context reads them */
 static void Ui_State(tcBuf *b, int i) {
 	static const char *const vars[] = { "Char", "Conversor.AvailableChars", "Conversor.FirstConversion", "Hangar.iHangarShip",
@@ -1108,6 +1134,13 @@ static void Ui_State(tcBuf *b, int i) {
 	const char *lives = SaveVar_Get("Player.NumLives");
 	TC_Addf(b, "Player.NumLives\t%s\n", lives ? lives : "(none)");
 	SaveVars_EachSeen(Ui_StateVar, b);
+	static uiActs_t acts;
+	acts.n = 0;
+	SaveVars_EachSeen(Ui_ActVar, &acts);
+	qsort(acts.line, (size_t)acts.n, sizeof(acts.line[0]), Ui_ActCmp);
+	for (int k = 0; k < acts.n; k++) {
+		TC_Addf(b, "%s\n", acts.line[k]);
+	}
 	static const char *const ents[][2] = { { "Parking", "PlayerShip" }, { "Sputnik", "spt" } };
 	cEntity *pair[2] = { NULL, NULL };
 	for (int k = 0; k < 2; k++) {
@@ -1140,6 +1173,29 @@ void Ui_Status(tcBuf *b, const char *arg) {
 		return;
 	}
 	int i, at = 0;
+	if (arg && sscanf(arg, "set %d %n", &i, &at) == 1 && at > 0 && i >= 0 && i < PLAYERS_MAX) {
+		/* "ui set <player> Module.var|value": a module variable as the player's context sets it (a value of a call
+		 * table line: 'text, a number, %Module.var) */
+		char mod[UI_NAME], var[UI_NAME];
+		const char *dot = strchr(arg + at, '.'), *bar = dot ? strchr(dot, '|') : NULL;
+		nativeVal_t v;
+		Native_SetNone(&v);
+		byte ok = dot && bar && dot - (arg + at) < UI_NAME && bar - dot - 1 < UI_NAME;
+		if (ok) {
+			Str_PrintfQuiet(mod, sizeof(mod), "%.*s", (int)(dot - (arg + at)), arg + at);
+			Str_PrintfQuiet(var, sizeof(var), "%.*s", (int)(bar - dot - 1), dot + 1);
+			int was = Players_Enter(i);
+			ok = Mode_Import(mod) && LvN_Value(bar + 1, -1, &v);
+			if (ok) {
+				Mode_ModPut(mod, var, &v);
+			}
+			Native_ErrPrint();
+			Players_Leave(was);
+		}
+		Native_Free(&v);
+		TC_Addf(b, "%s\n", ok ? "set" : "failed");
+		return;
+	}
 	if (arg && sscanf(arg, "call %d %n", &i, &at) == 1 && at > 0 && i >= 0 && i < PLAYERS_MAX) {
 		/* "ui call <player> Module.Func|arg|...": a call table line of the scripts in the player's context (an
 		 * interface the scripts open for that player) */

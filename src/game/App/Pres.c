@@ -335,6 +335,30 @@ void Pres_ModCall(const char *module, const char *func) {
 	pres.calls++;
 }
 
+int Pres_SkelPause(void) {
+	int depth = pres.skel;
+	pres.skel = 0;
+	return depth;
+}
+
+void Pres_SkelResume(int depth) {
+	pres.skel = depth;
+}
+
+void Pres_HudMode(const char *mode) {
+	if (!Pres_Out() || Players_Current() == PLAYERS_NONE || (strcmp(mode, "Walk") && strcmp(mode, "Racer"))) {
+		return;
+	}
+	/* single player's skeleton module clears the HUD first */
+	if (Pres_Begin(PRES_PLAYER, NULL, PRES_O_HUDCLEAR)) {
+		Pres_Send();
+	}
+	if (Pres_Begin(PRES_PLAYER, NULL, PRES_O_ACTIONSET)) {
+		Pres_PutStr(mode);
+		Pres_Send();
+	}
+}
+
 void Pres_ModLeave(const char *module) {
 	if (Pres_Skeleton(module) && pres.skel > 0) {
 		pres.skel--;

@@ -30,6 +30,7 @@
 #include "scrap/players.h"
 #include "scrap/scheduler.h"
 #include "scrap/scorer.h"
+#include "scrap/pres.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -287,6 +288,10 @@ static void Main_BackToGame(int id) {
 
 /* DrawScorer(id, mode): the scorer of a ship, of the character, or of a movie */
 static void Main_DrawScorer(int id, const char *mode) {
+	/* not in the original: a -mp2 player's client builds that HUD's skeleton itself (include/scrap/pres.h) */
+	if (!id) {
+		Pres_HudMode(mode);
+	}
 	/* OBJLIB 5 (9c): the aliases BackMenuFunc (= Create of racerscorer.mod and charscorer.mod) by name, called through
 	 * the entry of the function they hold */
 	if (!strcmp(mode, "Racer")) {
