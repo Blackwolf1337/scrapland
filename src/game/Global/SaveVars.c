@@ -70,6 +70,11 @@ static byte SV_PlayerName(const char *name) {
 	}
 	memcpy(prefix, name, n);
 	prefix[n] = 0;
+	/* coop: every variable is the party's story but those of data/coop/rules.def's list local (a member's own; the
+	 * story of a member's change goes to every member, Coop_SaveVarChanged) */
+	if (Coop_On() && !Party_RuleHas("local", name)) {
+		return 0;
+	}
 	/* PARTY: the coop story's, a player's own in a free world */
 	netTag_t tag = NetClass_Find(NCT_SAVEVAR, prefix);
 	return tag == NC_PLAYER || (tag == NC_PARTY && !Coop_On());

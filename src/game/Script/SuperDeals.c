@@ -263,8 +263,8 @@ static byte Sd_Finish(const char *how, const nativeVal_t *cad, long win, const c
 	return ok;
 }
 
-/* usr = Scrap.UsrEntity(0); if usr: (if usr.IsType("Car"): usr.Life = usr.MaxLife); usr.Invulnerable = 1; not in the
- * original: every member of a coop party (Sd_UsrSafe, Party_All) */
+/* usr = Scrap.UsrEntity(0); if usr: (if usr.IsType("Car"): usr.Life = usr.MaxLife); usr.Invulnerable = 1 (coop: every
+ * member, Party_All) */
 static byte Sd_UsrSafeOne(void *ctx) {
 	nativeVal_t usr, life;
 	(void)ctx;
