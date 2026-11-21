@@ -17,6 +17,7 @@
 #include "scrap/netaudit.h"
 #include "scrap/netrep.h"
 #include "scrap/netscene.h"
+#include "scrap/party.h"
 #include "scrap/objentity.h"
 #include "scrap/play.h"
 #include "scrap/players.h"
@@ -41,10 +42,6 @@
 #define NS_GONE_NS 2000000000ull	/* the scene entity's replica gone that long without an end: the end here */
 
 enum { NS_SKIP_ALL, NS_SKIP_ANY, NS_SKIP_HOST, NS_SKIP_NONE };
-
-static const char ns_rules[] = {
-#embed "../../../data/coop/rules.def"
-	, 0 };
 
 static struct {
 	/* instance */
@@ -91,27 +88,18 @@ int NetScene_Player(void) {
 	return NetScene_On() && !Coop_On() ? ns.player : PLAYERS_NONE;
 }
 
-/* SceneSkip of data/coop/rules.def */
+/* SceneSkip of data/coop/rules.def (include/scrap/party.h) */
 static int NetScene_Rule(void) {
 	static const char *const names[] = { "all", "any", "host", "none" };
 	if (ns.rule >= 0) {
 		return ns.rule;
 	}
+	const char *v = Party_Rule("SceneSkip", "all");
 	ns.rule = NS_SKIP_ALL;
-	for (const char *p = ns_rules; *p;) {
-		char key[32], val[32];
-		const char *eol = strchr(p, '\n');
-		int len = eol ? (int)(eol - p) : (int)strlen(p);
-		char line[128];
-		Str_PrintfQuiet(line, sizeof(line), "%.*s", len < 127 ? len : 127, p);
-		if (line[0] != '#' && sscanf(line, "%31s %31s", key, val) == 2 && !strcmp(key, "SceneSkip")) {
-			for (int k = 0; k < 4; k++) {
-				if (!strcmp(val, names[k])) {
-					ns.rule = k;
-				}
-			}
+	for (int k = 0; k < 4; k++) {
+		if (!strcmp(v, names[k])) {
+			ns.rule = k;
 		}
-		p += len + (eol != NULL);
 	}
 	return ns.rule;
 }

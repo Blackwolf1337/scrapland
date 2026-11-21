@@ -995,6 +995,15 @@ void cWorld_ShowDebrisInfo(cWorld *self, int x, int y) {
 	}
 }
 
+static byte world_camOwn;			/* cWorld_SetCamOwn runs */
+
+int cWorld_SetCamOwn(cWorld *world, int i, const char *name) {
+	world_camOwn = 1;
+	int r = cWorld_SetCam(world, i, name);
+	world_camOwn = 0;
+	return r;
+}
+
 /* view i shows the camera entity name ("" none); 2 if there is no such camera */
 int cWorld_SetCam(cWorld *world, int i, const char *name) {
 	NetAudit_Site(NA_CAMERA, i == 0 ? "cam.set" : "cam.set.view");
@@ -1010,8 +1019,9 @@ int cWorld_SetCam(cWorld *world, int i, const char *name) {
 	if (i == 0) {
 		Players_NoteCam(name);
 		/* the client's camera is its own (Play.c); a camera path of the scripts (boarding, parking) is a scene of a
-		 * player, stage 4.5's: counted apart */
-		if (g_Mp2 && !InitSteps_Entering()) {
+		 * player, stage 4.5's: counted apart; no camera (a camera entity of view 0 deleted: the coop stand-in's at the
+		 * first member's join) shows nothing to any player */
+		if (g_Mp2 && !InitSteps_Entering() && *name && !world_camOwn) {
 			byte path = cam && Entity_IsType(cam, TYEN_CAMPATH);
 			Pres_NoRoute(NA_CAMERA, path ? "pres.scene:camera:" : "pres.unforwarded:camera:", Pres_ModSite());
 			/* the path goes to the player as a scene (include/scrap/netscene.h) */

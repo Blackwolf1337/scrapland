@@ -26,6 +26,7 @@
 #include "scrap/coop.h"
 #include "scrap/game.h"
 #include "scrap/netscene.h"
+#include "scrap/party.h"
 #include "scrap/play.h"
 #include "scrap/players.h"
 #include "scrap/pres.h"
@@ -700,19 +701,28 @@ static byte Sc_HideType(const char *type) {
 	return ok;
 }
 
-/* HideChars(): the walking characters hide (the player does not select anything during the scene) */
-static byte Sc_HideChars(void) {
-	nativeVal_t empty, e = { 0 };
-	Native_SetEmpty(&empty, NV_LIST);
-	int walk = Mode_Put(SC, "HidenChars", NULL, &empty) && Mode_UsrHandle(&e) ? Native_True(&e) : -1;
+/* the player's character talks to no one (its SelectedEntity), for each member of a coop party (include/scrap/party.h) */
+static byte Sc_Unselect(void *ctx) {
+	nativeVal_t e = { 0 };
+	(void)ctx;
+	int walk = Mode_UsrHandle(&e) ? Native_True(&e) : -1;
 	if (walk > 0) {
 		walk = Mode_VIsType(&e, "WalkChar");
 	}
+	byte ok = walk >= 0 && (!walk || LvN_SetS(&e, "SelectedEntity", ""));
+	Native_Free(&e);
+	return ok;
+}
+
+/* HideChars(): the walking characters hide (the player does not select anything during the scene) */
+static byte Sc_HideChars(void) {
+	nativeVal_t empty;
+	Native_SetEmpty(&empty, NV_LIST);
 	/* not in the original: a sandbox instance hides nothing, the scene player's client hides the characters for
 	 * itself (include/scrap/netscene.h) */
-	byte ok = walk >= 0 && (!walk || LvN_SetS(&e, "SelectedEntity", "")) && (NetScene_LocalHide() || Sc_HideType("WalkChar"));
+	byte ok = Mode_Put(SC, "HidenChars", NULL, &empty) && Party_All(Sc_Unselect, NULL) &&
+		(NetScene_LocalHide() || Sc_HideType("WalkChar"));
 	Native_Free(&empty);
-	Native_Free(&e);
 	return ok;
 }
 

@@ -131,3 +131,56 @@ Sound_UpdateMusic	ANY	the action music while the alarm is on (the instance plays
 SG_MarkWayPoint	NEAREST	the way point of the player near the entity that runs (a conversor, a door)
 Speech.LaunchedTauntEntityName	NEAREST	the taunt a police entity launches (Speech.Taunt from its logic) is the nearest player's (stage 4.2: the city's and the arenas' police)
 CharConversor.PrevConv	NEAREST	an NPC that comes back at a conversion point near the player (CharsNPC repositioning in its logic) reads the nearest player's conversor
+CharConversor._usrName	PARTY	the conversor's flow in the world's context (a machine's action): the acting member in coop, else the nearest
+CharConversor._charName	PARTY	the conversor's flow in the world's context (a machine's action): the acting member in coop, else the nearest
+CharConversor.newChar	PARTY	the conversor's flow in the world's context (a machine's action): the acting member in coop, else the nearest
+CharConversor.prevChar	PARTY	the conversor's flow in the world's context (a machine's action): the acting member in coop, else the nearest
+CharConversor.afterExitConversor	PARTY	the conversor's flow in the world's context (a machine's action): the acting member in coop, else the nearest
+Metro.MissionMap	PARTY	the metro's trip of a mission read by the level's or mission's code: the acting member in coop
+Metro.OutOfMetro	PARTY	the metro's trip of a mission read by the level's or mission's code: the acting member in coop
+NewsPanel.act	PARTY	a news panel's state read by a mission or the panel's logic: the acting member in coop
+NewsPanel.ShowingNews	PARTY	a news panel's state read by a mission or the panel's logic: the acting member in coop
+Parking.LastCamera	PARTY	the last parking of the player read by a mission or a parking callback: the acting member in coop
+Parking.LastPark	PARTY	the last parking of the player read by a mission or a parking callback: the acting member in coop
+Parking.LastParkingZone	PARTY	the last parking of the player read by a mission or a parking callback: the acting member in coop
+PhoneCab.audioComEntity	PARTY	the phone cab's remote talk read by a mission: the acting member in coop
+Speech.AnsAnima	PARTY	the talk of the player read by a mission or a character script: the acting member in coop
+Speech.ArrowCanMission	PARTY	the talk of the player read by a mission or a character script: the acting member in coop
+Speech.LockAlarm	PARTY	the talk of the player read by a mission or a character script: the acting member in coop
+Speech.NPCAnswer	PARTY	the talk of the player read by a mission or a character script: the acting member in coop
+Speech.NPCAnswerTime	PARTY	the talk of the player read by a mission or a character script: the acting member in coop
+Speech.NPCName	PARTY	the talk of the player read by a mission or a character script: the acting member in coop
+Speech.ObjAnswer	PARTY	the talk of the player read by a mission or a character script: the acting member in coop
+Speech.ObjAutoAnswerAction	PARTY	the talk of the player read by a mission or a character script: the acting member in coop
+Speech.ObjAutoAnswerDefLoop	PARTY	the talk of the player read by a mission or a character script: the acting member in coop
+Speech.ObjCharType	PARTY	the talk of the player read by a mission or a character script: the acting member in coop
+Speech.ObjEntity	PARTY	the talk of the player read by a mission or a character script: the acting member in coop
+Speech.OnEndOfSpeech	PARTY	the talk of the player read by a mission or a character script: the acting member in coop
+Speech.OnEndOfSpeechParams	PARTY	the talk of the player read by a mission or a character script: the acting member in coop
+Speech.OnOutOfRange	PARTY	the talk of the player read by a mission or a character script: the acting member in coop
+Speech.PlayerName	PARTY	the talk of the player read by a mission or a character script: the acting member in coop
+Speech.TalkListen	PARTY	the talk of the player read by a mission or a character script: the acting member in coop
+Speech.TextColor	PARTY	the talk of the player read by a mission or a character script: the acting member in coop
+Speech_AddRemoteCom_E	PARTY	a Speech entry in the world's context (a mission's remote talk): the acting member in coop
+Speech_CalculateSpeechTime_E	PARTY	a Speech entry in the world's context (a mission's talk): the acting member in coop
+Speech_LaunchTaunt_E	PARTY	a Speech entry in the world's context (a taunt of a mission's enemy): the acting member in coop
+Speech_ProcessRemoteCom_E	PARTY	a Speech entry in the world's context (a mission's remote talk): the acting member in coop
+Speech_PlayVoiceScheduled_E	PARTY	a Speech entry in the world's context (a scheduled voice of a talk): the acting member in coop
+Speech_RestoreState_E	PARTY	a Speech entry in the world's context (the end of a talk): the acting member in coop
+Sp_Usr	PARTY	the speaker of a talk in the world's context: the acting member in coop
+Scrap_GetAlarm_E	PARTY	a mission reads the alarm: the acting member's in coop
+Data_AddTransportToList	PARTY	GetDataPart1 (DownTown): the transports the player hunts, the acting member in coop
+Data_OnTransportsDamage	PARTY	GetDataPart1 (DownTown): a transport hit by the player, the acting member in coop
+Dt_UsrTarget	PARTY	a DownTown mission sets the player's target: the acting member in coop
+Pk_BrowseItemPos	PARTY	the parkings of a level's start: the party's ship in coop at the place single player starts
+LvN_Usr	PARTY	a level's mission reads the player: the acting member in coop
+Sc_PlayAll	PARTY	a scene keeps the player of its start (its usr): the acting member in coop
+Sc_Unselect	ALL	a scene hides the characters: every member's SelectedEntity cleared (Party_All)
+PhoneCab_Free	PARTY	a phone cab's or desktop's talk ends (its free) in the world's context: the acting member in coop
+Speech_TestInRange_E	PARTY	a Speech entry in the world's context (the range of a talk): the acting member in coop
+Scrap_AlarmSet	ALL	Scrap.SetAlarm of a mission: the alarm of every member in coop (Party_All), else the nearest player's
+BeatPickus_OnThugRespawn	PARTY	BeatPickus (Police): a thug's respawn near the player, the acting member in coop
+Bp_SetThugsState	PARTY	BeatPickus (Police): the thugs follow the player, the acting member in coop
+Gd_UsrThere	PARTY	IntoTheGDB (GDB): the player at the restore point, the acting member in coop
+GoWithHuman_Init	PARTY	GoWithHuman (Press): the human follows the player, the acting member in coop
+Speech_ScheduledVoiceCallback_E	PARTY	a Speech entry in the world's context (a scheduled voice's end): the acting member in coop

@@ -12,6 +12,7 @@
 #include "scrap/nativeobj.h"
 #include "scrap/netaudit.h"
 #include "scrap/scorer.h"
+#include "scrap/party.h"
 #include "scrap/players.h"
 #include "scrap/pres.h"
 #include "scrap/scrap.h"
@@ -633,13 +634,18 @@ API_FN(Scrap, ScreenShot) {
 	return 1;
 }
 
-/* SetAlarm(level) */
+static byte Scrap_AlarmSet(void *level) {
+	Alarm_Set(Players_CurAlarm(), *(const float *)level);
+	return 1;
+}
+
+/* SetAlarm(level); not in the original: a coop party's every member (include/scrap/party.h) */
 API_FN(Scrap, SetAlarm) {
 	float level;
 	if (!Mode_Parse(a, n, "f", &level)) {
 		return 0;
 	}
-	Alarm_Set(Players_CurAlarm(), level);
+	Party_All(Scrap_AlarmSet, &level);
 	return 1;
 }
 
