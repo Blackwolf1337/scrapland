@@ -59,6 +59,7 @@ typedef struct ReRec {
 	int look;						/* the look id of the last snapshot, -1 */
 	byte dirty;						/* journal entries changed since the last flush */
 	byte lookAge;					/* snapshots since its look was made */
+	byte kind;						/* RepEnt_Kind of its entity (a class does not change) */
 } ReRec;
 
 typedef struct ReEvent {
@@ -277,6 +278,7 @@ static int RepEnt_SlotFor(cEntity *e) {
 		re.rec[s].look = -1;
 		re.rec[s].dirty = 0;
 		re.rec[s].lookAge = (byte)(s % RE_LOOK_EVERY);
+		re.rec[s].kind = 0;
 		e->netSlot = (uint16_t)(s + 1);
 		return s;
 	}
@@ -508,7 +510,11 @@ void RepEnt_Gather(NetRepServer *srv, uint32_t tick) {
 	RepEnt_Resync();
 	NetRepSrv_Begin(srv, tick);
 	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
-		int kind = RepEnt_Kind(e);
+		/* the kind of an entity with a slot as it was (the class tests of RepEnt_Kind for 2000 entities each
+		 * snapshot), what can change about it tested again */
+		int had = e->netSlot ? e->netSlot - 1 : -1;
+		int kind = had >= 0 && re.rec[had].e == e && re.rec[had].kind ? (e->deadNode.target || !e->name ||
+			Coop_IsStandIn(e) ? 0 : re.rec[had].kind) : RepEnt_Kind(e);
 		if (!kind) {
 			continue;
 		}
@@ -516,6 +522,7 @@ void RepEnt_Gather(NetRepServer *srv, uint32_t tick) {
 		if (s < 0) {
 			continue;
 		}
+		re.rec[s].kind = (byte)kind;
 		/* the look again when the scripts set a variable of it (a pilot, a motor, a model), every frame for a player's
 		 * entity, else every RE_LOOK_EVERY snapshots (what the C code changes: the weapons, the traffic flag) */
 		int id = re.rec[s].look;

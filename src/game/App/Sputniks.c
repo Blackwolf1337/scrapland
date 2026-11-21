@@ -3,6 +3,7 @@
  * the original.
  */
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 
 #include "scrap/console.h"
@@ -35,6 +36,7 @@
 #define SPK_NAME 64
 #define SPK_HOLD 10.0				/* s: the coop member that used Sputnik is hidden by its interface before the screen */
 #define SPK_BESIDE 1500.0f			/* units: the coop story's Sputnik stands beside a ship this near */
+#define SPK_OWNER_CACHE 128			/* the owners of the players' Sputniks found last (Spk_SpOwner) */
 
 typedef struct SpkPlayer {
 	cEntity *spt;					/* its Sputnik (Sputnik.spt of the player), read while World_FindEntity(name) is it */
@@ -302,24 +304,37 @@ static byte Spk_CoopUse(int i, cEntity *t) {
 	return 1;
 }
 
+/* e is player i's own Sputnik (its Sputnik.spt) */
+static byte Spk_IsOwnSpt(int i, cEntity *e) {
+	nativeVal_t s;
+	int was = Players_Enter(i);
+	Native_SetNone(&s);
+	cEntity *spt = Mode_ModGet("Sputnik", "spt", &s) && s.type == NV_ENT ? Native_Ent(&s) : NULL;
+	Native_Free(&s);
+	Native_ErrClear();
+	Players_Leave(was);
+	return spt == e;
+}
+
 /* with single player's flows (include/scrap/play.h): the player whose own Sputnik (its Sputnik.spt) e is, -1 */
 static int Spk_SpOwner(cEntity *e) {
 	cActCtrl *a = Entity_IsType(e, TYEN_WALKCHAR) ? WLife(e)->actCtrl : NULL;
 	if (!a || !a->cls || !a->cls->name || strcmp(a->cls->name, "Sputnik")) {
 		return -1;
 	}
+	/* the player found for it the last time first (the frame loop asks for every Sputnik of 64 players each frame) */
+	static struct {
+		const cEntity *e;
+		int pl;
+	} last[SPK_OWNER_CACHE];
+	int c = (int)(((uintptr_t)e >> 4) % SPK_OWNER_CACHE);
+	if (last[c].e == e && Players_InUse(last[c].pl) && Spk_IsOwnSpt(last[c].pl, e)) {
+		return last[c].pl;
+	}
 	for (int i = 0; i < PLAYERS_MAX; i++) {
-		nativeVal_t s;
-		if (!Players_InUse(i)) {
-			continue;
-		}
-		int was = Players_Enter(i);
-		Native_SetNone(&s);
-		cEntity *spt = Mode_ModGet("Sputnik", "spt", &s) && s.type == NV_ENT ? Native_Ent(&s) : NULL;
-		Native_Free(&s);
-		Native_ErrClear();
-		Players_Leave(was);
-		if (spt == e) {
+		if (Players_InUse(i) && Spk_IsOwnSpt(i, e)) {
+			last[c].e = e;
+			last[c].pl = i;
 			return i;
 		}
 	}
