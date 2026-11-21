@@ -943,6 +943,25 @@ void NetScene_Verb(tcBuf *b, const char *arg) {
 		TC_Addf(b, "%s\n", ok ? "playing" : "error: no such scene or its load failed");
 		return;
 	}
+	if (!strcmp(word, "call") && n >= 2) {
+		/* a function of a mission's module (imported from the level pack as SceneList_Import does) as a call table line
+		 * "Module.Func|arg|...", in the context of player (the instance): the scenes of the missions that move the
+		 * player's own camera (Mission_IdentifyMerc.InitIdentifyMerc) */
+		char mod[64];
+		const char *one[2] = { what, NULL };
+		Str_PrintfQuiet(mod, sizeof(mod), "%.*s", (int)strcspn(what, ".|"), what);
+		int was = Players_Current();
+		if (g_Instance && player != PLAYERS_NONE && player != was) {
+			Players_Enter(player);
+		}
+		byte ok = SceneList_Import(mod) && Mode_Calls(NULL, one);
+		Native_ErrPrint();
+		if (Players_Current() != was) {
+			Players_Leave(was);
+		}
+		TC_Addf(b, "%s\n", ok ? "called" : "error: the call failed");
+		return;
+	}
 	if (!strcmp(word, "skip")) {
 		if (g_Instance) {
 			NetScene_Skip(n >= 2 ? atoi(what) : 0);
@@ -952,5 +971,5 @@ void NetScene_Verb(tcBuf *b, const char *arg) {
 		TC_Add(b, "ok\n", -1);
 		return;
 	}
-	TC_Add(b, "error: scene [state|list|play <name> [player]|skip [player]]\n", -1);
+	TC_Add(b, "error: scene [state|list|play <name> [player]|call <Module.Func|arg...> [player]|skip [player]]\n", -1);
 }
