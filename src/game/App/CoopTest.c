@@ -31,6 +31,7 @@
 #include "scrap/party.h"
 #include "scrap/nodesworld.h"
 #include "scrap/nodesworld2d.h"
+#include "scrap/nodesworldsup.h"
 #include "scrap/places.h"
 #include "scrap/platform.h"
 #include "scrap/play.h"
@@ -693,6 +694,12 @@ static byte Cp_PathPoint(cEntity *e, const vec3_t *to, vec3_t *next) {
 		return 0;
 	}
 	vec3_t from = e->pos, dest = *to;
+	/* both in the graph's grid: a point outside fails the grid's check (a member pushed off the level by a crowd at one
+	 * place, Police and Temple with 8 players) */
+	CNodesWorld *w = NW2D_SUP(g_NodesWorld2D);
+	if (!CNodesWorldSup_InGrid(w, &from) || !CNodesWorldSup_InGrid(w, &dest)) {
+		return 0;
+	}
 	float r = Obj_GetRadius(e), h = WChar(e)->floorDist, fr = WithLife_GetActCtrl(e)->cls->sRadius;
 	byte noPath = 0, reach = 0, got = 0;
 	int res = 0;
@@ -726,6 +733,10 @@ static byte Cp_FlyPoint(cEntity *e, const vec3_t *to, vec3_t *next) {
 		return 0;
 	}
 	vec3_t from = e->pos, dest = *to;
+	/* both in the graph's grid (as for the walk: a ship pushed over the level's top) */
+	if (!CNodesWorldSup_InGrid(g_NodesWorld, &from) || !CNodesWorldSup_InGrid(g_NodesWorld, &dest)) {
+		return 0;
+	}
 	float r = Obj_GetRadius(e);
 	byte startOk = 0, goalOk = 0, got = 0;
 	int state = 0;
