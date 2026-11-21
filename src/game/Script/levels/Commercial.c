@@ -290,8 +290,7 @@ static byte CmMap_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 			return 0;
 		}
 	}
-	Native_SetInt(&v, 1);
-	if (!Mode_SetModVar("Init", "Outdoor", &v)) {
+	if (!Lv_Flags(1, NULL)) {
 		return 0;
 	}
 	if (LvN_SaveIs("RobotsControlledByBoss", "1")) {
@@ -331,8 +330,18 @@ static byte CmMap_Init(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
 	return Mode_Import("Metro") && Mode_Import("Elevator") && PORT_CALL(Metro, SetAsMetro, NULL, "s", "DM_Door_MetroExt_Comercial") &&
-		Mode_Connect("DM_Door_Elevator_Temple", "Temple", 0) && Mode_GVarSetI("CameraCloudRed", 30) && Mode_GVarSetI("CameraCloudGreen", 60) &&
-		Mode_GVarSetI("CameraCloudBlue", 100);
+		Mode_Connect("DM_Door_Elevator_Temple", "Temple", 0) && Lv_Clouds(30, 60, 100);
+}
+
+/* the client part (Levels.h): outdoors, the colour of the clouds */
+byte Commercial_ClientStatus(const nativeVal_t *path) {
+	(void)path;
+	return Lv_Flags(1, NULL);
+}
+
+byte Commercial_ClientInit(const nativeVal_t *path) {
+	(void)path;
+	return Lv_Clouds(30, 60, 100);
 }
 
 LV_FN(CmMap, InitStatusA, 1, CmMap_InitStatus)

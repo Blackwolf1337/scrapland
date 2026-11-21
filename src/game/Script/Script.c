@@ -50,6 +50,8 @@
 #include "scrap/crt.h"
 #include "scrap/filepak.h"
 #include "scrap/modvars.h"
+#include "scrap/netaudit.h"
+#include "scrap/netclass.h"
 #include "scrap/nativeobj.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/pyentity.h"
@@ -1102,6 +1104,36 @@ static void Def_ArgsFree(defArgs_t *a) {
  * last), by name to a function of the registry that something else replaced, by name to any other function */
 static portSite_t def_site = { .ref = &port_value, .file = __FILE__, .line = __LINE__ };
 static unsigned long def_byName, def_other, def_errors;
+/* not in the original: the definitions only of a section (Script_DefClient) */
+static byte def_client;
+
+void Script_DefClient(byte on) {
+	def_client = on;
+}
+
+/* a call line of a definitions-only run: an engine function the api table tags DEF, CLIENT or QUERY, Scrap.Set of an
+ * engine variable a client keeps itself (WORLD_SETTING, STATE, CLIENT_ONLY), a function of a script module the module
+ * table tags DEF; the others are the server's and counted as client.def.skip:<Module.Func> */
+static byte Def_ClientCall(const char *module, const char *func, const defArgs_t *a) {
+	char key[0x80];
+	netTag_t tag;
+	Str_PrintfQuiet(key, sizeof(key), "%s.%s", module, func);
+	if (!strcmp(key, "Scrap.Set")) {
+		tag = a->n >= 1 && a->v[0].type == NV_STR ? NetClass_Find(NCT_GVAR, Native_Text(&a->v[0])) : NC_ABSENT;
+		if (tag == NC_WORLD_SETTING || tag == NC_STATE || tag == NC_CLIENT_ONLY) {
+			return 1;
+		}
+	} else if (Port_Find(module, func)) {
+		tag = NetClass_Find(NCT_API, key);
+		if (tag == NC_DEF || tag == NC_CLIENT || tag == NC_QUERY) {
+			return 1;
+		}
+	} else if (NetClass_ModuleTag(module, func, NULL) == NC_DEF) {
+		return 1;
+	}
+	NetAudit_Name(NA_CREATE, "client.def.skip:", key);
+	return 0;
+}
 
 void Script_DefCounts(unsigned long *registry, unsigned long *byName, unsigned long *other, unsigned long *errors,
 	byte reset) {
@@ -1213,7 +1245,7 @@ static void Def_DoCall(scriptDef_t *m, scriptLine_t *l) {
 	}
 	defArgs_t a;
 	Def_Args(m, l, 2, &a);
-	if (!m->failed) {
+	if (!m->failed && (!def_client || Def_ClientCall(module, func, &a))) {
 		byte ok = Def_Call(module, func, &a);
 		def_errors += !ok;
 		if (m->stop) {
@@ -1490,6 +1522,11 @@ static void Def_Line(scriptDef_t *m, scriptLine_t *l, const char *next) {
 		return;
 	}
 	m->open = NULL;
+	/* a definitions-only run (Script_DefClient): the module variables and the calls of Def_ClientCall */
+	if (def_client && strcmp(cmd, "setvar") && strcmp(cmd, "call") && strcmp(cmd, "do")) {
+		NetAudit_Name(NA_CREATE, "client.def.skip:", cmd);
+		return;
+	}
 	if ((!strcmp(cmd, "style") || !strcmp(cmd, "list")) && l->n == 2) {
 		if (m->numBlocks >= SCRIPT_MAX_BLOCKS) {
 			Con_Warnf("%s:%d: too many styles and lists\n", m->name, m->line);

@@ -31,10 +31,10 @@
  * (the replica of the scene entity comes with the server's action time), its entity hidden as the scene's start hid
  * the others; in sandbox it is not in the audience and sees the actors.
  *
- * Tests: the test verb "scene" (list, play <name> [player], call <Module.Func|arg...> [player], state, skip [player]); SCRAP_SCENE_SHOTS=<dir>:<t>,<t>,...
- * takes a screenshot <dir>/<scene>-<k>.pcx at each scene time t (s of the scene entity's action; f<x>: that part of
- * the scene's length) of every scene that plays here, in single player and on a client alike, drawn at that scene
- * time exactly (NetScene_ShotStep).
+ * Tests: the test verb "scene" (list, play <name> [player], call <Module.Func|arg...> [player], state, skip
+ * [player]); SCRAP_SCENE_SHOTS=<dir>:<t>,<t>,... takes a screenshot <dir>/<scene>-<k>.pcx at each scene time t (s of
+ * the scene entity's action; f<x>: that part of the scene's length) of every scene that plays here, in single player
+ * and on a client alike, drawn at that scene time exactly (NetScene_ShotStep).
  *
  * Audit (NA_HUD): "scene.start:<name>", "scene.end:<name>", "scene.skip:<name>" on the instance; on the client
  * "scene.client:<name>", "scene.load:<name>", "pres.missing:scene:<name>" (no tables of the scene here).

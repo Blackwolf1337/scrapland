@@ -294,6 +294,11 @@ static byte Sy_UsePhone(const nativeVal_t *a, const char *module, const syPhone_
 
 /* ---- Map ---- */
 
+/* outdoors, the scrapyard (the flags of Init) */
+static byte Sy_Flags(void) {
+	return Lv_Flags(1, NULL) && LvN_ModSetI("Init", "isScrapYard", 1);
+}
+
 /* InitStatus(LevelPath): outdoors, the scrapyard, the police; the traffic by who controls the robots, the metro and
  * the elevator */
 static byte Map_InitStatusN(void) {
@@ -306,7 +311,7 @@ static byte Map_InitStatusN(void) {
 			return 0;
 		}
 	}
-	if (!LvN_ModSetI("Init", "Outdoor", 1) || !LvN_ModSetI("Init", "isScrapYard", 1) || !LvN_ModSetI("OutPolice", "PoliceActive", 1)) {
+	if (!Sy_Flags() || !LvN_ModSetI("OutPolice", "PoliceActive", 1)) {
 		return 0;
 	}
 	if (LvN_SaveIs("RobotsControlledByBoss", "1")) {
@@ -331,7 +336,18 @@ static byte Map_InitN(void) {
 	return Mode_Connect("DM_Door_Elevator_GamblinDen", "GamblinDen", 0) &&
 		PORT_CALL(Metro, SetAsMetro, NULL, "s", "DM_Door_MetroExt_ScrapYard") &&
 		(!LvN_SaveIs("LonelyMercLairActive", "1") || PORT_CALL(Parking, CreateLonelyMercParkings, NULL, "")) &&
-		Mode_GVarSetI("CameraCloudRed", 77) && Mode_GVarSetI("CameraCloudGreen", 80) && Mode_GVarSetI("CameraCloudBlue", 60);
+		Lv_Clouds(77, 80, 60);
+}
+
+/* the client part (Levels.h): the flags, the colour of the clouds */
+byte Scrapyard_ClientStatus(const nativeVal_t *path) {
+	(void)path;
+	return Sy_Flags();
+}
+
+byte Scrapyard_ClientInit(const nativeVal_t *path) {
+	(void)path;
+	return Lv_Clouds(77, 80, 60);
 }
 
 MODE_FN(Scrapyard, InitStatus, 1, Map_InitStatusN())

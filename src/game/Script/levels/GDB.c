@@ -208,8 +208,7 @@ static byte GDB_InitStatus(void) {
 	if (!Mode_Import("Init") || !Mode_Import("Chars") || !Mode_Import("Elevator") || !Mode_Import("OutPolice")) {
 		return 0;
 	}
-	Native_SetInt(&v, 1);
-	byte ok = Mode_SetModVar("Init", "Outdoor", &v);
+	byte ok = Lv_Flags(1, NULL);
 	Native_SetInt(&v, 0);
 	ok = ok && Mode_SetModVar("OutPolice", "PoliceActive", &v) && Mode_GVarSetI("iTrafficNumber", 0);
 	if (ok) {
@@ -223,8 +222,7 @@ static byte GDB_InitStatus(void) {
  * bishops as the police */
 static byte GDB_Init(void) {
 	nativeVal_t mp, from, to;
-	if (!Mode_Import("Init") || !Mode_GVarSetI("CameraCloudRed", 191) || !Mode_GVarSetI("CameraCloudGreen", 123) ||
-		!Mode_GVarSetI("CameraCloudBlue", 184) || !Mode_DelSchedS("InitMercs") || !LvN_ModGet("Init", "MultiPlayer", &mp)) {
+	if (!Mode_Import("Init") || !Lv_Clouds(191, 123, 184) || !Mode_DelSchedS("InitMercs") || !LvN_ModGet("Init", "MultiPlayer", &mp)) {
 		return 0;
 	}
 	int multi = Native_True(&mp);
@@ -247,6 +245,17 @@ static byte GDB_Init(void) {
 	}
 	int bishops = ok ? LvN_GTrue(GM, "CreateBishops") : -1;
 	return bishops > 0 ? PORT_LOWN(Map, InitPoliceBishops, NULL, "") : bishops == 0;
+}
+
+/* the client part (Levels.h): outdoors, the colour of the clouds (the player as the bishop is the server's) */
+byte GDB_ClientStatus(const nativeVal_t *path) {
+	(void)path;
+	return Lv_Flags(1, NULL);
+}
+
+byte GDB_ClientInit(const nativeVal_t *path) {
+	(void)path;
+	return Lv_Clouds(191, 123, 184);
 }
 
 /* InitPoliceBishops(): the alarm meter, the four waves of bishops and archbishops, the first one */

@@ -50,19 +50,19 @@ static byte Abi_Dummy(const char *pattern, nativeVal_t *dummy) {
 	return Mode_DummyStartSeam(pattern, 1) && Mode_DummyNextSeam(dummy);
 }
 
+/* the character classes of the friends at the end of the story */
+static const char *const abi_res[] = { "Human", "Betty", "CrazyGambler", "Berto" };
+
 /* InitStatus(LevelPath): an indoor map; the four friends of Dtritus, the mission after the final fight */
 static byte Abi_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
-	static const char *const res[] = { "Human", "Betty", "CrazyGambler", "Berto" };
 	static const char *const chars[][2] = { { "Human_Default", "CreateHuman" }, { "Betty_Default", "CreateBetty" },
 		{ "Berto_Default", "CreateBerto" }, { "CrazyGambler_Default", "CreateCrazyGambler" } };
 	static const char *const vars[][2] = { { "Mission.Map", "GamblinDen" }, { "Mission.Library", "Mission_AfterFinalFight" },
 		{ "Journalist.Berto_Defaut", "noplace" }, { "Journalist.Betty_Defaut", "noplace" },
 		{ "Journalist.Humprey_Defaut", "noplace" }, { "PoliceBossAtPolice", "0" }, { "CrazyGamblerAtGambinDen", "1" } };
-	nativeVal_t zero;
 	(void)a;
 	(void)out;
-	Native_SetInt(&zero, 0);
-	if (!Mode_Import("Init") || !Mode_Import("SaveGame") || !Mode_SetModVar("Init", "Outdoor", &zero) ||
+	if (!Mode_Import("Init") || !Mode_Import("SaveGame") || !Lv_Flags(0, NULL) ||
 		!PORT_CALL(SaveGame, MMDesc, NULL, "si", "Mission_TheEnd_MissionText1", 1L) ||
 		!PORT_CALL(Elevator, SetDef, NULL, "ss", "Teleporter", "DM_Door_Teleporter_GamblinDen")) {
 		return 0;
@@ -70,10 +70,8 @@ static byte Abi_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	SaveVar_Set("ComeFrom", "");
 	SaveVar_Set("Spawn", "DM_Player_Spawn");
 	SaveVar_Set("Char", "Dtritus");
-	for (int i = 0; i < 4; i++) {
-		if (!PORT_CALL(Chars, AddNewCharRes, NULL, "s", res[i])) {
-			return 0;
-		}
+	if (!Lv_CharRes(abi_res, 4)) {
+		return 0;
 	}
 	for (int i = 0; i < 4; i++) {
 		/* OBJLIB 6: the Create functions are sections of map.def */
@@ -92,7 +90,7 @@ static byte Abi_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 static byte Abi_Init(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
-	if (!Mode_Import("Menu") || !Mode_GVarSetI("isActionIndoor", 0) || !LvN_SetMusic("Music/AfterFinalFight.ogg", 1.0)) {
+	if (!Mode_Import("Menu") || !ABIndoor_ClientInit(NULL) || !LvN_SetMusic("Music/AfterFinalFight.ogg", 1.0)) {
 		return 0;
 	}
 	byte ok = 1;
@@ -281,6 +279,18 @@ static byte Abi_FadeEndTitle(const nativeVal_t *a, nativeVal_t *out) {
 	(void)out;
 	return Abi_MusicPlayer("", "fadeout", 1 / 5.0) && Mode_GVarSetN("FadeOutFinalTime", 3.0) &&
 		LvN_ScorerSetS(&a[0], "BlackSquare", "OnRender", "!ScorerSpriteFadeOutFinal");
+}
+
+/* the client part (Levels.h): an indoor map, the classes of the friends at the end of the story; no action music
+ * indoors (the music comes with the server's, include/scrap/pres.h) */
+byte ABIndoor_ClientStatus(const nativeVal_t *path) {
+	(void)path;
+	return Lv_Flags(0, NULL) && Lv_CharRes(abi_res, 4);
+}
+
+byte ABIndoor_ClientInit(const nativeVal_t *path) {
+	(void)path;
+	return Mode_GVarSetI("isActionIndoor", 0);
 }
 
 LV_FN(Abi, InitStatusPy, 1, Abi_InitStatus)

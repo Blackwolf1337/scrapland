@@ -161,6 +161,16 @@ static byte Tp_Arrive(const char *dummyName) {
 	return ok;
 }
 
+/* an indoor map next to Commercial (the flags of Init, set as the script sets them: a failure is not checked) */
+static void Tp_Flags(void) {
+	nativeVal_t v;
+	Native_SetInt(&v, 0);
+	LvN_SetVar("Init", "Outdoor", &v);
+	LvN_Str(&v, "Commercial");
+	LvN_SetVar("Init", "OutArea", &v);
+	Native_Free(&v);
+}
+
 /* ---- Map ---- */
 
 static byte TpMap_InitStatus(void) {
@@ -172,11 +182,7 @@ static byte TpMap_InitStatus(void) {
 	if (!Mode_Import("Init") || !Mode_Import("Elevator") || !Mode_Import("CharsNPC") || !Mode_Import("Messenger")) {
 		return 0;
 	}
-	Native_SetInt(&v, 0);
-	LvN_SetVar("Init", "Outdoor", &v);
-	LvN_Str(&v, "Commercial");
-	LvN_SetVar("Init", "OutArea", &v);
-	Native_Free(&v);
+	Tp_Flags();
 	Native_SetInt(&v, 0);
 	LvN_SetVar("Messenger", "MakeMDP", &v);
 	if (!PORT_CALL(Elevator, SetDef, NULL, "ss", "Metro", "DM_Door_Metro_Templo00") ||
@@ -232,6 +238,13 @@ static byte TpMap_EndOfAppears(void) {
 	Native_SetNone(&none);
 	LvN_SetVar("Elevator", "OnElevatorReachDown", &none);
 	return Tp_Arrive("DM_Player_Spawn_GDB");
+}
+
+/* the client part (Levels.h): an indoor map next to Commercial */
+byte Temple_ClientStatus(const nativeVal_t *path) {
+	(void)path;
+	Tp_Flags();
+	return 1;
 }
 
 LV_CORE0(TpMap_InitStatus)

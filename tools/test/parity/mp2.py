@@ -12,6 +12,11 @@ without a result).
                                                         (tools/test/coop/autochain.sh), then coopparity.py at the
                                                         chapter's start and end
   mp2.py sp [--lanes a,b,c] [--levels-time 30]         single player: regress.py check, golden.sh, levels.sh
+  mp2.py classes [--levels A,B] [--bot idle]           tools/test/parity/classes.py (stages 4.1, 4.2): per world level a
+                                                        -mp2 instance and a joined client: mirror, census by class, the
+                                                        definitions of the level's start, the audits, crashes
+  mp2.py weapons [--weapons Vulcan,Laser]              tools/test/parity/weapons.sh (stage 4.1): fight, single player
+                                                        and the sound and effect census of each weapon
   mp2.py all <chapter> [...]                           the four above and one summary table (<out>/summary.md, .json)
   mp2.py diff <old out> <new out>                      the gates two runs have in common, number by number against
                                                         the run-to-run noise (NOISE); exit 1 on a real difference
@@ -120,6 +125,71 @@ def gate_parity(a):
     table = ['# Parity (%d levels, %d points)' % (len(sums), sum(s['points'] for s in sums)), ''] + \
         parity.summary_table(sums) + ([''] + ['missing: ' + ', '.join(missing)] if missing else [])
     return write_gate(a, 'parity', {'status': status, 'levels': sums, 'missing': missing, 'gaps': gaps}, table)
+
+
+# ---- census by class and weapons (stages 4.1 and 4.2) ----
+
+def gate_classes(a):
+    out = os.path.join(a.out, 'classes')
+    cmd = [sys.executable, os.path.join(HERE, 'classes.py'), '--out', out, '--scratch', os.path.join(a.scratch, 'classes'),
+           '--port', str(a.port), '--build', a.build, '--bot', a.bot, '--jobs', str(a.classes_jobs)]
+    if a.levels:
+        cmd += ['--levels', ','.join(x.split(':')[0] for x in a.levels.split(',') if ':' not in x)]
+    if a.report_only:
+        cmd.append('--report-only')
+    run(cmd)
+    try:
+        data = json.load(open(os.path.join(out, 'classes.json')))
+        table = open(os.path.join(out, 'classes.md')).read().splitlines()
+    except (OSError, ValueError):
+        data, table = {'status': 'error', 'levels': [], 'errors': ['no result']}, ['# Census by class: no result']
+    return write_gate(a, 'classes', data, table)
+
+
+WEAPONS = ('Vulcan', 'Laser', 'Devastator', 'Tesla', 'ATPC', 'Swarm', 'Inferno')
+
+
+def gate_weapons(a):
+    out = os.path.join(a.out, 'weapons')
+    fight, sp = os.path.join(out, 'fight'), os.path.join(out, 'sp')
+    weaps = [w for w in (a.weapons.split(',') if a.weapons else WEAPONS) if w]
+    sh = os.path.join(HERE, 'weapons.sh')
+    env = {'SCRAP_BUILD': a.build, 'WEAP_SCRATCH': os.path.join(a.scratch, 'weapons'), 'WEAP_PORT': str(a.port),
+           'SCRAP_VK_DEVICE': a.device}
+    if not a.report_only:
+        os.makedirs(out, exist_ok=True)
+        run_real(['bash', sh, 'fight', fight] + weaps, env=env, log=os.path.join(out, 'fight.log'))
+        run_real(['bash', sh, 'sp', sp, 'none'] + weaps, env=env, log=os.path.join(out, 'sp.log'))
+        run_real(['bash', sh, 'census', fight, sp] + weaps, env=env, log=os.path.join(out, 'census.log'))
+    rows = []
+    census = open(os.path.join(out, 'census.log')).read() if os.path.exists(os.path.join(out, 'census.log')) else ''
+    for w in weaps:
+        r = {'weapon': w, 'hits': None, 'deaths': None, 'mirror_a': None, 'mirror_b': None, 'census': None}
+        try:
+            text = open(os.path.join(fight, w + '.summary.txt')).read()
+            m = re.search(r'(\d+) hits by players in the fight, (\d+) deaths', text)
+            if m:
+                r['hits'], r['deaths'] = int(m.group(1)), int(m.group(2))
+            mm = re.findall(r'differences in all 3 pairs: (\d+)', text)
+            if len(mm) == 2:
+                r['mirror_a'], r['mirror_b'] = int(mm[0]), int(mm[1])
+        except OSError:
+            pass
+        m = re.search(r'^%s: .*gaps \(on neither client\) (\d+)' % re.escape(w), census, re.M)
+        if m:
+            r['census'] = int(m.group(1))
+        rows.append(r)
+    missing = [r['weapon'] for r in rows if None in (r['hits'], r['mirror_a'], r['mirror_b'], r['census'])]
+    bad = [r['weapon'] for r in rows if r['weapon'] not in missing and
+           (not r['hits'] or not r['deaths'] or r['mirror_a'] or r['mirror_b'] or r['census'])]
+    status = 'error' if missing else 'fail' if bad else 'pass'
+    table = ['# Weapons (DownTown, a -mp2 shooter and target)', '',
+             '| weapon | hits | deaths | mirror shooter / target | census gaps |', '|---|---|---|---|---|']
+    table += ['| %s | %s | %s | %s / %s | %s |' % (r['weapon'], r['hits'], r['deaths'], r['mirror_a'], r['mirror_b'],
+                                                  r['census']) for r in rows]
+    if missing:
+        table += ['', 'no result: ' + ', '.join(missing)]
+    return write_gate(a, 'weapons', {'status': status, 'weapons': rows, 'missing': missing, 'failed': bad}, table)
 
 
 # ---- feel ----
@@ -418,7 +488,8 @@ def gate_sp(a):
 
 def gate_all(a):
     res = []
-    for gate, fn in (('sp', gate_sp), ('parity', gate_parity), ('feel', gate_feel), ('coop', gate_coop)):
+    for gate, fn in (('sp', gate_sp), ('parity', gate_parity), ('classes', gate_classes), ('weapons', gate_weapons),
+                     ('feel', gate_feel), ('coop', gate_coop)):
         if gate == 'coop' and not a.chapter:
             continue
         try:
@@ -462,6 +533,19 @@ def gate_numbers(r):
             r.get('gaps'))
     if g == 'sp':
         return '; '.join('%s %s' % (x['check'], x['result']) for x in r.get('rows', []))
+    if g == 'classes':
+        lv = r.get('levels', [])
+        return '%d levels: mirror %d, class gaps %d, definitions %d, client sim/create/purge/noclass %d, pres %d, ' \
+            'unresolved player reads %d, crashes %d%s' % (
+                len(lv), *[sum(x.get(k) or 0 for x in lv) for k in ('mirror', 'classes', 'defs')],
+                              sum(sum(x.get(k) or 0 for k in ('start_sim', 'start_create', 'start_purge', 'start_noclass',
+                                                              'sim', 'create', 'purge', 'noclass')) for x in lv),
+                              sum(sum(x.get(k) or 0 for k in ('unforwarded', 'double', 'missing')) for x in lv),
+                              sum(x.get('norule') or 0 for x in lv), sum(x.get('crash') or 0 for x in lv),
+                              ', could not run: ' + ','.join(r['errors']) if r.get('errors') else '')
+    if g == 'weapons':
+        return '; '.join('%s %s hits %s deaths, mirror %s/%s, census %s' % (
+            x['weapon'], x['hits'], x['deaths'], x['mirror_a'], x['mirror_b'], x['census']) for x in r.get('weapons', []))
     return ''
 
 
@@ -564,7 +648,7 @@ def gate_diff(a):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('gate', choices=('parity', 'feel', 'coop', 'sp', 'all', 'diff'))
+    ap.add_argument('gate', choices=('parity', 'feel', 'coop', 'sp', 'classes', 'weapons', 'all', 'diff'))
     ap.add_argument('args', nargs='*', help='coop and all: the chapter; diff: <old out> <new out>')
     ap.add_argument('--out', default=os.path.join(REPO, 'build-linux64', 'mp2'))
     ap.add_argument('--scratch', default=None, help='game folders and logs (default <out>/games)')
@@ -578,6 +662,10 @@ def main():
     ap.add_argument('--levels', default=None, help='parity: Level or Level:mode, comma separated')
     ap.add_argument('--points', dest='route_points', type=int, default=4, help='parity: the points of a route at most')
     ap.add_argument('--pvp-mode', default=parity.PVP_MODE)
+    # classes, weapons
+    ap.add_argument('--bot', default='idle', help='classes: SCRAP_PLAYBOT of the joined client (idle, npc, walk)')
+    ap.add_argument('--classes-jobs', type=int, default=4, help='classes: levels at the same time (ports from --port)')
+    ap.add_argument('--weapons', default=None, help='weapons: comma separated (default all seven)')
     # feel
     ap.add_argument('--cells', default='0,50,150')
     ap.add_argument('--sides', default='join,host', help='feel: the multiplayer sides of each cell (join, host)')
@@ -616,7 +704,8 @@ def main():
         a.old, a.new = (os.path.abspath(x) for x in a.args)
         r = gate_diff(a)
     else:
-        r = {'parity': gate_parity, 'feel': gate_feel, 'coop': gate_coop, 'sp': gate_sp, 'all': gate_all}[a.gate](a)
+        r = {'parity': gate_parity, 'feel': gate_feel, 'coop': gate_coop, 'sp': gate_sp, 'classes': gate_classes,
+             'weapons': gate_weapons, 'all': gate_all}[a.gate](a)
     sys.exit({'pass': 0, 'fail': 1}.get(r['status'], 2))
 
 

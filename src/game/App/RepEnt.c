@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "scrap/ai.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/game.h"
@@ -205,7 +206,7 @@ void RepEnt_State(cEntity *e, int kind, NetRepState *s) {
 	s->x[REPX_PREVLIFE] = w->prevLife;
 	s->x[REPX_BURN] = RepEnt_Ms(w->fireRemain > 0.0f ? w->fireRemain : 0.0f);
 	s->x[REPX_ARROW] = (w->arrow.canUse ? 1 : 0) | (w->arrow.canView ? 2 : 0) | (w->arrow.canMission ? 4 : 0) |
-		(w->arrow.tgType << 8);
+		((w->arrow.coneStatus & 3) << 3) | (w->arrow.tgType << 8);
 	if (kind == NETREP_SHIP) {
 		cVehicleEntity *v = Veh(e);
 		s->x[REPX_MAXLIFE] = v->maxLife;
@@ -214,6 +215,7 @@ void RepEnt_State(cEntity *e, int kind, NetRepState *s) {
 		s->x[REPX_EMI] = RepEnt_Ms(v->emi);
 		s->x[REPX_FIREW] = v->controls.fire && v->weapons.curWeap >= 0 && v->weapons.curWeap < 30 ?
 			1 << v->weapons.curWeap : 0;
+		s->x[REPX_WEAPSND] = v->weapons.weapSnd + 1;
 		/* the Hook firing (its sound and the effect of a shot at nothing are the replica's, Hook_NetPresent; a
 		 * replica keeps the bit in its countermeasure key, which only the Advance half reads) */
 		if (g_Instance ? Hook_Firing(e) : v->controls.cm) {
@@ -293,9 +295,10 @@ static byte RepEnt_Carried(const char *name) {
 	return 0;
 }
 
-/* the events a replica gets from its state already (its actions, its moves, its forces): not sent */
+/* the events a replica gets from its state already (its actions, its moves, its forces): not sent; ForceDefLoop is
+ * journaled (RepEnt_Tap) */
 static byte RepEnt_StateEvent(const char *name) {
-	static const char *const names[] = { "Action", "ForceAction", "ForceDefLoop", "StopSecondary", "MoveTime",
+	static const char *const names[] = { "Action", "ForceAction", "StopSecondary", "MoveTime",
 		"MovePos", "MoveAng", "MoveViewAng", "MoveFade", "ForceVel", "ForceAll", "ActionPress", "UsePress" };
 	for (size_t i = 0; i < sizeof(names) / sizeof(names[0]); i++) {
 		if (!strcmp(name, names[i])) {
@@ -357,6 +360,11 @@ static void RepEnt_Tap(cEntity *e, const char *name, int type, const void *value
 	}
 	if (tag == NC_STATE ? RepEnt_Carried(name) : RepEnt_StateEvent(name)) {
 		return;
+	}
+	/* the default loop a script forces is state the actions do not carry (a replica's next loop, the DefLoop it reads
+	 * back): kept in the journal like a set */
+	if (!strcmp(name, "ForceDefLoop")) {
+		tag = NC_STATE;
 	}
 	int s = RepEnt_SlotFor(e);
 	if (s < 0) {
@@ -496,7 +504,10 @@ void RepEnt_Gather(NetRepServer *srv, uint32_t tick) {
 		re.rec[s].look = id;
 		RepEnt_State(e, kind, &st);
 		st.x[REPX_GEN] = (int32_t)re.rec[s].gen;
-		NetRepSrv_SetEx(srv, s, kind, id, &st, kind >= NETREP_ITEM ? NETREP_SET_LEVEL : 0);
+		/* the level scope: the things of the level, and on an indoor map its ships too (the few traffic ships
+		 * behind the windows, seen from farther than the interest radius) */
+		NetRepSrv_SetEx(srv, s, kind, id, &st, kind >= NETREP_ITEM || (kind == NETREP_SHIP && !g_IsMapOutDoor) ?
+			NETREP_SET_LEVEL : 0);
 	}
 	NetRepSrv_End(srv);
 }

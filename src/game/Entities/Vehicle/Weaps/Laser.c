@@ -807,6 +807,7 @@ static void Sonic_FireNative(cAbstractFile *f) {
 	}
 	cMissileEntity_SetLifeTime((cMissileEntity *)m, g_SonicLifeTime - 0.2f);
 	cPy_Function_SetFunc(&Missile(m)->onHit, "Sonic.OnServerHit");
+	Missile(m)->weap = MISSILE_WEAP_COUNTER;
 	cPy_Function_SetFunc(&WLife(m)->onDeath, "Sonic.OnDeath");
 	cWeaponManager_SetAmmo(&Veh(v)->weapons, g_SonicIDAmmo, (float)(ammo - Missile(m)->swarmCount / 3));
 }

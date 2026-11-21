@@ -10,6 +10,7 @@
 #include "scrap/console.h"
 #include "scrap/coop.h"
 #include "scrap/coord.h"
+#include "scrap/crt.h"
 #include "scrap/fx.h"
 #include "scrap/fxmisc.h"
 #include "scrap/game.h"
@@ -19,6 +20,7 @@
 #include "scrap/instance.h"
 #include "scrap/net2.h"
 #include "scrap/netaudit.h"
+#include "scrap/netclass.h"
 #include "scrap/netscene.h"
 #include "scrap/netrep.h"
 #include "scrap/objentity.h"
@@ -30,6 +32,8 @@
 #include "scrap/repent.h"
 #include "scrap/scorer.h"
 #include "scrap/scrap.h"
+#include "scrap/scriptmodes.h"
+#include "scrap/scriptnative.h"
 #include "scrap/sound.h"
 #include "scrap/uichan.h"
 #include "scrap/viewers.h"
@@ -45,6 +49,8 @@
 #define PRES_HOLDS 32				/* effect records a client holds until it has their entities */
 #define PRES_HOLD_REC 640			/* the longest held record */
 #define PRES_HOLD_NS 1000000000ull	/* how long: then it plays and counts what it misses */
+#define PRES_GVARS 64
+#define PRES_CHARRES 64
 
 int g_PresIn;
 int g_PresDerived;
@@ -53,7 +59,8 @@ byte g_PresHud;
 
 static const char *const pres_opNames[PRES_O_COUNT] = { "?", "soundat", "sound3d", "sound2d", "voiceopen", "voiceplay",
 	"voicestop", "music", "shipexpl", "fxent", "msgtext", "labeltext", "speech", "speechcancel", "chat", "head", "fade",
-	"cinema", "actionset", "hudadd", "hudclear", "hudshow", "hudset", "talk", "itemsnd", "scene", "sceneend", "campath", "fxcall", "time", "camvar" };
+	"cinema", "actionset", "hudadd", "hudclear", "hudshow", "hudset", "talk", "itemsnd", "scene", "sceneend", "campath",
+	"fxcall", "gvar", "charres", "time", "camvar" };
 
 /* a voice of a -mp2 instance's model: nothing plays, the file's length and the time it started give what the scripts
  * read (VoiceRemain), the text what the talk voice's checks read */
@@ -89,6 +96,14 @@ static struct {
 	cScorer models[PLAYERS_MAX];
 	byte made[PLAYERS_MAX];
 	PresVoice voices[PLAYERS_MAX + 1][MUSIC_MAX_VOICES];	/* each player's, the last the world's */
+	char music[64];					/* the world's music (the last play outside a player's context), "" none */
+	float musicVolume;
+	byte haveMusicVolume;
+	char gvars[PRES_GVARS][48];		/* the engine variables of Pres_GVar the world's scripts set: their values then
+									 * go to the players that join later (C code sets some of them too) */
+	int numGVars;
+	char charRes[PRES_CHARRES][32];	/* the character classes of Pres_CharRes */
+	int numCharRes;
 	uint32_t sent[PRES_O_COUNT], bytes, cut;
 	/* client */
 	PresRecent recent[PRES_RECENT];
@@ -99,7 +114,7 @@ static struct {
 	uint32_t played[PRES_O_COUNT];
 	struct {
 		uint64_t ns;				/* 0: free */
-		int size;
+		int size, op;
 		uint8_t rec[PRES_HOLD_REC];
 	} hold[PRES_HOLDS];
 	uint32_t held;
@@ -183,8 +198,8 @@ static uint64_t Pres_Audience(presTo_t to, const vec3_t *pos) {
 	return m;
 }
 
-byte Pres_Begin(presTo_t to, const vec3_t *pos, int op) {
-	pres.to = Pres_Audience(to, pos);
+static byte Pres_BeginTo(uint64_t to, int op) {
+	pres.to = to;
 	if (!pres.to) {
 		return 0;
 	}
@@ -194,20 +209,18 @@ byte Pres_Begin(presTo_t to, const vec3_t *pos, int op) {
 	return 1;
 }
 
+byte Pres_Begin(presTo_t to, const vec3_t *pos, int op) {
+	return Pres_BeginTo(Pres_Audience(to, pos), op);
+}
+
 byte Pres_BeginMask(uint64_t mask, int op) {
-	pres.to = 0;
+	uint64_t to = 0;
 	for (int i = 0; i < PLAYERS_MAX; i++) {
 		if ((mask >> i & 1) && Pres_Online(i)) {
-			pres.to |= (uint64_t)1 << i;
+			to |= (uint64_t)1 << i;
 		}
 	}
-	if (!pres.to) {
-		return 0;
-	}
-	pres.op = op;
-	NetRepBuf_Init(&pres.w, pres.rec, sizeof(pres.rec));
-	NetRep_PutU8(&pres.w, (uint32_t)op);
-	return 1;
+	return Pres_BeginTo(to, op);
 }
 
 void Pres_PutStr(const char *s) {
@@ -283,6 +296,22 @@ void Pres_Flush(Net2Host *host) {
 		if (pres.size[i]) {
 			Pres_FlushPlayer(host, i);
 		}
+	}
+}
+
+presSaved_t Pres_SimScript(void) {
+	presSaved_t s = { g_PresDerived, pres.own };
+	if (g_Mp2 && g_Instance) {
+		g_PresDerived = 0;
+		pres.own = -1;
+	}
+	return s;
+}
+
+void Pres_SimScriptEnd(presSaved_t saved) {
+	if (g_Mp2 && g_Instance) {
+		g_PresDerived = saved.derived;
+		pres.own = saved.own;
 	}
 }
 
@@ -533,8 +562,18 @@ void Pres_NoRoute(int cat, const char *prefix, const char *site) {
 
 void Pres_ItemSound(cEntity *e, int item) {
 	vec3_t pos;
-	if (!Pres_Out() || !e || !Entity_IsType(e, TYEN_VEHICLE) || !PtrArray_Get(&Obj(e)->snd, item) ||
-		!Pres_Begin(PRES_NEAR, Entity_GetPos(e, &pos), PRES_O_ITEMSND)) {
+	if (!Pres_Out() || !e || !Entity_IsType(e, TYEN_VEHICLE) || !PtrArray_Get(&Obj(e)->snd, item)) {
+		return;
+	}
+	/* the players near whose clients have the ship (one beyond a client's interest has no replica to start it on) */
+	uint64_t to = Pres_Audience(PRES_NEAR, Entity_GetPos(e, &pos));
+	int slot = RepEnt_Slot(e);
+	for (int i = 0; i < PLAYERS_MAX; i++) {
+		if ((to >> i & 1) && !Rep_PlayerHolds(i, slot)) {
+			to &= ~((uint64_t)1 << i);
+		}
+	}
+	if (!Pres_BeginTo(to, PRES_O_ITEMSND)) {
 		return;
 	}
 	Pres_PutStr(e->name);
@@ -547,6 +586,7 @@ void Pres_SoundAt(const char *name, const vec3_t *pos, int volume) {
 	if (!Pres_Out() || !Pres_Begin(PRES_NEAR, pos, PRES_O_SOUNDAT)) {
 		return;
 	}
+	NetAudit_Name(NA_CENSUS, "snd.sent:", name);
 	Pres_PutStr(name);
 	Pres_PutVec(pos);
 	Pres_PutInt(volume);
@@ -567,6 +607,7 @@ void Pres_Sound3D(const char *name, const cSoundDesc *d) {
 	if (!Pres_Begin(PRES_NEAR, &pres.pos, PRES_O_SOUND3D)) {
 		return;
 	}
+	NetAudit_Name(NA_CENSUS, "snd.sent:", name);
 	Pres_PutStr(name);
 	Pres_PutVec(&pres.pos);
 	Pres_PutInt(d->volume - pres.posVolume);
@@ -630,13 +671,127 @@ void Pres_VoiceStop(int voice) {
 }
 
 void Pres_Music(const char *name, const char *cmd, float volume) {
-	if (!Pres_Out() || !Pres_Begin(PRES_PARTY, NULL, PRES_O_MUSIC)) {
+	if (!Pres_Out()) {
+		return;
+	}
+	/* the world's music, for the players that join later (Pres_Joined) */
+	if (Players_Current() == PLAYERS_NONE || Coop_On()) {
+		if (!crt_stricmp(cmd, "play")) {
+			Str_Copy(pres.music, name ? name : "", sizeof(pres.music));
+		} else if (!crt_stricmp(cmd, "stop")) {
+			pres.music[0] = 0;
+		} else if (!crt_stricmp(cmd, "volume")) {
+			pres.musicVolume = volume;
+			pres.haveMusicVolume = 1;
+		}
+	}
+	if (!Pres_Begin(PRES_PARTY, NULL, PRES_O_MUSIC)) {
 		return;
 	}
 	Pres_PutStr(name);
 	Pres_PutStr(cmd);
 	Pres_PutFloat(volume);
 	Pres_Send();
+}
+
+/* the fields of a PRES_O_GVAR record: name, kind (1 text, 2 number), value */
+static void Pres_PutGVar(const char *name, byte text, const char *s, float f) {
+	Pres_PutStr(name);
+	NetRep_PutU8(&pres.w, text ? 1u : 2u);
+	if (text) {
+		Pres_PutStr(s);
+	} else {
+		Pres_PutFloat(f);
+	}
+}
+
+/* the engine variable name when the gvar table tags it STATE or WORLD_SETTING and it holds a text or a number, NULL
+ * else */
+static const cGVar *Pres_GVarOf(const char *name) {
+	netTag_t tag = NetClass_Find(NCT_GVAR, name);
+	const cGVar *v = GVar_Find(name);
+	if ((tag != NC_STATE && tag != NC_WORLD_SETTING) || !v ||
+		(v->base.type != GVAR_STRING && v->base.type != GVAR_INT && v->base.type != GVAR_FLOAT)) {
+		return NULL;
+	}
+	return v;
+}
+
+/* the fields of v's value now into the record begun, sent */
+static void Pres_SendGVar(const char *name, const cGVar *v) {
+	byte text = v->base.type == GVAR_STRING;
+	Pres_PutGVar(name, text, text && v->value.s ? v->value.s : "",
+		v->base.type == GVAR_INT ? (float)v->value.i : v->base.type == GVAR_FLOAT ? v->value.f : 0.0f);
+	Pres_Send();
+}
+
+void Pres_GVar(const char *name) {
+	const cGVar *v = Pres_Out() ? Pres_GVarOf(name) : NULL;
+	if (!v) {
+		return;
+	}
+	if (Players_Current() == PLAYERS_NONE) {
+		int k;
+		for (k = 0; k < pres.numGVars && strcmp(pres.gvars[k], name); k++) {
+		}
+		if (k == pres.numGVars && k < PRES_GVARS) {
+			Str_Copy(pres.gvars[k], name, sizeof(pres.gvars[k]));
+			pres.numGVars++;
+		}
+	}
+	if (Pres_Begin(PRES_PLAYER, NULL, PRES_O_GVAR)) {
+		Pres_SendGVar(name, v);
+	}
+}
+
+void Pres_CharRes(const char *name) {
+	if (!Pres_Out() || !name || !*name) {
+		return;
+	}
+	int k;
+	for (k = 0; k < pres.numCharRes && crt_stricmp(pres.charRes[k], name); k++) {
+	}
+	if (k < pres.numCharRes) {
+		return;
+	}
+	if (k < PRES_CHARRES) {
+		Str_Copy(pres.charRes[k], name, sizeof(pres.charRes[k]));
+		pres.numCharRes++;
+	}
+	if (Pres_Begin(PRES_LEVEL, NULL, PRES_O_CHARRES)) {
+		Pres_PutStr(name);
+		Pres_Send();
+	}
+}
+
+void Pres_Joined(int i) {
+	if (!Pres_Out() || i < 0 || i >= PLAYERS_MAX || !Pres_Online(i)) {
+		return;
+	}
+	for (int k = 0; k < pres.numCharRes; k++) {
+		if (Pres_BeginTo((uint64_t)1 << i, PRES_O_CHARRES)) {
+			Pres_PutStr(pres.charRes[k]);
+			Pres_Send();
+		}
+	}
+	for (int k = 0; k < pres.numGVars; k++) {
+		const cGVar *v = Pres_GVarOf(pres.gvars[k]);
+		if (v && Pres_BeginTo((uint64_t)1 << i, PRES_O_GVAR)) {
+			Pres_SendGVar(pres.gvars[k], v);
+		}
+	}
+	if (pres.haveMusicVolume && Pres_BeginTo((uint64_t)1 << i, PRES_O_MUSIC)) {
+		Pres_PutStr(NULL);
+		Pres_PutStr("volume");
+		Pres_PutFloat(pres.musicVolume);
+		Pres_Send();
+	}
+	if (pres.music[0] && Pres_BeginTo((uint64_t)1 << i, PRES_O_MUSIC)) {
+		Pres_PutStr(pres.music);
+		Pres_PutStr("play");
+		Pres_PutFloat(0.0f);
+		Pres_Send();
+	}
 }
 
 void Pres_ShipExplosion(const vec3_t *pos, const vec3_t *vel, float scale, float time, int flames, int collision) {
@@ -1180,6 +1335,27 @@ static void Pres_Play(int op, NetRepReader *r) {
 		}
 		break;
 	}
+	case PRES_O_GVAR: {
+		NetRep_GetStr(r, name, sizeof(name));
+		uint32_t kind = NetRep_GetU8(r);
+		if (kind == 1) {
+			NetRep_GetStr(r, s2, sizeof(s2));
+		}
+		float f = kind == 2 ? Pres_GetFloat(r) : 0.0f;
+		if (!r->bad && (kind == 1 ? GVar_SetStr(name, s2) : GVar_SetNum(name, (double)f)) < 0) {
+			Pres_Missing(op, name);
+		}
+		break;
+	}
+	case PRES_O_CHARRES:
+		NetRep_GetStr(r, name, sizeof(name));
+		/* the class with its sounds as single player loads a class it lacks (Chars.LoadRes: nothing when the
+		 * level's start has it) */
+		if (!r->bad && (!Mode_Import("Chars") || !PORT_CALL(Chars, LoadRes, NULL, "s", name))) {
+			Native_ErrPrint();
+			Pres_Missing(op, name);
+		}
+		break;
 	case PRES_O_ACTIONSET:
 		NetRep_GetStr(r, name, sizeof(name));
 		if (!r->bad && !Input_SelectActionSetNamed(name)) {
@@ -1299,9 +1475,22 @@ static byte Pres_FxReady(NetRepReader *r) {
 	return !r->bad && (!*a || ReplicaEnt_Find(a)) && (!*b || ReplicaEnt_Find(b));
 }
 
-/* an effect record whose entity the client does not have yet (a replica made again under a new slot a moment later):
- * held, 1; 0 when no place is free */
-static byte Pres_Hold(const uint8_t *rec, int size) {
+/* the entity of a sound item record is here (a replica made a moment later than the server started the item) */
+static byte Pres_ItemReady(NetRepReader *r) {
+	char a[256];
+	NetRep_GetStr(r, a, sizeof(a));
+	NetRep_GetSVar(r);
+	return !r->bad && ReplicaEnt_Find(a);
+}
+
+/* a record of op that waits for its entities: the effects and the sound items (0 for the other records) */
+static byte Pres_Waits(int op, NetRepReader *r) {
+	return op == PRES_O_FXENT ? !Pres_FxReady(r) : op == PRES_O_ITEMSND ? !Pres_ItemReady(r) : 0;
+}
+
+/* an effect or sound item record whose entity the client does not have yet (a replica made again under a new slot,
+ * or made a moment later): held, 1; 0 when no place is free */
+static byte Pres_Hold(int op, const uint8_t *rec, int size) {
 	if (size > PRES_HOLD_REC) {
 		return 0;
 	}
@@ -1309,6 +1498,7 @@ static byte Pres_Hold(const uint8_t *rec, int size) {
 		if (!pres.hold[k].ns) {
 			memcpy(pres.hold[k].rec, rec, (size_t)size);
 			pres.hold[k].size = size;
+			pres.hold[k].op = op;
 			pres.hold[k].ns = Plat_RealNs();
 			pres.held++;
 			return 1;
@@ -1414,9 +1604,9 @@ static void Pres_Play2(const uint8_t *data, int size) {
 			Con_Warnf("pres: unknown record %d\n", op);
 			break;
 		}
-		if (op == PRES_O_FXENT) {
+		if (op == PRES_O_FXENT || op == PRES_O_ITEMSND) {
 			NetRepReader t = r;
-			if (!Pres_FxReady(&t) && !t.bad && Pres_Hold(r.p + r.pos, t.pos - r.pos)) {
+			if (Pres_Waits(op, &t) && !t.bad && Pres_Hold(op, r.p + r.pos, t.pos - r.pos)) {
 				r = t;
 				continue;
 			}
@@ -1437,12 +1627,12 @@ void Pres_ClientFrame(void) {
 		NetRepReader r, t;
 		NetRepReader_Init(&r, pres.hold[k].rec, pres.hold[k].size);
 		t = r;
-		if (!Pres_FxReady(&t) && now - pres.hold[k].ns < PRES_HOLD_NS) {
+		if (Pres_Waits(pres.hold[k].op, &t) && now - pres.hold[k].ns < PRES_HOLD_NS) {
 			continue;
 		}
 		pres.hold[k].ns = 0;
 		g_PresIn++;
-		Pres_PlayRecord(PRES_O_FXENT, &r);
+		Pres_PlayRecord(pres.hold[k].op, &r);
 		g_PresIn--;
 	}
 }

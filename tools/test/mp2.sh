@@ -7,6 +7,9 @@
 #   tools/test/mp2.sh feel [--cells 0,50,150] [--sides join,host]   key to frame latency, jitter, corrections
 #   tools/test/mp2.sh coop <chapter> --points-dir DIR          a coop chapter (tools/test/coop/chapters.txt) and coopparity
 #   tools/test/mp2.sh sp [--levels-time 30]                    regress.py check, golden.sh, levels.sh
+#   tools/test/mp2.sh classes [--levels A,B] [--bot idle]      census by class per world level (mirror, classes, the
+#                                                              level start's definitions, audits, crashes)
+#   tools/test/mp2.sh weapons [--weapons Vulcan,Laser]         every weapon: fight, single player, sound census
 #   tools/test/mp2.sh all <chapter> --points-dir DIR           all of the above and a summary
 #   tools/test/mp2.sh diff <old out> <new out>                 two runs against the run-to-run noise
 # common: --out DIR (default build-linux64/mp2), --build DIR, --port BASE (40 ports from BASE), --scratch DIR, --device

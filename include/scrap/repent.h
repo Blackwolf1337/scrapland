@@ -72,13 +72,17 @@ enum {
 									 * weapons' lock (hook plug) */
 	REPX_MOVE,						/* the scripted move: on << 30 | ms done */
 	REPX_MOVET,						/* its length, ms */
-	REPX_ITEM,						/* item: taken, ms left (0 there) */
+	REPX_ITEM,						/* item: taken, ms left (0 there); ship: REPX_WEAPSND */
 	REPX_BLINK,						/* item: blink */
 	REPX_TARGET,					/* missile: the slot of its target + 1 */
 	REPX_LEVEL,						/* missile: its upgrade level */
-	REPX_ARROW,						/* the arrow: can use, view, mission (bits 0..2) and the target type << 8 */
+	REPX_ARROW,						/* the arrow: can use, view, mission (bits 0..2), the view cone's status (off,
+									 * relax, alert, danger: bits 3..4, the radar's cones and a sentinel's light)
+									 * and the target type << 8 */
 	REPX_COUNT
 };
+/* ship: the sound item of the firing loop + 1, 0 none (cWeaponManager.weapSnd: a replica runs no weapon update) */
+#define REPX_WEAPSND REPX_ITEM
 
 /* journal entries of no entity variable (a name no Var function knows): the embedded effect type the scripts set
  * (SFX.EmbeddedSet, SetFX, a character's named effect; the client applies it with Entity_SetEmbeddedFX) */

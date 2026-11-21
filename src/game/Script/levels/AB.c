@@ -651,7 +651,7 @@ static byte AbMap_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	Native_SetEmpty(&v, NV_TUPLE);
 	Native_SetFloat(Native_Append(&v), 0.01);
 	Native_SetFloat(Native_Append(&v), 0.02);
-	byte ok = Mode_SetModVar("Vehicles", "HullLifeTimeDeath", &v) && LvN_ModSetI("Init", "Outdoor", 1) &&
+	byte ok = Mode_SetModVar("Vehicles", "HullLifeTimeDeath", &v) && Lv_Flags(1, NULL) &&
 		LvN_ModSetI("OutPolice", "PoliceActive", 0) && Mode_GVarSetI("iTrafficNumber", 0);
 	Native_Free(&v);
 	Native_SetEmpty(&v, NV_LIST);
@@ -692,14 +692,12 @@ static byte AbMap_Type(const nativeVal_t *name) {
 
 /* Init(LevelPath): the free space magnet around the mission centre, the teleporter, the asteroid ship types, an
  * asteroid at every spawn position */
-static byte AbMap_Init(const nativeVal_t *a, nativeVal_t *out) {
+/* the magnet of the free space round the centre of the asteroid field (physics of the level) */
+static byte AbMap_Magnet(void) {
 	static const char *const axes[] = { "FreeSpaceMagnetCenterX", "FreeSpaceMagnetCenterY", "FreeSpaceMagnetCenterZ" };
 	modeVals_t t = { .n = 0 };
-	nativeVal_t *dummy = Mode_V(&t), *p = Mode_V(&t), *x = Mode_V(&t), *from = Mode_V(&t), *to = Mode_V(&t);
-	nativeVal_t *types = Mode_V(&t), *spawns = Mode_V(&t), *item = Mode_V(&t);
-	(void)a;
-	(void)out;
-	if (!Mode_Import("Elevator") || !Mode_GVarSetI("FreeSpaceMagnet", 1)) {
+	nativeVal_t *dummy = Mode_V(&t), *p = Mode_V(&t), *x = Mode_V(&t);
+	if (!Mode_GVarSetI("FreeSpaceMagnet", 1)) {
 		return Mode_Done(&t, 0);
 	}
 	LvN_Dummy("DM_Mission_Centre", 1, dummy);
@@ -710,13 +708,14 @@ static byte AbMap_Init(const nativeVal_t *a, nativeVal_t *out) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	Native_SetEmpty(from, NV_LIST);
-	LvN_Str(Native_Append(from), "DM_Door_Teleporter_GamblinDen");
-	Native_SetEmpty(to, NV_LIST);
-	LvN_Str(Native_Append(to), "GamblinDen");
-	if (!Mode_GVarSetI("FreeSpaceMagnetHiRadius", 95000) || !Mode_GVarSetI("FreeSpaceMagnetAccel", 56000) ||
-		!PORT_CALL(Elevator, ConnectElevators, NULL, "vv", from, to) || !PORT_CALL(Traffic, SetPath, NULL, "") ||
-		!LvN_GElems(MAP, "asttype", types)) {
+	return Mode_Done(&t, Mode_GVarSetI("FreeSpaceMagnetHiRadius", 95000) && Mode_GVarSetI("FreeSpaceMagnetAccel", 56000));
+}
+
+/* the ship classes of the asteroids (Map.asttype) */
+static byte AbMap_Types(void) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *types = Mode_V(&t), *item = Mode_V(&t);
+	if (!PORT_CALL(Traffic, SetPath, NULL, "") || !LvN_GElems(MAP, "asttype", types)) {
 		return Mode_Done(&t, 0);
 	}
 	int n = Native_ForCount(types);
@@ -726,10 +725,25 @@ static byte AbMap_Init(const nativeVal_t *a, nativeVal_t *out) {
 			return Mode_Done(&t, 0);
 		}
 	}
-	if (n < 0 || !PORT_CALL(Traffic, ResetPath, NULL, "") || !LvN_GElems(MAP, "SpawnPositions", spawns)) {
+	return Mode_Done(&t, n >= 0 && PORT_CALL(Traffic, ResetPath, NULL, ""));
+}
+
+static byte AbMap_Init(const nativeVal_t *a, nativeVal_t *out) {
+	modeVals_t t = { .n = 0 };
+	nativeVal_t *from = Mode_V(&t), *to = Mode_V(&t), *spawns = Mode_V(&t), *item = Mode_V(&t);
+	(void)a;
+	(void)out;
+	if (!Mode_Import("Elevator") || !AbMap_Magnet()) {
 		return Mode_Done(&t, 0);
 	}
-	n = Native_ForCount(spawns);
+	Native_SetEmpty(from, NV_LIST);
+	LvN_Str(Native_Append(from), "DM_Door_Teleporter_GamblinDen");
+	Native_SetEmpty(to, NV_LIST);
+	LvN_Str(Native_Append(to), "GamblinDen");
+	if (!PORT_CALL(Elevator, ConnectElevators, NULL, "vv", from, to) || !AbMap_Types() || !LvN_GElems(MAP, "SpawnPositions", spawns)) {
+		return Mode_Done(&t, 0);
+	}
+	int n = Native_ForCount(spawns);
 	for (int i = 0; i < n; i++) {
 		Native_Free(item);
 		if (!Native_SeqItem(spawns, i, item) || !PORT_LOWN(Map, CreateAsteroid, NULL, "sv", "Asteroid", item)) {
@@ -873,6 +887,19 @@ static byte AbMap_RealOnDeath(const nativeVal_t *a, nativeVal_t *out) {
 }
 
 LV_FN(AbMap, onTrackCreatePy, 1, AbMap_onTrackCreate)
+/* the client part (Levels.h): outdoors (as InitStatus: only when the map's module code saw no network flags); the
+ * magnet of the free space, the classes of the asteroids */
+byte AB_ClientStatus(const nativeVal_t *path) {
+	(void)path;
+	int single = LvN_GTrue(MAP, "SinglePlayer");
+	return single > 0 ? Lv_Flags(1, NULL) : single == 0;
+}
+
+byte AB_ClientInit(const nativeVal_t *path) {
+	(void)path;
+	return AbMap_Magnet() && AbMap_Types();
+}
+
 LV_FN(AbMap, InitStatusPy, 1, AbMap_InitStatus)
 LV_FN(AbMap, InitPy, 1, AbMap_Init)
 LV_FN(AbMap, CreateAsteroidPy, 2, AbMap_CreateAsteroid)

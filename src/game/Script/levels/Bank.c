@@ -93,13 +93,7 @@ static byte BankMap_InitStatus(void) {
 	if (!Mode_Import("Init") || !Mode_Import("CharsNPC") || !Mode_Import("Elevator")) {
 		return 0;
 	}
-	LvN_Int(&v, 0);
-	if (!Mode_SetModVar("Init", "Outdoor", &v)) {
-		return 0;
-	}
-	LvN_Str(&v, "Outskirts");
-	byte ok = Mode_SetModVar("Init", "OutArea", &v);
-	Native_Free(&v);
+	byte ok = Lv_Flags(0, "Outskirts");
 	if (!ok || !LvN_Repos("Sentinel", 2) || !LvN_Repos("Police", 3) || !LvN_Repos("Nurse", 2)) {
 		return 0;
 	}
@@ -162,6 +156,12 @@ static byte BankMap_Init(void) {
 	Native_Free(&name);
 	Native_Free(&elv);
 	return ok;
+}
+
+/* the client part (Levels.h): an indoor map next to Outskirts */
+byte Bank_ClientStatus(const nativeVal_t *path) {
+	(void)path;
+	return Lv_Flags(0, "Outskirts");
 }
 
 LV_CORE0(BankMap_InitStatus)
