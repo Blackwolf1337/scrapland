@@ -154,7 +154,7 @@ byte Scene_ClientEnd(void);
 
 /* ---- both ---- */
 
-/* the start of a level (Init.Init): SCRAP_TEST_SAVEVARS=<name>=<value>[;...] sets those save variables first, for a
+/* the start of a level (before the module Init): SCRAP_TEST_SAVEVARS=<name>=<value>[;...] sets those save variables first, for a
  * test that plays a scene whose level state depends on the story (HumanCD needs the mental controller of the press of
  * GameAct 1stMurder to 3rdMurder) on every side alike */
 void NetScene_TestVars(void);

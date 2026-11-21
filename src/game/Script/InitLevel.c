@@ -24,7 +24,6 @@
 
 #include "scrap/coop.h"
 #include "scrap/initsteps.h"
-#include "scrap/netscene.h"
 #include "scrap/modvars.h"
 #include "scrap/nativeobj.h"
 #include "scrap/places.h"
@@ -322,8 +321,6 @@ static byte In_InitN(const nativeVal_t *path) {
 	}
 	/* not in the original: the steps of the start (include/scrap/initsteps.h) */
 	InitSteps_Begin(path->type == NV_STR ? Native_Text(path) : NULL);
-	/* not in the original: the save variables of a test (SCRAP_TEST_SAVEVARS, include/scrap/netscene.h) */
-	NetScene_TestVars();
 	/* the map scripts of the level and its libraries */
 	if (!Native_Arith('+', path, Mode_S(&t, "/Scripts"), dir) || !Mode_Append("sys", "path", dir) || !Mode_Pack(dir) ||
 		!PORT_CALL(Scrap, PreloadLibrary, NULL, "ss", "Map", "Map.pyc") ||

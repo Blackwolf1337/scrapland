@@ -710,6 +710,10 @@ void NetScene_TestVars(void) {
 			*eq = 0;
 			SaveVar_Set(item, eq + 1);
 			Con_Printf("scene: test save variable %s = %s\n", item, eq + 1);
+			/* the character's library, as an outdoor level's start preloads the player's (Bishop on GDB) */
+			if (!strcmp(item, "Char")) {
+				SceneList_CharLib(eq + 1);
+			}
 		}
 		p = end ? end + 1 : NULL;
 	}

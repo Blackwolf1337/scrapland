@@ -28,6 +28,9 @@ byte SceneList_Loaded(const char *scene);
 /* a module of the current level's scripts imported (a mission's: its level pack's Scripts folder preloaded first, as
  * the level start preloads it) */
 byte SceneList_Import(const char *module);
+/* the library of a character (Chars/<ch>.pyc and its sounds, as Init.LoadCharLib preloads them) when it is not
+ * there: an outdoor level preloads only the player's character (Init's module code) */
+byte SceneList_CharLib(const char *ch);
 /* the classes of the scene loaded by its function when they are not there yet (a class loaded twice is a fatal
  * check of the actions); 0 when it could not */
 byte SceneList_Load(const sceneInfo_t *s);
