@@ -15,6 +15,7 @@
 #include "scrap/arena.h"
 #include "scrap/app.h"
 #include "scrap/camcontrol.h"
+#include "scrap/collisiongrid.h"
 #include "scrap/console.h"
 #include "scrap/coop.h"
 #include "scrap/crt.h"
@@ -107,6 +108,7 @@ static struct {
 	uint32_t records;				/* things made of the instance's static records */
 	uint32_t made;					/* proxies made: their names stay unique while a deleted one waits */
 	uint64_t bytes;
+	byte playDue;					/* the own player's step of this frame waits for the input update (Watch_FrameInput) */
 	WatchProxy px[NETREP_MAX_ENTS];
 } watch;
 
@@ -141,6 +143,14 @@ static void Watch_Free(int slot) {
 		/* the scene entity of a scene that plays here: the camera off its model first (include/scrap/netscene.h) */
 		NetScene_ClientGone(p->e);
 		cEntity_Del(p->e);
+		if (g_Mp2) {
+			/* out of the collision grid now: the own prediction steps before the world's frame deletes it (a new own
+			 * ship catching up to the input tick touched the replica of the same ship it replaced) */
+			byte active = p->e->active;
+			p->e->active = 0;
+			Grid_Add(&g_pWorld->grid, p->e);
+			p->e->active = active;
+		}
 		watch.proxies--;
 	}
 	p->e = NULL;
@@ -580,14 +590,15 @@ double Watch_ActAt(const cEntity *e, int l, float t, double from, double to) {
 	return hi;
 }
 
-/* the position of the proxy at server time rt */
-static void Watch_PosAt(const WatchProxy *p, double rt, vec3_t *pos) {
+/* the position and velocity of the proxy at server time rt */
+static void Watch_PosAt(const WatchProxy *p, double rt, vec3_t *pos, vec3_t *vel) {
 	const WatchSample *a, *b;
 	float f, ext;
 	Watch_Pick(p, rt, &a, &b, &f, &ext);
 	for (int k = 0; k < 3; k++) {
 		float pa = NetRep_UPos(a->st.pos[k]), v = (float)a->st.vel[k] + (float)(b->st.vel[k] - a->st.vel[k]) * f;
 		(&pos->x)[k] = pa + (NetRep_UPos(b->st.pos[k]) - pa) * f + v * ext;
+		(&vel->x)[k] = v;
 	}
 }
 
@@ -595,21 +606,22 @@ static void Watch_PosAt(const WatchProxy *p, double rt, vec3_t *pos) {
  * they are at
  * server time t (the own prediction of that tick collides with them there, not where they are drawn), and back to
  * the drawn places */
-static vec3_t g_ProxiesDrawn[NETREP_MAX_ENTS];
+static vec3_t g_ProxiesDrawn[NETREP_MAX_ENTS], g_ProxiesVel[NETREP_MAX_ENTS];
 static byte g_ProxiesMoved[NETREP_MAX_ENTS];
 static byte g_AnyMoved;
 
-void Watch_ProxiesAt(double t, byte players) {
+void Watch_ProxiesAt(double t, int also) {
 	const cEntity *own = Play_Entity();
 	for (int s = 0; s < NETREP_MAX_ENTS; s++) {
 		WatchProxy *p = &watch.px[s];
 		if (!p->e || !p->n || p->kind == NETREP_MISSILE) {
 			continue;
 		}
-		/* the ships of no player stay: the traffic follows its rails, its path ahead is a worse guess than where it
-		 * is drawn (A/B in the M4b handback); the other characters only on request (players 0) */
+		/* the ships of no player only with WATCH_AT_SHIPS (the old path keeps them where they are drawn: the traffic
+		 * follows its rails, its path ahead was a worse guess, A/B in the M4b handback), the other characters with
+		 * WATCH_AT_CHARS */
 		byte player = (p->s[p->n - 1].st.flags & NETREP_FL_PLAYER) != 0;
-		if ((players || p->kind == NETREP_SHIP || p->kind == NETREP_ITEM) && !player) {
+		if (!player && !(p->kind == NETREP_SHIP ? also & WATCH_AT_SHIPS : p->kind == NETREP_ITEM ? 0 : also & WATCH_AT_CHARS)) {
 			continue;
 		}
 		if (!player && own && !g_ProxiesMoved[s] && Watch_DistSq(p->e, own) > WATCH_AHEAD_RADIUS * WATCH_AHEAD_RADIUS) {
@@ -618,10 +630,18 @@ void Watch_ProxiesAt(double t, byte players) {
 		vec3_t pos;
 		if (!g_ProxiesMoved[s]) {
 			g_ProxiesDrawn[s] = p->e->pos;
-			g_ProxiesMoved[s] = 1;
+			g_ProxiesMoved[s] = Entity_IsType(p->e, TYEN_OBJECT) ? 2 : 1;
+			if (g_ProxiesMoved[s] > 1) {
+				g_ProxiesVel[s] = Obj(p->e)->vel;
+			}
 		}
-		Watch_PosAt(p, t, &pos);
+		/* the velocity then too: a ship's bounce off it takes it */
+		vec3_t vel;
+		Watch_PosAt(p, t, &pos, &vel);
 		Entity_SetPos(p->e, &pos);
+		if (g_ProxiesMoved[s] > 1) {
+			Obj(p->e)->vel = vel;
+		}
 		g_AnyMoved = 1;
 	}
 }
@@ -634,6 +654,9 @@ void Watch_ProxiesBack(void) {
 		if (g_ProxiesMoved[s]) {
 			if (watch.px[s].e) {
 				Entity_SetPos(watch.px[s].e, &g_ProxiesDrawn[s]);
+				if (g_ProxiesMoved[s] > 1) {
+					Obj(watch.px[s].e)->vel = g_ProxiesVel[s];
+				}
 			}
 			g_ProxiesMoved[s] = 0;
 		}
@@ -1264,9 +1287,7 @@ void Watch_PreFrame(void) {
 	if (g_Mp2) {
 		Pres_ClientShown(rt);
 	}
-	if (g_Play) {
-		Play_PreFrame(now, watch.rtt, watch.rttVar, watch.loss);
-	}
+	watch.playDue = g_Play;
 	for (int s = 0; s < NETREP_MAX_ENTS; s++) {
 		if (watch.px[s].e && watch.px[s].n) {
 			Watch_Place(s, &watch.px[s], rt, dt);
@@ -1284,6 +1305,13 @@ void Watch_PreFrame(void) {
 	}
 }
 
+void Watch_FrameInput(void) {
+	if (watch.playDue) {
+		watch.playDue = 0;
+		Play_PreFrame((double)Plat_RealNs() / 1e9, watch.rtt, watch.rttVar, watch.loss);
+	}
+}
+
 void Watch_PostFrame(void) {
 	uint64_t ns = Plat_RealNs(), ms = ns / 1000000;
 	uint16_t newest;
@@ -1293,6 +1321,8 @@ void Watch_PostFrame(void) {
 	Net2Stats st;
 	int n;
 
+	/* a frame without its input update (a load, no time passed): the step all the same */
+	Watch_FrameInput();
 	if (!watch.host) {
 		return;
 	}

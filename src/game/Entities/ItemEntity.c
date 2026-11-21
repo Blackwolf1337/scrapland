@@ -14,6 +14,7 @@
 #include "scrap/withlifeentity.h"
 #include "scrap/staticinit.h"
 #include "scrap/players.h"
+#include "scrap/play.h"
 
 #define CITEMENTITY_VFTABLE (&cItemEntity_vftable.base)
 #define g_ItemFxDist (GVar_FXItemFadeMaxDist.value.f)		/* the fade effects only nearer (60000) */
@@ -103,12 +104,18 @@ static void cItemEntity_Free(cEntity *base) {
 	operator_delete(self);
 }
 
+static byte g_ItemStepTouch;
+
 static void cItemEntity_Touch(cEntity *elem, cEntity *other, const vec3_t *point, const vec3_t *dir) {
 	cItemEntity *self = (cItemEntity *)elem;
 	cEntity *pl = Players_Net() ? NULL : Item_Usr0();
 
 	(void)point;
 	(void)dir;
+	/* not in the original: a -mp2 player's ship touches the parking boxes in its own step (NetPl_StepBrakes) */
+	if (!g_ItemStepTouch && NetPl_StepBrakes(other) && NetPl_IsParkBox(elem)) {
+		return;
+	}
 	if (self->onlyUser && (Players_Net() ? !Players_Is(other) : !pl || pl != other)) {
 		return;
 	}
@@ -129,6 +136,12 @@ static void cItemEntity_Touch(cEntity *elem, cEntity *other, const vec3_t *point
 	cPy_Function_AddParamS(&self->onTake, other->name);
 	cPy_Function_Execute(&self->onTake, 0);
 	Players_Leave(was);
+}
+
+void cItemEntity_TouchBy(cEntity *item, cEntity *other) {
+	g_ItemStepTouch = 1;
+	cItemEntity_Touch(item, other, &other->pos, NULL);
+	g_ItemStepTouch = 0;
 }
 
 static void cItemEntity_SetBackTime(cItemEntity *self, float t);

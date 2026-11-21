@@ -67,6 +67,7 @@ static struct {
 		uint64_t ns;				/* when it came, 0 free */
 	} camWait[NS_CAMWAITS];
 	byte pathOn;
+	byte pathLocal;					/* the path is one the client started itself (NetScene_ClientOwnPath) */
 	byte cOn, linked, seen;
 	char cCls[NS_NAME], cEnt[NS_NAME];
 	int cFlags, cTick;
@@ -407,12 +408,16 @@ void NetScene_ClientPath(const char *name, const netScenePath_t *path) {
 		return;
 	}
 	cCamPathEntity *p = (cCamPathEntity *)e;
+	/* the server's path of a flow the client started for the eye goes on from where the client's is */
+	float was = p->time;
 	p->numPoints = path->n;
 	/* the own entity is drawn at its predicted time, ahead of the server's: the path as far as it is at that time,
 	 * so the camera and the own ship it shows (boarded, parked) keep single player's timing */
 	double own = Play_OwnTime();
 	float ahead = own > 0.0 && path->sent > 0.0 && own > path->sent ? (float)(own - path->sent) : 0.0f;
-	p->time = path->time + (ahead < 0.5f ? ahead : 0.5f);
+	float at = path->time + (ahead < 0.5f ? ahead : 0.5f);
+	p->time = ns.pathLocal && was > at ? was : at;
+	ns.pathLocal = 0;
 	for (int k = 0; k < path->n; k++) {
 		cCamPathPoint *pt = &p->points[k];
 		Str_Copy(pt->cam, !strcmp(path->p[k].cam, "@own") ? NS_OWNCAM : path->p[k].cam, sizeof(pt->cam));
@@ -486,6 +491,24 @@ void NetScene_ClientCamVar(const char *name, const char *s, float f) {
 		Entity_VarF(cam, name, &d, 1);
 	}
 	NetAudit_Name(NA_CAMERA, "scene.client.camvar:", name);
+}
+
+cEntity *NetScene_ClientOwnPath(void) {
+	cEntity *e = World_FindEntity(NS_PATH);
+	if (!e) {
+		e = cWorld_CreateEntity(g_pWorld, NS_PATH, 0.0f, 0.0f, 0.0f, TYEN_CAMPATH);
+	}
+	if (!e || !Entity_IsType(e, TYEN_CAMPATH)) {
+		return NULL;
+	}
+	((cCamPathEntity *)e)->time = 0.0f;
+	ns.pathOn = 1;
+	ns.pathLocal = 1;
+	return e;
+}
+
+void NetScene_ClientOwnPathDone(void) {
+	ns.pathLocal = 0;
 }
 
 byte NetScene_ClientPathHolds(void) {

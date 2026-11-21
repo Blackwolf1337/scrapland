@@ -127,6 +127,11 @@ void NetScene_ClientEnd(const char *cls);
 void NetScene_ClientPath(const char *name, const netScenePath_t *path);
 /* a setting of the own camera (PRES_O_CAMVAR; s: an entity name of the server, else the number f) */
 void NetScene_ClientCamVar(const char *name, const char *s, float f);
+/* -mp2: a camera path the client starts itself for the eye (Play.c: the boarding at the use's press): the path entity,
+ * its time 0, which the caller fills and puts on view 0; the server's path of the flow, when it comes, goes on from
+ * where it is (its points, the later time of the two); Done: no path of the server is waited for any more */
+struct cEntity *NetScene_ClientOwnPath(void);
+void NetScene_ClientOwnPathDone(void);
 /* the own camera stays off view 0 while a path plays (Play_ViewCamera) */
 byte NetScene_ClientPathHolds(void);
 /* each frame: the camera link once the replica is there, the end when the replica went without an end */

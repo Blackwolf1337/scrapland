@@ -117,6 +117,7 @@ typedef struct RepPlayer {
 	byte step;						/* that step is due */
 	uint64_t stepTick;				/* the tick of its entity's last step */
 	uint8_t moved;					/* the scripts' moves of its entity (-mp2: its rollback state says so) */
+	byte touched;					/* -mp2: a collision with another ship since its last rollback state */
 } RepPlayer;
 
 typedef struct RepRewind {
@@ -1686,9 +1687,21 @@ static void Rep_SendOwn(Net2Host *host, RepPlayer *pl, cEntity *e) {
 	uint8_t buf[NETREP_OWN_MAX];
 
 	NetPl_OwnOf(e, (uint32_t)rep.tick, pl->moved, &o);
+	if (pl->touched) {
+		o.flags |= NETPL_OF_TOUCHED;
+		pl->touched = 0;
+	}
 	int n = NetRep_WriteOwn(buf, sizeof(buf), &o);
 	if (n > 0) {
 		Net2_Send(host, pl->conn, REP_CH_UNRELIABLE, buf, n);
+	}
+}
+
+void Rep_OwnTouched(cEntity *e) {
+	for (int i = 0; i < PLAYERS_MAX; i++) {
+		if (rep.pl[i].used && rep.pl[i].own == e) {
+			rep.pl[i].touched = 1;
+		}
 	}
 }
 

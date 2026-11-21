@@ -10,6 +10,7 @@
 #include "scrap/app.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
+#include "scrap/feellog.h"
 #include "scrap/filepak.h"
 #include "scrap/filesys.h"
 #include "scrap/input.h"
@@ -657,7 +658,12 @@ static byte CApp_FrameRun(CApp *self) {
 	if (!App_Headless()) {
 		Input_Update(dt);
 	}
+	/* not in the original: a client's own player steps with this frame's input (include/scrap/play.h) */
+	if (g_Watch) {
+		Watch_FrameInput();
+	}
 	if (g_DrawNextFrame) {
+		FeelLog_Render();
 		App_Render(self);
 	}
 	g_DrawNextFrame = 1;
