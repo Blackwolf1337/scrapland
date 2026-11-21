@@ -66,7 +66,8 @@ export AUTO_MID_Mission_InfiltrateBank='@|poll inst @ show MissionsFuncs.current
 # foot and uses it, pb stays out of ships (no auto line)
 export AUTO_PRE_Mission_ReinsertOwnMatrix2='usenear $a DM_Mission_RestoreMatrix;wait 30' AUTO_B_Mission_ReinsertOwnMatrix2='0'
 # DestroyHumphrey: Humphrey attacks once the player boards a ship (Parking.SwitchVehicleMissionCallback StartMission)
-export AUTO_PRE_Mission_DestroyHumphrey='switch $a;switch $b'
+# (part 3: with two members Humphrey killed the party again and again: no member takes damage, as the 8 player chain needs none)
+export AUTO_PRE_Mission_DestroyHumphrey='switch $a;switch $b;tough $a 1;tough $b 1'
 # GoWithHuman: the human waits at the entrance and follows D-Tritus once he is near (CheckMaxDist), to the machine's
 # switch; he stops when D-Tritus is too far: pa goes to him first, then walks (test line walk)
 export AUTO_PRE_Mission_GoWithHuman='goto $a Human_Entrance 0 300;wait 5;walk $a 1 Human_Entrance'

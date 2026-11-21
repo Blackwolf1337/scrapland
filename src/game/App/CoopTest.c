@@ -1142,9 +1142,10 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 		g_Coop.pl[i].autoSince = now;
 		return;
 	}
-	if (Cp_NITalk(i)) {
-		/* its talk of a phone cab plays: it listens, as the single player's talk holds its input (a boarding during
-		 * MeetBerto's call left the talk's end on a ship: AutoSelect, the call's callback lost) */
+	if (Cp_NITalk(i) || (g_Coop.pl[i].usedAt > 0.0 && now - g_Coop.pl[i].usedAt < CP_USE_HOLD)) {
+		/* its talk of a phone cab plays, or may start after its use: it listens, as the single player's talk holds its
+		 * input (a boarding during MeetBerto's call left the talk's end on a ship: AutoSelect, the call's callback and
+		 * the talk's end lost) */
 		g_Coop.pl[i].autoSince = now;
 		return;
 	}
