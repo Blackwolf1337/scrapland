@@ -1028,6 +1028,10 @@ byte Ui_ClientHangar(int k) {
 	return 1;
 }
 
+void Ui_ClientHudCleared(void) {
+	ui.hudBack = 1;
+}
+
 void Ui_ClientControls(const char *set) {
 	/* the end of the machine's scene (CharConversor.EndOfScene) builds the HUD skeleton the instance does not send
 	 * (include/scrap/pres.h): the client's own, as Play.c builds it */
@@ -1041,10 +1045,6 @@ void Ui_ClientControls(const char *set) {
 	if (!Mode_Import(mod) || !Native_CallMod(mod, "Create", NULL, "i", 0L)) {
 		Native_ErrPrint();
 	}
-}
-
-void Ui_ClientHudCleared(void) {
-	ui.hudBack = 1;
 }
 
 byte Ui_ClientAsk(int k) {

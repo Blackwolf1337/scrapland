@@ -8,6 +8,7 @@
 #include "scrap/camcontrol.h"
 #include "scrap/fxelements.h"
 #include "scrap/input.h"
+#include "scrap/netscene.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/staticinit.h"
 
@@ -268,6 +269,8 @@ static byte cFollowCamEntity_VarF(cEntity *self, const char *name, double *d, in
 			float v = (float)*d;
 			fc->camDist = v;
 			fc->dist = v;
+			/* not in the original: a player's camera of a -mp2 instance tells its client */
+			NetScene_CamVar(self, name, *d, NULL);
 		} else {
 			*d = fc->camDist;
 		}
@@ -285,6 +288,7 @@ static byte cFollowCamEntity_VarF(cEntity *self, const char *name, double *d, in
 	}
 	if ((byte)set) {
 		*deg = Cam_Deg2Rad(*d);
+		NetScene_CamVar(self, name, *d, NULL);
 	} else {
 		*d = Rad2Deg(*deg);
 	}
@@ -549,6 +553,7 @@ static byte cFollowCamEntity_VarS(cEntity *self, const char *name, char **s, int
 	if (!strcmp(name, "MainTarget")) {
 		if ((byte)set) {
 			Str_Copy(fc->mainTarget, *s, 0x80);
+			NetScene_CamVar(self, name, 0.0, *s);
 		} else {
 			*s = fc->mainTarget;
 		}
@@ -558,6 +563,7 @@ static byte cFollowCamEntity_VarS(cEntity *self, const char *name, char **s, int
 		if ((byte)set) {
 			cEntity *e = World_FindEntity(*s);
 			cCamEntity_SetTarget(self, e && Entity_IsType(e, TYEN_OBJECT) ? e : NULL);
+			NetScene_CamVar(self, name, 0.0, *s);
 		} else {
 			*s = fc->target ? fc->target->name : str_Empty;
 		}

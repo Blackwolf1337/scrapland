@@ -4,6 +4,7 @@
  * the audit of calls without a route and of sounds played twice. Not in the original.
  */
 #include <math.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "scrap/console.h"
@@ -59,7 +60,7 @@ byte g_PresHud;
 static const char *const pres_opNames[PRES_O_COUNT] = { "?", "soundat", "sound3d", "sound2d", "voiceopen", "voiceplay",
 	"voicestop", "music", "shipexpl", "fxent", "msgtext", "labeltext", "speech", "speechcancel", "chat", "head", "fade",
 	"cinema", "actionset", "hudadd", "hudclear", "hudshow", "hudset", "talk", "itemsnd", "scene", "sceneend", "campath",
-	"fxcall", "gvar", "charres", "savevar" };
+	"fxcall", "gvar", "charres", "time", "camvar", "savevar" };
 
 /* a voice of a -mp2 instance's model: nothing plays, the file's length and the time it started give what the scripts
  * read (VoiceRemain), the text what the talk voice's checks read */
@@ -118,8 +119,19 @@ static struct {
 	} hold[PRES_HOLDS];
 	uint32_t held;
 } pres = { .own = -1 };
+static float pres_lag;				/* s the held message being played comes after its server time */
+static double pres_shown = -1.0;	/* the server time drawn in this frame (Pres_ClientShown), < 0 before */
 
 /* ---- both ---- */
+
+/* SCRAP_PRES_TRACE (tests): every record sent (instance) and played (client) in the log */
+static byte Pres_Trace(void) {
+	static int trace = -1;
+	if (trace < 0) {
+		trace = getenv("SCRAP_PRES_TRACE") != NULL;
+	}
+	return (byte)trace;
+}
 
 byte Pres_Out(void) {
 	return g_Mp2 && g_Instance && !g_PresIn && !g_PresDerived;
@@ -250,6 +262,10 @@ void Pres_Send(void) {
 	}
 	NetAudit_Func(NA_SOUND, "pres.sent:", pres_opNames[pres.op]);
 	pres.sent[pres.op]++;
+	if (Pres_Trace()) {
+		Con_Printf("pres: %s to %llx at %.3f from %s\n", pres_opNames[pres.op], (unsigned long long)pres.to, Instance_Time(),
+			Pres_ModSite());
+	}
 	for (int i = 0; i < PLAYERS_MAX; i++) {
 		if (!(pres.to >> i & 1)) {
 			continue;
@@ -260,6 +276,14 @@ void Pres_Send(void) {
 		if (!pres.size[i]) {
 			pres.buf[i][0] = PRES_MSG;
 			pres.size[i] = 1;
+			if (NetScene_Timed(i)) {
+				/* the records of a scene's audience at the scene's time on the client */
+				NetRepBuf t;
+				NetRepBuf_Init(&t, pres.buf[i] + 1, 8);
+				NetRep_PutU8(&t, PRES_O_TIME);
+				NetRep_PutSVar(&t, (int)(Instance_Time() * 1000.0));
+				pres.size[i] += t.size;
+			}
 		}
 		memcpy(pres.buf[i] + pres.size[i], pres.rec, (size_t)pres.w.size);
 		pres.size[i] += pres.w.size;
@@ -894,6 +918,7 @@ void Pres_Fade(const cScorer *sc, uint32_t from, uint32_t to, float time) {
 		Pres_PutInt((int)to);
 		Pres_PutFloat(time);
 		Pres_Send();
+		NetScene_FadeSent(from, to, time);
 	}
 }
 
@@ -1319,6 +1344,8 @@ static void Pres_Play(int op, NetRepReader *r) {
 		cScorer *sc = Scorer_Get(0);
 		if (!r->bad && sc) {
 			ScorerFade_Start(&sc->fade, from, to, time);
+			/* a held record played after its time: the fade as far as it is at the time drawn */
+			sc->fade.time = sc->fade.time > pres_lag ? sc->fade.time - pres_lag : 0.0f;
 		}
 		break;
 	}
@@ -1328,6 +1355,9 @@ static void Pres_Play(int op, NetRepReader *r) {
 		cScorer *sc = Scorer_Get(0);
 		if (!r->bad && sc && time >= 0.0f) {
 			ScorerCinema_Set(&sc->cinema, on != 0, time);
+			if (time > 0.0f) {
+				sc->cinema.time = sc->cinema.time + pres_lag < sc->cinema.life ? sc->cinema.time + pres_lag : sc->cinema.life;
+			}
 		}
 		break;
 	}
@@ -1397,6 +1427,25 @@ static void Pres_Play(int op, NetRepReader *r) {
 			NetScene_ClientEnd(name);
 		}
 		break;
+	case PRES_O_TIME:
+		NetRep_GetSVar(r);
+		break;
+	case PRES_O_CAMVAR: {
+		int kind;
+		NetRep_GetStr(r, name, sizeof(name));
+		kind = NetRep_GetSVar(r);
+		if (kind) {
+			NetRep_GetStr(r, s2, sizeof(s2));
+		}
+		float f = kind ? 0.0f : Pres_GetFloat(r);
+		if (!r->bad) {
+			if (Pres_Trace()) {
+				Con_Printf("pres: camvar %s %s %.2f\n", name, kind ? s2 : "-", (double)f);
+			}
+			NetScene_ClientCamVar(name, kind ? s2 : NULL, f);
+		}
+		break;
+	}
 	case PRES_O_FXCALL: {
 		static cPy_Function call;
 		static uint8_t bytes[PRES_REC];
@@ -1421,6 +1470,7 @@ static void Pres_Play(int op, NetRepReader *r) {
 		NetRep_GetStr(r, name, sizeof(name));
 		int n = NetRep_GetSVar(r);
 		path.time = Pres_GetFloat(r);
+		path.sent = NetRep_GetSVar(r) / 1000.0;
 		path.n = n < 0 ? 0 : n > NETSCENE_PATH_POINTS ? NETSCENE_PATH_POINTS : n;
 		for (int k = 0; k < path.n && !r->bad; k++) {
 			NetRep_GetStr(r, path.p[k].cam, sizeof(path.p[k].cam));
@@ -1491,6 +1541,9 @@ static byte Pres_Hold(int op, const uint8_t *rec, int size) {
 }
 
 static void Pres_PlayRecord(int op, NetRepReader *r) {
+	if (Pres_Trace()) {
+		Con_Printf("pres: %s (server time %.3f, lag %.3f)\n", pres_opNames[op], pres_shown, (double)pres_lag);
+	}
 	pres.played[op]++;
 	pres.recOp = op;
 	if (op == PRES_O_MSGTEXT || op == PRES_O_LABELTEXT || op == PRES_O_SPEECH) {
@@ -1503,10 +1556,14 @@ static void Pres_PlayRecord(int op, NetRepReader *r) {
 
 /* the messages that came while a scene of the server plays here, held for the interpolation delay: the scene's
  * entities are drawn that long behind the server, so what its lines present (a fade, an effect) plays at the scene's
- * time it played at on the server (include/scrap/netscene.h) */
+ * time it played at on the server (include/scrap/netscene.h). A message with its server time (PRES_O_TIME first)
+ * plays once that time is drawn, and its fades and cinema bars are as far as they are then (pres_lag); one that
+ * starts a scene waits for its time as well */
 #define PRES_LATE 32
+#define PRES_LATE_MAX_NS 1000000000ull	/* a message with a time plays at most that long after its real due time */
 static struct {
-	uint64_t due;					/* Plat_RealNs when it plays, 0 free */
+	uint64_t due;					/* Plat_RealNs when it plays (without a time) */
+	double at;						/* the server time it plays at, < 0 none */
 	int size;
 	uint8_t data[PRES_BUF];
 } pres_late[PRES_LATE];
@@ -1514,26 +1571,54 @@ static int pres_lateFirst, pres_lateN;
 
 static void Pres_Play2(const uint8_t *data, int size);
 
+/* the server time of a message (its PRES_O_TIME), < 0 none */
+static double Pres_MessageTime(const uint8_t *data, int size) {
+	NetRepReader r;
+	if (size < 3 || data[1] != PRES_O_TIME) {
+		return -1.0;
+	}
+	NetRepReader_Init(&r, data + 2, size - 2);
+	int ms = NetRep_GetSVar(&r);
+	return r.bad ? -1.0 : ms / 1000.0;
+}
+
 /* the held messages that are due (all with force) */
 static void Pres_LateFlush(byte force) {
 	uint64_t now = Plat_RealNs();
-	while (pres_lateN && (force || now >= pres_late[pres_lateFirst].due)) {
+	while (pres_lateN) {
 		int k = pres_lateFirst;
+		double at = pres_late[k].at;
+		byte due = at >= 0.0 && pres_shown >= 0.0 ? pres_shown >= at || now >= pres_late[k].due + PRES_LATE_MAX_NS :
+			now >= pres_late[k].due;
+		if (!force && !due) {
+			break;
+		}
 		pres_lateFirst = (pres_lateFirst + 1) % PRES_LATE;
 		pres_lateN--;
+		pres_lag = at >= 0.0 && pres_shown > at ? (float)(pres_shown - at) : 0.0f;
+		pres_lag = pres_lag > 0.5f ? 0.5f : pres_lag;
 		Pres_Play2(pres_late[k].data, pres_late[k].size);
+		pres_lag = 0.0f;
 	}
 }
 
+void Pres_ClientShown(double rt) {
+	pres_shown = Watch_ClockReady() ? rt : -1.0;
+	Pres_LateFlush(0);
+}
+
 void Pres_Message(const uint8_t *data, int size) {
+	double at = Pres_MessageTime(data, size);
 	/* while some are held every message waits behind them (the order of the records stays) */
-	if ((NetScene_ClientHolds() || pres_lateN) && size <= PRES_BUF) {
+	if ((NetScene_ClientHolds() || pres_lateN || (at >= 0.0 && pres_shown >= 0.0 && at > pres_shown)) &&
+		size <= PRES_BUF) {
 		if (pres_lateN == PRES_LATE) {
 			Pres_LateFlush(1);
 		}
 		int k = (pres_lateFirst + pres_lateN) % PRES_LATE;
 		double d = NetScene_ClientHolds() ? Watch_Delay() : 0.0;
 		pres_late[k].due = Plat_RealNs() + (uint64_t)(d > 0.0 ? d * 1e9 : 0.0);
+		pres_late[k].at = at;
 		pres_late[k].size = size;
 		memcpy(pres_late[k].data, data, (size_t)size);
 		pres_lateN++;

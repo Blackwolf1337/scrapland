@@ -557,6 +557,40 @@ static void Watch_Pick(const WatchProxy *p, double rt, const WatchSample **pa, c
 	*pext = ext;
 }
 
+/* the time of layer l of the proxy drawn at server time rt, -1 */
+static float Watch_ActTarget(const WatchProxy *p, double rt, int l, uint32_t *act) {
+	const WatchSample *a, *b;
+	float f, ext;
+	Watch_Pick(p, rt, &a, &b, &f, &ext);
+	return ReplicaEnt_LayerTarget(&a->st, &b->st, f, l, act);
+}
+
+double Watch_ActAt(const cEntity *e, int l, float t, double from, double to) {
+	const WatchProxy *p = NULL;
+	uint32_t act, at;
+	for (int s = 0; e && s < NETREP_MAX_ENTS && !p; s++) {
+		p = watch.px[s].e == e && watch.px[s].n ? &watch.px[s] : NULL;
+	}
+	if (!p || from >= to || Watch_ActTarget(p, to, l, &act) < t) {
+		return to;
+	}
+	/* the first time of the span in that action at t or later: the layer's time grows with the server time in one
+	 * action, so halve the span */
+	double lo = from, hi = to;
+	if (Watch_ActTarget(p, lo, l, &at) >= t && at == act) {
+		return to;
+	}
+	for (int k = 0; k < 30; k++) {
+		double mid = (lo + hi) * 0.5;
+		if (Watch_ActTarget(p, mid, l, &at) >= t && at == act) {
+			hi = mid;
+		} else {
+			lo = mid;
+		}
+	}
+	return hi;
+}
+
 /* the position and velocity of the proxy at server time rt */
 static void Watch_PosAt(const WatchProxy *p, double rt, vec3_t *pos, vec3_t *vel) {
 	const WatchSample *a, *b;
@@ -681,8 +715,11 @@ static void Watch_Place(int slot, WatchProxy *p, double rt, float dt) {
 	}
 	if (g_Mp2 && o->mod.link.target) {
 		/* a replica linked to another model's node (a scene's actors) is placed by its link in its update; a jump
-		 * to the samples' place and back each frame would lose the model's room of an indoor level */
+		 * to the samples' place and back each frame would lose the model's room of an indoor level. Its own angles
+		 * stay the server's (drawn by them without UseLinkAng: Junkyard's lifeboat on its platform) */
 		e->pos = pos;
+		o->ang = ang;
+		o->slotAng = ang;
 	} else {
 		Entity_SetPos(e, &pos);
 		o->slotPos = pos;
@@ -1246,7 +1283,14 @@ void Watch_PreFrame(void) {
 	double now = (double)ns / 1e9;
 	double delay = NetRepDelay_Step(&watch.delay, dt, watch.loss);
 	double rt = NetRepFollow_Step(&watch.follow, NetRepClock_Server(&watch.clock, now) - watch.rtt * 0.5 - delay, dt);
+	if (g_Mp2) {
+		/* tests: a scene screenshot due in this frame is drawn at its scene time exactly */
+		rt = NetScene_ShotServerTime(watch.shown, rt);
+	}
 	watch.shown = rt;
+	if (g_Mp2) {
+		Pres_ClientShown(rt);
+	}
 	watch.playDue = g_Play;
 	for (int s = 0; s < NETREP_MAX_ENTS; s++) {
 		if (watch.px[s].e && watch.px[s].n) {

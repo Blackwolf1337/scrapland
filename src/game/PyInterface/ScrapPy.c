@@ -11,6 +11,7 @@
 #include "scrap/global.h"
 #include "scrap/nativeobj.h"
 #include "scrap/netaudit.h"
+#include "scrap/play.h"
 #include "scrap/scorer.h"
 #include "scrap/players.h"
 #include "scrap/pres.h"
@@ -297,7 +298,16 @@ API_FN(Scrap, GetAlarmChars) {
 /* GetCam(i) : name of the camera */
 API_FN(Scrap, GetCam) {
 	int i;
-	return Mode_Parse(a, n, "i", &i) && Api_Build(out, "s", cWorld_GetCamName(g_pWorld, i));
+	if (!Mode_Parse(a, n, "i", &i)) {
+		return 0;
+	}
+	/* not in the original: view 0 in a player's context of a -mp2 instance is that player's camera (Mode_CamName;
+	 * the outdoor scenes of the missions set its CamDist, Target, ...) */
+	if (i == 0 && Rep_SpFlows() && Players_Current() != PLAYERS_NONE) {
+		Mode_CamName(i, out);
+		return 1;
+	}
+	return Api_Build(out, "s", cWorld_GetCamName(g_pWorld, i));
 }
 
 /* GetFirst() : Retorna la primera entidad de la list o none */

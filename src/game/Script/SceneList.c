@@ -96,6 +96,46 @@ byte SceneList_Import(const char *module) {
 	return ok && Mode_Import(module);
 }
 
+/* the character libraries a scene's loader needs (MakeChar of its actors) that its level does not load for every
+ * player: an outdoor level loads only the player's character (Init's module code) and GDB's scene is Bishop's, whom
+ * only a player of the mission is */
+static const struct {
+	const char *scene, *chars[2];
+} sl_chars[] = {
+	{ "EnterMatrix", { "Bishop", NULL } },
+};
+
+byte SceneList_CharLib(const char *ch) {
+	char lib[0x40], file[0x60];
+	nativeVal_t pack;
+	if (Mode_Import(ch)) {
+		return 1;
+	}
+	/* the libraries Init.LoadCharLib preloads, in the pack of the game's scripts */
+	Native_ErrClear();
+	Native_SetStr(&pack, "Scripts");
+	byte ok = Mode_Pack(&pack);
+	Str_PrintfQuiet(file, sizeof(file), "Chars/%s.pyc", ch);
+	ok = ok && PORT_CALL(Scrap, PreloadLibrary, NULL, "ss", ch, file);
+	Str_PrintfQuiet(lib, sizeof(lib), "%sSound", ch);
+	Str_PrintfQuiet(file, sizeof(file), "Sound/%sSound.pyc", ch);
+	ok = ok && PORT_CALL(Scrap, PreloadLibrary, NULL, "ss", lib, file);
+	Native_Free(&pack);
+	Mode_Pack(NULL);
+	if (!ok) {
+		Native_ErrPrint();
+	}
+	return ok;
+}
+
+static void SceneList_Chars(const sceneInfo_t *s) {
+	for (size_t i = 0; i < sizeof(sl_chars) / sizeof(sl_chars[0]); i++) {
+		for (int k = 0; !crt_stricmp(sl_chars[i].scene, s->scene) && k < 2 && sl_chars[i].chars[k]; k++) {
+			SceneList_CharLib(sl_chars[i].chars[k]);
+		}
+	}
+}
+
 byte SceneList_Load(const sceneInfo_t *s) {
 	char code[0x100];
 	nativeVal_t text = { 0 };
@@ -105,8 +145,9 @@ byte SceneList_Load(const sceneInfo_t *s) {
 	if (SceneList_Loaded(s->scene)) {
 		return 1;
 	}
+	SceneList_Chars(s);
 	if (!SceneList_Import(s->module)) {
-		Native_ErrClear();
+		Native_ErrPrint();
 		return 0;
 	}
 	/* the line the debug menu ran: the function as the module holds it (a data section's replay or a port) */
@@ -116,7 +157,7 @@ byte SceneList_Load(const sceneInfo_t *s) {
 	byte ok = Exec_Text(&x, &text);
 	Native_Free(&text);
 	if (!ok) {
-		Native_ErrClear();
+		Native_ErrPrint();
 	}
 	return ok && SceneList_Loaded(s->scene);
 }
