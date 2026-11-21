@@ -50,6 +50,8 @@ CharAct.TakenPhoto	PARTY	the mission's hook of a photo: the party's in coop, a p
 CharAct.TakenPhotoMap	PARTY	the mission's hook of a photo: the party's in coop, a player's own photo elsewhere (stage 4.4)
 CharAct.onNPCDeath	WORLD	one value for the world (SIM module)
 CharConversor.AvailableChars	WORLD	table or constant of the interface
+CharConversor.AuxInterp	PLAYER	the possession of one player: its camera entity and its NewPlayer (a scheduled call in the player's context)
+CharConversor.Cam	PLAYER	the possession of one player: its camera entity and its NewPlayer (a scheduled call in the player's context)
 CharConversor.CheckConversor	WORLD	table or constant of the interface
 CharConversor.ConversionChars	WORLD	table or constant of the interface
 CharConversor.ConversionPoints	WORLD	table or constant of the interface
@@ -1137,7 +1139,7 @@ Parking.SwitchVehicleMissionCallbackAux	WORLD	one value for the world (SIM modul
 PhoneCab.audioComEntity	PLAYER	the communicator one player uses (its use runs in its context; stage 4.4)
 Police.FXPoliceGearConversionFile	WORLD	one value for the world (DEF module)
 Police.FXPoliceStealFile	WORLD	one value for the world (DEF module)
-Police.ResState	WORLD	one value for the world (DEF module)
+Police.ResState	PLAYER	the bribe of one player (its speech and the end of it run in the context of the player that talks; stage 6b)
 PoliceBoss.BrupBaseFile	WORLD	one value for the world (DEF module)
 PoliceBossSound.isPC	WORLD	one value for the world (DEF module)
 PoliceSound.isPC	WORLD	one value for the world (DEF module)

@@ -313,7 +313,12 @@ void NetScene_CamVar(cEntity *cam, const char *name, double d, const char *s) {
 	if (Coop_On() && NetScene_OwnCam(cam, PLAYERS_NONE)) {
 		i = PLAYERS_NONE;
 	} else if (i == PLAYERS_NONE || !NetScene_OwnCam(cam, i)) {
-		return;
+		/* a player's camera set in the world's context (an elevator's arrival gives the camera back to its rider) */
+		for (i = 0; i < PLAYERS_MAX && !(Players_Get(i) && NetScene_OwnCam(cam, i)); i++) {
+		}
+		if (i == PLAYERS_MAX) {
+			return;
+		}
 	}
 	if (!Pres_BeginMask(i == PLAYERS_NONE ? ~(uint64_t)0 : (uint64_t)1 << i, PRES_O_CAMVAR)) {
 		return;
@@ -482,6 +487,10 @@ void NetScene_ClientCamVar(const char *name, const char *s, float f) {
 		return;
 	}
 	if (s) {
+		/* the camera ride of an elevator the client started for the eye (include/scrap/play.h) */
+		if (!strcmp(name, "EntityLink") && *s) {
+			PlayFlow_Took(PLAYFLOW_ELEV, s);
+		}
 		if (!NetScene_CamTarget(cam, name, s)) {
 			int k = 0;
 			/* the same variable's wait is replaced, else a free one (the oldest given up when there is none) */

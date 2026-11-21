@@ -31,6 +31,7 @@
 #include "scrap/players.h"
 #include "scrap/replicate.h"
 #include "scrap/repent.h"
+#include "scrap/scenelist.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -370,7 +371,7 @@ static byte Fr_LoadClass(const char *cls) {
 		return 1;
 	}
 	/* outdoors the level loads no character scripts (Init's LoadChars): the class's script and its sound first */
-	if (!Mode_Import("Init") || !PORT_CALL(Init, LoadCharLib, NULL, "s", cls)) {
+	if (!SceneList_CharLib(cls)) {
 		Native_ErrPrint();
 	}
 	if (!Mode_Import("Chars") || !PORT_CALL(Chars, LoadRes, NULL, "s", cls)) {
@@ -386,13 +387,26 @@ void Faction_EnsureClass(const char *cls) {
 	}
 }
 
+/* single player's flows: the character of player i's save game (Char in its context: what the startup player, the
+ * conversor and the level's start gave it), NULL without one */
+static const char *Fr_SaveChar(int i) {
+	static char ch[64];
+	int was = Players_Enter(i);
+	const char *v = SaveVar_Get("Char");
+	Str_Copy(ch, v ? v : "", sizeof(ch));
+	Players_Leave(was);
+	return ch[0] ? ch : NULL;
+}
+
 const char *Faction_CharClass(int i) {
 	FrPlayer *p = Fr_Player(i);
 	const FactionTable *t = Faction_Table();
-	const char *cls = FR_DEFAULT_CHAR;
+	const char *cls = FR_DEFAULT_CHAR, *save;
 	if (p && t && fr.freeroam && p->faction >= 0) {
 		const FactionDef *f = &t->f[p->faction];
 		cls = p->armoured && f->armour[0] ? f->armour : Faction_PlayClass(f, Fr_Rank(p));
+	} else if (Rep_SpFlows() && (save = Fr_SaveChar(i)) != NULL) {
+		cls = save;
 	} else if (p && p->charCls[0]) {
 		cls = p->charCls;
 	}

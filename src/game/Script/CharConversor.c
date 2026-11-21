@@ -691,6 +691,13 @@ static byte Cc_Possession(const nativeVal_t *uname, const nativeVal_t *pname) {
 	if (go > 0) {
 		go = Mode_VObj(ent, "Invulnerable", inv) ? !Native_True(inv) : -1;
 	}
+	/* not in the original: on an instance a player's body is nobody else's, and a body another player took in this
+	 * frame (deleted at its end) is gone */
+	if (go > 0 && g_Instance && ent->type == NV_ENT && Native_Ent(ent) && (Players_Is(Native_Ent(ent)) ||
+		Native_Ent(ent)->deadNode.target)) {
+		Con_Printf("conversor: %s is not free for a possession\n", Native_Ent(ent)->name);
+		go = 0;
+	}
 	if (go <= 0) {
 		return Mode_Done(&t, go == 0);
 	}

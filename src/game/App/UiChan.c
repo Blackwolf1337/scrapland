@@ -314,6 +314,7 @@ void Ui_NewsHead(int on) {
 	}
 }
 
+static void Ui_Refuse(int i, int k, const char *why, const char *msgKey);
 byte Ui_MachineBusy(const char *machine, const char *msgKey) {
 	if (!g_Mp2 || !g_Instance) {
 		return 0;
@@ -321,14 +322,10 @@ byte Ui_MachineBusy(const char *machine, const char *msgKey) {
 	cEntity *m = machine ? World_FindEntity(machine) : NULL;
 	int i = Players_Current(), user = Players_OfMachine(m);
 	if (user >= 0 && user != i) {
-		/* single player's message of a machine that cannot be used now */
-		if (!Mode_LangMsg(msgKey)) {
-			Native_ErrPrint();
-		}
-		ui.refusals[UI_K_CONV]++;
-		Str_Copy(ui.lastRefusal, "busy", sizeof(ui.lastRefusal));
-		NetAudit_Func(NA_HUD, "ui.refuse:busy:", machine ? "machine" : "-");
+		/* single player's message of a machine that cannot be used now; the client gives up the conversor it started
+		 * for the eye (include/scrap/play.h) */
 		Con_Printf("ui: %s is player %d's, player %d's use refused\n", machine, user, i);
+		Ui_Refuse(i, UI_K_CONV, "busy", msgKey);
 		return 1;
 	}
 	Players_SetMachine(i, m);
@@ -965,8 +962,14 @@ void Ui_ClientMessage(const uint8_t *data, int size) {
 		if (k != UI_K_TEXTBOX && k != UI_K_MISSION) {
 			ui.cseq = (uint16_t)seq;
 		}
+		if (k == UI_K_CONV) {
+			PlayFlow_Took(PLAYFLOW_CONV, NULL);
+		}
 		Ui_ClientOpen(k, &r);
 	} else if (data[1] == UI_S_REFUSE) {
+		if (k == UI_K_CONV) {
+			PlayFlow_Refused();
+		}
 		ui.crefused[k]++;
 		Con_Printf("ui: the instance refused the %s\n", ui_names[k]);
 	} else if (data[1] == UI_S_CLOSE && ui.cui == k && ui.cseq == seq) {
@@ -1103,6 +1106,7 @@ static void Ui_State(tcBuf *b, int i) {
 		cls = WLife(e)->actCtrl->cls->name;
 	}
 	TC_Addf(b, "money\t%d\n", *Players_CurMoney());
+	TC_Addf(b, "alarm\t%.2f %d\n", (double)Players_CurAlarm()->value, Players_CurAlarm()->on);
 	TC_Addf(b, "class\t%s\n", cls);
 	TC_Addf(b, "entity\t%s\n", !e ? "none" : Entity_IsType(e, TYEN_CAR) ? "ship" : Entity_IsType(e, TYEN_WALKCHAR) ?
 		"char" : "other");
@@ -1195,10 +1199,23 @@ void Ui_Status(tcBuf *b, const char *arg) {
 	if (arg && sscanf(arg, "call %d %n", &i, &at) == 1 && at > 0 && i >= 0 && i < PLAYERS_MAX) {
 		/* "ui call <player> Module.Func|arg|...": a call table line of the scripts in the player's context (an
 		 * interface the scripts open for that player) */
-		const char *one[2] = { arg + at, NULL };
-		char mod[UI_NAME];
+		char line[512], mod[UI_NAME];
+		const char *one[2] = { line, NULL };
 		Str_PrintfQuiet(mod, sizeof(mod), "%.*s", (int)strcspn(arg + at, ".|"), arg + at);
 		int was = Players_Enter(i);
+		/* an argument @me: the name of the player's entity */
+		cEntity *me = Players_Get(i);
+		const char *src = arg + at, *m;
+		int n = 0;
+		while ((m = strstr(src, "|@me")) != NULL && (m[4] == '|' || !m[4])) {
+			int k = Str_PrintfQuiet(line + n, sizeof(line) - n, "%.*s|%s", (int)(m - src), src, me ? me->name : "None");
+			if (k < 0 || n + k >= (int)sizeof(line) - 1) {
+				break;
+			}
+			n += k;
+			src = m + 4;
+		}
+		Str_PrintfQuiet(line + n, sizeof(line) - n, "%s", src);
 		byte ok = Mode_Import(mod) && Mode_Calls(NULL, one);
 		Native_ErrPrint();
 		Players_Leave(was);
