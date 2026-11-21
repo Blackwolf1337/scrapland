@@ -24,6 +24,7 @@
  */
 #include <string.h>
 
+#include "scrap/coop.h"
 #include "scrap/input.h"
 #include "scrap/scrap.h"
 #include "scrap/replicate.h"
@@ -2027,7 +2028,7 @@ static byte Traitor_InitStatusC(const nativeVal_t *a, nativeVal_t *out) {
 	(void)a;
 	(void)out;
 	SaveVar_Set("Player.InfiniteLives", "1");
-	SaveVar_Set("Char", "Functionary");
+	Coop_SetChar("Functionary");
 	return Gd_MissionCharG("Functionary_Traitorius", TT, "CreateTraitoriusInit");
 }
 

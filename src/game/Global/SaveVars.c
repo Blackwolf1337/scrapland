@@ -88,6 +88,11 @@ int SaveVar_OverOwner(const char *name) {
 	if (i < 0 || i >= PLAYERS_MAX) {
 		return -1;
 	}
+	/* coop: every variable is the party's story but those of data/coop/rules.def's list local (a member's own; the
+	 * story of a member's change goes to every member, Coop_SaveVarChanged) */
+	if (Coop_On() && !Party_RuleHas("local", name)) {
+		return -1;
+	}
 	return SV_PlayerName(name) ? i : -1;
 }
 

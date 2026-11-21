@@ -38,6 +38,7 @@
 #include <limits.h>
 #include <string.h>
 
+#include "scrap/coop.h"
 #include "scrap/input.h"
 #include "scrap/modvars.h"
 #include "scrap/nativeobj.h"
@@ -859,7 +860,7 @@ static byte CatchRudolph_SetNextMission(void) {
 		return 0;
 	}
 	if (in == 0) {
-		SaveVar_Set("Char", "Dtritus");
+		Coop_SetChar("Dtritus");
 	}
 	SaveVar_Set("PrevMap", "Levels/Bank");
 	SaveVar_Set("ComeFrom", "DoorElevator");
@@ -1497,7 +1498,7 @@ static byte InfiltrateBank_InitStatus(void) {
 		return 0;
 	}
 	if (LvN_SaveIs("Char", "BankMaster")) {
-		SaveVar_Set("Char", "Dtritus");
+		Coop_SetChar("Dtritus");
 	}
 	return 1;
 }

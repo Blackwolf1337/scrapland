@@ -654,6 +654,15 @@ static byte Pk_SetDtritusPlateN(const nativeVal_t *v, const nativeVal_t *active)
 	if (Rep_SpFlows() && owner < 0) {
 		return 1;
 	}
+	/* the instance otherwise: the plate only for the coop party ship while it lives (a destroyed one's name read
+	 * failed at every respawn of a parked ship) */
+	if (owner < 0 && Pk_NotOwn()) {
+		byte none = !Pk_G("PlayerShip", &plate) || Pk_NotOwnShip(&plate);
+		Native_Free(&plate);
+		if (none) {
+			return 1;
+		}
+	}
 	int was = Players_Current();
 	if (owner >= 0) {
 		Players_Enter(owner);

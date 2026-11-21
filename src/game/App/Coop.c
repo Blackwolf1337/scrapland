@@ -192,6 +192,33 @@ void Coop_LevelChar(const char *level) {
 	}
 }
 
+void Coop_EnterChar(int i) {
+	if (Coop_On() && g_Instance && g_Mp2 && g_Coop.levelChar[0]) {
+		Con_Printf("coop: player %d enters as %s, the character the level's scripts made the player\n", i,
+			g_Coop.levelChar);
+		Faction_SetChar(i, g_Coop.levelChar);
+	}
+}
+
+void Coop_SetChar(const char *cls) {
+	SaveVar_Set("Char", cls);
+	if (!Coop_On() || !g_Instance || !g_Mp2) {
+		return;
+	}
+	int cur = Players_Current();
+	if (cur != PLAYERS_NONE) {
+		Faction_SetChar(cur, cls);
+		return;
+	}
+	Str_Copy(g_Coop.levelChar, cls, sizeof(g_Coop.levelChar));
+	for (int i = 0; i < PLAYERS_MAX; i++) {
+		if (Rep_PlayerConn(i) >= 0) {
+			Faction_SetChar(i, cls);
+		}
+	}
+	Con_Printf("coop: the scripts make the party's character %s\n", cls);
+}
+
 void Coop_LevelStart(const char *level) {
 	static char text[COORD_STORY_MAX];
 	static char key[CP_NAME], val[COORD_STORY_VALUE + 1];

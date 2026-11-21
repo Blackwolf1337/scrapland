@@ -19,6 +19,7 @@
  */
 #include <string.h>
 
+#include "scrap/coop.h"
 #include "scrap/places.h"
 #include "scrap/scrap.h"
 #include "scrap/world.h"
@@ -69,7 +70,7 @@ static byte Abi_InitStatus(const nativeVal_t *a, nativeVal_t *out) {
 	}
 	SaveVar_Set("ComeFrom", "");
 	SaveVar_Set("Spawn", "DM_Player_Spawn");
-	SaveVar_Set("Char", "Dtritus");
+	Coop_SetChar("Dtritus");
 	if (!Lv_CharRes(abi_res, 4)) {
 		return 0;
 	}

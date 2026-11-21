@@ -3,6 +3,7 @@
  * include/scrap/scorerhud.h.
  */
 #include "scrap/scorerhud.h"
+#include "scrap/pres.h"
 #include "scrap/timer.h"
 #include "scrap/staticinit.h"
 
@@ -142,7 +143,19 @@ void cTimerScorer_Tick(cScorerItem *base) {
 	cTimerScorer *self = (cTimerScorer *)base;
 	float *var = NULL;
 	float left;
-	if (base->vftable == CTIMERSCORER_VFTABLE && !base->delMe && cTimerScorer_Left(self, &var, &left)) {
+	if (base->vftable != CTIMERSCORER_VFTABLE || base->delMe) {
+		return;
+	}
+	/* not in the original: a -mp2 instance ticks the world's scorer and the HUD model of each player (include/scrap/
+	 * pres.h), all with the same timer item; its engine variable counts down and expires once a frame */
+	if (g_PresHud && self->type >= 0 && self->type < TIMER_TYPES) {
+		static float s_tickAt[TIMER_TYPES] = { -1.0f, -1.0f, -1.0f, -1.0f };
+		if (s_tickAt[self->type] == g_pWorld->timer.gameTime) {
+			return;
+		}
+		s_tickAt[self->type] = g_pWorld->timer.gameTime;
+	}
+	if (cTimerScorer_Left(self, &var, &left)) {
 		cTimerScorer_Run(self, var, left);
 	}
 }
