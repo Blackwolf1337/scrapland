@@ -328,8 +328,9 @@ cEntity *Watch_Build(const char *name, int kind, const char *look, const NetRepS
 	}
 	int one = 1;
 	Entity_VarI(e, "isInit", &one, 1);
-	/* the sounds of its motors, weapons and crashes by its model (Vehicles.SetProperties of single player) */
-	if (!Mode_Import("OutSound") || !PORT_CALL(OutSound, SetVehicleSounds, NULL, "s", name)) {
+	/* the sounds of its motors, weapons and crashes by its model (Vehicles.SetProperties of single player); a -mp2
+	 * replica gets the server's sound items from its journal (a ship without weapons, an asteroid, has fewer) */
+	if (!g_Mp2 && (!Mode_Import("OutSound") || !PORT_CALL(OutSound, SetVehicleSounds, NULL, "s", name))) {
 		Native_ErrPrint();
 	}
 	return e;

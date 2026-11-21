@@ -57,8 +57,13 @@ static inline float Missile_RandSym(float v) {
 /* OnHit runs: the effects of a shot (a missile some entity fired: a weapon's, a countermeasure, a gear's) are the
  * clients' own (its replica plays the hit itself, include/scrap/pres.h); those of a missile without a parent the
  * scripts made (a falling hull, a lost engine) go to the players near */
+byte cMissileEntity_IsShot(const cEntity *e) {
+	const cMissileEntity *m = (const cMissileEntity *)e;
+	return Entity_IsType((cEntity *)e, "Missile") && (m->parent[0] || m->weap != MISSILE_WEAP_NONE);
+}
+
 static void Missile_ExecHit(cMissileEntity *self) {
-	if (self->parent[0] || self->weap != MISSILE_WEAP_NONE) {
+	if (cMissileEntity_IsShot(Missile_Ent(self))) {
 		Pres_Derive();
 		cPy_Function_Execute(&self->onHit, 0);
 		Pres_Underive();

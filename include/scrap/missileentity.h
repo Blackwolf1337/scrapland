@@ -37,6 +37,9 @@
 enum { MISSILE_FX_NONE, MISSILE_FX_DUMBMOTOR, MISSILE_FX_GEARMISSILE, MISSILE_FX_CLOUD, MISSILE_FX_EMI, MISSILE_FXS };
 /* MISSILE_WEAP_COUNTER: the countermeasures Cloud, EMI and Sonic (their hits are the replicas' own, MissileEntity.c) */
 enum { MISSILE_WEAP_NONE, MISSILE_WEAP_SWARM, MISSILE_WEAP_INFERNO, MISSILE_WEAP_COUNTER };
+/* not in the original: e is a missile some entity fired or a weapon made (its hit and death effects are a -mp2
+ * replica's own, include/scrap/pres.h) */
+byte cMissileEntity_IsShot(const struct cEntity *e);
 
 /* the names of the MISSILE_FX_ effects ("" for none) */
 extern const char *const g_MissileFXNames[MISSILE_FXS];

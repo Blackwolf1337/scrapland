@@ -17,6 +17,7 @@
 #include <string.h>
 
 #include "scrap/scrap.h"
+#include "scrap/missileentity.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/weaps.h"
@@ -204,6 +205,10 @@ static byte Weap_Create(const char *mod, const nativeVal_t *a, const weapStep_t 
 	/* the handle of the script finds the entity by its name */
 	e = e ? World_FindEntity(e->name) : NULL;
 	const char *ref = e ? e->name : "";
+	/* not in the original: a countermeasure's hit is its -mp2 replica's own (MissileEntity.c) */
+	if (e && Entity_IsType(e, "Missile")) {
+		Missile(e)->weap = MISSILE_WEAP_COUNTER;
+	}
 	for (const weapStep_t *s = steps; s->kind >= 0; s++) {
 		if (!Weap_Step(mod, e, ref, s, &a[4])) {
 			return 0;
