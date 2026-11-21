@@ -3186,6 +3186,7 @@ static const netClassRow_t nc_playerread[] = {
 	{ "Dtritus_CheckCreateBadGuyN", NC_PARTY },
 	{ "Dtritus_InitN", NC_PARTY },
 	{ "Dtritus_Relax", NC_NEAREST },
+	{ "Escort_MadGuyDamage", NC_PARTY },
 	{ "ExtPolice_CopDamage", NC_NEAREST },
 	{ "Fd_Bribe", NC_NEAREST },
 	{ "Fr_AddMoney", NC_NEAREST },
