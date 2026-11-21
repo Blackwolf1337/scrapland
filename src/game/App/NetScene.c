@@ -43,6 +43,7 @@
 #define NS_GONE_NS 2000000000ull	/* the scene entity's replica gone that long without an end: the end here */
 #define NS_CAMWAITS 4				/* camera targets that wait for their replica */
 #define NS_CAMWAIT_NS 2000000000ull	/* that long at most */
+#define NS_CAMNUMS 8
 
 enum { NS_SKIP_ALL, NS_SKIP_ANY, NS_SKIP_HOST, NS_SKIP_NONE };
 
@@ -68,6 +69,11 @@ static struct {
 		char name[16], value[NS_NAME];
 		uint64_t ns;				/* when it came, 0 free */
 	} camWait[NS_CAMWAITS];
+	struct {
+		char name[16];
+		float f;
+	} camNum[NS_CAMNUMS];			/* the numbers set while a target waits, again after it */
+	int ncamNum;
 	byte pathOn;
 	byte pathLocal;					/* the path is one the client started itself (NetScene_ClientOwnPath) */
 	byte cOn, linked, seen;
@@ -312,7 +318,13 @@ static byte NetScene_OwnCam(const cEntity *cam, int i) {
 
 void NetScene_CamVar(cEntity *cam, const char *name, double d, const char *s) {
 	int i = Players_Current();
-	if (!Pres_Out() || !cam || (i == PLAYERS_NONE && !Coop_On()) || !NetScene_OwnCam(cam, i)) {
+	if (!Pres_Out() || !cam) {
+		return;
+	}
+	/* coop: the world's camera (the party's scenes, in any context) to every player */
+	if (Coop_On() && NetScene_OwnCam(cam, PLAYERS_NONE)) {
+		i = PLAYERS_NONE;
+	} else if (i == PLAYERS_NONE || !NetScene_OwnCam(cam, i)) {
 		return;
 	}
 	if (!Pres_BeginMask(i == PLAYERS_NONE ? ~(uint64_t)0 : (uint64_t)1 << i, PRES_O_CAMVAR)) {
@@ -321,7 +333,9 @@ void NetScene_CamVar(cEntity *cam, const char *name, double d, const char *s) {
 	Pres_PutStr(name);
 	Pres_PutInt(s != NULL);
 	if (s) {
-		Pres_PutStr(s);
+		/* the player's own entity is the client's own ("@own"): its name there may change with a new own entity */
+		cEntity *e = i != PLAYERS_NONE && *s ? World_FindEntity(s) : NULL;
+		Pres_PutStr(e && (e == Players_Get(i) || e == Players_Ship(i)) ? "@own" : s);
 	} else {
 		Pres_PutFloat((float)d);
 	}
@@ -442,7 +456,7 @@ void NetScene_ClientPath(const char *name, const netScenePath_t *path) {
 
 /* a camera's target of the server's name: its replica or the own entity here; 0 when it is not here (yet) */
 static byte NetScene_CamTarget(cEntity *cam, const char *name, const char *s) {
-	cEntity *e = *s ? ReplicaEnt_Find(s) : NULL;
+	cEntity *e = !strcmp(s, "@own") ? Play_Entity() : *s ? ReplicaEnt_Find(s) : NULL;
 	char *v = e ? e->name : "";
 	if (*s && !e) {
 		return 0;
@@ -461,6 +475,12 @@ static void NetScene_CamWaits(void) {
 		}
 		if (cam && NetScene_CamTarget(cam, ns.camWait[k].name, ns.camWait[k].value)) {
 			ns.camWait[k].ns = 0;
+			/* the numbers the scripts set with it again: the camera changed its distance for the target it had */
+			for (int n = 0; n < ns.ncamNum; n++) {
+				double d = ns.camNum[n].f;
+				Entity_VarF(cam, ns.camNum[n].name, &d, 1);
+			}
+			ns.ncamNum = 0;
 		} else if (now - ns.camWait[k].ns > NS_CAMWAIT_NS) {
 			Pres_ClientMissing("camvar", ns.camWait[k].value);
 			ns.camWait[k].ns = 0;
@@ -491,6 +511,14 @@ void NetScene_ClientCamVar(const char *name, const char *s, float f) {
 	} else {
 		double d = f;
 		Entity_VarF(cam, name, &d, 1);
+		byte waits = 0;
+		for (int k = 0; k < NS_CAMWAITS; k++) {
+			waits |= ns.camWait[k].ns != 0;
+		}
+		if (waits && ns.ncamNum < NS_CAMNUMS) {
+			Str_Copy(ns.camNum[ns.ncamNum].name, name, sizeof(ns.camNum[0].name));
+			ns.camNum[ns.ncamNum++].f = f;
+		}
 	}
 	NetAudit_Name(NA_CAMERA, "scene.client.camvar:", name);
 }
@@ -716,6 +744,7 @@ byte NetScene_Exact(cEntity *e) {
 
 void NetScene_ClientReset(void) {
 	memset(ns.camWait, 0, sizeof(ns.camWait));
+	ns.ncamNum = 0;
 	ns.cOn = 0;
 	ns.pathOn = 0;
 	ns.nhid = 0;
