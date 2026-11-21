@@ -28,6 +28,8 @@
 #include "scrap/scrap.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/scriptports.h"
+#include "scrap/vehicleentity.h"
+#include "scrap/walkcharentity.h"
 #include "scrap/withlifeentity.h"
 #include "scrap/world.h"
 
@@ -891,6 +893,18 @@ double NetScene_ShotServerTime(double rt) {
 
 /* ---- the test verb ---- */
 
+/* the owner scan of the world (World.c) for player i when the test channel runs without its entity bound: the
+ * scripts' "the player" (Mode_UsrHandle) of a call in its context */
+static void NetScene_BindPlayer(int i) {
+	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e && !Players_Get(i); e = cEntity_Next(e)) {
+		int slot = !e->active ? -1 : Entity_IsType(e, TYEN_CAR) ? (int)cVehicleEntity_GetOwnerSlot(e) :
+			Entity_IsType(e, TYEN_WALKCHAR) ? (int)cWalkCharEntity_GetOwnerSlot(e) : -1;
+		if (slot == PLAYERS_NET_SLOT + i) {
+			Players_SetOwner(slot, e);
+		}
+	}
+}
+
 void NetScene_Verb(tcBuf *b, const char *arg) {
 	char word[32] = "", what[64] = "";
 	int player = PLAYERS_NONE;
@@ -952,9 +966,11 @@ void NetScene_Verb(tcBuf *b, const char *arg) {
 		Str_PrintfQuiet(mod, sizeof(mod), "%.*s", (int)strcspn(what, ".|"), what);
 		int was = Players_Current();
 		if (g_Instance && player != PLAYERS_NONE && player != was) {
+			NetScene_BindPlayer(player);
 			Players_Enter(player);
 		}
-		byte ok = SceneList_Import(mod) && Mode_Calls(NULL, one);
+		byte ok = SceneList_Import(mod) && (strchr(what, '|') ? Mode_Calls(NULL, one) :
+			Native_CallMod(mod, what + strlen(mod) + 1, NULL, ""));
 		Native_ErrPrint();
 		if (Players_Current() != was) {
 			Players_Leave(was);
