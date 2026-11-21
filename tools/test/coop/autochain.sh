@@ -236,6 +236,8 @@ while [ $n -lt $max ]; do
 		echo "autochain $tag: stopped in $mis (chapter $n)"
 		exit 1
 	fi
+	# CHAP_CLEAN=1: the chapter's game folders go once it passed (about 45 MB a player; its logs and data stay)
+	[ -n "$CHAP_CLEAN" ] && rm -rf "$S/g-$tag$n-"* "$S/g-world-$tag$n"
 	data=$S/$tag-$n-data
 	echo "next: $(val "$data/party.story" Mission.Library) in $(val "$data/party.story" Mission.Map)"
 done
