@@ -605,12 +605,15 @@ static cEntity *Cp_RadarItem(const cEntity *e) {
 	for (cEntity *v = cWorld_GetFirstEntity(g_pWorld); v; v = cEntity_Next(v)) {
 		const cItemEntity *it = (const cItemEntity *)v;
 		const char *m = Entity_IsType(v, "item") ? cPy_Function_Module(&it->onTake) : "";
-		/* the mission's, or a super deal mode's (Domination's baton and zones) */
+		/* the mission's, or a super deal mode's (Domination's baton and zones; a race's checkpoint is raced) */
 		if (!v->active || v->deadNode.target || !Entity_IsType(v, "item") || !Obj(v)->radarShow || Obj(v)->replica ||
-			it->respawn > 0.0f || !mission || (strcmp(m, mission) && !(deal && deal[0] && !strcmp(m, deal)))) {
+			it->respawn > 0.0f || !mission || (strcmp(m, mission) && !(deal && deal[0] && !strcmp(m, deal) &&
+			strncmp(v->name, CP_CHECKPOINT, sizeof(CP_CHECKPOINT) - 1)))) {
 			continue;
 		}
 		float dx = v->pos.x - e->pos.x, dz = v->pos.z - e->pos.z, d = dx * dx + dz * dz;
+		/* a deal's baton first (Domination's zones count only with it) */
+		d = !strncmp(v->name, "Baton", 5) ? -1.0f : d;
 		if (!t || d < best) {
 			t = v;
 			best = d;
@@ -1109,9 +1112,9 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 		}
 		return;
 	}
-	/* a race: the mission's member races, a helper that stays with a ship of the mission does not (eight ships put on
-	 * one checkpoint pushed one out of the level) */
-	if (World_FindEntity(CP_CHECKPOINT) && g_Coop.pl[i].autoOn != 2) {
+	/* a race: the mission's member races (a deal's baton taken first: MortalRace), a helper that stays with a ship of
+	 * the mission does not (eight ships put on one checkpoint pushed one out of the level) */
+	if (World_FindEntity(CP_CHECKPOINT) && g_Coop.pl[i].autoOn != 2 && !dealItem) {
 		if (kind == NETREP_SHIP) {
 			Cp_TestRace(i);
 		} else {

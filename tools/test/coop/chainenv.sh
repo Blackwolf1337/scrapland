@@ -99,3 +99,7 @@ export AUTO_B_Mission_StealMayorShip='-'
 export AUTO_PRE_SuperDeal_Fifth='switch $a;switch $b;waypoint $a 1' AUTO_PRE_SuperDeal_Ninth='switch $a;switch $b;waypoint $a 1'
 # the Domination super deals (OM): pa flies onto the waypoint's item (the baton, then the zones), the others fight
 export AUTO_PRE_SuperDeal_Sixth='switch $a;switch $b;waypoint $a 1' AUTO_PRE_SuperDeal_Tenth='switch $a;switch $b;waypoint $a 1'
+# the automatic player does not win a Domination deal (it does not hunt the enemy's baton carrier): after its try the
+# deal's victory is called as the campaign chain of round 8o does (the story goes on to the next deal)
+export AUTO_MID_SuperDeal_Sixth='@|wait 150||||;;@|inst @ call SuperDeal_Sixth.Victory|coop: call SuperDeal_Sixth.Victory: done|10|the deal'"'"'s victory (test line)'
+export AUTO_MID_SuperDeal_Tenth='@|wait 150||||;;@|inst @ call SuperDeal_Tenth.Victory|coop: call SuperDeal_Tenth.Victory: done|10|the deal'"'"'s victory (test line)'
