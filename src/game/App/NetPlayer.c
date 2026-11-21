@@ -6,13 +6,18 @@
 #include <string.h>
 
 #include "scrap/actions.h"
+#include "scrap/collisiongrid.h"
+#include "scrap/crt.h"
 #include "scrap/global.h"
 #include "scrap/mathlib.h"
 #include "scrap/input.h"
 #include "scrap/inputtape.h"
+#include "scrap/itementity.h"
 #include "scrap/play.h"
 #include "scrap/replicate.h"
 #include "scrap/repent.h"
+#include "scrap/script.h"
+#include "scrap/scriptmodes.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
 #include "scrap/weapons.h"
@@ -61,6 +66,11 @@ static inline float NetPl_Rot(int16_t v) {
 /* the buttons a -mp2 client runs on its own entity (stage 3.5): all but the flows of the scripts, which start on the
  * server (a character's use and possession) and the countermeasures (their missiles are the server's entities) */
 #define NETPL_MP2_LOCAL (NETREP_IN_ACT | NETREP_IN_BOOST | NETREP_IN_FULL | NETREP_IN_LOCK)
+
+#define NETPL_PARK_MODEL "models/Misc/Parking/Parking.m3d"
+#define NETPL_PARK_REACH 2000.0f		/* units beyond the ship's radius the grid is asked for boxes (a box's radius: 1000) */
+#define NETPL_PARK_SLOTS 3				/* slots of 1/60 s from one touch to the next: the item's slot of 0.05 s */
+#define NETPL_PARK_MAX 4				/* boxes touched at once */
 
 void NetPl_Apply(cEntity *e, const NetRepInput *in, byte local, byte replay) {
 	uint16_t b = !local ? in->buttons : g_Mp2 ? in->buttons & NETPL_MP2_LOCAL : 0;
@@ -144,6 +154,57 @@ byte NetPl_StepRand(const cEntity *e, int *r) {
 	return 1;
 }
 
+byte NetPl_StepBrakes(const cEntity *e) {
+	return g_Mp2 && e && Obj(e)->netStep && NetPl_Kind((cEntity *)e) == NETREP_SHIP;
+}
+
+byte NetPl_IsParkBox(cEntity *e) {
+	CGameModel *m = &Obj(e)->model;
+	return Entity_IsType(e, "item") && CGameModel_IsLoaded(m) && m->Model->scene && m->Model->scene->name &&
+		!crt_stricmp(m->Model->scene->name, NETPL_PARK_MODEL);
+}
+
+/* -mp2: the parking boxes in the step of a player's ship. Single player's box touches the ships in its own slots (20
+ * a second, Parking.OnPark: a ship faster than MinParkingVel gets 0.6 of its velocity, a slower one parks); here every
+ * third slot of 1/60 s of the ship's step on both sides: the server runs the box's OnTake, its client predicts what
+ * the script does with the free boxes it has as replicas (their respawn time comes with them): the brake, or the start
+ * of the parking's move (Parking_PredictPark) */
+static void NetPl_ParkBoxes(cEntity *e) {
+	cVehicleEntity *v = Veh(e);
+	float r = v->wl.prim.radius + NETPL_PARK_REACH;
+	vec3_t lo = { e->pos.x - r, e->pos.y - r, e->pos.z - r }, hi = { e->pos.x + r, e->pos.y + r, e->pos.z + r };
+	cEntity *touch[NETPL_PARK_MAX];
+	int n = 0;
+
+	if (v->wl.obj.move.active || !(e->mask & 0x11) || !(v->wl.prim.on && v->wl.prim.radius > 0.0f)) {
+		return;
+	}
+	/* the boxes first: the scripts may change the grid */
+	for (cEntity *b = Grid_FirstInBox(&g_pWorld->grid, &lo, &hi); b && n < NETPL_PARK_MAX; b = Grid_NextInBox(&g_pWorld->grid)) {
+		cItemEntity *it = (cItemEntity *)b;
+		if (b->deadNode.target || !b->active || !NetPl_IsParkBox(b) || it->respawn > 0.0f) {
+			continue;
+		}
+		float dx = e->pos.x - b->pos.x, dy = e->pos.y - b->pos.y, dz = e->pos.z - b->pos.z;
+		float rr = v->wl.prim.radius + it->radius;
+		if (rr * rr >= dx * dx + dy * dy + dz * dz) {
+			touch[n++] = b;
+		}
+	}
+	for (int k = 0; k < n && !v->wl.obj.move.active; k++) {
+		if (g_Instance) {
+			cItemEntity_TouchBy(touch[k], e);
+		} else if ((double)v->speed > (double)Mode_ModGetI("Parking", "MinParkingVel", 1000)) {
+			/* the script's Vel * 0.6 in double */
+			vec3_t vel = { (float)((double)v->wl.obj.vel.x * 0.6), (float)((double)v->wl.obj.vel.y * 0.6),
+				(float)((double)v->wl.obj.vel.z * 0.6) };
+			Obj_SetVel(e, &vel);
+		} else {
+			Parking_PredictPark(touch[k], e);
+		}
+	}
+}
+
 void NetPl_StepPart(cEntity *e, const NetRepInput *in, byte local, byte replay, int part) {
 	/* the entity's time speed: 1, slower in a bullet time of the freeroam factions (the server and the prediction) */
 	float iv = PLAY_SLOT * cTimer_GetSpeed(&Obj(e)->timer);
@@ -163,6 +224,9 @@ void NetPl_StepPart(cEntity *e, const NetRepInput *in, byte local, byte replay, 
 	netPlStepping = e;
 	netPlStepSlot = in->tick * PLAY_STEPS + (uint32_t)part;
 	netPlStepDraws = 0;
+	if (NetPl_StepBrakes(e) && netPlStepSlot % NETPL_PARK_SLOTS == 0) {
+		NetPl_ParkBoxes(e);
+	}
 	if (!replay || g_Mp2) {
 		NetPl_Actions(e, iv);
 	}

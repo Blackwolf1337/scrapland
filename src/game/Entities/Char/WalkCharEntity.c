@@ -1575,8 +1575,9 @@ static void cWalkCharEntity_Update(cEntity *self) {
 		WCE_ViewLock(self);
 	}
 	WCE_ViewLockBlend(w, dt);
-	if (adv && w->ownerSlot >= 0 && w->ownerSlot < 4) {
-		cWalkCharControl_Update(&w->control, self, dt);
+	/* not in the original: a client's own character read them before its step (Play_PreFrame) */
+	if (adv && !(g_Play && w->wl.obj.netStep)) {
+		cWalkCharEntity_ReadControls(self, dt);
 	}
 	if (WCE_Action0(w)->anmConeView) {
 		CGameModel *model = Obj_GetModel(self);
@@ -1584,6 +1585,13 @@ static void cWalkCharEntity_Update(cEntity *self) {
 		w->headPitch = Matrix_GetRotAng(mat, &t)->y + M_PI_F;
 	} else {
 		w->headPitch = Obj_GetRenderAng(self, &t)->y;
+	}
+}
+
+void cWalkCharEntity_ReadControls(cEntity *self, float dt) {
+	cWalkCharEntity *w = WChar(self);
+	if (w->ownerSlot >= 0 && w->ownerSlot < 4) {
+		cWalkCharControl_Update(&w->control, self, dt);
 	}
 }
 

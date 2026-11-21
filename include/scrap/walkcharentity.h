@@ -143,6 +143,9 @@ void cWalkCharEntity_SetEnergy(cEntity *self, float energy);
 /* ScrapC: the walking state of a replica (move, which its movement sound reads; a flying class's sound follows its
  * velocity), as the walk of the slot sets it */
 void cWalkCharEntity_NetWalking(cEntity *self, byte walking);
+/* ScrapC: the control of a player's character read from its input (cWalkCharControl_Update, the end of its frame; a
+ * client's own character reads it before its step instead, include/scrap/play.h) */
+void cWalkCharEntity_ReadControls(cEntity *self, float dt);
 /* the falling state of a character (0x464), with what goes with it */
 void cWalkCharEntity_SetFalling(cEntity *self, byte on);
 /* WithLifeEntity.h */

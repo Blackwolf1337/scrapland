@@ -58,6 +58,7 @@ static struct {
 	char path[PLAYERS_MAX][NS_NAME];	/* the camera path each player's view 0 shows now, to send */
 	/* client */
 	byte pathOn;
+	byte pathLocal;					/* the path is one the client started itself (NetScene_ClientOwnPath) */
 	byte cOn, linked, seen;
 	char cCls[NS_NAME], cEnt[NS_NAME];
 	int cFlags, cTick;
@@ -322,8 +323,11 @@ void NetScene_ClientPath(const char *name, const netScenePath_t *path) {
 		return;
 	}
 	cCamPathEntity *p = (cCamPathEntity *)e;
+	/* the server's path of a flow the client started for the eye goes on from where the client's is */
+	float was = p->time;
 	p->numPoints = path->n;
-	p->time = path->time;
+	p->time = ns.pathLocal && was > path->time ? was : path->time;
+	ns.pathLocal = 0;
 	for (int k = 0; k < path->n; k++) {
 		cCamPathPoint *pt = &p->points[k];
 		Str_Copy(pt->cam, !strcmp(path->p[k].cam, "@own") ? NS_OWNCAM : path->p[k].cam, sizeof(pt->cam));
@@ -342,6 +346,24 @@ void NetScene_ClientPath(const char *name, const netScenePath_t *path) {
 	NetAudit_Name(NA_CAMERA, "scene.client.path:", name);
 	Con_Printf("scene: the camera path %s of the server (%d points, %.2f s) plays here\n", name, path->n,
 		(double)NetScene_PathLength(p));
+}
+
+cEntity *NetScene_ClientOwnPath(void) {
+	cEntity *e = World_FindEntity(NS_PATH);
+	if (!e) {
+		e = cWorld_CreateEntity(g_pWorld, NS_PATH, 0.0f, 0.0f, 0.0f, TYEN_CAMPATH);
+	}
+	if (!e || !Entity_IsType(e, TYEN_CAMPATH)) {
+		return NULL;
+	}
+	((cCamPathEntity *)e)->time = 0.0f;
+	ns.pathOn = 1;
+	ns.pathLocal = 1;
+	return e;
+}
+
+void NetScene_ClientOwnPathDone(void) {
+	ns.pathLocal = 0;
 }
 
 byte NetScene_ClientPathHolds(void) {

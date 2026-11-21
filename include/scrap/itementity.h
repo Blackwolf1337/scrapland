@@ -55,5 +55,7 @@ typedef struct cItemEntity {
 
 /* t > 0: taken, hidden for t (fade out, take sound); else back (fade in) */
 void cItemEntity_SetRespawn(cItemEntity *self, float t);
+/* ScrapC: other touches the item now (its OnTake), from the step of a -mp2 player's ship (include/scrap/play.h) */
+void cItemEntity_TouchBy(cEntity *item, cEntity *other);
 
 #endif
