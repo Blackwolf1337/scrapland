@@ -3,7 +3,6 @@
  */
 #include <string.h>
 
-#include "scrap/gvar.h"
 #include "scrap/ai.h"
 #include "scrap/camcontrol.h"
 #include "scrap/collisiongrid.h"
@@ -11,14 +10,20 @@
 #include "scrap/crt.h"
 #include "scrap/embeddedfxchar.h"
 #include "scrap/embeddedfxmisc.h"
+#include "scrap/entity.h"
 #include "scrap/fxmisc.h"
+#include "scrap/game.h"
+#include "scrap/gvar.h"
 #include "scrap/inputtape.h"
 #include "scrap/net.h"
 #include "scrap/netaudit.h"
-#include "scrap/pres.h"
 #include "scrap/objentity.h"
+#include "scrap/players.h"
+#include "scrap/pres.h"
+#include "scrap/repent.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/staticinit.h"
+#include "scrap/world.h"
 
 #define CNETCONTROLLER_VFTABLE (&cNetController_vftable)
 #define COBJENTITY_VFTABLE (&cObjEntity_vftable.base)
@@ -139,12 +144,30 @@ static void cObjEntity_ReleaseFX(cEntity *self) {
 	}
 }
 
+/* not in the original: on an instance the follow cameras of the views and of the players' contexts that still follow
+ * the entity let it go. An object knows one camera (cam); a player's camera moved to its new entity (a respawn) took the
+ * entity off the camera of view 0 that also followed it, which then read the deleted character (the sound listener of
+ * GetAuthorization with 8 players) */
+static void Obj_DropCams(cEntity *self) {
+	for (int k = 0; k < 4 + PLAYERS_MAX; k++) {
+		const cPlayer *c = k < 4 ? NULL : Players_Ctx(k - 4);
+		const char *name = k < 4 ? g_pWorld->camName[k] : c ? c->camName : "";
+		cEntity *cam = *name ? World_FindEntity(name) : NULL;
+		if (cam && cam != self && Entity_IsType(cam, FCAM_CLASSNAME) && cCamEntity_GetTarget(cam) == self) {
+			cCamEntity_SetTarget(cam, NULL);
+		}
+	}
+}
+
 void cObjEntity_dtor(cEntity *self) {
 	cObjEntity *o = Obj(self);
 
 	self->vftable = COBJENTITY_VFTABLE;
 	if (o->cam) {
 		cCamEntity_SetTarget(o->cam, NULL);
+	}
+	if (g_Instance && g_Mp2 && g_pWorld) {
+		Obj_DropCams(self);
 	}
 	operator_delete(o->slot);
 	if (o->net) {

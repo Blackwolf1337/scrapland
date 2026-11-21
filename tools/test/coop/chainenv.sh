@@ -106,6 +106,11 @@ export AUTO_MID_Mission_StealMayorShip='@|wait 60||||;;@|inst @ auto $a 1 @OutCo
 # StealMayorShip: only the kills of the mayor's ship count: the other members stay out of the fight (their kills of
 # the police would not count; alive they keep the party alive while pa fights)
 export AUTO_B_Mission_StealMayorShip='-'
+# ApologizeMayor: pb plays nothing (its helper's punches at the sentinels and gears of the town hall draw a fight the mayor
+# joins: he stays on a gear and does not talk again)
+export AUTO_B_Mission_ApologizeMayor='-'
+# DestroyPorkinsTransports: the bishops kill the whole party now and then (the mission starts again): pb takes no damage
+export AUTO_PRE_Mission_DestroyPorkinsTransports='switch $a;switch $b;tough $b 1'
 # the CTF super deals (FZ): pa flies onto the waypoint's item (the flag) as a player follows its arrow, the others fight
 export AUTO_PRE_SuperDeal_Fifth='switch $a;switch $b;waypoint $a 1' AUTO_PRE_SuperDeal_Ninth='switch $a;switch $b;waypoint $a 1'
 # the Domination super deals (OM): pa flies onto the waypoint's item (the baton, then the zones), the others fight

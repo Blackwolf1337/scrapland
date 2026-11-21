@@ -209,20 +209,6 @@ Tdm_Death	PARTY	a TeamDeathMatch super deal: a death against the player's team, 
 Ctf_OnVehicleDeathCallbackC	PARTY	a CTF super deal: a ship's death and the player's flag, the acting member in coop
 Ctf_TakeFlagC	PARTY	a CTF super deal: a flag taken by the player, the acting member in coop
 Steal_CreateMissionShip	PARTY	StealMayorShip (DownTown): the mayor's ship made for the player, the acting member in coop
-Dom_TakeBatonC	PARTY	a Domination super deal: the baton taken by the player, the acting member in coop
-Dom_TakeZoneC	PARTY	a Domination super deal: a zone taken with the player's baton, the acting member in coop
-Rudolph_InitRace	PARTY	CatchRudolph, KillRudolph: Rudolph's race starts for the player, the acting member in coop
-Mr_RespawnRacerC	PARTY	a MortalRace super deal or mission: a racer again near the player, the acting member in coop
-Steal_OnPoliceDeath	PARTY	StealMayorShip (DownTown): a police ship's death and the player's mayor's ship, the acting member in coop
-Sd_UsrSafe	ALL	a super deal's end (a win): every member's life full and invulnerable in coop (Party_All)
-Sd_UsrInvulnerable	ALL	a super deal's end (a defeat): every member invulnerable in coop (Party_All)
-Sd_SetVulnerableC	ALL	a super deal's ship can be hit again (boarded): every member's in coop (Party_All)
-Dom_CreateTeam	PARTY	a Domination super deal: a team made around the player, the acting member in coop
-Speech_ForceRemoteCom_E	PARTY	a Speech entry in the world's context (a forced remote talk: a deal's end): the acting member in coop
-Parking.SwitchVehicleMissionCallback	WORLD	a mission's callback of the world's context (a super deal's level start sets it for the group); a player's own is read in its context
-Parking.SwitchCharMissionCallback	WORLD	a mission's callback of the world's context; a player's own is read in its context
-Alarm.AbortMissionCallback	WORLD	a mission's callback of the world's context; a player's own is read in its context
-Menu.MissionScorerCall	WORLD	the HUD callback of the world's context; a player's own HUD reads it in its context
 # stage 5b part 2, Mission_GetAuthorization (68)
 Ga_Shield	ALL	GetAuthorization: the player healed and invulnerable for the way out of the jail (every member in coop, Party_All)
 Ga_OutOfJail	ALL	GetAuthorization: the player out of the jail in front of it (every member in coop, Party_All, the others beside)
@@ -265,10 +251,25 @@ Speech_RestartMenuEvents_E	PARTY	a Speech entry in the world's context (the end 
 # stage 5b part 2, the super deals' ends (Mission_IgorCombat 43 and the deals of part 1)
 Sd_UsrSafeOne	ALL	a super deal's end: the player's ship at its most life and the player cannot be hurt (every member in coop, Party_All)
 Sd_UsrInvulnerableOne	ALL	a super deal lost: the player cannot be hurt (every member in coop, Party_All)
+Speech_ForceRemoteCom_E	PARTY	a Speech entry in the world's context (a forced remote talk): the acting member in coop
 # stage 5b part 2, the sites of the 8 player chains: StupidMerc (37), AttackTraitorius (51), IdentifyMerc (57)
 Merc_OnStupidMercDeathN	PARTY	the stupid mercenary died by no member's hand: was it the player (the party's acting member)
 Traitorius_OnTraitoriusDamage	PARTY	Traitorius hit by no member: the player's hint (the party's acting member)
 Merc_ScanShip	PARTY	every second the scan of the lonely mercenary by the player (the party's acting member, its mission's)
+Merc_OnLonelyMercDamage	PARTY	the lonely mercenary hit by no member: the player's hint (the party's acting member)
+Dom_TakeBatonC	PARTY	a Domination super deal: the baton taken by the player, the acting member in coop
+Dom_TakeZoneC	PARTY	a Domination super deal: a zone taken with the player's baton, the acting member in coop
+Rudolph_InitRace	PARTY	CatchRudolph, KillRudolph: Rudolph's race starts for the player, the acting member in coop
+Mr_RespawnRacerC	PARTY	a MortalRace super deal or mission: a racer again near the player, the acting member in coop
+Steal_OnPoliceDeath	PARTY	StealMayorShip (DownTown): a police ship's death and the player's mayor's ship, the acting member in coop
+Sd_UsrSafe	ALL	a super deal's end (a win): every member's life full and invulnerable in coop (Party_All)
+Sd_UsrInvulnerable	ALL	a super deal's end (a defeat): every member invulnerable in coop (Party_All)
+Sd_SetVulnerableC	ALL	a super deal's ship can be hit again (boarded): every member's in coop (Party_All)
+Dom_CreateTeam	PARTY	a Domination super deal: a team made around the player, the acting member in coop
+Parking.SwitchVehicleMissionCallback	WORLD	a mission's callback of the world's context (a super deal's level start sets it for the group); a player's own is read in its context
+Parking.SwitchCharMissionCallback	WORLD	a mission's callback of the world's context; a player's own is read in its context
+Alarm.AbortMissionCallback	WORLD	a mission's callback of the world's context; a player's own is read in its context
+Menu.MissionScorerCall	WORLD	the HUD callback of the world's context; a player's own HUD reads it in its context
 # stage 5b part 3 (story chapters 69-100): the sites the chapters met
 Speech_CancelRemoteCom_E	PARTY	a Speech entry in the world's context (a remote talk cancelled: the final fight's hints): the acting member in coop
 Ff_BossAttacks	PARTY	the final fight (AB): the boss attacks the player, the acting member in coop (after a respawn the member's own context)
@@ -292,3 +293,8 @@ Probes_CreateProbes	PARTY	the probes of a level's mission left at points the pla
 Humphrey_CreateHumphrey	PARTY	DestroyHumphrey (Outskirts): Humphrey made near the player, the acting member in coop
 Berto_CheckBertoDeath	PARTY	BertoMassacre (DownTown): a Berto's death by no member: the acting member's name in coop (no count on the bar)
 Speech_AbortSpeech_E	PARTY	a Speech entry in the world's context (a talk aborted): the acting member in coop
+# stage 5b part 2, Mission_Ambush (50) after a member's flight out of DownTown
+Pk_Arrive	PARTY	a level's start after an arrival from another outdoor level: the player's ship there (none on a coop instance's start)
+Ambush_CreateProbeN	PARTY	a probe far from the player: from the party's member (a timer of the level, no member in context)
+# stage 5b part 2, Mission_ProtectMayorTransport (49) a mercenary hit from a ship
+Escort_MadGuyDamage	PARTY	the mercenary the player hits turns on him: the party's member (an OnDamage without a member in context)
