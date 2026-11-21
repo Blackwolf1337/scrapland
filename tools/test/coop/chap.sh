@@ -128,7 +128,15 @@ while IFS='|' read -r lg line pat secs what; do
 		"$T/send.sh" $tag "$line"
 	fi
 	[ -z "$pat" ] && continue
-	if waitnew "$f" "$pat" "${secs:-30}" "$mark"; then echo "ok: $what"; else echo "FAIL: $what (no '$pat' in $(basename "$f"))"; fail=$((fail + 1)); fi
+	# (in steps of 5 s: a CHAP_ABORT pattern in the log ends the chapter at once, as in a poll)
+	end=$((SECONDS + ${secs:-30})) got= aborted=
+	while [ $SECONDS -lt $end ]; do
+		waitnew "$f" "$pat" 5 "$mark" && { got=1; break; }
+		if [ -n "$CHAP_ABORT" ] && [ -z "$CHAP_REARM" ] && grep -qE "$CHAP_ABORT" "$f" 2>/dev/null; then aborted=1; break; fi
+	done
+	if [ -n "$got" ]; then echo "ok: $what"
+	elif [ -n "$aborted" ]; then echo "FAIL: $what (aborted: '$CHAP_ABORT' in $(basename "$f"))"; fail=$((fail + 1)); break
+	else echo "FAIL: $what (no '$pat' in $(basename "$f"))"; fail=$((fail + 1)); fi
 done < "$steps"
 "$T/send.sh" $tag "status"; timeout 2 tail -f /dev/null
 [ -n "$CHAP_KEEP" ] || "$T/stopw.sh" $tag $tag-pa $tag-pb ${more//p/$tag-p}

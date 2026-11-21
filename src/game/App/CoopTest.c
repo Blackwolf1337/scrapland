@@ -87,6 +87,7 @@
 #define CP_HIDE_FAR 6000.0f			/* test: units a hiding place is from the character at least */
 #define CP_SWAP_FLOOR 3000.0f		/* test: units below such a ship a floor is looked for (a called ship's drop) */
 #define CP_SWAP_GAP 12.0
+#define CP_SWAP_SAME 90.0			/* test: s before it leaves the same ship again (none could be called instead) */
 #define CP_SHIPLESS 20.0			/* test: s on foot without the ship it asks for before it is put at a spawn */			/* test: s between two changes of a ship low on life without a life box */
 #define CP_FIGHT_USELESS 10.0		/* test: s a weapon fires at a target near ahead that loses no life: not taken again */
 #define CP_FIGHT_RED "red"			/* test: the fight list of all the red ones (or enemies) of the level */
@@ -240,7 +241,9 @@ static int Cp_FightWeapon(cEntity *e, float d, uint32_t useless) {
 	cWeaponManager *m = (cWeaponManager *)&Veh(e)->weapons;
 	const int far[] = { g_SwarmIDWeap, g_InfernoIDWeap, g_ATPCIDWeap, g_DevastatorIDWeap, g_TeslaIDWeap, g_VulcanIDWeap,
 		g_LaserIDWeap };
-	const int near[] = { g_ATPCIDWeap, g_TeslaIDWeap, g_VulcanIDWeap, g_DevastatorIDWeap, g_SwarmIDWeap, g_InfernoIDWeap,
+	/* (near no Inferno nor Devastator: their blast on a thing right ahead killed the own ship again and again, Ambush's
+	 * probe nets) */
+	const int near[] = { g_ATPCIDWeap, g_TeslaIDWeap, g_VulcanIDWeap, g_SwarmIDWeap, g_LaserIDWeap, g_LaserIDWeap,
 		g_LaserIDWeap };
 	const int *pick = d < CP_FIGHT_HIT ? near : far;
 	for (int k = 0; k < (int)(sizeof(far) / sizeof(far[0])); k++) {
@@ -297,8 +300,8 @@ static byte Cp_NewShip(int i, cEntity *e, double now, const char *why) {
 	 * stayed on foot) */
 	vec3_t in = e->pos, down = { e->pos.x, e->pos.y - CP_SWAP_FLOOR, e->pos.z };
 	Cp_InWorld(&in);
-	/* (still in it a second later: the switch again, a ship too fast to leave is stopped again) */
-	if (now - g_Coop.pl[i].swapAt < (g_Coop.pl[i].swapOf == e ? 1.0 : CP_SWAP_GAP) || in.x != e->pos.x ||
+	/* (in the same ship again after a change: no other ship could be called here, it stays in that one) */
+	if (now - g_Coop.pl[i].swapAt < (g_Coop.pl[i].swapOf == e ? CP_SWAP_SAME : CP_SWAP_GAP) || in.x != e->pos.x ||
 		in.z != e->pos.z || !Engine_TestLine(&e->pos, &down, NULL, NULL)) {
 		return 0;
 	}
@@ -1368,7 +1371,8 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 		g_Coop.pl[i].autoSince = now;
 		return;
 	}
-	if (kind == NETREP_CHAR && Cp_Hide(i, e, now)) {
+	/* (not while it walks a follower somewhere: TalkToBoss' human stayed behind at the hiding place) */
+	if (kind == NETREP_CHAR && !g_Coop.pl[i].walk && Cp_Hide(i, e, now)) {
 		g_Coop.pl[i].autoSince = now;
 		return;
 	}
