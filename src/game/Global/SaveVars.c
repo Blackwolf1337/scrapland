@@ -11,6 +11,7 @@
 #include "scrap/hashtable.h"
 #include "scrap/netclass.h"
 #include "scrap/players.h"
+#include "scrap/pres.h"
 #include "scrap/repent.h"
 #include "scrap/scrap.h"
 #include "scrap/staticinit.h"
@@ -100,6 +101,7 @@ static cSaveVar *SV_OverSet(int i, const char *name, const char *value) {
 		cString_Set(&v->value, value);
 		/* the coordinator keeps it with the player's state (a player without one: nothing) */
 		Travel_SetVar(i, name, value);
+		Pres_SaveVar(i, name, value);
 	} else {
 		cString_Set(&v->value, NULL);
 	}

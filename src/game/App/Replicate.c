@@ -1141,6 +1141,20 @@ static void Rep_Death(int i, cEntity *e) {
 	if (sand.rebuild && NetPl_Kind(e) == NETREP_SHIP && Rep_ShipOwner(e) == i) {
 		pl->rebuild = Rep_ShipPrice(e);
 	}
+	/* single player's flows: SinglePlayerDeath's life less of the player's GDB (Player.NumLives, a PLAYER save
+	 * variable) unless its lives are infinite; none left: single player's jail of the Police level (a coordinator's
+	 * world), else the next character here */
+	if (Rep_SpFlows() && SaveVar_Get("Player.InfiniteLives") && !strcmp(SaveVar_Get("Player.InfiniteLives"), "0")) {
+		char v[16];
+		const char *n = SaveVar_Get("Player.NumLives");
+		int lives = (n ? crt_atoi(n) : 0) - 1;
+		Str_PrintfQuiet(v, sizeof(v), "%d", lives);
+		SaveVar_Set("Player.NumLives", v);
+		Con_Printf("instance: player %d has %d lives left\n", i, lives);
+		if (lives < 0 && Travel_SendAt(i, "Police", "DM_Player_Spawn_Jail")) {
+			Con_Printf("instance: player %d goes to the jail\n", i);
+		}
+	}
 	if (sand.lives && --pl->lives <= 0) {
 		pl->lives = sand.lives;
 		*Players_CurMoney() = Instance_StartMoney();
@@ -1159,6 +1173,15 @@ static void Rep_Death(int i, cEntity *e) {
 	}
 	Coop_Died(i, e);
 	Players_Leave(was);
+}
+
+void Rep_OwnDied(int i) {
+	RepPlayer *pl = i >= 0 && i < PLAYERS_MAX ? &rep.pl[i] : NULL;
+	cEntity *e = pl && pl->used ? Players_Get(i) : NULL;
+	if (e && e == pl->own && !pl->dead && !pl->lost) {
+		Rep_Death(i, e);
+		Rep_DropOwn(i);
+	}
 }
 
 byte Rep_PlayerDead(int i) {
@@ -1272,6 +1295,12 @@ static void Rep_SpLeave(int i) {
 	int was = Players_Enter(i);
 	Native_SetNone(&v);
 	if (Mode_ModGet("Sputnik", "spt", &v) && v.type == NV_ENT && Native_Ent(&v) && !Native_Ent(&v)->deadNode.target) {
+		cEntity_Del(Native_Ent(&v));
+	}
+	Native_Free(&v);
+	/* the plate of its ship (its own Parking.DtritusPlate, Parking.PlayerJoin) */
+	Native_SetNone(&v);
+	if (Mode_ModGet("Parking", "DtritusPlate", &v) && v.type == NV_ENT && Native_Ent(&v) && !Native_Ent(&v)->deadNode.target) {
 		cEntity_Del(Native_Ent(&v));
 	}
 	Native_Free(&v);
@@ -1488,10 +1517,15 @@ void Rep_PreFrame(uint64_t tick) {
 			}
 			if (Arena_On() ? Arena_SpawnDue(i, tick - pl->lost) :
 				tick - pl->lost >= (uint64_t)sand.respawnTicks + Faction_DownedTicks(i)) {
+				byte died = pl->dead;
 				Rep_DropOwn(i);
 				Rep_SpawnChar(i, NULL, 0.0f);
 				NetRepInBuf_Restart(&pl->in);
 				pl->told = -2;
+				/* single player's restart after a death: its own ship and Sputnik at the parking nearest to it */
+				if (died && Rep_SpFlows() && Sputniks_Outdoor() && NetPl_Kind(Rep_Own(pl)) == NETREP_CHAR) {
+					Rep_SpShip(i);
+				}
 			}
 			continue;
 		}
