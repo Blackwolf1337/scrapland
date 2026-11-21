@@ -29,6 +29,18 @@ story=$T/story.txt
 nextlv() { awk -F'|' -v m="$1" '!/^#/ && f { print $3; exit } !/^#/ && $2 == m { f = 1 }' "$story"; }
 nextmis() { awk -F'|' -v m="$1" '!/^#/ && f { print $2; exit } !/^#/ && $2 == m { f = 1 }' "$story"; }
 worldargs=$CHAP_WORLD_ARGS
+# the steps' lines for pb of chainenv.sh (AUTO_PRE, AUTO_MID: a switch, a scan, a fight) go to p3.. too with their own
+# index (their leader and auto lines are their own); alone they are left out
+each() {
+	local l m
+	while IFS= read -r l; do
+		if [[ $l != *'$b'* ]]; then echo "$l"; continue; fi
+		[ "$np" -lt 2 ] && continue
+		echo "$l"
+		[[ $l == *'leader $b'* || $l == *'auto $b'* ]] && continue
+		for m in $mp; do echo "${l//\$b/\$$m}"; done
+	done
+}
 n=0
 while [ $n -lt $max ]; do
 	n=$((n + 1))
@@ -115,6 +127,9 @@ while [ $n -lt $max ]; do
 				elif [[ $l == wait\ * ]]; then echo "$lv|$l||||"; else echo "$lv|inst $lv $l||||"; echo "$lv|wait 5||||"; fi
 			done
 		fi
+		# CHAP_TOUGH=1: pa takes no damage (test line tough: a party of one dies where two members take turns, the
+		# police waves and the smart mercenaries of the fights; deaths are played with 2 and 8 players)
+		[ -n "$CHAP_TOUGH" ] && echo "$lv|inst $lv tough \$a 1||||"
 		va=AUTO_A_$mis vb=AUTO_B_$mis
 		# AUTO_A_<Mission>="-": pa plays nothing by itself (the steps of AUTO_MID play the chapter: the intro's levels)
 		[ "${!va}" = "-" ] || echo "$lv|inst $lv auto \$a ${!va}|player \$a plays the mission's targets|5|pa plays the mission's targets"
@@ -147,7 +162,7 @@ while [ $n -lt $max ]; do
 		for m in $mp; do echo "$lv|inst $lv auto \$$m 0||||"; done
 		echo "w|wait 8||||"
 		echo "w|save $tag-$n||||"
-	} > "$steps"
+	} | each > "$steps"
 	echo "== $n: $mis in $lv (party in $from)"
 	envv=AUTO_ENV_$mis
 	# AUTO_TRIES: a chapter whose mission failed (the party died: the instance restarts without the test lines) is played

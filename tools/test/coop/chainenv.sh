@@ -16,13 +16,14 @@ export AUTO_ENV_Mission_ArrangeBankersCTF="SCRAP_COOP_CONV=Functionary" AUTO_PRE
 # BeatPickus from a story point at GetFuncShipPlans (bp2-data): BPTAIL
 export BP_TAIL=';;@|poll inst @ story get MissionState|MissionState = TalkToTraitoriusAgain|1200|the plans photographed;;@|inst @ auto $a 0||||;;@|inst @ walk $a 0||||;;@|wait 5||||;;'"$CONV_A"';;@|inst @ auto $a|player $a plays|5|pa plays on as a functionary'
 export AUTO_PRE_Mission_DestroyMickus='switch $a;switch $b;scan $a 1;scan $b 1'
-export AUTO_MID_Mission_IdentifyMerc='@|poll inst @ story get MissionState|MissionState = IdentifyMerc2|600|the scene of the mercenary;;@|inst @ switch $a||||;;@|wait 3||||;;@|inst @ switch $b||||;;@|inst @ scan $a 1||||;;@|inst @ scan $b 1||||'
+export AUTO_MID_Mission_IdentifyMerc='@|poll inst @ story get MissionState|MissionState = IdentifyMerc2|600|the scene of the mercenary;;@|inst @ ship $a||||;;@|wait 3||||;;@|inst @ ship $b||||;;@|inst @ scan $a 1||||;;@|inst @ scan $b 1||||'
 export AUTO_PRE_Mission_ProtectGus='switch $a;switch $b;scan $a 1;scan $b 1'
 export AUTO_PRE_Mission_IntoTheGDB='switch $a;switch $b;scan $a 1;scan $b 1'
 export AUTO_PRE_Mission_TalkToMayor='conv'
-# TalkToMayor: Dtritus for the mayor, a banker robs Corruptus (the banker's slaps), Dtritus again for the mayor; pb idle
+# TalkToMayor: Dtritus for the mayor, a banker robs Corruptus (the banker's slaps), Dtritus again for the mayor; pb idle;
+# the end of the slaps is the state's own log line, not a poll (in a poll's gap the banker robbed the mayor: no more talk)
 export AUTO_ENV_Mission_TalkToMayor="SCRAP_COOP_CONV=Dtritus,BankDirector,Dtritus" AUTO_B_Mission_TalkToMayor='-'
-export AUTO_MID_Mission_TalkToMayor='@|poll inst @ story get MissionState|MissionState = StealFunctionary|900|the mayor asks for the functionary'"'"'s money;;@|inst @ auto $a 0||||;;@|wait 5||||;;'"$CONV_A"';;@|inst @ auto $a|player $a plays|5|pa plays on as a banker;;@|poll inst @ story get MissionState|MissionState = TalkToMayor2|900|Corruptus emptied by the slaps;;@|inst @ auto $a 0||||;;@|wait 5||||;;'"$CONV_A"';;@|inst @ auto $a|player $a plays|5|pa plays on as Dtritus'
+export AUTO_MID_Mission_TalkToMayor='@|poll inst @ story get MissionState|MissionState = StealFunctionary|900|the mayor asks for the functionary'"'"'s money;;@|inst @ auto $a 0||||;;@|wait 5||||;;'"$CONV_A"';;@|inst @ auto $a|player $a plays|5|pa plays on as a banker;;@|-|coop: MissionState = TalkToMayor2|900|Corruptus emptied by the slaps (any time);;@|inst @ auto $a 0||||;;@|wait 5||||;;'"$CONV_A"';;@|inst @ auto $a|player $a plays|5|pa plays on as Dtritus'
 # BeatPickus: pb plays nothing (its helper's punches at the police and sentinels of the station draw the alarm)
 export AUTO_B_Mission_BeatPickus='-'
 # IntoTheGDB: once the scan found the traitor ("Destroy him"), he is shot down (he stays a bishop that is no foe)
@@ -103,3 +104,8 @@ export AUTO_PRE_SuperDeal_Sixth='switch $a;switch $b;waypoint $a 1' AUTO_PRE_Sup
 # deal's victory is called as the campaign chain of round 8o does (the story goes on to the next deal)
 export AUTO_MID_SuperDeal_Sixth='@|wait 150||||;;@|inst @ call SuperDeal_Sixth.Victory|coop: call SuperDeal_Sixth.Victory: done|10|the deal'"'"'s victory (test line)'
 export AUTO_MID_SuperDeal_Tenth='@|wait 150||||;;@|inst @ call SuperDeal_Tenth.Victory|coop: call SuperDeal_Tenth.Victory: done|10|the deal'"'"'s victory (test line)'
+# ApologizeMayor: pb plays nothing (its helper's punches at the sentinels and gears of the town hall draw a fight the mayor
+# joins: he stays on a gear and does not talk again)
+export AUTO_B_Mission_ApologizeMayor='-'
+# DestroyPorkinsTransports: the bishops kill the whole party now and then (the mission starts again): pb takes no damage
+export AUTO_PRE_Mission_DestroyPorkinsTransports='switch $a;switch $b;tough $b 1'

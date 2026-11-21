@@ -8,6 +8,7 @@
 #include "scrap/coop.h"
 #include "scrap/input.h"
 #include "scrap/netaudit.h"
+#include "scrap/players.h"
 #include "scrap/pres.h"
 #include "scrap/repent.h"
 #include "scrap/scorer.h"
@@ -240,6 +241,13 @@ int Scorer_GetItemVar(int player, const char *name, const char *var, char **s, d
 	*i = 0;
 	cScorer *sc = Scorer_Get(player);
 	cScorerItem *item = sc ? cScorer_FindItem(sc, name) : NULL;
+	/* not in the original: a -mp2 instance keeps a HUD model per player; an item the current one lacks is read from the
+	 * world's scorer or a player's model that has it (DestroyPorkinsTransports' bar, made in the context of the member
+	 * who boarded, read back at a transport's death in another context) */
+	for (int k = -1; g_PresHud && !player && !item && k < PLAYERS_MAX; k++) {
+		cScorer *o = k < 0 ? Scorer_GetWorld(0) : Pres_HudMade(k);
+		item = o && o != sc ? cScorer_FindItem(o, name) : NULL;
+	}
 	int kind = item ? ScorerItem_Var(item, var, 0, s, d, i) : 0;
 	return kind >= 1 && kind <= 3 ? kind : 0;
 }

@@ -223,3 +223,49 @@ Sd_UsrInvulnerable	ALL	a super deal's end (a defeat): every member invulnerable 
 Sd_SetVulnerableC	ALL	a super deal's ship can be hit again (boarded): every member's in coop (Party_All)
 Dom_CreateTeam	PARTY	a Domination super deal: a team made around the player, the acting member in coop
 Speech_ForceRemoteCom_E	PARTY	a Speech entry in the world's context (a forced remote talk: a deal's end): the acting member in coop
+# stage 5b part 2, Mission_GetAuthorization (68)
+Ga_Shield	ALL	GetAuthorization: the player healed and invulnerable for the way out of the jail (every member in coop, Party_All)
+Ga_OutOfJail	ALL	GetAuthorization: the player out of the jail in front of it (every member in coop, Party_All, the others beside)
+# stage 5b part 2, Mission_StupidMerc (37) and Mission_StupidMercAgain (40)
+Sy_GotoNextN	PARTY	the mercenary goes on when the player is near (every 2 s): the party's acting member (its mission's)
+Again_CheckEvasionN	PARTY	StupidMercAgain every 2 s: the smart mercenaries dead or the player far from them (the party's acting member)
+# stage 5b part 2, Mission_ProtectGus (58)
+Gus_Init	PARTY	the level's start of ProtectGus: the fight now when the player is in a ship (the party's acting member)
+# stage 5b part 2, Mission_TransportKiller (38): the transport's damage by an attacker that is no player (police)
+Transport_isValidDamage_C	PARTY	only the player's hits with the ATPC count: the party's acting member (a member's hit runs in its context)
+Transport_TryToDamage	PARTY	a hit that does not count: the hint to the player when it was its hit (the party's acting member)
+# stage 5b part 2, Mission_Massacre (41)
+Massacre_OnVehicleCallback	PARTY	an AI ship destroyed by no member: is the winner the player (the party's acting member; a member's kill runs in its context)
+# stage 5b part 2, Mission_DestroyMickus (53)
+Mickus_CheckMickusVisibility	PARTY	Mickus out of range and sight of the player (the party's acting member, its mission's)
+Cm_UsrNameIs	PARTY	a Commercial mission's callback by no member: is the killer or user the player (the party's acting member; a member's runs in its context)
+# stage 5b part 2, Mission_BankersCTF (55), Mission_TalkToTraitoriusAfterCTF (56)
+Ctf_SpawnFlagsC	PARTY	the flags a dead ship carried: the nearest one is the player's way point (the party's acting member)
+Traitor_LaunchTraitoriusSpeechC	PARTY	the level's start: the player in front of Traitorius for his talk (the party's acting member)
+Speech_NISpeech_E	PARTY	a Speech entry in the world's context (a mission's talk without answers): the acting member in coop
+Speech_AutoAddNI_E	PARTY	a Speech entry in the world's context (a mission's talk without answers): the acting member in coop
+Speech_RunNI_E	PARTY	a Speech entry in the world's context (a mission's talk without answers): the acting member in coop
+Speech_OnSpch_E	PARTY	a Speech entry in the world's context (a mission's talk): the acting member in coop
+Speech.NISpeechHeadName	PARTY	the talk of the player read by a mission or a character script: the acting member in coop
+Speech.TalkNI	PARTY	the talk of the player read by a mission or a character script: the acting member in coop
+# stage 5b part 2, Mission_IdentifyMerc (57)
+Merc_InitIdentifyMerc	PARTY	the scene's start: the player out of the elevator in front of Traitorius (the party's acting member)
+Sc_Invulnerable	ALL	an outdoor scene with the characters shown: the player, its ship and Sputnik cannot be hurt (every member in coop, Party_All)
+# stage 5b part 2, Mission_FindDtritusMatrix (61)
+Dtritus_InitN	PARTY	the level's start of FindDtritusMatrix: is the player in a lonely mercenary ship of its own (the party's acting member)
+Dtritus_CheckCreateBadGuyN	PARTY	every second until the player is at the hangar doors (the party's acting member, its mission's)
+# stage 5b part 2, Mission_IgorCombat (43) and Mission_BankersCombat (45): the super deal's talks and deaths
+Bankers_LaunchIgorDefeatedSpeechC	PARTY	back from the fight with Igor: the player in front of him for his talk (the party's acting member)
+Speech.CurrNI	PARTY	the talk of the player read by a mission or a character script: the acting member in coop
+Speech.OnEndOfSpeechNI	PARTY	the talk of the player read by a mission or a character script: the acting member in coop
+Speech.OnEndOfSpeechParamsNI	PARTY	the talk of the player read by a mission or a character script: the acting member in coop
+# stage 5b part 2, Mission_IntroHuman (66)
+Speech_PerformAnswer_E	PARTY	a Speech entry in the world's context (the answer of a mission's talk): the acting member in coop
+Speech_RestartMenuEvents_E	PARTY	a Speech entry in the world's context (the end of a talk's answers): the acting member in coop
+# stage 5b part 2, the super deals' ends (Mission_IgorCombat 43 and the deals of part 1)
+Sd_UsrSafeOne	ALL	a super deal's end: the player's ship at its most life and the player cannot be hurt (every member in coop, Party_All)
+Sd_UsrInvulnerableOne	ALL	a super deal lost: the player cannot be hurt (every member in coop, Party_All)
+# stage 5b part 2, the sites of the 8 player chains: StupidMerc (37), AttackTraitorius (51), IdentifyMerc (57)
+Merc_OnStupidMercDeathN	PARTY	the stupid mercenary died by no member's hand: was it the player (the party's acting member)
+Traitorius_OnTraitoriusDamage	PARTY	Traitorius hit by no member: the player's hint (the party's acting member)
+Merc_ScanShip	PARTY	every second the scan of the lonely mercenary by the player (the party's acting member, its mission's)

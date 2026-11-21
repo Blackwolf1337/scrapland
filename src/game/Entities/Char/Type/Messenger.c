@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "scrap/chartype.h"
+#include "scrap/fx.h"
 #include "scrap/fxelements.h"
 #include "scrap/itementity.h"
 #include "scrap/modmove.h"
@@ -43,7 +44,7 @@ static cGVar GVar_FXMessengerAttackFile;
  * lightning with its sound */
 static void ChType_MessengerAttack(cAbstractFile *params) {
 	char name[0x80];
-	vec3_t t1, t2, t3, ang, d, hit, p, a, off, from, to, nv, vel;
+	vec3_t t1, t2, t3, ang, d, hit, nv, vel;
 	cEntity *target = NULL;
 
 	cAbstractFile_ReadString(params, name, 0x80);
@@ -112,6 +113,11 @@ static void ChType_MessengerAttack(cAbstractFile *params) {
 			cPad_Rumble(&g_Pads[0], 0.0f, 1.0f, 0.75f);
 		}
 	}
+	FX_MessengerAttack(v, target, &hit);
+}
+
+static void FX_MessengerAttackRun(cEntity *v, cEntity *target, const vec3_t *hit) {
+	vec3_t t1, p, a, off, from, to;
 	cObjElementFXMessengerAttack *el = FX_DropNew(g_FXMessengerAttackFile, 0.400000006f);
 	if (!el) {
 		return;
@@ -128,7 +134,7 @@ static void ChType_MessengerAttack(cAbstractFile *params) {
 	from.x = r->x + p.x;
 	from.y = r->y + p.y;
 	from.z = r->z + p.z;
-	to = hit;
+	to = *hit;
 	if (target) {
 		to = *Obj_GetViewPos(target, &t1);
 	}
@@ -137,6 +143,16 @@ static void ChType_MessengerAttack(cAbstractFile *params) {
 	const char *s = g_MessengerShootSound;
 	int vol = Snd_Volume(g_MessengerShootSoundVol);
 	SoundSys_PlayAt(g_pSound, s, &from, vol);
+}
+
+/* the lightning sent to the players of a -mp2 instance (include/scrap/pres.h), the sinks inside it not again */
+void FX_MessengerAttack(cEntity *v, cEntity *target, const vec3_t *hit) {
+	if (g_Mp2) {
+		Pres_FxEnt(PRES_FX_MSGATTACK, v->name, target ? target->name : "", 0.0f, 0, hit);
+	}
+	g_PresIn++;
+	FX_MessengerAttackRun(v, target, hit);
+	g_PresIn--;
 }
 
 /* the OnTake of the data pack a messenger dropped: params the data pack, the one that touches it. A messenger that
