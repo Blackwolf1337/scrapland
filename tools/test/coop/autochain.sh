@@ -38,6 +38,8 @@ each() {
 		[ "$np" -lt 2 ] && continue
 		echo "$l"
 		[[ $l == *'leader $b'* || $l == *'auto $b'* ]] && continue
+		# AUTO_EACH_<Mission>=0: pb's lines stay pb's (the more members play nothing there: AUTO_M_<Mission>=0)
+		[ "$noeach" = 0 ] && continue
 		for m in $mp; do echo "${l//\$b/\$$m}"; done
 	done
 }
@@ -57,6 +59,10 @@ endsteps() {
 		echo "AB|inst AB switch \$a|player \$a into|30|pa gets into a ship"
 		echo "AB|-|player \$a into a ship: Parking.SwitchVehicleMissionCallback|10|the boarding's mission callback: the boss comes (any time)"
 		echo "AB|inst AB switch \$b||||"
+		# no member takes damage: a death of the whole party heals the boss (single player's rule), and the automatic
+		# players died faster than their weapons took its shield (the chain's test help, as CHAP_TOUGH)
+		echo "AB|inst AB tough \$a 1||||"
+		echo "AB|inst AB tough \$b 1||||"
 		echo "AB|wait 5||||"
 		echo "AB|inst AB show MapFinalFight.bossName|bossName = '|10|the boss is there"
 		echo "AB|inst AB fight \$a MapFinalFight.bossName|player \$a fights MapFinalFight.bossName|5|pa fights the boss"
@@ -216,7 +222,7 @@ while [ $n -lt $max ]; do
 		fi
 		echo "w|wait 8||||"
 		echo "w|save $tag-$n||||"
-	} | each > "$steps"
+	} | { v=AUTO_EACH_$mis; noeach=${!v}; each; } > "$steps"
 	echo "== $n: $mis in $lv (party in $from)"
 	envv=AUTO_ENV_$mis
 	# AUTO_TRIES: a chapter whose mission failed (the party died: the instance restarts without the test lines) is played

@@ -9,6 +9,8 @@ export AUTO_PRE_Mission_BankersCTF='switch $a;switch $b;waypoint $a 1' AUTO_B_Mi
 # MortalRace: no member takes damage (the racers kill the baton's carrier again and again, and a member's death drops
 # the baton: the race's checkpoints stopped for the party), as a party of one plays it with CHAP_TOUGH
 export AUTO_PRE_Mission_MortalRace='switch $a;switch $b;tough $a 1;tough $b 1'
+# (the other members play nothing: with eight a helper took the baton and pa's checkpoints did not count)
+export AUTO_B_Mission_MortalRace='-'
 export CHAP_SECS=1800 CHAP_ENV="SCRAP_COOP_CONV=Dtritus SCRAP_COOP_WARNING=3 SCRAP_COOP_ANSWER=yes"
 export AUTO_PRE_Mission_FaceTheMayor='switch $a;switch $b'
 export AUTO_PRE_Mission_AttackTraitorius='spare $a 30;spare $b 30'
@@ -54,6 +56,9 @@ export AUTO_B_Mission_GetDataPart2='1'
 # count (ten before the time ends the round too soon, as Humphrey's ten); after the time (MissionState CallDeepThroat)
 # both shoot the traffic to finish the round, then the plain auto player again (Deep Throat's phone cab)
 export AUTO_MID_Mission_DistractHumphrey='@|poll inst @ story get DistractionStart|DistractionStart = 1|900|the distraction starts at the meeting point;;@|inst @ upto $a Mission_DistractHumphrey.shipsKilledPlayer 6||||;;@|inst @ upto $b Mission_DistractHumphrey.shipsKilledPlayer 8||||;;@|inst @ fight $a @Traffic|player $a fights|5|pa fights the traffic;;@|inst @ fight $b red|player $b fights|5|pb fights the police the shots bring;;@|poll inst @ story get MissionState|MissionState = CallDeepThroat|1200|Humphrey kept busy until Deep Throat has the code;;@|inst @ upto $a 0 0||||;;@|inst @ upto $b 0 0||||;;@|inst @ fight $b @Traffic||||;;@|poll inst @ show Mission_DistractHumphrey.missionComplete|missionComplete = 0|900|the round finished (ten ships);;@|inst @ fight $a 0||||;;@|inst @ fight $b 0||||;;@|inst @ auto $b 0||||'
+# with eight members only pa and pb play it (their counts and the police the shots bring; six more helpers kept the
+# police and the alarms up): the more members stay idle
+export AUTO_EACH_Mission_DistractHumphrey=0 AUTO_M_Mission_DistractHumphrey=0
 # (the helpers stop after the round: with eight members their fights kept the police and pa's alarm up, and the call
 # to Deep Throat waits for the alarm to fall)
 # DestroyBadDebtors: pa shoots the money transports (the mission's targets), pb keeps the mercenaries off the treasures
