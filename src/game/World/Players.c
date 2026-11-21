@@ -66,6 +66,29 @@ static int Players_Slot(cEntity *e) {
 	return Entity_IsType(e, TYEN_WALKCHAR) ? cWalkCharEntity_GetOwnerSlot(e) : -1;
 }
 
+/* a count per hash of the pointers that are a player's ship or machine (Players_ShipOwner and Players_OfMachine of
+ * every entity in every frame looked at all 64 players: stage 9) */
+#define PLAYERS_CLAIMS 1024
+static uint16_t g_Claims[PLAYERS_CLAIMS];
+
+static unsigned Players_ClaimHash(const cEntity *e) {
+	return (unsigned)(((uintptr_t)e >> 4) * 2654435761u) % PLAYERS_CLAIMS;
+}
+
+static void Players_Claim(cEntity **at, cEntity *e) {
+	if (*at && g_Claims[Players_ClaimHash(*at)]) {
+		g_Claims[Players_ClaimHash(*at)]--;
+	}
+	*at = e;
+	if (e) {
+		g_Claims[Players_ClaimHash(e)]++;
+	}
+}
+
+static byte Players_Claimed(const cEntity *e) {
+	return g_Claims[Players_ClaimHash(e)] != 0;
+}
+
 int Players_Of(cEntity *e) {
 	if (!e) {
 		return -1;
@@ -242,7 +265,7 @@ void Players_Join(int i, int money) {
 	s->alarm.tauntReady = 1;
 	s->money = money;
 	s->joined++;
-	s->ship = NULL;
+	Players_Claim(&s->ship, NULL);
 	s->shipName[0] = 0;
 	for (int k = 0; k < PLAYERS_LEVELS; k++) {
 		s->level[k] = -1;
@@ -251,7 +274,7 @@ void Players_Join(int i, int money) {
 	s->camName[0] = 0;
 	s->actionSet = -1;
 	s->timeSpeed = 0.0f;
-	s->machine = NULL;
+	Players_Claim(&s->machine, NULL);
 	s->machineName[0] = 0;
 	s->used = 1;
 	Native_GVarOverClear(i);
@@ -270,7 +293,7 @@ void Players_Part(int i) {
 		Players_Enter(PLAYERS_NONE);
 	}
 	g_Pl[i].used = 0;
-	g_Pl[i].machine = NULL;
+	Players_Claim(&g_Pl[i].machine, NULL);
 	Players_OwnedForget(i);
 	Native_GVarOverClear(i);
 	ModVar_OverClearPlayer(i);
@@ -481,12 +504,12 @@ void Players_SetMachine(int i, cEntity *e) {
 	if (!Players_Used(i)) {
 		return;
 	}
-	g_Pl[i].machine = e;
+	Players_Claim(&g_Pl[i].machine, e);
 	Str_Copy(g_Pl[i].machineName, e && e->name ? e->name : "", sizeof(g_Pl[i].machineName));
 }
 
 int Players_OfMachine(const cEntity *e) {
-	if (!Players_Net() || !e || !e->name) {
+	if (!Players_Net() || !e || !e->name || !Players_Claimed(e)) {
 		return -1;
 	}
 	for (int i = 0; i < PLAYERS_MAX; i++) {
@@ -705,7 +728,7 @@ void Players_SetShip(int i, cEntity *ship) {
 		return;
 	}
 	cPlayer *s = &g_Pl[i];
-	s->ship = ship;
+	Players_Claim(&s->ship, ship);
 	Str_Copy(s->shipName, ship ? ship->name : "", sizeof(s->shipName));
 	int was = Players_Enter(i);
 	if (ship) {
@@ -719,7 +742,7 @@ void Players_SetShip(int i, cEntity *ship) {
 
 void Players_NoteShip(int i, cEntity *ship) {
 	if (Players_Used(i)) {
-		g_Pl[i].ship = ship;
+		Players_Claim(&g_Pl[i].ship, ship);
 		Str_Copy(g_Pl[i].shipName, ship ? ship->name : "", sizeof(g_Pl[i].shipName));
 	}
 }
@@ -734,7 +757,7 @@ cEntity *Players_Ship(int i) {
 }
 
 int Players_ShipOwner(cEntity *e) {
-	for (int i = 0; e && Players_Net() && i < PLAYERS_MAX; i++) {
+	for (int i = 0; e && Players_Net() && Players_Claimed(e) && i < PLAYERS_MAX; i++) {
 		if (g_Pl[i].ship == e && Players_Ship(i) == e) {
 			return i;
 		}
