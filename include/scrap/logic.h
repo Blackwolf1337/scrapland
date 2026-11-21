@@ -393,10 +393,11 @@ typedef cLocalLogic cCTFEnemiesLocalLogic;
 typedef cLocalLogic cEnemiesLocalLogic;
 typedef cLocalLogic cScrapyardLocalLogic;
 
-/* the type name of the action class of a character */
+/* the type name of the action class of a character ("" without one: not in the original, a -mp2 client's own
+ * character between two classes of a conversion) */
 static inline const char *Logic_TypeName(cEntity *e) {
 	cActCtrl *ctrl = WithLife_GetActCtrl(e);
-	return ctrl->cls->name;
+	return ctrl ? ctrl->cls->name : "";
 }
 
 /* the radar marker of an object (cObjEntity.radarShow, "RadarShow") */

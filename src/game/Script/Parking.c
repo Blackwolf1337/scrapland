@@ -63,9 +63,11 @@ static byte Pk_NotOwn(void) {
 }
 
 /* Pk_NotOwn, but the coop story's party ship (the world's own Parking.PlayerShip of the level's start, Pk_BrowseItemPosN)
- * is single player's own ship in the world's context (a parking's callback for a ship no member owns) */
+ * is single player's own ship in the world's context (a parking's callback for a ship no member owns) while it lives
+ * (a destroyed one is none: its name read failed at every parking check) */
 static byte Pk_NotOwnShip(const nativeVal_t *ship) {
-	return Pk_NotOwn() && !(Coop_On() && Players_Current() == PLAYERS_NONE && Native_True(ship));
+	return Pk_NotOwn() && !(Coop_On() && Players_Current() == PLAYERS_NONE && Native_True(ship) &&
+		ship->type == NV_ENT && Native_Ent(ship));
 }
 
 /* Scrap.GetEntity(name) through its seam, the handle value (None for no entity) */
@@ -1009,9 +1011,35 @@ static byte Pk_ParkNames(const nativeVal_t *dname, nativeVal_t *box, nativeVal_t
 	return ok;
 }
 
+/* not in the original: a parking of a DM_Parking dummy whose place holds another player's own ship (a player that
+ * joins an instance takes the nearest free one, Parking_PlayerJoin) */
+#define PK_TAKEN 1500.0f
+static byte Pk_TakenByOther(const nativeVal_t *dummy) {
+	nativeVal_t pos = { 0 };
+	double p[3];
+	if (!Pk_Item(dummy, 1, &pos)) {
+		Native_ErrClear();
+		return 0;
+	}
+	byte got = Mode_VecOf(&pos, p);
+	Native_Free(&pos);
+	for (int i = 0; got && i < PLAYERS_MAX; i++) {
+		cEntity *v = i != Players_Current() ? Players_Ship(i) : NULL;
+		if (v && !v->deadNode.target) {
+			float dx = v->pos.x - (float)p[0], dz = v->pos.z - (float)p[2];
+			if (dx * dx + dz * dz < PK_TAKEN * PK_TAKEN) {
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
 /* BrowseItemPos(): the parking boxes of the DM_Parking dummies; the player's ship on the one nearest to the player
  * (the junkyard's only when the player comes from there), Sputnik beside it; join: only the ship and Sputnik of the
- * current player of the instance (Parking_PlayerJoin), the boxes are the level's start's */
+ * current player of the instance (Parking_PlayerJoin), the boxes are the level's start's, the parking nearest to the
+ * player's character that holds no other player's ship (the junkyard's too: the instance spreads its players over
+ * the level's spawn places, one of them the junkyard's) */
 static byte Pk_BrowseItemPos(byte join) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *usr = Mode_V(&t), *myPos = Mode_V(&t), *nearest = Mode_V(&t), *nearestDist = Mode_V(&t), *x = Mode_V(&t);
@@ -1064,7 +1092,10 @@ static byte Pk_BrowseItemPos(byte join) {
 			return Mode_Done(&t, 0);
 		}
 		int closer = none ? 0 : Mode_Cmp(nearestDist, ">", dist);
-		if (closer && !fromJY) {
+		if (closer > 0 && join && Pk_TakenByOther(dummy)) {
+			closer = 0;
+		}
+		if (closer && !fromJY && !join) {
 			closer = Pk_Item(dummy, 0, x) ? Mode_CmpG(x, "!=", PK, "PR_Junk") : -1;
 		}
 		if (closer < 0) {

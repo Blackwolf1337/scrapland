@@ -108,7 +108,8 @@ enum {
 	PRES_FX_SUCTION,				/* bank master, victim: FX_BankMasterSuction */
 	PRES_FX_FLASH,					/* Berto, victim: FX_BertoFlash */
 	PRES_FX_TAKE,					/* messenger, data pack: FX_MessengerTake */
-	PRES_FX_POLICESTEAL				/* police, victim: FX_PoliceSteal */
+	PRES_FX_POLICESTEAL,			/* police, victim: FX_PoliceSteal */
+	PRES_FX_KILL					/* D-Tritus, the character his punch killed: FX_DtritusKill */
 };
 
 struct cEntity;

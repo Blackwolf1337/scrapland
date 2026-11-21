@@ -20,6 +20,7 @@
 #include "scrap/netclass.h"
 #include "scrap/places.h"
 #include "scrap/play.h"
+#include "scrap/party.h"
 #include "scrap/players.h"
 #include "scrap/pres.h"
 #include "scrap/replicate.h"
@@ -470,24 +471,55 @@ static int Players_NearRunner(void) {
 
 /* the player a read of "the player" at site (a C function, or Module.variable with copy) gets in the world's context
  * of the instance, by the site's row of tools/script/netclass/playerread.tsv: NEAREST (to the entity that runs), ANY
- * (some player, the next one each frame), PARTY (the coop party's acting member: its mission's, else the nearest; outside coop NEAREST),
- * WORLD (no player: the world's own money, alarm and module variables). A site without a row gets PARTY in coop and
- * NEAREST elsewhere and is counted as player.world.norule (the gate of stage 1.3: none on the city levels). */
+ * (some player, the next one each frame), WORLD (no player: the world's own money, alarm and module variables), and
+ * the party's rules (include/scrap/party.h; in coop rules.def can give a site another rule): PARTY (the acting
+ * member, else the nearest), MENU (the acting member), DEAD (a living member first), ALL (a setter that runs for
+ * every member: a read gives the acting member); outside coop those four are NEAREST. A site without a row gets PARTY
+ * in coop and NEAREST elsewhere and is counted as player.world.norule (the gates of stages 1.3 and 5: none on the
+ * city levels and in the coop chapters). */
 static int Players_ResolveAt(const char *site, byte copy) {
 	netTag_t tag = Players_RuleOf(site, copy);
 	const char *key;
 	int i;
 
-	if (tag == NC_WORLD) {
+	if (Coop_On()) {
+		tag = Party_Tag(site, tag);
+	}
+	switch (tag) {
+	case NC_WORLD:
 		key = "player.world.world:";
+		break;
+	case NC_ANY:
+		key = "player.world.any:";
+		break;
+	case NC_NEAREST:
+		key = "player.world.nearest:";
+		break;
+	case NC_PARTY:
+		key = "player.world.party:";
+		break;
+	case NC_MENU:
+		key = "player.world.menu:";
+		break;
+	case NC_DEAD:
+		key = "player.world.dead:";
+		break;
+	case NC_ALL:
+		key = "player.world.all:";
+		break;
+	default:
+		key = "player.world.norule:";
+		break;
+	}
+	if (tag == NC_WORLD) {
 		i = PLAYERS_NONE;
 	} else if (tag == NC_ANY) {
-		key = "player.world.any:";
 		i = Players_First();
 	} else {
-		key = tag == NC_NEAREST ? "player.world.nearest:" : tag == NC_PARTY ? "player.world.party:" :
-			"player.world.norule:";
-		i = (tag == NC_PARTY || tag != NC_NEAREST) && Coop_On() ? Coop_MissionPlayer() : -1;
+		i = tag != NC_NEAREST && Coop_On() ? Party_Acting() : -1;
+		if (tag == NC_DEAD && Coop_On()) {
+			i = Party_Living(i);
+		}
 		if (i < 0 || !g_Pl[i].used) {
 			i = Players_NearRunner();
 		}
