@@ -277,3 +277,13 @@ Hump_OnDeath	PARTY	DistractHumphrey (DownTown): a ship's death by no member (Hum
 Hump_OnGeneralDamage	PARTY	DistractHumphrey (DownTown): a ship hit by no member: the acting member's name in coop (no ship to taunt)
 Hump_OnHumphreyDamage	PARTY	DistractHumphrey (DownTown): Humphrey hit by no member: only a player hurts him, the acting member in coop
 Hump_OnStartDistraction	PARTY	DistractHumphrey (DownTown): the meeting point taken by no member's entity: the acting member in coop
+Win2nd_GetRaceWaypointIndex_C	PARTY	Win2ndRace (Outskirts): the race's next waypoint of the player, the acting member in coop
+Win2nd_OnCheckPoint	PARTY	Win2ndRace (Outskirts): a checkpoint taken by no member (a racer): the acting member's name in coop
+Win2nd_OnRaceStart	PARTY	Win2ndRace (Outskirts): the race starts for the player, the acting member in coop
+Bd_CreateBanker	PARTY	DestroyBadDebtors (Outskirts): a banker made for the player's treasure, the acting member in coop
+Bd_CreateBankMaster	PARTY	DestroyBadDebtors (Outskirts): the chief of bankers made for the player, the acting member in coop
+Debtors_CheckMercsFreezed	PARTY	DestroyBadDebtors (Outskirts): the mercenaries near the player, the acting member in coop
+Debtors_DropTreasure	PARTY	DestroyBadDebtors (Outskirts): a money transport's treasure dropped by no member: the acting member in coop
+Debtors_OnCoinTaken	PARTY	DestroyBadDebtors (Outskirts): a coin taken by no member (a banker, a mercenary): the acting member in coop
+Debtors_OnInitMission	PARTY	DestroyBadDebtors (Outskirts): the mission starts for the player (the boarding callback), the acting member in coop
+Debtors_OnTreasureReached	PARTY	DestroyBadDebtors (Outskirts): a treasure reached by a banker, the acting member in coop

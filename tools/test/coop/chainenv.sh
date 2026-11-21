@@ -6,7 +6,8 @@ export AUTO_PRE_Mission_IgorCombat='switch $a;switch $b' AUTO_A_Mission_IgorComb
 export AUTO_A_Mission_Massacre="1 @Traffic" AUTO_B_Mission_Massacre="2 @Traffic"
 export AUTO_PRE_Mission_BankersCombat='switch $a;switch $b' AUTO_B_Mission_BankersCombat='2 red'
 export AUTO_PRE_Mission_BankersCTF='switch $a;switch $b;waypoint $a 1' AUTO_B_Mission_BankersCTF='2 red'
-export AUTO_PRE_Mission_MortalRace='switch $a;switch $b'
+# MortalRace: the helpers take no damage (a member's death stopped the race's checkpoints for the party: open point)
+export AUTO_PRE_Mission_MortalRace='switch $a;switch $b;tough $b 1'
 export CHAP_SECS=1800 CHAP_ENV="SCRAP_COOP_CONV=Dtritus SCRAP_COOP_WARNING=3 SCRAP_COOP_ANSWER=yes"
 export AUTO_PRE_Mission_FaceTheMayor='switch $a;switch $b'
 export AUTO_PRE_Mission_AttackTraitorius='spare $a 30;spare $b 30'
@@ -51,7 +52,9 @@ export AUTO_B_Mission_GetDataPart2='1'
 # the shots bring, with the fight helper (Humphrey is green: left out); both hold their fire at 6 and 8 of the player's
 # count (ten before the time ends the round too soon, as Humphrey's ten); after the time (MissionState CallDeepThroat)
 # both shoot the traffic to finish the round, then the plain auto player again (Deep Throat's phone cab)
-export AUTO_MID_Mission_DistractHumphrey='@|poll inst @ story get DistractionStart|DistractionStart = 1|900|the distraction starts at the meeting point;;@|inst @ upto $a Mission_DistractHumphrey.shipsKilledPlayer 6||||;;@|inst @ upto $b Mission_DistractHumphrey.shipsKilledPlayer 8||||;;@|inst @ fight $a @Traffic|player $a fights|5|pa fights the traffic;;@|inst @ fight $b red|player $b fights|5|pb fights the police the shots bring;;@|poll inst @ story get MissionState|MissionState = CallDeepThroat|1200|Humphrey kept busy until Deep Throat has the code;;@|inst @ upto $a 0 0||||;;@|inst @ upto $b 0 0||||;;@|inst @ fight $b @Traffic||||;;@|poll inst @ show Mission_DistractHumphrey.missionComplete|missionComplete = 0|900|the round finished (ten ships);;@|inst @ fight $a 0||||;;@|inst @ fight $b 0||||'
+export AUTO_MID_Mission_DistractHumphrey='@|poll inst @ story get DistractionStart|DistractionStart = 1|900|the distraction starts at the meeting point;;@|inst @ upto $a Mission_DistractHumphrey.shipsKilledPlayer 6||||;;@|inst @ upto $b Mission_DistractHumphrey.shipsKilledPlayer 8||||;;@|inst @ fight $a @Traffic|player $a fights|5|pa fights the traffic;;@|inst @ fight $b red|player $b fights|5|pb fights the police the shots bring;;@|poll inst @ story get MissionState|MissionState = CallDeepThroat|1200|Humphrey kept busy until Deep Throat has the code;;@|inst @ upto $a 0 0||||;;@|inst @ upto $b 0 0||||;;@|inst @ fight $b @Traffic||||;;@|poll inst @ show Mission_DistractHumphrey.missionComplete|missionComplete = 0|900|the round finished (ten ships);;@|inst @ fight $a 0||||;;@|inst @ fight $b 0||||;;@|inst @ auto $b 0||||'
+# (the helpers stop after the round: with eight members their fights kept the police and pa's alarm up, and the call
+# to Deep Throat waits for the alarm to fall)
 # DestroyBadDebtors: pa shoots the money transports (the mission's targets), pb keeps the mercenaries off the treasures
 # the bankers carry home (the money counts only when a banker takes it)
 export AUTO_MID_Mission_DestroyBadDebtors='@|wait 20||||;;@|inst @ fight $b Mission_DestroyBadDebtors.mercsActive|player $b fights|5|pb fights the mercenaries'
@@ -114,5 +117,7 @@ export AUTO_PRE_Mission_DestroyPorkinsTransports='switch $a;switch $b;tough $b 1
 # member starts them, knocks the functionaries down on foot, then starts the downloads again
 export AUTO_MID1_Mission_GetDataPart2='@|wait 40||||;;@|inst @ auto $a 0||||;;@|inst @ fight $a Mission_GetDataPart2.funcNames|player $a fights|5|pa fights the functionaries;;@|wait 150||||;;@|inst @ fight $a 0||||;;@|inst @ auto $a|player $a plays|5|pa starts the downloads again'
 # GetDataPart3 alone: the police the data cubes' fight brought keep the alarm up while the member fights them (the
-# call waits for the alarm to fall): after the boss' call it stops and waits for its alarm to fall, then calls
-export AUTO_MID1_Mission_GetDataPart3='@|poll inst @ story get MissionState|MissionState = CallDeepThroat|1500|the data with the boss: Deep Throat to call;;@|inst @ auto $a 0||||;;@|poll inst @ status|player $a \(.*alarm 0\.00|900|pa'"'"'s alarm falls before the call;;@|inst @ auto $a|player $a plays|5|pa calls Deep Throat'
+# call waits for the alarm to fall), and the fighters left of the last wave draw it back into a ship, whose boarding
+# callback starts the data's waves again: after the boss' call it stops, waits for its alarm to fall, then goes to the
+# phone cab of the call on foot and uses it (test lines switch, target and usetarget)
+export AUTO_MID1_Mission_GetDataPart3='@|poll inst @ story get MissionState|MissionState = CallDeepThroat|1500|the data with the boss: Deep Throat to call;;@|inst @ auto $a 0||||;;@|poll inst @ status|player $a \(.*alarm 0\.00|900|pa'"'"'s alarm falls before the call;;@|inst @ switch $a|player $a out of|30|pa out of its ship;;@|wait 5||||;;@|inst @ target $a 0 150||||;;@|wait 3||||;;@|inst @ usetarget $a|player $a uses|10|pa calls Deep Throat'

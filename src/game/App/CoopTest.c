@@ -90,6 +90,7 @@
 #define CP_FLY_NEAR 400.0f			/* test: a point of its flight's path this near is passed */
 #define CP_FLY_STUCK 8.0			/* test: s, else it is placed CP_FIGHT_NEAR from its goal (as before) */
 #define CP_AUTO_SHIP 8000.0f		/* test: outdoors a target on foot further than this is flown to */
+#define CP_USE_BOARD 120.0			/* test: s after a use before it boards for a mission that starts so */
 #define CP_USE_HOLD 5.0				/* test: s it waits after a use (the talk of a call starts after it) */
 #define CP_SHIP_ITEM 1000.0f		/* test: outdoors an item this wide is a ship's (flown onto) */
 #define CP_SHIP_ASK 12.0			/* test: s it asks for a ship (the switch) before it walks */
@@ -134,6 +135,9 @@ static void Cp_TestRace(int i) {
 	g_Coop.pl[i].raceSince = now;
 	e->pos = c->pos;
 	Obj(e)->vel = (vec3_t){ 0.0f, 0.0f, 0.0f };
+	/* the placement goes to its client too (its own ship's step there would take it back: MortalRace's ship stood
+	 * short of its checkpoint) */
+	Rep_Placed(i);
 }
 
 /* test: a target of the mission to fight (its radar mark red, or in the scripts' list of enemies) */
@@ -1147,9 +1151,11 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	/* a mission arrow to take (BankersCombat's blueprints while the bankers attack) before the level's red ones; one on
 	 * a ship to shoot down before the mission's targets to use (Ambush's probes, its phone cab still the target) */
 	cEntity *arrow = Cp_ArrowTarget(e);
-	/* in a super deal the mode's items (Domination's baton and zones) come before its red ones */
+	/* in a super deal the mode's items (Domination's baton and zones) come before its red ones, so does the mission
+	 * MortalRace's baton (dropped again at a member's death) */
 	const char *lib = SaveVar_Get("Mission.Library");
-	byte dealItem = g_Coop.pl[i].autoOn != 2 && lib && !strncmp(lib, "SuperDeal_", 10) && Cp_RadarItem(e);
+	byte dealItem = g_Coop.pl[i].autoOn != 2 && lib && (!strncmp(lib, "SuperDeal_", 10) || !strcmp(lib, "Mission_MortalRace")) &&
+		Cp_RadarItem(e);
 	byte other = Cp_FightTargets("", all, 1, 0) || arrow || dealItem;
 	const char *foes = Cp_FightTargets("", all, CP_FIGHT_MAX, 1) ? "" : arrow && Cp_ShipFoe(arrow) && !Cp_Scanned(i, arrow) ? arrow->name : (escort ? Cp_RedNear(escort) :
 		(g_Coop.pl[i].autoOn == 2 || !other) && Cp_FightTargets(CP_FIGHT_RED, all, CP_FIGHT_MAX, 1)) ? CP_FIGHT_RED : NULL;
@@ -1188,7 +1194,7 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	}
 	/* a talk plays, or one may start after its use: it listens (the call's talk of a phone cab: no ship and no item
 	 * meanwhile, GetDataPart3's boarding started the data's waves again) */
-	if (g_RemainTalkTime > 0.01f || now - g_Coop.pl[i].usedAt < CP_USE_HOLD) {
+	if (g_RemainTalkTime > 0.01f || (g_Coop.pl[i].usedAt > 0.0 && now - g_Coop.pl[i].usedAt < CP_USE_HOLD)) {
 		g_Coop.pl[i].autoSince = now;
 		return;
 	}
@@ -1222,8 +1228,10 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 		if (g_Coop.pl[i].autoList[0]) {
 			Str_Copy(g_Coop.pl[i].fightList, g_Coop.pl[i].autoList, sizeof(g_Coop.pl[i].fightList));
 			Cp_TestFight(i, in, back);
-		} else if (kind == NETREP_CHAR && Cp_WaitsForShip()) {
-			/* the mission starts when the player boards (its level again after a failure): into a ship */
+		} else if (kind == NETREP_CHAR && Cp_WaitsForShip() &&
+			(g_Coop.pl[i].usedAt <= 0.0 || now - g_Coop.pl[i].usedAt >= CP_USE_BOARD)) {
+			/* the mission starts when the player boards (its level again after a failure): into a ship; not soon after a
+			 * use (GetDataPart3's call to Deep Throat: the boarding's callback started the data's waves again) */
 			in->buttons |= pulse ? NETREP_IN_SWITCH : 0;
 		}
 		return;
@@ -1271,7 +1279,9 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	/* outdoors a target far away: into a ship first (the switch: a parked one near, else its called ship), as a player
 	 * flies there; it walks when it gets none */
 	float fx = t->pos.x - e->pos.x, fz = t->pos.z - e->pos.z;
-	if (Cp_WalkGraph() || Entity_IsType(t, TYEN_CAR) || fx * fx + fz * fz <= CP_AUTO_SHIP * CP_AUTO_SHIP) {
+	if (Cp_WalkGraph() || Entity_IsType(t, TYEN_CAR) || fx * fx + fz * fz <= CP_AUTO_SHIP * CP_AUTO_SHIP ||
+		(g_Coop.pl[i].usedAt > 0.0 && now - g_Coop.pl[i].usedAt < CP_USE_BOARD)) {
+		/* (not soon after a use: GetDataPart3's boarding callback starts the data's waves again during the call) */
 		g_Coop.pl[i].shipAsk = 0.0;
 	} else if (g_Coop.pl[i].shipAsk <= 0.0) {
 		g_Coop.pl[i].shipAsk = now;
