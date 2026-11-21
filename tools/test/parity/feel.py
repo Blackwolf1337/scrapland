@@ -27,18 +27,23 @@ put 15000 units up, W held 6 s (5 s with --no-boost), three times. The results g
              the own ship's weapon fired (the feel log counts the fire callbacks of the own ship)
 With --mp2 a client boards its own ship as single player does (the use of its ship's arrow, through the instance's
 test line "use <player> <ship>"): the switch key of the sandbox is off on that path.
+--mode sets the mode of the hosting game (freeroam by default); a PvP mode (include/scrap/arena.h: dm, tdm, ...)
+starts the player in its ship, so there are no walks and no boarding, the flights start at once. --fighters n joins n
+headless bots (SCRAP_PLAYBOT=1, -mp2 with --mp2, the same network settings) to the hosting game's world, which fight
+the player: its corrections a minute then count the hits it takes and the ships it collides with.
 --delay, --jitter and --loss set SCRAP_NET2_DELAY (ms each way), SCRAP_NET2_JITTER (ms) and SCRAP_NET2_LOSS (percent)
 on the client and the server of a multiplayer side (tools/test/mp2.sh feel runs the matrix of them); --cell names the
 JSON files <side>-<cell>.json. FEEL_HOST_DEVICE in the environment puts the hosting game of the join side on another
 Vulkan device than --device (the measured games keep a device to themselves).
 
   feel.py [--sides sp,host,join,menuhost] [--level DownTown] [--port 29960] [--build DIR] [--out DIR] [--scratch DIR]
-          [--delay MS] [--jitter MS] [--loss PCT] [--cell NAME] [--no-boost]
+          [--delay MS] [--jitter MS] [--loss PCT] [--cell NAME] [--no-boost] [--mode MODE] [--fighters N]
 """
 import argparse
 import json
 import os
 import re
+import shutil
 import statistics
 import subprocess
 import sys
@@ -244,6 +249,35 @@ def own_kind(rows, t):
     return k[-1] if k else '-'
 
 
+ARENA_MODES = ('dm', 'dmbots', 'tdm', 'flaghunt', 'teamflag', 'postman', 'teampost')
+
+
+def start_fighters(a, port):
+    """--fighters headless bots that join the world on port and fight; their game folders"""
+    dirs = []
+    for k in range(a.fighters):
+        d = os.path.join(a.scratch, 'g-ff%d' % k)
+        if not os.path.isdir(os.path.join(d, 'Bin')):
+            subprocess.run([os.path.join(REPO, 'tools/test/mkgame.sh'), '--native', d], stdout=subprocess.DEVNULL,
+                           stderr=subprocess.DEVNULL, check=True)
+        shutil.copy2(os.path.join(a.build, 'ScrapC'), os.path.join(d, 'Bin', 'ScrapC'))
+        lib = os.path.join(a.build, 'ffmpeg', 'install', 'lib')
+        for f in os.listdir(lib) if os.path.isdir(lib) else []:
+            if '.so' in f:
+                subprocess.run(['cp', '-a', os.path.join(lib, f), os.path.join(d, 'Bin')])
+        env = dict(os.environ, **a.net)
+        env.pop('DISPLAY', None)
+        env.pop('WAYLAND_DISPLAY', None)
+        env.update(SCRAP_GAME_DIR=d, XDG_DATA_HOME=os.path.join(d, 'xdg-data'), SCRAP_NO_MSGBOX='1', SCRAP_PLAYBOT='1',
+                   SDL_AUDIODRIVER='dummy', SDL_VIDEODRIVER='dummy', PULSE_SERVER='unix:/nonexistent')
+        subprocess.Popen(['timeout', '-k', '3', str(a.timeout), './ScrapC', '-join:127.0.0.1', '-port:%d' % port,
+                          '-headless', '-name:Fighter%d' % k] + (['-mp2'] if a.mp2 else []), cwd=os.path.join(d, 'Bin'),
+                         env=env, stdin=subprocess.DEVNULL, stdout=open(os.path.join(a.scratch, 'ff%d.log' % k), 'w'),
+                         stderr=subprocess.STDOUT, start_new_session=True)
+        dirs.append(d)
+    return dirs
+
+
 def run_side(a, side):
     res = {'side': side, 'level': a.level, 'cell': a.cell}
     log = os.path.join(a.scratch, 'feel-%s%s.csv' % (side, '-' + a.cell if a.cell else ''))
@@ -255,11 +289,13 @@ def run_side(a, side):
         env['SCRAP_PLAYLOG'] = os.path.join(a.scratch, 'play-%s%s.csv' % (side, '-' + a.cell if a.cell else ''))
     port = a.port
     hostg = None
+    fighters = []
     v2 = ['-mp2'] if a.mp2 else []
+    arena = a.mode in ARENA_MODES
     if side == 'sp':
         g = parity.Game(a, 'fs', ['-imap:Levels/' + a.level], env)
     elif side == 'host':
-        g = parity.Game(a, 'fh', ['-host:' + a.level, '-port:%d' % port, '-mode:freeroam', '-name:Host'] + v2, env)
+        g = parity.Game(a, 'fh', ['-host:' + a.level, '-port:%d' % port, '-mode:' + a.mode, '-name:Host'] + v2, env)
     elif side == 'menuhost':
         g = parity.Game(a, 'fm', [], env)
     else:
@@ -268,7 +304,7 @@ def run_side(a, side):
         hostenv = dict(a.net)
         if os.environ.get('FEEL_HOST_DEVICE'):
             hostenv['SCRAP_VK_DEVICE'] = os.environ['FEEL_HOST_DEVICE']
-        hostg = parity.Game(a, 'fo', ['-host:' + a.level, '-port:%d' % port, '-mode:freeroam', '-name:Host'] + v2,
+        hostg = parity.Game(a, 'fo', ['-host:' + a.level, '-port:%d' % port, '-mode:' + a.mode, '-name:Host'] + v2,
                             hostenv)
         g = parity.Game(a, 'fj', ['-join:127.0.0.1', '-port:%d' % port, '-name:Join'] + v2, env)
     inst_dir = hostg or g
@@ -308,29 +344,35 @@ def run_side(a, side):
                 return res
             me = own['name']
         res['own'] = me
+        if side != 'sp':
+            fighters = start_fighters(a, port)
         time.sleep(6)
         rows = read_log(log)
         res['start_kind'] = own_kind(rows, time.monotonic_ns())
         res['start_on_foot'] = res['start_kind'] == 'C'
-        if side != 'sp':
+        if arena:
+            pass
+        elif side != 'sp':
             # a click of the use button where the arrow is on nothing: single player does nothing, the sandbox used to
             # board the nearest parked ship
             click(g, 1, 0.12)
             time.sleep(3)
             res['after_click_kind'] = own_kind(read_log(log), time.monotonic_ns())
-        if res['start_kind'] == 'S' or res.get('after_click_kind') == 'S':
+        if not arena and (res['start_kind'] == 'S' or res.get('after_click_kind') == 'S'):
             press(g, 'F1', 0.12)
             time.sleep(3)
         walks = []
         # forwards and back in turn (six walks into one direction end at a wall); the pauses step through a 30 Hz
         # tick so the presses fall on every part of it (a press waits for the next tick or slot: the latency varies
         # by up to a tick with the moment of the press)
-        for k in range(a.walks):
+        for k in range(0 if arena else a.walks):
             time.sleep(1.0 + (k * 7 % a.walks) / a.walks / 30.0)
             walks.append(press(g, 'w' if k % 2 == 0 else 's', 3.0))
         time.sleep(1.0)
-        # the ship
-        if side == 'sp':
+        # the ship (a PvP mode's player is in its ship from the start)
+        if arena:
+            pass
+        elif side == 'sp':
             g.ask('Parking.UseShip("Player0", "PlayerShip", "", "")')
         elif a.mp2:
             board_mp2(a, g, inst_dir, side)
@@ -389,6 +431,8 @@ def run_side(a, side):
             res['corr_per_min'] = round(res['corrections'] / mins, 2) if mins > 0 else None
         res['bump'] = bump_result(rows, bumps)
     finally:
+        for d in fighters:
+            parity.stop_dir(d)
         g.stop()
         if hostg:
             hostg.stop()
@@ -635,6 +679,8 @@ def main():
     ap.add_argument('--cell', default='', help='a name added to the JSON files of the sides (<side>-<cell>.json)')
     ap.add_argument('--no-boost', dest='boost', action='store_false', help='flights without the boost button')
     ap.add_argument('--mp2', action='store_true', help='the multiplayer sides on the replication v2 (-mp2)')
+    ap.add_argument('--mode', default='freeroam', help='the mode of the hosting game (a PvP mode: no walks, no boarding)')
+    ap.add_argument('--fighters', type=int, default=0, help='headless bots that join the world and fight the player')
     ap.add_argument('--fly-from', dest='fly_from_json', default=None,
                     help='the JSON of an earlier side (single player): its flight start for every flight of this run')
     ap.add_argument('--report-only', action='store_true')

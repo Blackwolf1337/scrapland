@@ -347,6 +347,12 @@ void Play_SetOwn(int player, int slot, int kind, uint32_t tick, const float *phy
 			play.e = NULL;
 		}
 	}
+	if (slot < 0 && play.cam && Arena_ClientOn()) {
+		/* the PvP modes take the ship without a death (the round's end, a spectator, a team change): the camera that
+		 * loses it builds no ship's HUD over the scores */
+		char *none = "";
+		Entity_VarS(play.cam, "OnSwitch", &none, 1);
+	}
 	Play_OwnRemove();
 	play.slot = slot;
 	play.kind = kind;

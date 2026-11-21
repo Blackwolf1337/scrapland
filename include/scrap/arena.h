@@ -142,6 +142,9 @@ enum { ARENA_RQ_JOIN, ARENA_RQ_RESPAWN, ARENA_RQ_SPECT, ARENA_RQ_TEAM };
 #define ARENA_INTEREST 1000000.0f	/* the interest radius of a client: the whole arena (the original sent every ship to
 									   every client) */
 #define ARENA_SPECTATOR_POINTS (-999999)	/* RacerScorer.SPECTATOR_POINTS: a spectator's score in the scorer */
+#define ARENA_FLAG_ENT "ArenaFlag"	/* the item of the flag or the mail bag (the original's FlagToBeHunted) */
+#define ARENA_ZONE_ENT "ArenaZone"	/* the items of the postman zones, ARENA_ZONE_ENT<key> */
+#define ARENA_TEXT 256				/* a text of the modes */
 
 /* ---- the pure part (src/arena/ArenaDef.c, unit test arena_test) ---- */
 
@@ -164,6 +167,9 @@ void Arena_NextLevel(const char *list, const char *cur, char *out, int cap);
 /* the rows of the scorer (Ffa.GetScorerInfo): the members in order (the leading team, the other team, the players of
  * no team, the spectators; each by score, the member you before an equal score); their count */
 int Arena_Rows(const ArenaState *s, int you, int *rows, int max);
+/* the place of member you in those rows (1 first), its score, the lead (Ffa.isTied: 1 alone on top, 0 tied on top, -1
+ * not on top) */
+void Arena_Place(const ArenaState *s, int you, int *pos, int *score, int *winner);
 
 /* the wire: the state for the member you (ARENA_NOBODY: a watcher), an event, the requests; the size, 0 when it does
  * not fit. The readers: 1 when the message was whole */
@@ -209,7 +215,15 @@ void Arena_Tick(struct Net2Host *host, uint64_t tick);
  * the bag's zone, or dist units east of it looking at it); 1 when it was one */
 byte Arena_Command(const char *line);
 
+/* a request of player i's client through the UI channel (-mp2, include/scrap/uichan.h: UI_C_ARENA and the bytes of
+ * an ARENA_MSG_REQ message) */
+void Arena_UiRequest(int i, const uint8_t *data, int size);
+
 /* ---- the client (src/game/App/ArenaClient.c) ---- */
+
+/* both: a language text of the original (or of ScrapC's table, src/game/Script/Texts.c) with its %s, %d and %i filled
+ * in order with a and b */
+void Arena_Lang(char *out, int cap, const char *key, const char *a, const char *b);
 
 void Arena_ClientMessage(const uint8_t *data, int size);
 /* each frame of a player: the requests, the keys, the flag, the proxies, the HUD */

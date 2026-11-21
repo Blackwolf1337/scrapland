@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """The census by class of the multiplayer rewrite (plan mp2, stages 4.1 and 4.2) on every world level: per level a
-headless -mp2 instance (sandbox) and one joined headless -mp2 client (SCRAP_PLAYBOT, idle by default), then
+headless -mp2 instance (sandbox, or the PvP mode of --mode, include/scrap/arena.h) and one joined headless -mp2
+client (SCRAP_PLAYBOT, idle by default), then
 
   - mirror.py: the declared state of every entity on the server and the client (differences in all three pairs),
   - census.py --classes: the replicated entities by class and kind (missing, extra, state),
@@ -11,7 +12,7 @@ headless -mp2 instance (sandbox) and one joined headless -mp2 client (SCRAP_PLAY
   - a crash of either side (FATAL ERROR, AddressSanitizer, a signal; the instance's known exit check
     g_CountSprite2D == 0 is not counted).
 
-  classes.py --out DIR [--levels A,B] [--bot idle] [--jobs 4] [--port BASE] [--build DIR] [--scratch DIR]
+  classes.py --out DIR [--levels A,B] [--bot idle] [--mode sandbox] [--jobs 4] [--port BASE] [--build DIR] [--scratch DIR]
              [--settle 40] [--report-only]
 
 Writes <out>/<level>.json per level, <out>/classes.json and <out>/classes.md; exit 0 when every level has 0 in every
@@ -88,7 +89,7 @@ def run_level(a, w, level):
     env.pop('WAYLAND_DISPLAY', None)
     ilog, clog = os.path.join(out, level + '.i.log'), os.path.join(out, level + '.c.log')
     inst = subprocess.Popen(['timeout', '-k', '3', '1200', './ScrapC', '-instance:' + level, '-port:%d' % port,
-                             '-bind:127.0.0.1', '-id:' + level, '-mode:sandbox', '-mp2'], cwd=os.path.join(gi, 'Bin'),
+                             '-bind:127.0.0.1', '-id:' + level, '-mode:' + a.mode, '-mp2'], cwd=os.path.join(gi, 'Bin'),
                             env=dict(env, XDG_DATA_HOME=os.path.join(gi, 'xdg-data'), SCRAP_GAME_DIR=gi),
                             stdin=subprocess.PIPE, stdout=open(ilog, 'w'), stderr=subprocess.STDOUT)
     cli = None
@@ -186,6 +187,7 @@ def main():
     ap.add_argument('--out', required=True)
     ap.add_argument('--levels')
     ap.add_argument('--bot', default='idle')
+    ap.add_argument('--mode', default='sandbox')
     ap.add_argument('--jobs', type=int, default=4)
     ap.add_argument('--port', type=int, default=30120)
     ap.add_argument('--build', default=os.path.join(REPO, 'build-linux64'))

@@ -4,6 +4,14 @@
  * Member i < ARENA_PLAYERS is player i of the replication (include/scrap/play.h), the bots of DeathMatch with bots
  * follow. The scores, teams, flag and phase live in ar.st (the state the clients get); what only the instance needs
  * (the entities, the ship texts, the times) in ar.sv.
+ *
+ * -mp2 (include/scrap/repent.h): the state and the events go to each player as records of the presentation interface
+ * (include/scrap/pres.h, PRES_O_ARENA), in order with the player's other records; the texts, labels, sounds and fades
+ * of the events, the place labels and the count down of a team change run here in the player's context, so their
+ * sinks send them to that player alone; the flag, the mail bag and the postman zones are items of the instance that
+ * the clients get as replicas, each player's way point an engine variable of its context; the requests come through
+ * the UI channel (include/scrap/uichan.h, UI_C_ARENA). The client draws the scores and the mission scorer from the
+ * state. The old path keeps its own messages and the client's texts and local items.
  */
 #include <math.h>
 #include <stdio.h>
@@ -18,15 +26,20 @@
 #include "scrap/instance.h"
 #include "scrap/logic.h"
 #include "scrap/net2.h"
+#include "scrap/netaudit.h"
 #include "scrap/netrep.h"
 #include "scrap/nodesworld.h"
 #include "scrap/play.h"
 #include "scrap/platform.h"
 #include "scrap/players.h"
+#include "scrap/pres.h"
+#include "scrap/repent.h"
 #include "scrap/replicate.h"
 #include "scrap/scrap.h"
+#include "scrap/script.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/scriptnative.h"
+#include "scrap/texts.h"
 #include "scrap/travel.h"
 #include "scrap/vehicleattack.h"
 #include "scrap/vehicleentity.h"
@@ -49,6 +62,9 @@ typedef struct ArSv {
 	byte fire;						/* asked for a ship */
 	byte leaving;					/* travels to the next level */
 	int spawns;
+	int pos, score, winner;			/* the place labels' last place, score and lead (-mp2, Ffa.OnPositionChange) */
+	double lastCount;				/* the count down of a team change, its last text (-mp2) */
+	char way[ARENA_ZONE + 16];		/* the way point of the player's context (-mp2) */
 	char ship[ARENA_SHIP_CFG];		/* the ten lines of its garage ship */
 } ArSv;
 
@@ -76,6 +92,8 @@ static struct {
 	uint32_t rnd;
 	double nextBotCheck;
 	int nbots;
+	byte items;						/* the flag's or the bag's item and the zones made (-mp2) */
+	char link[AR_ENT + 24];			/* the LinkModel of the bag's item ("" none) */
 	struct {
 		char desc[ARENA_NAME + 1], ship[32], prof[32];
 	} bot[ARENA_BOTS];
@@ -168,10 +186,118 @@ static int Ar_MemberOf(cEntity *e) {
 	return -1;
 }
 
-static void Ar_Send(int conn, const uint8_t *buf, int n) {
+/* a message of the mode to player i: -mp2 a record of the presentation interface, in order with the texts and sounds
+ * of its context, else on the instance connection's reliable channel */
+static void Ar_Out(int i, const uint8_t *buf, int n) {
 	Net2Host *host = Instance_Host();
-	if (host && conn >= 0 && n > 0) {
+	int conn = Rep_PlayerConn(i);
+	if (n <= 0 || conn < 0) {
+		return;
+	}
+	if (g_Mp2) {
+		Pres_Bytes(PRES_O_ARENA, (uint64_t)1 << i, buf, n);
+	} else if (host) {
 		Net2_Send(host, conn, REP_CH_RELIABLE, buf, n);
+	}
+}
+
+static const char *Ar_MemberName(int k) {
+	return k >= 0 && k < ARENA_MEMBERS && ar.st.m[k].used ? ar.st.m[k].name : "";
+}
+
+/* ---- the texts and sounds of the modes on player i's HUD (-mp2): in its context, the sinks send them to it alone
+ * (the original's clients made them: Ffa and the n*.py modes) ---- */
+
+static void Ar_Text(int i, const char *text, double secs, byte label) {
+	nativeVal_t v;
+	int was = Players_Enter(i);
+	Native_SetStr(&v, text);
+	if (!(label ? Mode_LabelText(&v, Mode_Time() + secs) : Mode_MsgText(&v, Mode_Time() + secs))) {
+		Native_ErrPrint();
+	}
+	Native_Free(&v);
+	Players_Leave(was);
+}
+
+/* the way point's sound of the flag (Sound.WaySound for the player or its team, EneWaySound for the others) */
+static void Ar_WaySound(int i, byte mine) {
+	int was = Players_Enter(i);
+	if (!Mode_Import("Sound") || !(mine ? Mode_Sound("WaySound", "WayVolume") : Mode_Sound("EneWaySound", "EneWayVolume"))) {
+		Native_ErrPrint();
+	}
+	Players_Leave(was);
+}
+
+/* Ffa.EndOfGame and the next round: the screen darker and back (the client adds its noise) */
+static void Ar_Fade(int i, byte dark) {
+	static const int clear[4] = { 0, 0, 0, 0 }, half[4] = { 0, 0, 0, 128 };
+	int was = Players_Enter(i);
+	if (!Mode_Fade(0, dark ? clear : half, dark ? half : clear, dark ? 1.0 : 0.5)) {
+		Native_ErrPrint();
+	}
+	Players_Leave(was);
+}
+
+/* the texts, sounds and fades of an event for every player */
+static void Ar_Tell(int ev, int a, int b, int num) {
+	char text[ARENA_TEXT];
+	const ArenaState *s = &ar.st;
+	byte team = (Ar_Flags() & ARENA_F_TEAM) != 0;
+	(void)num;
+	for (int i = 0; i < ARENA_PLAYERS; i++) {
+		if (!s->m[i].used || Rep_PlayerConn(i) < 0) {
+			continue;
+		}
+		byte ours = a >= 0 && (a == i || (team && s->m[a].team == s->m[i].team));
+		switch (ev) {
+		case ARENA_EV_KILL:
+			/* the dead player's own text is on its scores (the client's, from the event) */
+			if (a == i && b >= 0 && a != b) {
+				Arena_Lang(text, sizeof(text), "Net_Msg_You_Kill", Ar_MemberName(b), NULL);
+				Ar_Text(i, text, 5.0, 0);
+			}
+			break;
+		case ARENA_EV_JOIN:
+			/* Ffa.PlayerJoinGame */
+			Texts_Fill(text, sizeof(text), s->m[a].team == ARENA_TEAM_RED ? "%s joins red team." : s->m[a].team ==
+				ARENA_TEAM_GREEN ? "%s joins green team." : "%s joins the game.", 0, Ar_MemberName(a), NULL);
+			Ar_Text(i, text, 2.5, 0);
+			break;
+		case ARENA_EV_LEAVE:
+		case ARENA_EV_SPECT:
+			Texts_Fill(text, sizeof(text), ev == ARENA_EV_LEAVE ? "%s leaves the match." : "%s becomes spectator.", 0,
+				Ar_MemberName(a), NULL);
+			Ar_Text(i, text, 2.5, 0);
+			break;
+		case ARENA_EV_FLAG:
+			Ar_WaySound(i, ours);
+			/* NPostman.TakeFlag: the label of the carrier, of its team, of the enemies (team modes) */
+			if (Ar_Flags() & ARENA_F_POST) {
+				const char *key = a == i ? "Net_Msg_You_HaveFlag" : ours ? "Net_Msg_Your_TeamFlag" : team ?
+					"Net_Msg_Enemy_TeamFlag" : NULL;
+				if (key) {
+					Ar_Text(i, Script_Lang(key), 5.0, 0);
+				}
+			}
+			break;
+		case ARENA_EV_DROP:
+			Ar_WaySound(i, 0);
+			break;
+		case ARENA_EV_BACK:
+			Ar_Text(i, Script_Lang("MP_Arena_BagBack"), 3.0, 0);
+			break;
+		case ARENA_EV_DELIVER:
+			Ar_WaySound(i, ours);
+			Arena_Lang(text, sizeof(text), "MP_Arena_Delivered", Ar_MemberName(a), NULL);
+			Ar_Text(i, text, 3.0, 0);
+			break;
+		case ARENA_EV_END:
+		case ARENA_EV_START:
+			Ar_Fade(i, ev == ARENA_EV_END);
+			break;
+		default:
+			break;
+		}
 	}
 }
 
@@ -183,7 +309,10 @@ static void Ar_Event(int ev, int a, int b, int num) {
 	int n = Arena_WriteEvent(buf, sizeof(buf), ev, a, b, num);
 	Ar_SendState(1);
 	for (int i = 0; i < ARENA_PLAYERS; i++) {
-		Ar_Send(Rep_PlayerConn(i), buf, n);
+		Ar_Out(i, buf, n);
+	}
+	if (g_Mp2) {
+		Ar_Tell(ev, a, b, num);
 	}
 	Con_Printf("arena: event %d %d %d %d\n", ev, a, b, num);
 }
@@ -381,6 +510,9 @@ static void Ar_Ready(void) {
 	ar.st.you = ARENA_NOBODY;
 	ar.st.round = 1;
 	Arena_NextLevel(ar.maps, Instance_Level(), ar.st.next, sizeof(ar.st.next));
+	if ((Ar_Flags() & (ARENA_F_FLAG | ARENA_F_POST)) && g_Mp2 && !Arena_Module(ar.mode)) {
+		Con_Errorf("arena: no module %s: no flag models\n", g_ArenaModes[ar.mode].module);
+	}
 	if (Ar_Flags() & ARENA_F_FLAG) {
 		Ar_Zones("DM_Multiplayer_Flag_*", 19);
 		Ar_PickZone();
@@ -420,6 +552,7 @@ void Arena_Joined(int i) {
 	m->used = 1;
 	Str_PrintfQuiet(m->name, sizeof(m->name), "Player %d", i + 1);
 	ar.sv[i].since = ar.now;
+	ar.sv[i].pos = 1;
 	ar.dirty = 1;
 }
 
@@ -666,6 +799,7 @@ static void Ar_Request(int i, int rq, const char *name, int team, const char *sh
 		m->flags &= (uint8_t)~ARENA_MF_SPECT;
 		m->score = 0;
 		v->notBefore = ar.now + ARENA_REJOIN_SECS;
+		v->lastCount = 0.0;
 		v->fire = 1;
 		ar.dirty = 1;
 		Ar_Event(ARENA_EV_JOIN, i, -1, (int)ARENA_REJOIN_SECS);
@@ -687,8 +821,25 @@ byte Arena_Message(Net2Host *host, int conn, const uint8_t *data, int size) {
 		!Arena_ReadRequest(data, size, &rq, name, sizeof(name), &team, ship, sizeof(ship))) {
 		return 1;
 	}
+	int was = Players_Enter(i);
 	Ar_Request(i, rq, name, team, ship);
+	Players_Leave(was);
 	return 1;
+}
+
+void Arena_UiRequest(int i, const uint8_t *data, int size) {
+	static const char *const rqs[4] = { "join", "respawn", "spect", "team" };
+	char name[ARENA_NAME + 1], ship[ARENA_SHIP_CFG];
+	int rq, team;
+	if (!Arena_On() || i < 0 || i >= ARENA_PLAYERS || !ar.st.m[i].used ||
+		!Arena_ReadRequest(data, size, &rq, name, sizeof(name), &team, ship, sizeof(ship))) {
+		NetAudit_Func(NA_HUD, "ui.arena:", "bad");
+		return;
+	}
+	NetAudit_Func(NA_HUD, "ui.arena:", rqs[rq]);
+	int was = Players_Enter(i);
+	Ar_Request(i, rq, name, team, ship);
+	Players_Leave(was);
 }
 
 /* ---- the round ---- */
@@ -702,7 +853,9 @@ static void Ar_End(void) {
 			continue;
 		}
 		if (k < ARENA_PLAYERS) {
+			int was = Players_Enter(k);
 			Ar_Remove(k);
+			Players_Leave(was);
 		} else {
 			cEntity *e = Ar_Ship(k);
 			if (e) {
@@ -835,7 +988,10 @@ static byte Ar_TooEarly(int k) {
 	if (k < ARENA_PLAYERS && ar.now - ar.sv[k].lastWait >= AR_WAIT_SECS) {
 		uint8_t buf[16];
 		ar.sv[k].lastWait = ar.now;
-		Ar_Send(Rep_PlayerConn(k), buf, Arena_WriteEvent(buf, sizeof(buf), ARENA_EV_WAIT, k, -1, 0));
+		Ar_Out(k, buf, Arena_WriteEvent(buf, sizeof(buf), ARENA_EV_WAIT, k, -1, 0));
+		if (g_Mp2) {
+			Ar_Text(k, Script_Lang("Net_Label_Waiting_Challenge"), 1.0, 1);
+		}
 	}
 	return 1;
 }
@@ -908,6 +1064,38 @@ static void Ar_Postman(void) {
 	}
 }
 
+/* Ffa.OnPositionChange (-mp2, the modes without teams): the labels of a player whose lead or place changed */
+static void Ar_Places(void) {
+	char text[ARENA_TEXT], place[16];
+	if (Ar_Flags() & ARENA_F_TEAM) {
+		return;
+	}
+	for (int i = 0; i < ARENA_PLAYERS; i++) {
+		const ArenaMember *m = &ar.st.m[i];
+		ArSv *v = &ar.sv[i];
+		int pos, score, winner;
+		if (!m->used || !(m->flags & ARENA_MF_JOINED) || (m->flags & ARENA_MF_SPECT) || Rep_PlayerConn(i) < 0) {
+			continue;
+		}
+		Arena_Place(&ar.st, i, &pos, &score, &winner);
+		if (pos == v->pos && score == v->score && winner == v->winner) {
+			continue;
+		}
+		if (winner != v->winner || (score != v->score && v->winner != -1)) {
+			Ar_Text(i, Script_Lang(winner == -1 ? "Net_Label_Lost_Lead" : winner == 0 ? "Net_Label_Tied_Lead" :
+				"Net_Label_Tied_Leading"), 5.0, 1);
+		} else {
+			Str_PrintfQuiet(place, sizeof(place), pos == 1 ? "1st" : pos == 2 ? "2nd" : "%dth", pos);
+			Arena_Lang(text, sizeof(text), pos < v->pos ? "Net_Label_Up_to" : pos > v->pos ? "Net_Label_Down_to" :
+				"Net_Label_Still_to", place, NULL);
+			Ar_Text(i, text, 5.0, 1);
+		}
+		v->pos = pos;
+		v->score = score;
+		v->winner = winner;
+	}
+}
+
 /* the state to every player when it changed (now: at once, else at most every ARENA_SEND_MS) */
 static void Ar_SendState(byte now) {
 	static uint8_t buf[8192];
@@ -918,10 +1106,147 @@ static void Ar_SendState(byte now) {
 	ar.dirty = 0;
 	ar.lastSent = ms;
 	for (int i = 0; i < ARENA_PLAYERS; i++) {
-		int conn = ar.st.m[i].used ? Rep_PlayerConn(i) : -1;
-		if (conn >= 0) {
-			Ar_Send(conn, buf, Arena_WriteState(buf, sizeof(buf), &ar.st, i));
+		if (ar.st.m[i].used) {
+			Ar_Out(i, buf, Arena_WriteState(buf, sizeof(buf), &ar.st, i));
 		}
+	}
+	if (g_Mp2) {
+		Ar_Places();
+	}
+}
+
+/* ---- -mp2: the flag, the bag and the zones as items of the instance, the way points, the count down ---- */
+
+static cEntity *Ar_Item(const char *name, const vec3_t *p) {
+	cEntity *e = World_FindEntity(name);
+	return e ? e : cWorld_CreateEntity(g_pWorld, name, p->x, p->y, p->z, "Item");
+}
+
+/* a model of the mode's module (FlagModel, FlagPilotModel, FlagNoUsrModel), 0 none */
+static byte Ar_ModelPath(const char *var, char *model, int cap) {
+	byte ok = Mode_ModGetS(g_ArenaModes[ar.mode].module, var, model, cap) && model[0];
+	Native_ErrClear();
+	return ok;
+}
+
+static void Ar_Model(cEntity *e, const char *var) {
+	char model[128];
+	if (Ar_ModelPath(var, model, sizeof(model))) {
+		Entity_SetModel(e, model, 1.0f, 1.0f, 1.0f, 1);
+	}
+}
+
+/* the zones of the postman modes: an item of radius 3000 at each zone (NPostman.BrowseAreas), on the radar while it
+ * is the carried bag's target */
+static void Ar_ZoneItems(void) {
+	char ent[ARENA_ZONE + 16];
+	for (int z = 0; z < ar.nzones; z++) {
+		Str_PrintfQuiet(ent, sizeof(ent), ARENA_ZONE_ENT "%s", ar.zone[z].key);
+		cEntity *e = Ar_Item(ent, &ar.zone[z].pos);
+		int radar = ar.st.flag == ARENA_FL_CARRIED && z == ar.zoneAt ? 2 : 0, radius = (int)ARENA_ZONE_RADIUS;
+		if (e && !ar.items) {
+			Entity_VarI(e, "Radius", &radius, 1);
+		}
+		int cur = -1;
+		if (e && (!Entity_VarI(e, "RadarShow", &cur, 0) || cur != radar)) {
+			Entity_VarI(e, "RadarShow", &radar, 1);
+		}
+	}
+}
+
+static void Ar_Items(void) {
+	char link[sizeof(ar.link)];
+	vec3_t p = { (float)ar.st.flagPos[0], (float)ar.st.flagPos[1], (float)ar.st.flagPos[2] };
+	if (!(Ar_Flags() & (ARENA_F_FLAG | ARENA_F_POST)) || ar.st.flag == ARENA_FL_NONE) {
+		return;
+	}
+	cEntity *f = Ar_Item(ARENA_FLAG_ENT, &p);
+	if (!f) {
+		return;
+	}
+	if (Ar_Flags() & ARENA_F_POST) {
+		Ar_ZoneItems();
+	}
+	if (!ar.items) {
+		int radius = (int)ARENA_FLAG_RADIUS, radar = 1;
+		ar.items = 1;
+		Ar_Model(f, "FlagModel");
+		Entity_VarI(f, "Radius", &radius, 1);
+		Entity_VarI(f, "RadarShow", &radar, 1);
+	}
+	int k = ar.st.carrier - 1;
+	cEntity *c = ar.st.flag == ARENA_FL_CARRIED && k >= 0 && k < ARENA_PLAYERS ? Players_Get(k) : NULL;
+	if (c) {
+		/* NPostman.TakeFlag: on the carrier's DC_Flag_Player with its pilot, the model without it on the carrier's
+		 * own client (REPENT_J_OWNMODEL); a link before goes first (NPostman.DropFlag) */
+		Str_PrintfQuiet(link, sizeof(link), "%s,DC_Flag_Player", c->name);
+		if (strcmp(ar.link, link)) {
+			char own[128];
+			int four = 4, zero = 0, one = 1;
+			if (ar.link[0]) {
+				Ar_SetVarS(f, "LinkModel", ",");
+			}
+			Ar_Model(f, "FlagPilotModel");
+			if (Ar_ModelPath("FlagNoUsrModel", own, sizeof(own))) {
+				RepEnt_Note(f, REPENT_J_OWNMODEL, own);
+			}
+			Ar_SetVarS(f, "LinkModel", link);
+			Entity_VarI(f, "DeltaOffMul", &four, 1);
+			Entity_VarI(f, "OffMul", &zero, 1);
+			Entity_VarI(f, "UseLinkAng", &one, 1);
+			Str_Copy(ar.link, link, sizeof(ar.link));
+		}
+	} else {
+		if (ar.link[0]) {
+			Ar_SetVarS(f, "LinkModel", ",");
+			Ar_Model(f, "FlagModel");
+			ar.link[0] = 0;
+		}
+		Entity_SetPos(f, &p);
+	}
+}
+
+/* each player's way point (CurrentWaypointName in its context): the flag or the bag, the carried bag's zone for its
+ * carrier (and its team in TeamPost) */
+static void Ar_Ways(void) {
+	char way[sizeof(ar.sv[0].way)];
+	int k = ar.st.carrier - 1;
+	if (!(Ar_Flags() & (ARENA_F_FLAG | ARENA_F_POST)) || ar.st.flag == ARENA_FL_NONE) {
+		return;
+	}
+	for (int i = 0; i < ARENA_PLAYERS; i++) {
+		const ArenaMember *m = &ar.st.m[i];
+		if (!m->used || Rep_PlayerConn(i) < 0) {
+			continue;
+		}
+		byte mine = k >= 0 && (k == i || ((Ar_Flags() & ARENA_F_TEAM) && ar.st.m[k].team == m->team));
+		if ((Ar_Flags() & ARENA_F_POST) && ar.st.flag == ARENA_FL_CARRIED && mine && ar.st.zone[0]) {
+			Str_PrintfQuiet(way, sizeof(way), ARENA_ZONE_ENT "%s", ar.st.zone);
+		} else {
+			Str_Copy(way, ARENA_FLAG_ENT, sizeof(way));
+		}
+		if (strcmp(way, ar.sv[i].way)) {
+			int was = Players_Enter(i);
+			Mode_GVarSetS("CurrentWaypointName", way);
+			Players_Leave(was);
+			Str_Copy(ar.sv[i].way, way, sizeof(ar.sv[i].way));
+		}
+	}
+}
+
+/* Ffa.RejoinMsg: the count down of a team change, a text a second */
+static void Ar_CountDown(void) {
+	char text[ARENA_TEXT], n[16];
+	for (int i = 0; i < ARENA_PLAYERS; i++) {
+		ArSv *v = &ar.sv[i];
+		int left = (int)ceil(v->notBefore - ar.now);
+		if (!ar.st.m[i].used || left <= 0 || ar.now - v->lastCount < 1.0) {
+			continue;
+		}
+		v->lastCount = ar.now;
+		Str_PrintfQuiet(n, sizeof(n), "%d", left);
+		Arena_Lang(text, sizeof(text), "Net_Msg_Join_Time", n, NULL);
+		Ar_Text(i, text, 1.0, 0);
 	}
 }
 
@@ -935,6 +1260,11 @@ void Arena_Tick(Net2Host *host, uint64_t tick) {
 		Ar_Ready();
 	}
 	Ar_Members();
+	if (g_Mp2) {
+		Ar_Items();
+		Ar_Ways();
+		Ar_CountDown();
+	}
 	if (ar.st.phase == ARENA_PH_END) {
 		int left = (int)ceil(ar.endAt - ar.now);
 		if (left != ar.st.endLeft) {
