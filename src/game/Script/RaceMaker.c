@@ -51,6 +51,23 @@ static byte Rm_G(const char *name, nativeVal_t *out) {
 	return Mode_G(RM, name, out);
 }
 
+/* the name of an entity of the race (not in the original: a -mp2 free world gives each player's race its own,
+ * include/scrap/players.h) */
+static nativeVal_t *Rm_Name(modeVals_t *t, const char *name) {
+	char own[96];
+	Players_OwnName(name, own, sizeof(own));
+	return Mode_S(t, own);
+}
+
+/* not in the original: the entity the race just made is the current player's on a -mp2 free world (its takes, deaths
+ * and hits run there, include/scrap/players.h) */
+static byte Rm_Own(const nativeVal_t *e) {
+	if (e->type == NV_ENT) {
+		Players_OwnNew(Native_Ent(e));
+	}
+	return 1;
+}
+
 /* x == one of the texts (the == of the script): 1, 0, -1 */
 static int Rm_InS(const nativeVal_t *x, const char *const *texts) {
 	for (; *texts; texts++) {
@@ -457,15 +474,16 @@ static byte Rm_OnCounterMeasure(void) {
 	}
 	return Mode_Done(&t, Mode_Cat(&t, key, 3, Mode_S(&t, "Generics_"), cft, Mode_S(&t, "Race_2")) &&
 		PORT_CALL(Speech, AddRemoteCom, NULL, "vv", key, cft) && PORT_OWN(RaceMaker, AbortCameraTravelling, NULL, "") &&
-		PORT_OWN(RaceMaker, EndOfRace, NULL, "ss", "CheckPoint", "CounterMeasure"));
+		PORT_OWN(RaceMaker, EndOfRace, NULL, "vs", Rm_Name(&t, "CheckPoint"), "CounterMeasure"));
 }
 
 /* the travelling ends, then EndOfRace("CheckPoint", why) (alarm: and Scrap.SetAlarm(1)) */
 static byte Rm_Stop(const char *why, byte alarm) {
+	modeVals_t t = { .n = 0 };
 	nativeVal_t one;
 	Native_SetInt(&one, 1);
-	return PORT_OWN(RaceMaker, AbortCameraTravelling, NULL, "") && PORT_OWN(RaceMaker, EndOfRace, NULL, "ss", "CheckPoint", why) &&
-		(!alarm || Mode_SetAlarm(&one));
+	return Mode_Done(&t, PORT_OWN(RaceMaker, AbortCameraTravelling, NULL, "") &&
+		PORT_OWN(RaceMaker, EndOfRace, NULL, "vs", Rm_Name(&t, "CheckPoint"), why) && (!alarm || Mode_SetAlarm(&one)));
 }
 
 /* RacerDamaged(racerDamaged, attacker, damageDone): the first hit on a racer counts as its checkpoint, once */
@@ -610,7 +628,7 @@ static byte Rm_StartCameraTravelling(const nativeVal_t *item, const nativeVal_t 
 		}
 	}
 	if (!LvN_Item(&p[0], 0, x) || !LvN_Item(&p[0], 1, y) || !LvN_Item(&p[0], 2, z) ||
-		!LvN_Create(Mode_S(&t, "RaceCamera"), x, y, z, "CamPath", cam) || !LvN_SetI(cam, "nWayPoint", 3)) {
+		!LvN_Create(Rm_Name(&t, "RaceCamera"), x, y, z, "CamPath", cam) || !Rm_Own(cam) || !LvN_SetI(cam, "nWayPoint", 3)) {
 		return Mode_Done(&t, 0);
 	}
 	int normal = LvN_EqS(speed, "Normal"), slow = normal ? 0 : LvN_EqS(speed, "Slow");
@@ -764,9 +782,10 @@ static byte Rm_Method(const nativeVal_t *e, const char *method, const char *s) {
 static byte Rm_CountDownLight(int side) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *vec = Mode_V(&t), *x = Mode_V(&t), *y = Mode_V(&t), *z = Mode_V(&t), *l = Mode_V(&t), *ang = Mode_V(&t);
-	const char *name = side == 0 ? "RaceCountDownR" : "RaceCountDownL";
+	nativeVal_t *nv = Rm_Name(&t, side == 0 ? "RaceCountDownR" : "RaceCountDownL");
+	const char *name = Native_Text(nv);
 	return Mode_Done(&t, Rm_BesideStart(side == 0 ? -3300 : 3300, 1100, -4000, vec) && LvN_Item(vec, 0, x) &&
-		LvN_Item(vec, 1, y) && LvN_Item(vec, 2, z) && LvN_Create(Mode_S(&t, name), x, y, z, "Obj", l) &&
+		LvN_Item(vec, 1, y) && LvN_Item(vec, 2, z) && LvN_Create(nv, x, y, z, "Obj", l) && Rm_Own(l) &&
 		Rm_Method(l, "SetModel", "models/misc/MeetingPoint-Race/MeetingPoint-Race.m3d") &&
 		Rm_Method(l, "SetFX", "MeetingPoint-Race.m3d") && Rm_StartAng3(side == 0 ? 0 : 180, ang) && Mode_VSet(l, "Ang", ang) &&
 		PORT_CALL(Scrap, SetCallFunc, NULL, "s", "!FXMeetingPointCountDown") &&
@@ -820,7 +839,7 @@ static byte Rm_CreateRaceCountDown(void) {
 static byte Rm_DestroyRaceCountDown(void) {
 	for (int side = 0; side < 2; side++) {
 		modeVals_t t = { .n = 0 };
-		nativeVal_t *name = Mode_S(&t, side == 0 ? "RaceCountDownR" : "RaceCountDownL"), *e = Mode_V(&t), *mp = Mode_V(&t);
+		nativeVal_t *name = Rm_Name(&t, side == 0 ? "RaceCountDownR" : "RaceCountDownL"), *e = Mode_V(&t), *mp = Mode_V(&t);
 		nativeVal_t *ma = Mode_V(&t), *half = Mode_V(&t), *when = Mode_V(&t);
 		Native_SetFloat(half, 0.5);
 		byte ok = Mode_EntitySeam(name, e) && (!Native_True(e) || (Rm_BesideStart(side == 0 ? -10000 : 10000, 1000, -4500, mp) &&
@@ -1261,7 +1280,7 @@ static byte Rm_BadBoy(const nativeVal_t *i, const nativeVal_t *pos, nativeVal_t 
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *rep = Mode_V(&t), *name = Mode_V(&t);
 	Mode_Repr(i, rep);
-	return Mode_Done(&t, Native_Arith('+', Mode_S(&t, "BadBoy"), rep, name) && LvN_CreateAt(name, pos, "Car", v));
+	return Mode_Done(&t, Native_Arith('+', Rm_Name(&t, "BadBoy"), rep, name) && LvN_CreateAt(name, pos, "Car", v) && Rm_Own(v));
 }
 
 /* the racer i of InitRace (crazy: a crazy deal; partners the count of the partners) */
@@ -1294,7 +1313,7 @@ static byte Rm_Racer(long i, const nativeVal_t *numply, int iscrazy, int partner
 	}
 	byte ok;
 	if (i == 0) {
-		ok = LvN_CreateAt(Mode_S(&t, "NPC_START_ITEM"), spos, "item", npc) && Mode_Put(RM, "NPC_START_ITEM", NULL, npc) &&
+		ok = LvN_CreateAt(Rm_Name(&t, "NPC_START_ITEM"), spos, "item", npc) && Rm_Own(npc) && Mode_Put(RM, "NPC_START_ITEM", NULL, npc) &&
 			Rm_StartAng3(0, ang) && (Native_Free(npc), Rm_G("NPC_START_ITEM", npc)) && Mode_VSet(npc, "Ang", ang) &&
 			(Native_Free(npc), Rm_G("NPC_START_ITEM", npc)) && LvN_SetS(npc, "OnTake", "RaceMaker.PlaceNPCAtRacePos") &&
 			(Native_Free(npc), Rm_G("NPC_START_ITEM", npc)) && LvN_SetI(npc, "Radius", 1800);
@@ -1334,7 +1353,8 @@ static byte Rm_CheckPoints(const nativeVal_t *shower) {
 	nativeVal_t *sp = Mode_V(&t), *s0 = Mode_V(&t), *spos = Mode_V(&t), *l = Mode_V(&t), *ang = Mode_V(&t);
 	nativeVal_t *ln = Mode_V(&t), *tn = Mode_V(&t), *l2 = Mode_V(&t), *lp = Mode_V(&t), *wn = Mode_V(&t);
 	if (!Rm_G("StartPos", sp) || !LvN_Item(sp, 0, s0) || !LvN_Item(s0, 0, spos) ||
-		!LvN_CreateAt(Mode_S(&t, "CheckPoint"), spos, "Item", l) || !Mode_VModel(l, Mode_S(&t, "models/Misc/Wayp/Wayp.m3d")) ||
+		!LvN_CreateAt(Rm_Name(&t, "CheckPoint"), spos, "Item", l) || !Rm_Own(l) ||
+		!Mode_VModel(l, Mode_S(&t, "models/Misc/Wayp/Wayp.m3d")) ||
 		!LvN_SetS(l, "OnTake", "RaceMaker.OnRaceStart") || !Mode_VSet(l, "RadarShow", shower) || !LvN_SetI(l, "Radius", 2400) ||
 		!Rm_StartAng3(0, ang) || !Mode_VSet(l, "Ang", ang) || !LvN_SetI(l, "FadeInEffect", 0) ||
 		!LvN_SetI(l, "FadeOutEffect", 0) || !Mode_VGet(l, "Name", ln) || !Mode_Cat(&t, tn, 2, ln, Mode_S(&t, "_Trigg"))) {
@@ -1344,6 +1364,7 @@ static byte Rm_CheckPoints(const nativeVal_t *shower) {
 	Native_Free(s0);
 	Native_Free(spos);
 	return Mode_Done(&t, Rm_G("StartPos", sp) && LvN_Item(sp, 0, s0) && LvN_Item(s0, 0, spos) && LvN_CreateAt(tn, spos, "Item", l2) &&
+		Rm_Own(l2) &&
 		Mode_VObj(l, "Pos", lp) && Mode_VSet(l2, "Pos", lp) && LvN_SetI(l2, "Radius", 20000) &&
 		LvN_SetI(l2, "FadeInEffect", 0) && LvN_SetI(l2, "FadeOutEffect", 0) && Mode_VGet(l, "Name", wn) &&
 		Mode_GVarSet("CurrentWaypointName", wn));
@@ -1500,7 +1521,7 @@ static byte Rm_InitCombat(const nativeVal_t *foeArg, const nativeVal_t *revengeA
 	nativeVal_t *dpos = Mode_V(&t), *prev = Mode_V(&t), *foe = Mode_V(&t), *npcs = Mode_V(&t), *n0 = Mode_V(&t);
 	nativeVal_t *v = Mode_V(&t), *usr = Mode_V(&t), *up = Mode_V(&t), *key = Mode_V(&t), *who = Mode_V(&t);
 	nativeVal_t *pos = Mode_V(&t), *st = Mode_V(&t), *when = Mode_V(&t), *cad = Mode_V(&t), *name = Mode_V(&t);
-	nativeVal_t *bb = Mode_S(&t, "BadBoy");
+	nativeVal_t *bb = Rm_Name(&t, "BadBoy");
 	for (int i = 0; i < 6; i++) {
 		if (!Mode_Import(mods[i])) {
 			return Mode_Done(&t, 0);
@@ -1521,7 +1542,8 @@ static byte Rm_InitCombat(const nativeVal_t *foeArg, const nativeVal_t *revengeA
 	Native_Copy(foe, foeArg);
 	for (long i = 0; i < count; i++) {
 		nativeVal_t e = { 0 }, en = { 0 }, np = { 0 }, l = { 0 }, nf = { 0 };
-		ok = LvN_CreateAt(bb, prev, "Car", &e) && Mode_VGet(&e, "Name", &en) && Mode_Append(RM, "challenged_NPCs_Names", &en) &&
+		ok = LvN_CreateAt(bb, prev, "Car", &e) && Rm_Own(&e) && Mode_VGet(&e, "Name", &en) &&
+			Mode_Append(RM, "challenged_NPCs_Names", &en) &&
 			PORT_CALL(OutMap, GetNearestFreeSpawnPosReal, &np, "v", prev) && Rm_ShipAI(&e, foe, "Combat.Profile") &&
 			Rm_Partners(&l) && LvN_Item(&l, partners == 1 ? 0 : i - 1, &nf) && LvN_SetS(&e, "EntityList", "Enemies");
 		if (ok) {

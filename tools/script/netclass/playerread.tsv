@@ -256,3 +256,7 @@ Speech_ForceRemoteCom_E	PARTY	a Speech entry in the world's context (a forced re
 Merc_OnStupidMercDeathN	PARTY	the stupid mercenary died by no member's hand: was it the player (the party's acting member)
 Traitorius_OnTraitoriusDamage	PARTY	Traitorius hit by no member: the player's hint (the party's acting member)
 Merc_ScanShip	PARTY	every second the scan of the lonely mercenary by the player (the party's acting member, its mission's)
+Parking.SwitchVehicleMissionCallback	WORLD	a mission's callback of the world's context (a super deal's level start sets it for the group); a player's own is read in its context
+Parking.SwitchCharMissionCallback	WORLD	a mission's callback of the world's context; a player's own is read in its context
+Alarm.AbortMissionCallback	WORLD	a mission's callback of the world's context; a player's own is read in its context
+Menu.MissionScorerCall	WORLD	the HUD callback of the world's context; a player's own HUD reads it in its context

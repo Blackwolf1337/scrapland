@@ -131,12 +131,18 @@ static void cItemEntity_Touch(cEntity *elem, cEntity *other, const vec3_t *point
 	if (Players_Net() && self->respawn > 0.0f && Players_Is(other)) {
 		return;
 	}
+	/* not in the original: an item of a player's activity (a race's checkpoint) is its player's, taken by it and its
+	 * rivals, never by another player (include/scrap/players.h) */
+	int owner = Players_Net() ? Players_OfOwned(elem) : -1;
+	if (owner >= 0 && Players_Is(other) && Players_Of(other) != owner) {
+		return;
+	}
 	if (self->taker.target) {
 		CHECK(self->taker.data);
 		Nto1Node_Unlink(&self->taker);
 	}
 	cEntity_AddLink(other, &self->taker);
-	int was = Players_EnterEntity(other);
+	int was = owner >= 0 ? Players_Enter(owner) : Players_EnterEntity(other);
 	cPy_Function_AddParamS(&self->onTake, self->base.name);
 	cPy_Function_AddParamS(&self->onTake, other->name);
 	cPy_Function_Execute(&self->onTake, 0);

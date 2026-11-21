@@ -55,7 +55,9 @@
 #include "scrap/nativeobj.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/pyentity.h"
+#include "scrap/pres.h"
 #include "scrap/pyfunction.h"
+#include "scrap/repent.h"
 #include "scrap/scorer.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapfont.h"
@@ -429,6 +431,10 @@ void Script_SetStr(int id, const char *item, const char *var, const char *s) {
 	cScorerItem *it = Script_Item(id, item);
 	char *v = (char *)s;
 	if (it) {
+		/* not in the original: a -mp2 player's HUD (include/scrap/pres.h), as SScorer.Set sends it */
+		if (g_Mp2) {
+			Pres_HudSet(Scorer_Get(id), item, var, s ? s : "", 0.0);
+		}
 		ScorerItem_Var(it, var, 1, &v, NULL, NULL);
 	}
 }
@@ -437,6 +443,9 @@ void Script_SetNum(int id, const char *item, const char *var, double d) {
 	cScorerItem *it = Script_Item(id, item);
 	int i = (int)d;
 	if (it) {
+		if (g_Mp2) {
+			Pres_HudSet(Scorer_Get(id), item, var, NULL, d);
+		}
 		ScorerItem_Var(it, var, 1, NULL, &d, &i);
 	}
 }

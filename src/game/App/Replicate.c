@@ -1227,6 +1227,8 @@ static void Rep_SpShip(int i) {
 	Players_Leave(was);
 }
 
+static void Rep_SpChallenge(int i);
+
 static int Rep_Join(int conn) {
 	for (int i = 0; i < PLAYERS_MAX; i++) {
 		RepPlayer *pl = &rep.pl[i];
@@ -1273,6 +1275,9 @@ static int Rep_Join(int conn) {
 			if (Sputniks_Outdoor() && NetPl_Kind(Rep_Own(pl)) == NETREP_CHAR) {
 				Rep_SpShip(i);
 			}
+			if (g_Mp2 && conn >= 0) {
+				Rep_SpChallenge(i);
+			}
 		} else if (Places_On() && Sputniks_Outdoor() && NetPl_Kind(Rep_Own(pl)) == NETREP_CHAR) {
 			int was = Players_Enter(i);
 			Rep_CallShip(i, Rep_Own(pl), 1);
@@ -1289,9 +1294,26 @@ void Rep_SoloJoin(void) {
 	}
 }
 
+/* single player's flows: the challenge or the revenge player i took starts in the outdoor level it arrives in, as
+ * single player's level start (MissionsFuncs.Init) starts it, in its context */
+static void Rep_SpChallenge(int i) {
+	nativeVal_t out;
+	int was = Players_Enter(i);
+	Native_SetNone(&out);
+	if (Mode_ModGet("Init", "Outdoor", &out) && out.type == NV_INT && out.i == 1 &&
+		(!Mode_Import("Challenge") || !PORT_CALL(Challenge, Init, NULL, ""))) {
+		Native_ErrPrint();
+	}
+	Native_ErrClear();
+	Native_Free(&out);
+	Players_Leave(was);
+}
+
 /* single player's flows: player i leaves, its own ship (when no one sits in it) and its Sputnik go with it */
 static void Rep_SpLeave(int i) {
 	nativeVal_t v;
+	/* its race's or combat's ships and things (single player's go with the level) */
+	Players_OwnedDel(i);
 	cEntity *ship = Players_Ship(i);
 	if (ship && Entity_IsType(ship, TYEN_CAR) && cVehicleEntity_GetOwnerSlot(ship) == -1 && !ship->deadNode.target) {
 		cEntity_Del(ship);
@@ -1929,6 +1951,7 @@ static void Rep_Hello(Net2Host *host, int conn, uint32_t rate, int flags) {
 		}
 		memset(&rep.conn[conn].last, 0, sizeof(rep.conn[conn].last));
 		rep.conn[conn].player = (flags & NETREP_HELLO_PLAY) ? Rep_Join(conn) : -1;
+		NetRepSrv_SetTag(rep.conn[conn].c, rep.conn[conn].player + 1);
 		rep.watchers++;
 	}
 	int i = rep.conn[conn].player;

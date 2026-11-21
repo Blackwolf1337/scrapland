@@ -1,26 +1,27 @@
 # The save variable prefixes (the name up to its first dot; SaveVar_* calls in src/game, call Scrap.*SaveVar in the
 # data): prefix, tag, why. Tags: STORY (the story's progress: the party's in coop, the world's in a free world),
-# PLAYER (one player's progress: the coordinator keeps it per player key). netclass.py counts the rows without a tag.
+# PLAYER (one player's progress: the coordinator keeps it per player key), PARTY (the story's in coop, one player's
+# progress in a free world: the challenges' and deals' counters, stage 6c). netclass.py counts the rows without a tag.
 Char	PLAYER	one player's progress (plan: Player, Hangar, Char, Challenge, Revenge, Conversor)
 Spawn	PLAYER	where the player enters the level
 ComeFrom	PLAYER	the level the player came from
-Mission	STORY	the story (missions, map state, deals, counters)
+Mission	PARTY	the story's in coop, one player's own in a free world (stage 6c: a super deal keeps the player's mission aside)
 Hangar	PLAYER	one player's progress (plan: Player, Hangar, Char, Challenge, Revenge, Conversor)
 Conversor	PLAYER	one player's progress (plan: Player, Hangar, Char, Challenge, Revenge, Conversor)
-Stats	STORY	the story (missions, map state, deals, counters)
-JackInTheBox	STORY	the story (missions, map state, deals, counters)
-NewBluePrintAvaliable	STORY	the story (missions, map state, deals, counters)
+Stats	PARTY	the story's in coop, one player's progress in a free world (stage 6c: the deals, counters, secondary mission)
+JackInTheBox	PARTY	the story's in coop, one player's progress in a free world (stage 6c: the deals, counters, secondary mission)
+NewBluePrintAvaliable	PARTY	the story's in coop, one player's progress in a free world (stage 6c: the deals, counters, secondary mission)
 RobotsControlledByBoss	STORY	the story (missions, map state, deals, counters)
 Player	PLAYER	one player's progress (plan: Player, Hangar, Char, Challenge, Revenge, Conversor)
 GameAct	STORY	the story (missions, map state, deals, counters)
 Challenge	PLAYER	one player's progress (plan: Player, Hangar, Char, Challenge, Revenge, Conversor)
 Revenge	PLAYER	one player's progress (plan: Player, Hangar, Char, Challenge, Revenge, Conversor)
 Race	PLAYER	one player's progress (plan: Player, Hangar, Char, Challenge, Revenge, Conversor)
-Combat	STORY	the story (missions, map state, deals, counters)
+Combat	PARTY	the story's in coop, one player's progress in a free world (stage 6c: the deals, counters, secondary mission)
 HumphreyRaceTutorial	PLAYER	one player's money, ship, batteries, debt or seen messages
 TakePhotoMsg	PLAYER	one player's money, ship, batteries, debt or seen messages
 Batteries	PLAYER	one player's money, ship, batteries, debt or seen messages
-SuperDeal	STORY	the story (missions, map state, deals, counters)
+SuperDeal	PARTY	the story's in coop, one player's progress in a free world (stage 6c: the deals, counters, secondary mission)
 AcBatteries	PLAYER	one player's money, ship, batteries, debt or seen messages
 MercFriends	STORY	the story (missions, map state, deals, counters)
 Traffic	STORY	the story (missions, map state, deals, counters)
@@ -39,12 +40,12 @@ AlarmActive	PLAYER	the alarm of the player
 AlarmStatus	PLAYER	the alarm of the player
 BertosProfile	STORY	the story (missions, map state, deals, counters)
 BertosLife	STORY	the story (missions, map state, deals, counters)
-SuperDealType	STORY	the story (missions, map state, deals, counters)
+SuperDealType	PARTY	the story's in coop, one player's progress in a free world (stage 6c: the deals, counters, secondary mission)
 DominationRounds	PLAYER	one player's progress (plan: Player, Hangar, Char, Challenge, Revenge, Conversor)
 usrShip	PLAYER	one player's money, ship, batteries, debt or seen messages
 Parking	PLAYER	one player's money, ship, batteries, debt or seen messages
 PrimaryMissionDesc	STORY	the story (missions, map state, deals, counters)
-SecondaryMissionDesc	STORY	the story (missions, map state, deals, counters)
+SecondaryMissionDesc	PARTY	the story's in coop, one player's progress in a free world (stage 6c: the deals, counters, secondary mission)
 Money	PLAYER	one player's money, ship, batteries, debt or seen messages
 Map	STORY	the story (missions, map state, deals, counters)
 GameplayTime	PLAYER	play time of the player
@@ -144,3 +145,4 @@ Mission_CatchTrurl_NumMapsDropped	STORY	the story (missions, map state, deals, c
 Mission_CatchTrurl_NumMapsTaken	STORY	the story (missions, map state, deals, counters)
 OutMusicAction	STORY	the story (missions, map state, deals, counters)
 OutMusicRelax	STORY	the story (missions, map state, deals, counters)
+CrazyDeal	PARTY	the story's in coop, one player's progress in a free world (stage 6c: the deals, counters, secondary mission)

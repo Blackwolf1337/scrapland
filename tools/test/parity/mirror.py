@@ -135,6 +135,8 @@ def compare(srv, cli, radius, rates=None):
     for key, s in sents.items():
         if s['slot'] == own:
             continue
+        if s.get('only', 0) and s['only'] != cli.get('tag', 0):
+            continue    # another player's private thing (an activity's checkpoint)
         if s['kind'] in MOVING and dist(s['pos'], view) > radius:
             continue
         c = cents.get(key)

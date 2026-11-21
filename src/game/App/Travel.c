@@ -27,12 +27,14 @@
 #include "scrap/platform.h"
 #include "scrap/players.h"
 #include "scrap/play.h"
+#include "scrap/repent.h"
 #include "scrap/replicate.h"
 #include "scrap/scrap.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/scriptnative.h"
 #include "scrap/sputniks.h"
 #include "scrap/travel.h"
+#include "scrap/vehicleattack.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
 #include "scrap/world.h"
@@ -41,6 +43,8 @@
 #define TR_CHANNEL 0				/* REP_CH_RELIABLE, also the coordinator's */
 #define TR_STATIONS 16
 #define TR_DOOR_NEAR 3000.0f		/* units from the entrance to its door */
+#define SV_TEXT 1024				/* a value of a player's state the tests list */
+#define TR_GROUP_NEAR 3000.0f		/* units: the players beside one who starts a super deal play it with it */
 
 typedef struct TrPlayer {
 	byte used;
@@ -197,8 +201,8 @@ static void Tr_Hello(void) {
 	NetRep_PutU8(&w, COORD_MSG_INST);
 	NetRep_PutU16(&w, COORD_VERSION);
 	CoordMsg_PutBytes(&w, tr.token, sizeof(tr.token));
-	NetRep_PutStr(&w, Instance_Level());
-	NetRep_PutStr(&w, Instance_Level());
+	NetRep_PutStr(&w, Instance_Id());
+	NetRep_PutStr(&w, Instance_Id());
 	NetRep_PutU16(&w, Instance_Port());
 #ifdef _WIN32
 	NetRep_PutU32(&w, (uint32_t)_getpid());
@@ -391,7 +395,7 @@ static void Tr_Ticket(Net2Host *host, int conn, const uint8_t *data, int size) {
 	}
 	uint64_t now = Coord_UnixMs();
 	int res = Coord_TicketOpen(data + 3, n, tr.key, now, &t);
-	if (res == COORD_TK_OK && crt_stricmp(t.level, Instance_Level())) {
+	if (res == COORD_TK_OK && crt_stricmp(t.level, Instance_Id())) {
 		res = COORD_TK_BAD;
 	}
 	if (res == COORD_TK_OK && !Tr_TakeNonce(&t, now)) {
@@ -635,6 +639,93 @@ byte Travel_Go(int i, const char *level, const char *entrance, const char *door,
 	return 1;
 }
 
+/* the group's instance a super deal's start gives its members ("" none) */
+static char tr_session[COORD_LEVEL + 1];
+
+/* the super deal of the current player when level is a map of the super deals and its SuperDealType is set:
+ * "<type>,<library>,<map>,<reputation>" into deal */
+static byte Tr_SuperDeal(const char *level, char *deal, int cap) {
+	char maps[64];
+	const char *type = SaveVar_Get("SuperDealType"), *lib = SaveVar_Get("Mission.Library");
+	Str_PrintfQuiet(maps, sizeof(maps), ",%s,", COORD_SESSION_MAPS);
+	char key[COORD_LEVEL + 3];
+	Str_PrintfQuiet(key, sizeof(key), ",%s,", level);
+	for (char *p = key; *p; p++) {
+		*p = (char)crt_toupper(*p);
+	}
+	if (!type || !*type || !strstr(maps, key)) {
+		return 0;
+	}
+	/* the starter's reputation picks the enemies' profile at the level's start (the super deal's SetVars) */
+	const char *rep = SaveVar_Get("BadReputation");
+	Str_PrintfQuiet(deal, cap, "%s,%s,%s,%s", type, lib ? lib : "", level, rep && *rep ? rep : "0");
+	return 1;
+}
+
+byte Travel_QLoad(const char *map) {
+	int i = Players_Current();
+	if (!g_Mp2 || !Rep_SpFlows() || i < 0 || i >= PLAYERS_MAX) {
+		return 0;
+	}
+	const char *s = strrchr(map, '/');
+	const char *level = s ? s + 1 : map;
+	const char *spawn = SaveVar_Get("Spawn"), *door = SaveVar_Get("ComeFrom");
+	char deal[COORD_LEVEL + 1], lib[64];
+	if (!Tr_SuperDeal(level, deal, sizeof(deal))) {
+		return Travel_Go(i, level, spawn ? spawn : "", door ? door : "", 0);
+	}
+	if (tr_session[0]) {
+		return Travel_Go(i, tr_session, spawn ? spawn : "", deal, 0);
+	}
+	/* a super deal: an instance of its own for the group, the player and the others beside it with the same deal
+	 * (single player's crazy gambler gives it to the one player; the others start theirs in their contexts) */
+	static unsigned count;
+	const uint8_t *key = Travel_KeyOfPlayer(i);
+	Str_PrintfQuiet(tr_session, sizeof(tr_session), "%s%c%02x%02x%02x%u", level, COORD_SESSION, key ? key[0] : 0,
+		key ? key[1] : 0, key ? key[2] : 0, ++count);
+	const char *l = SaveVar_Get("SuperDeal.Library");
+	Str_Copy(lib, l ? l : "", sizeof(lib));
+	cEntity *me = Players_Get(i);
+	vec3_t at = me ? me->pos : (vec3_t){ 0.0f, 0.0f, 0.0f };
+	byte ok = Travel_Go(i, tr_session, spawn ? spawn : "", deal, 0);
+	for (int k = 0; me && k < PLAYERS_MAX; k++) {
+		cEntity *o = k != i && tr.pl[k].used && !tr.pl[k].traveled ? Players_Get(k) : NULL;
+		float dx = o ? o->pos.x - at.x : 0.0f, dz = o ? o->pos.z - at.z : 0.0f;
+		if (!o || dx * dx + dz * dz > TR_GROUP_NEAR * TR_GROUP_NEAR) {
+			continue;
+		}
+		int was = Players_Enter(k);
+		const char *ol = SaveVar_Get("SuperDeal.Library");
+		if (ol && !strcmp(ol, lib) && *lib) {
+			Con_Printf("instance: player %d goes with player %d to the super deal %s\n", k, i, lib);
+			if (!Mode_Import("MissionsFuncs") || !PORT_CALL(MissionsFuncs, StartActualSuperDeal, NULL, "")) {
+				Native_ErrPrint();
+			}
+		}
+		Players_Leave(was);
+	}
+	tr_session[0] = 0;
+	return ok;
+}
+
+byte Travel_SessionEnd(byte won) {
+	if (!g_Mp2 || !Rep_SpFlows() || !strchr(Instance_Id(), COORD_SESSION)) {
+		return 0;
+	}
+	for (int i = 0; i < PLAYERS_MAX; i++) {
+		if (!tr.pl[i].used || tr.pl[i].traveled || !Players_Get(i)) {
+			continue;
+		}
+		Con_Printf("instance: the super deal ends for player %d (%s)\n", i, won ? "won" : "lost");
+		int was = Players_Enter(i);
+		if (!Native_CallMod("MissionsFuncs", won ? "SuperDealOnVictory" : "SuperDealOnDefeat", NULL, "ii", 0L, 0L)) {
+			Native_ErrPrint();
+		}
+		Players_Leave(was);
+	}
+	return 1;
+}
+
 byte Travel_Name(int player, char *out, int cap) {
 	out[0] = 0;
 	return player >= 0 && player < PLAYERS_MAX && tr.pl[player].used &&
@@ -760,6 +851,16 @@ byte Travel_GetVar(int player, const char *key, char *out, int cap) {
 	return CoordKv_Get(tr.pl[player].state, tr.pl[player].len, key, out, cap) != 0;
 }
 
+void Travel_EachVar(int player, void (*fn)(const char *key, const char *value, void *u), void *u) {
+	static char key[COORD_LEVEL * 2], val[SV_TEXT];
+	if (player < 0 || player >= PLAYERS_MAX || !tr.pl[player].used) {
+		return;
+	}
+	for (int pos = 0; CoordKv_Next(tr.pl[player].state, tr.pl[player].len, &pos, key, sizeof(key), val, sizeof(val));) {
+		fn(key, val, u);
+	}
+}
+
 byte Travel_SetVar(int player, const char *key, const char *value) {
 	TrPlayer *p = player >= 0 && player < PLAYERS_MAX ? &tr.pl[player] : NULL;
 	return p && p->used && CoordKv_Set(p->state, &p->len, sizeof(p->state), key, value);
@@ -803,6 +904,18 @@ cEntity *Travel_OwnShip(int player, const vec3_t *pos, float yaw) {
 }
 
 /* ---- tests ---- */
+
+void Travel_TestKill(int player, const char *entity) {
+	cEntity *e = Players_Get(player);
+	cEntity *t = World_FindEntity(entity);
+	if (!e || !t || !Entity_IsType(t, TYEN_WITH_LIFE)) {
+		Con_Printf("instance: kill: no player %d or no entity %s\n", player, entity);
+		return;
+	}
+	cVehicleAttack_HitBy(&WLife(t)->attack, e->name);
+	WLife(t)->life = 0;
+	Con_Printf("instance: player %d kills %s\n", player, entity);
+}
 
 void Travel_TestUse(int player, const char *entity, const char *option) {
 	cEntity *e = Players_Get(player);

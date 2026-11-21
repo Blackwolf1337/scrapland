@@ -76,11 +76,12 @@ int SaveVar_OverOwner(const char *name) {
 	memcpy(prefix, name, n);
 	prefix[n] = 0;
 	/* coop: every variable is the party's story but those of data/coop/rules.def's list local (a member's own; the
-	 * story of a member's change goes to every member, Coop_SaveVarChanged) */
+	 * story of a member's change goes to every member, Coop_SaveVarChanged); PARTY: a player's own in a free world */
 	if (Coop_On() && !Party_RuleHas("local", name)) {
 		return -1;
 	}
-	return NetClass_Find(NCT_SAVEVAR, prefix) == NC_PLAYER ? i : -1;
+	netTag_t tag = NetClass_Find(NCT_SAVEVAR, prefix);
+	return tag == NC_PLAYER || (tag == NC_PARTY && !Coop_On()) ? i : -1;
 }
 
 static cSaveVar *SV_OverFind(int i, const char *name) {
@@ -110,6 +111,8 @@ static cSaveVar *SV_OverSet(int i, const char *name, const char *value) {
 		Pres_SaveVar(i, name, value);
 	} else {
 		cString_Set(&v->value, NULL);
+		/* the coordinator's copy keeps no value either (a text the player's next level reads as empty) */
+		Travel_SetVar(i, name, "");
 	}
 	return v;
 }
@@ -233,6 +236,19 @@ void SaveVars_Each(void (*fn)(const char *name, const char *value, void *u), voi
 	}
 }
 
+static struct {
+	void (*fn)(const char *name, const char *value, void *u);
+	void *u;
+	int i;
+} sv_each;
+
+static void SV_EachKept(const char *key, const char *value, void *u) {
+	(void)u;
+	if (SaveVar_OverOwner(key) == sv_each.i && !SaveVar_Find(key) && !SV_OverFind(sv_each.i, key)) {
+		sv_each.fn(key, value, sv_each.u);
+	}
+}
+
 void SaveVars_EachSeen(void (*fn)(const char *name, const char *value, void *u), void *u) {
 	for (cSaveVar *v = g_SaveVars; v; v = v->next) {
 		const char *seen = SaveVar_Get(v->name);
@@ -249,6 +265,11 @@ void SaveVars_EachSeen(void (*fn)(const char *name, const char *value, void *u),
 			fn(v->name, v->value, u);
 		}
 	}
+	/* the player's own ones its state of the coordinator keeps that it has not read here yet */
+	sv_each.fn = fn;
+	sv_each.u = u;
+	sv_each.i = i;
+	Travel_EachVar(i, SV_EachKept, NULL);
 }
 
 /* deletes the variables whose name starts with prefix ("" all); a player's own prefix in its context: its variables
@@ -299,7 +320,7 @@ void SaveVars_ScriptDelete(const char *prefix) {
 
 /*
  * the crazy deals done: with JackInTheBox.Active "1", deal N counts when CrazyDeal.N.Var names a variable whose
- * value reaches CrazyDeal.N.Tgt
+ * value reaches CrazyDeal.N.Tgt (the current player's on a -mp2 instance: SaveVar_Get)
  */
 static int CrazyDeals_Count(void) {
 	static const char *const deals[3][2] = {
@@ -309,22 +330,22 @@ static int CrazyDeals_Count(void) {
 	};
 	int n = 0;
 
-	cSaveVar *active = SaveVar_Find("JackInTheBox.Active");
-	if (!active || !active->value || strcmp(active->value, "1")) {
+	const char *active = SaveVar_Get("JackInTheBox.Active");
+	if (!active || strcmp(active, "1")) {
 		return 0;
 	}
 	for (int i = 0; i < 3; i++) {
-		cSaveVar *var = SaveVar_Find(deals[i][0]);
-		if (!var || !var->value || !strcmp(var->value, "")) {
+		const char *var = SaveVar_Get(deals[i][0]);
+		if (!var || !strcmp(var, "")) {
 			continue;
 		}
-		cSaveVar *v = SaveVar_Find(var->value);
-		if (!v || !v->value || !strcmp(v->value, "")) {
+		const char *v = SaveVar_Get(var);
+		if (!v || !strcmp(v, "")) {
 			continue;
 		}
-		int value = crt_atoi(v->value);
-		cSaveVar *tgt = SaveVar_Find(deals[i][1]);
-		if (tgt && tgt->value && strcmp(tgt->value, "") && crt_atoi(tgt->value) <= value) {
+		int value = crt_atoi(v);
+		const char *tgt = SaveVar_Get(deals[i][1]);
+		if (tgt && strcmp(tgt, "") && crt_atoi(tgt) <= value) {
 			n++;
 		}
 	}

@@ -20,6 +20,8 @@
 #include "scrap/modvars.h"
 #include "scrap/nativeobj.h"
 #include "scrap/netaudit.h"
+#include "scrap/netclass.h"
+#include "scrap/play.h"
 #include "scrap/players.h"
 #include "scrap/pres.h"
 #include "scrap/repent.h"
@@ -2616,7 +2618,73 @@ static byte Native_GVarValue(const char *name, byte def, nativeVal_t *out) {
 	return 0;
 }
 
+/* ---- the STATE engine variables the scripts set in a player's context on a -mp2 sandbox or freeroam instance (not
+ * in the original, stage 6c): its HUD state, sent to its client alone (Pres_GVar); the scripts of that context read
+ * back their own value (a race's CurrentWaypointName while another player races too) ---- */
+
+#define GV_OVER 256
+
+static struct {
+	int8_t pl;						/* -1: free */
+	char name[48];
+	nativeVal_t v;
+} gv_over[GV_OVER];
+static int gv_nover;
+
+/* the current player whose values these are, -1 */
+static int Native_GVarOwner(const char *name) {
+	int i = Players_Current();
+	return g_Mp2 && Rep_SpFlows() && i >= 0 && i < PLAYERS_MAX && NetClass_Find(NCT_GVAR, name) == NC_STATE ? i : -1;
+}
+
+static int Native_GVarOverFind(int i, const char *name) {
+	for (int k = 0; k < gv_nover; k++) {
+		if (gv_over[k].pl == i && !strcmp(gv_over[k].name, name)) {
+			return k;
+		}
+	}
+	return -1;
+}
+
+/* the value name has now becomes player i's */
+static void Native_GVarOverNote(int i, const char *name) {
+	int k = Native_GVarOverFind(i, name);
+	for (int f = 0; k < 0 && f < gv_nover; f++) {
+		k = gv_over[f].pl < 0 ? f : -1;
+	}
+	if (k < 0) {
+		if (gv_nover >= GV_OVER || strlen(name) >= sizeof(gv_over[0].name)) {
+			return;
+		}
+		k = gv_nover++;
+		Native_SetNone(&gv_over[k].v);
+	}
+	nativeVal_t v;
+	if (!Native_GVarValue(name, 0, &v)) {
+		Native_ErrClear();
+		return;
+	}
+	Native_Free(&gv_over[k].v);
+	gv_over[k].v = v;
+	gv_over[k].pl = (int8_t)i;
+	Str_Copy(gv_over[k].name, name, sizeof(gv_over[k].name));
+}
+
+void Native_GVarOverClear(int i) {
+	for (int k = 0; k < gv_nover; k++) {
+		if (gv_over[k].pl == i) {
+			gv_over[k].pl = -1;
+			Native_Free(&gv_over[k].v);
+		}
+	}
+}
+
 byte Native_GVarGet(const char *name, nativeVal_t *out) {
+	int i = gv_nover ? Native_GVarOwner(name) : -1, k = i >= 0 ? Native_GVarOverFind(i, name) : -1;
+	if (k >= 0) {
+		Native_Copy(out, &gv_over[k].v);
+		return 1;
+	}
 	return Native_GVarValue(name, 0, out);
 }
 
@@ -2646,9 +2714,14 @@ int Native_GVarStore(const char *name, const nativeVal_t *v) {
 	double d;
 	int r = v->type == NV_STR && strlen(Native_Text(v)) == (size_t)v->n ? GVar_SetStr(name, Native_Text(v)) :
 		Native_ArgDouble(v, &d) ? GVar_SetNum(name, d) : -2;
-	/* not in the original: the presentation state a -mp2 instance's players keep (include/scrap/pres.h) */
+	/* not in the original: the presentation state a -mp2 instance's players keep (include/scrap/pres.h), the value of
+	 * the player whose scripts set it */
 	if (r >= 0 && g_Mp2) {
 		Pres_GVar(name);
+		int i = Native_GVarOwner(name);
+		if (i >= 0) {
+			Native_GVarOverNote(i, name);
+		}
 	}
 	return r;
 }
