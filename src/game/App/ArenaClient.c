@@ -1,8 +1,9 @@
 /*
- * The client's side of the PvP modes (include/scrap/arena.h): the join, the requests, the keys, the flag or mail bag
- * as local items, the names and team colours of the proxies and the original's HUD of the modes (the scores of
- * RacerScorer, the mission scorer, the texts of Ffa and the n*.py modes) from the instance's state. Not in the
- * original.
+ * The client's side of the PvP modes (include/scrap/arena.h): the join, the requests, the keys and the original's HUD
+ * of the modes (the scores of RacerScorer, the mission scorer) from the instance's state. On the old path also the
+ * flag or mail bag as local items, the names and team colours of the proxies, the way point and the texts of Ffa and
+ * the n*.py modes; -mp2 (include/scrap/repent.h) those are the instance's (replicas, the journal, the records of the
+ * presentation interface) and the requests go through the UI channel (include/scrap/uichan.h). Not in the original.
  */
 #include <math.h>
 #include <stdio.h>
@@ -19,19 +20,21 @@
 #include "scrap/input.h"
 #include "scrap/platform.h"
 #include "scrap/play.h"
+#include "scrap/repent.h"
 #include "scrap/replicate.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
 #include "scrap/scriptnative.h"
 #include "scrap/texts.h"
+#include "scrap/uichan.h"
 #include "scrap/world.h"
 
-#define AC_FLAG "ArenaFlag"				/* the local flag or bag item (the original's FlagToBeHunted) */
-#define AC_ZONE "ArenaZone"				/* the local zone items of the postman modes, AC_ZONE<key> */
+#define AC_FLAG ARENA_FLAG_ENT			/* the local flag or bag item of the old path */
+#define AC_ZONE ARENA_ZONE_ENT			/* the local zone items of the postman modes, AC_ZONE<key> */
 #define AC_CAM "ArenaCam"				/* the free camera of a spectator (Ffa.CameraSpectator) */
 #define AC_ZONES 32
-#define AC_MSG 256
+#define AC_MSG ARENA_TEXT
 #define AC_PROXY_SECS 0.5				/* the names and colours of the proxies set again this often */
 #define AC_BOT_FIRE 1.5					/* s a headless player or a test bot waits before it asks for a ship */
 
@@ -107,9 +110,8 @@ static void Ac_Msg(const char *text, double secs, byte label) {
 	Native_Free(&v);
 }
 
-/* a language text of the original (or of ScrapC's table) with its %s, %d and %i filled in order with a and b (the
- * numbers as text: the original's texts are Python formats of one value or of a pair) */
-static void Ac_Lang(char *out, int cap, const char *key, const char *a, const char *b) {
+/* the numbers as text: the original's texts are Python formats of one value or of a pair */
+void Arena_Lang(char *out, int cap, const char *key, const char *a, const char *b) {
 	char fmt[AC_MSG];
 	Str_Copy(fmt, Script_Lang(key), sizeof(fmt));
 	for (char *p = fmt; (p = strchr(p, '%')) != NULL; p += 2) {
@@ -144,9 +146,9 @@ static void Ac_Title(char *out, int cap) {
 		/* Ffa.GetGameTeamDescriptor: tied, else the leading team with its total first */
 		byte red = s->red > s->green;
 		if (s->red == s->green) {
-			Ac_Lang(out, cap, "Net_Title_Teams_Tied", Ac_Num(a, sizeof(a), s->green), NULL);
+			Arena_Lang(out, cap, "Net_Title_Teams_Tied", Ac_Num(a, sizeof(a), s->green), NULL);
 		} else {
-			Ac_Lang(out, cap, red ? "Net_Title_Red_Wins" : "Net_Title_Green_Wins",
+			Arena_Lang(out, cap, red ? "Net_Title_Red_Wins" : "Net_Title_Green_Wins",
 				Ac_Num(a, sizeof(a), red ? s->red : s->green), Ac_Num(b, sizeof(b), red ? s->green : s->red));
 		}
 		return;
@@ -157,10 +159,25 @@ static void Ac_Title(char *out, int cap) {
 
 /* ---- the requests ---- */
 
+/* a request to the instance: -mp2 through the UI channel, else on the instance connection's reliable channel */
+static byte Ac_Send(const uint8_t *req, int n) {
+	uint8_t buf[ARENA_SHIP_CFG + 72];
+	if (n <= 0 || n > (int)sizeof(buf) - 2) {
+		return 0;
+	}
+	if (!g_Mp2) {
+		return Watch_SendReliable(req, n);
+	}
+	buf[0] = UI_MSG;
+	buf[1] = UI_C_ARENA;
+	memcpy(buf + 2, req, (size_t)n);
+	return Watch_SendReliable(buf, n + 2);
+}
+
 static void Ac_Request(int rq, int team) {
 	uint8_t buf[8];
 	int n = Arena_WriteRequest(buf, sizeof(buf), rq, team);
-	if (n > 0 && Watch_SendReliable(buf, n)) {
+	if (Ac_Send(buf, n)) {
 		Con_Printf("arena: request %d %d\n", rq, team);
 	}
 }
@@ -190,7 +207,7 @@ static void Ac_Join(void) {
 	const char *name = getenv("SCRAP_PLAYER_NAME");
 	name = name && *name ? name : GVar_GetStr("PlayerName");
 	int size = Arena_WriteJoin(buf, sizeof(buf), name, team, ship);
-	if (size > 0 && Watch_SendReliable(buf, size)) {
+	if (Ac_Send(buf, size)) {
 		ac.joined = 1;
 		Con_Printf("arena: join as %s, team %d\n", name, team);
 	}
@@ -313,6 +330,25 @@ static void Ac_Flag(void) {
 	Ac_Way(AC_FLAG);
 }
 
+/* -mp2: the replica of the bag on the own ship shows the model the instance named for its carrier (NPostman.TakeFlag's
+ * FlagNoUsrModel, REPENT_J_OWNMODEL) */
+static void Ac_OwnBag(void) {
+	char name[96];
+	cEntity *f = World_FindEntity(AC_FLAG), *own = Play_Entity();
+	const char *model = f && own ? ReplicaEnt_Text(f, REPENT_J_OWNMODEL) : NULL;
+	const char *link = model ? ReplicaEnt_Text(f, "LinkModel") : NULL;
+	const char *comma = link ? strchr(link, ',') : NULL;
+	if (!comma) {
+		return;
+	}
+	CGameModel *m = &Obj(f)->model;
+	const char *cur = CGameModel_IsLoaded(m) && m->Model->scene && m->Model->scene->name ? m->Model->scene->name : "";
+	Str_PrintfQuiet(name, sizeof(name), "%.*s", (int)(comma - link), link);
+	if (crt_stricmp(cur, model) && ReplicaEnt_Find(name) == own) {
+		Entity_SetModel(f, model, 1.0f, 1.0f, 1.0f, 1);
+	}
+}
+
 /* ---- the proxies ---- */
 
 static void Ac_Proxies(void) {
@@ -355,9 +391,6 @@ static int Ac_Rows(nativeVal_t *list, int *pos, int *score, int *winner) {
 	int rows[ARENA_MEMBERS], you = Ac_You();
 	int n = Arena_Rows(&ac.st, you, rows, ARENA_MEMBERS);
 	Native_SetEmpty(list, NV_LIST);
-	*pos = 1;
-	*score = 0;
-	*winner = -1;
 	for (int r = 0; r < n; r++) {
 		const ArenaMember *m = &ac.st.m[rows[r]];
 		char name[ARENA_NAME + 3];
@@ -370,18 +403,8 @@ static int Ac_Rows(nativeVal_t *list, int *pos, int *score, int *winner) {
 		Ac_Tuple(Native_Append(row), m->team == ARENA_TEAM_RED ? ac_red : m->team == ARENA_TEAM_GREEN ? ac_green : none,
 			4);
 		Native_SetStr(Native_Append(row), m->name);
-		if (rows[r] == you) {
-			*pos = r + 1;
-			*score = m->score;
-		}
 	}
-	if (n && you >= 0) {
-		int top = ac.st.m[rows[0]].score, same = 0;
-		for (int r = 0; r < n; r++) {
-			same += ac.st.m[rows[r]].score == top && !(ac.st.m[rows[r]].flags & ARENA_MF_SPECT);
-		}
-		*winner = *score != top ? -1 : same == 1 ? 1 : 0;
-	}
+	Arena_Place(&ac.st, you, pos, score, winner);
 	return n;
 }
 
@@ -486,7 +509,7 @@ static void Ac_Places(void) {
 				"Net_Label_Tied_Leading"), 5.0, 1);
 		} else {
 			Str_PrintfQuiet(place, sizeof(place), pos == 1 ? "1st" : pos == 2 ? "2nd" : "%dth", pos);
-			Ac_Lang(text, sizeof(text), pos < ac.yourPos ? "Net_Label_Up_to" : pos > ac.yourPos ? "Net_Label_Down_to" :
+			Arena_Lang(text, sizeof(text), pos < ac.yourPos ? "Net_Label_Up_to" : pos > ac.yourPos ? "Net_Label_Down_to" :
 				"Net_Label_Still_to", place, NULL);
 			Ac_Msg(text, 5.0, 1);
 		}
@@ -563,26 +586,72 @@ static void Ac_Hud(void) {
 
 /* ---- messages ---- */
 
+/* the noise of the end screen (Ffa.EndOfGame) and its end; the old path also fades (-mp2 the instance's fade record) */
+static void Ac_Noise(byte on) {
+	static const int clear[4] = { 0, 0, 0, 0 }, dark[4] = { 0, 0, 0, 128 };
+	if (g_HeadlessPlay) {
+		return;
+	}
+	if (on) {
+		Mode_GVarSetN("NoiseFactorBegin", 0);
+		Mode_GVarSetN("NoiseFactor", 32);
+		Mode_GVarSetN("NoiseTime", 0);
+		Mode_GVarSetN("NoiseEndTime", 1.0);
+	} else {
+		Mode_GVarSetN("NoiseFactor", 0);
+	}
+	if (!g_Mp2) {
+		Mode_Fade(0, on ? clear : dark, on ? dark : clear, on ? 1.0 : 0.5);
+	}
+}
+
+/* Ffa.OnDeath of the dead player of this machine (killed by a, ARENA_NOBODY or b itself: a suicide or the world): the
+ * text on its scores until its next ship */
+static void Ac_OwnDeath(int a, int b) {
+	char text[AC_MSG];
+	if (a >= 0 && a != b) {
+		Arena_Lang(text, sizeof(text), "Net_Title_Death_Kill", Ac_Name(a), NULL);
+	} else {
+		Str_Copy(text, Script_Lang("Net_Title_Death_Suicide"), sizeof(text));
+	}
+	Str_Copy(ac.deathTop, text, sizeof(ac.deathTop));
+	Ac_ShowScores(text, Script_Lang("Net_Bott_Press_Fire"));
+	Con_Printf("arena: %s\n", text);
+}
+
+/* -mp2: the texts and sounds of the events are the instance's records; the HUD's part here: the own death on the
+ * scores, the noise of the end screen */
+static void Ac_EventMp2(int ev, int a, int b, int num) {
+	int you = Ac_You();
+	if (ev == ARENA_EV_KILL && b == you && you >= 0) {
+		Ac_OwnDeath(a, b);
+	} else if (ev == ARENA_EV_END) {
+		Con_Printf("arena: the round ended, next %s in %d s\n", ac.st.next, num);
+		Ac_Noise(1);
+	} else if (ev == ARENA_EV_START) {
+		Con_Printf("arena: round %d\n", num);
+		Ac_Noise(0);
+	} else {
+		Con_Printf("arena: event %d %s %s %d\n", ev, Ac_Name(a), Ac_Name(b), num);
+	}
+}
+
 static void Ac_Event(int ev, int a, int b, int num) {
 	char text[AC_MSG];
 	int you = Ac_You();
 	const ArenaState *s = &ac.st;
 	byte team = (Ac_Flags() & ARENA_F_TEAM) != 0;
 	byte ours = a >= 0 && you >= 0 && (a == you || (team && s->m[a].team == s->m[you].team));
+	if (g_Mp2) {
+		Ac_EventMp2(ev, a, b, num);
+		return;
+	}
 	switch (ev) {
 	case ARENA_EV_KILL:
 		if (b == you && you >= 0) {
-			/* Ffa.OnDeath of the dead player of this machine */
-			if (a >= 0 && a != b) {
-				Ac_Lang(text, sizeof(text), "Net_Title_Death_Kill", Ac_Name(a), NULL);
-			} else {
-				Str_Copy(text, Script_Lang("Net_Title_Death_Suicide"), sizeof(text));
-			}
-			Str_Copy(ac.deathTop, text, sizeof(ac.deathTop));
-			Ac_ShowScores(text, Script_Lang("Net_Bott_Press_Fire"));
-			Con_Printf("arena: %s\n", text);
+			Ac_OwnDeath(a, b);
 		} else if (a == you && you >= 0 && b >= 0) {
-			Ac_Lang(text, sizeof(text), "Net_Msg_You_Kill", Ac_Name(b), NULL);
+			Arena_Lang(text, sizeof(text), "Net_Msg_You_Kill", Ac_Name(b), NULL);
 			Ac_Msg(text, 5.0, 0);
 		} else {
 			Con_Printf("arena: %s killed by %s\n", Ac_Name(b), a >= 0 ? Ac_Name(a) : "-");
@@ -632,7 +701,7 @@ static void Ac_Event(int ev, int a, int b, int num) {
 		break;
 	case ARENA_EV_DELIVER:
 		Ac_Sound(ours);
-		Ac_Lang(text, sizeof(text), "MP_Arena_Delivered", Ac_Name(a), NULL);
+		Arena_Lang(text, sizeof(text), "MP_Arena_Delivered", Ac_Name(a), NULL);
 		Ac_Msg(text, 3.0, 0);
 		break;
 	case ARENA_EV_WAIT:
@@ -644,22 +713,11 @@ static void Ac_Event(int ev, int a, int b, int num) {
 	case ARENA_EV_END:
 		/* Ffa.EndOfGame: the screen fades to noise */
 		Con_Printf("arena: the round ended, next %s in %d s\n", s->next, num);
-		if (!g_HeadlessPlay) {
-			static const int clear[4] = { 0, 0, 0, 0 }, dark[4] = { 0, 0, 0, 128 };
-			Mode_GVarSetN("NoiseFactorBegin", 0);
-			Mode_GVarSetN("NoiseFactor", 32);
-			Mode_GVarSetN("NoiseTime", 0);
-			Mode_GVarSetN("NoiseEndTime", 1.0);
-			Mode_Fade(0, clear, dark, 1.0);
-		}
+		Ac_Noise(1);
 		break;
 	case ARENA_EV_START:
 		Con_Printf("arena: round %d\n", num);
-		if (!g_HeadlessPlay) {
-			static const int dark[4] = { 0, 0, 0, 128 }, clear[4] = { 0, 0, 0, 0 };
-			Mode_GVarSetN("NoiseFactor", 0);
-			Mode_Fade(0, dark, clear, 0.5);
-		}
+		Ac_Noise(0);
 		break;
 	default:
 		break;
@@ -810,14 +868,14 @@ void Arena_ClientFrame(void) {
 	/* the free camera while there is no own ship and no death camera: a spectator, a player before its first ship
 	 * or at the end of a round */
 	Ac_SpectCam(!own && !Play_DeathCamOn());
-	if (ac.rejoinUntil > 0.0 && now - ac.lastCount >= 1.0) {
+	if (!g_Mp2 && ac.rejoinUntil > 0.0 && now - ac.lastCount >= 1.0) {
 		/* Ffa.RejoinMsg: the count down of a team change */
 		char text[AC_MSG];
 		int left = (int)ceil(ac.rejoinUntil - now);
 		ac.lastCount = now;
 		if (left > 0) {
 			char n[16];
-			Ac_Lang(text, sizeof(text), "Net_Msg_Join_Time", Ac_Num(n, sizeof(n), left), NULL);
+			Arena_Lang(text, sizeof(text), "Net_Msg_Join_Time", Ac_Num(n, sizeof(n), left), NULL);
 			Ac_Msg(text, 1.0, 0);
 		} else {
 			ac.rejoinUntil = 0.0;
@@ -827,9 +885,13 @@ void Arena_ClientFrame(void) {
 		ac.dirty = 0;
 		return;
 	}
-	Ac_Flag();
-	Ac_Proxies();
-	Ac_Places();
+	if (!g_Mp2) {
+		Ac_Flag();
+		Ac_Proxies();
+		Ac_Places();
+	} else {
+		Ac_OwnBag();
+	}
 	Ac_Hud();
 	ac.dirty = 0;
 }

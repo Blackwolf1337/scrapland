@@ -66,8 +66,8 @@ enum {
 	PRES_O_SHIPEXPL,				/* pos, vel, scale, time, flames, collision: FX_ShipExplosion */
 	PRES_O_FXENT,					/* kind, entity, entity, f, i, a place: the effects between two entities (the SFX
 									 * module's, an item's fade, the bishop's ray) */
-	PRES_O_MSGTEXT,					/* text, time, font */
-	PRES_O_LABELTEXT,				/* text, time */
+	PRES_O_MSGTEXT,					/* text, the seconds it shows (0 or less: no end), font */
+	PRES_O_LABELTEXT,				/* text, the seconds it shows */
 	PRES_O_SPEECH,					/* text, time, r g b */
 	PRES_O_SPEECHCANCEL,			/* time */
 	PRES_O_CHAT,					/* text, color */
@@ -92,7 +92,8 @@ enum {
 	PRES_O_CAMVAR,					/* name, kind (svarint: 0 number, 1 entity name), value (f32 or str): a setting
 									 * the scripts gave the player's follow camera (include/scrap/netscene.h) */
 	PRES_O_SAVEVAR,					/* name, value: a save variable of the player its client reads (Pres_SaveVar) */
-	PRES_O_FACTION,					/* size u16 and the bytes of a status of the freeroam factions (Pres_Faction) */
+	PRES_O_FACTION,					/* size u16 and the bytes of a status of the freeroam factions (Pres_Bytes) */
+	PRES_O_ARENA,					/* size u16 and the bytes of a state or event of the PvP modes (Pres_Bytes) */
 	PRES_O_COUNT
 };
 
@@ -227,9 +228,11 @@ void Pres_CharRes(const char *name);
 /* player i's own save variable name changed on the instance (SaveVars.c): one the client reads itself (the lives of
  * its HUD) goes to its client; also at its join */
 void Pres_SaveVar(int i, const char *name, const char *value);
-/* a status of the freeroam factions (include/scrap/faction.h: a FACTION_MSG_STATUS message, its state, a notice or a
- * headline) to the players of mask; the client hands it to Faction_ClientMessage */
-void Pres_Faction(uint64_t mask, const uint8_t *data, int size);
+/* the bytes of a message of the old channels as a record op to the players of mask, in order with their other records:
+ * PRES_O_FACTION a status of the freeroam factions (include/scrap/faction.h: a FACTION_MSG_STATUS message, its state, a
+ * notice or a headline; the client hands it to Faction_ClientMessage), PRES_O_ARENA a state or an event of the PvP
+ * modes (include/scrap/arena.h: an ARENA_MSG message; the client hands it to Arena_ClientMessage) */
+void Pres_Bytes(int op, uint64_t mask, const uint8_t *data, int size);
 void Pres_ShipExplosion(const vec3_t *pos, const vec3_t *vel, float scale, float time, int flames, int collision);
 void Pres_FxEnt(int kind, const char *a, const char *b, float f, int i, const vec3_t *v);
 void Pres_MsgText(const char *text, float time, const char *font);

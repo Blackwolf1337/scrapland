@@ -186,6 +186,13 @@ int ReplicaEnt_SlotOf(const cEntity *e) {
 	return e && e->netSlot ? e->netSlot - 1 : -1;
 }
 
+const char *ReplicaEnt_Text(const cEntity *e, const char *name) {
+	int slot = ReplicaEnt_SlotOf(e);
+	int k = slot >= 0 && rc.j ? NetRepJ_Find(rc.j, slot, name) : -1;
+	const NetRepJVal *v = k >= 0 ? NetRepJ_Get(rc.j, k) : NULL;
+	return v && v->type == NETREP_JS ? v->u.s : NULL;
+}
+
 /* LinkModel "object,node" names another entity (the CHECK of cModMove_Link ends the game without it): the value
  * with the client's name of it (the own entity has its own name) in out; 0 when the client does not have it yet */
 static byte ReplicaEnt_LinkValue(const char *value, char *out, int size) {
@@ -285,6 +292,11 @@ static void ReplicaEnt_Apply(cEntity *e, const NetRepJVal *v) {
 			Entity_SetEmbeddedFX(e, v->u.s);
 		}
 		g_PresIn--;
+		rc.applying--;
+		return;
+	}
+	if (!strcmp(v->name, REPENT_J_OWNMODEL)) {
+		/* read where it applies (ArenaClient.c) */
 		rc.applying--;
 		return;
 	}

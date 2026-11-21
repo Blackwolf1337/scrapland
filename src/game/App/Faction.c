@@ -565,7 +565,7 @@ uint64_t Faction_DownedTicks(int i) {
  * the player's other records, else on the faction's own channel */
 static void Fr_Out(int i, const uint8_t *buf, int size) {
 	if (g_Mp2) {
-		Pres_Faction((uint64_t)1 << i, buf, size);
+		Pres_Bytes(PRES_O_FACTION, (uint64_t)1 << i, buf, size);
 		return;
 	}
 	int conn = Rep_PlayerConn(i);

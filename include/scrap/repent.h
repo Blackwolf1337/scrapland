@@ -90,6 +90,9 @@ enum {
 /* journal entries of no entity variable (a name no Var function knows): the embedded effect type the scripts set
  * (SFX.EmbeddedSet, SetFX, a character's named effect; the client applies it with Entity_SetEmbeddedFX) */
 #define REPENT_J_FX "@FX"
+/* the model a replica shows while its LinkModel names the client's own entity (the mail bag of the PvP modes on the own
+ * ship: the original's FlagNoUsrModel, include/scrap/arena.h); the replica keeps the server's model otherwise */
+#define REPENT_J_OWNMODEL "@OwnModel"
 
 #define REPENT_MSG 'N'
 #define REPENT_K_CREATE 'c'
@@ -171,6 +174,8 @@ void ReplicaEnt_Reset(void);
 struct cEntity *ReplicaEnt_Find(const char *name);
 /* the slot of a replica, -1 */
 int ReplicaEnt_SlotOf(const struct cEntity *e);
+/* a text entry of the journal of replica e (an entity variable or a REPENT_J_ name, as the server set it), NULL */
+const char *ReplicaEnt_Text(const struct cEntity *e, const char *name);
 /* the client's side of "mirror json" */
 void ReplicaEnt_Mirror(struct tcBuf *b);
 

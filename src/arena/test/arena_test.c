@@ -217,6 +217,31 @@ static void Test_Rows(void) {
 	CHECK(Arena_Rows(&s, -1, rows, 2) == 2);
 }
 
+static void Test_Place(void) {
+	ArenaState s;
+	int pos, score, winner;
+	Fresh(&s, ARENA_DM);
+	Member(&s, 0, ARENA_TEAM_NONE, 3, "a");
+	Member(&s, 1, ARENA_TEAM_NONE, 5, "b");
+	Member(&s, 2, ARENA_TEAM_NONE, 5, "c");
+	Member(&s, 3, ARENA_TEAM_NONE, 9, "d");
+	s.m[3].flags |= ARENA_MF_SPECT;
+	/* the spectator's score does not lead: b and c tie on top, b (you) first */
+	Arena_Place(&s, 1, &pos, &score, &winner);
+	CHECK(pos == 1 && score == 5 && winner == 0);
+	Arena_Place(&s, 2, &pos, &score, &winner);
+	CHECK(pos == 1 && score == 5 && winner == 0);
+	Arena_Place(&s, 0, &pos, &score, &winner);
+	CHECK(pos == 3 && score == 3 && winner == -1);
+	s.m[1].score = 6;
+	Arena_Place(&s, 1, &pos, &score, &winner);
+	CHECK(pos == 1 && score == 6 && winner == 1);
+	Arena_Place(&s, 2, &pos, &score, &winner);
+	CHECK(pos == 2 && winner == -1);
+	Arena_Place(&s, -1, &pos, &score, &winner);
+	CHECK(pos == 1 && score == 0 && winner == -1);
+}
+
 static void Test_Wire(void) {
 	ArenaState s, t;
 	uint8_t buf[8192];
@@ -288,6 +313,7 @@ int main(void) {
 	Test_Teams();
 	Test_Next();
 	Test_Rows();
+	Test_Place();
 	Test_Wire();
 	printf("arena_test: %d checks, %d failed\n", checks, failed);
 	return failed != 0;
