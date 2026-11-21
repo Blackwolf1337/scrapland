@@ -128,22 +128,35 @@ class World:
         parity.stop_dir(self.dir)
 
 
-def prepare_data(a, name, data, level):
-    """a copy of the data folder with every player in level (no entrance: the level's start or next to a member)"""
+def entry_spawn(story, level):
+    """the spawn of the chapter's way point when it is in level (Coop.Entry.*: the instance's level start puts the
+    party's ship at its parking), else ''"""
+    if story.get('Coop.Entry.Map', '').lower() != ('levels/' + level).lower():
+        return ''
+    return story.get('Coop.Entry.Spawn', '')
+
+
+def prepare_data(a, name, data, level, entrance=''):
+    """a copy of the data folder with every player in level (entrance: the chapter's way point in that level, else
+    none: the level's start or next to a member)"""
     dst = os.path.join(a.scratch, name + '-data')
     shutil.rmtree(dst, ignore_errors=True)
     shutil.copytree(data, dst, ignore=shutil.ignore_patterns('*.log', 'instances.txt'))
-    subprocess.run([sys.executable, a.storyedit, dst, '--level', level, '--entrance', '', '--door', ''], check=True)
+    subprocess.run([sys.executable, a.storyedit, dst, '--level', level, '--entrance', entrance, '--door', ''], check=True)
     return dst
 
 
 def sp_story(sp, story, own, level):
-    """the party's save variables into the single player game, then the level loaded again with them"""
+    """the party's save variables into the single player game, then the level loaded again with them (single player
+    starts at the chapter's way point where the member comes in)"""
     lines = []
     for k, v in story.items():
         if k in SKIP or k.startswith('Coop.'):
             continue
         lines.append('do Scrap.SetSaveVar(%s, %s)' % (lit(k), lit(v)))
+    spawn = entry_spawn(story, level)
+    if spawn:
+        lines.append('do Scrap.SetSaveVar("Spawn", %s)' % lit(spawn))
     if own.get('char'):
         lines.append('do Scrap.SetSaveVar("Char", %s)' % lit(own['char']))
     for k in range(0, len(lines), 40):
@@ -176,7 +189,7 @@ def run_point(a, name, data, level, key):
             own = load_store(p)
     res['mission'] = '%s (%s) in %s' % (story.get('Mission.Library', '-'), story.get('MissionState', '-'),
                                         story.get('Mission.Map', '-'))
-    wdata = prepare_data(a, name, data, level)
+    wdata = prepare_data(a, name, data, level, entry_spawn(story, level))
     world = World(a, wdata, level)
     sp = parity.Game(a, 'cs', ['-imap:Levels/' + level])
     member = parity.Game(a, 'cm', ['-join:127.0.0.1', '-port:%d' % a.port, '-name:' + (own.get('name') or 'pa')] +
@@ -212,7 +225,9 @@ def run_point(a, name, data, level, key):
         res['at'] = at
         m = re.search(r"\('Ang', \(([-\d.e]+), ([-\d.e]+), ([-\d.e]+)\)\)", member.ask('ent %s Ang' % me['name']))
         ang = tuple(float(x) for x in m.groups()) if m else (0.0, 0.0, 0.0)
-        sp.ask('do e = Scrap.UsrEntity(0); e.Pos = (%.1f, %.1f, %.1f); e.Ang = (%.3f, %.3f, %.3f)' % (at + ang))
+        # (a level that plays its scenes without a player, Fake, answers late or not: the place is left as it is)
+        sp.try_ask('do e = Scrap.UsrEntity(0); e.Pos = (%.1f, %.1f, %.1f); e.Ang = (%.3f, %.3f, %.3f)' % (at + ang),
+                   timeout=60)
         # the instance's audit counts over the wait (stage 0.1; None without the verb)
         res['audit_verb'] = parity.audit(world, level, 'reset') is not None
         if a.mp2:
@@ -220,7 +235,7 @@ def run_point(a, name, data, level, key):
         gameclock.sleep(a.settle)
         def inst_now():
             return parity.parse_ents(world.ask('entinfo %.0f %.0f %.0f %.0f' % (at[0], at[1], at[2], a.radius * 1.2),
-                                               level, timeout=30))
+                                               level, timeout=90))
         inst = inst_now()
         # single player in the instance's level and the story's mission (its level path can name the point's level
         # while the story's load took it to the level of an older mission: stage 0.4 runs had the Police station and
@@ -232,7 +247,8 @@ def run_point(a, name, data, level, key):
             sp_story(sp, story, own, level)
             gameclock.sleep(8)
             parity.wait_for(lambda: sp.try_ask('Scrap.GetLevelPath()', timeout=5), 240, 2)
-            sp.ask('do e = Scrap.UsrEntity(0); e.Pos = (%.1f, %.1f, %.1f); e.Ang = (%.3f, %.3f, %.3f)' % (at + ang))
+            sp.try_ask('do e = Scrap.UsrEntity(0); e.Pos = (%.1f, %.1f, %.1f); e.Ang = (%.3f, %.3f, %.3f)' % (at + ang),
+                       timeout=60)
             gameclock.sleep(a.settle)
             inst = inst_now()
         res['sp_same_level'] = same_level(sp, inst) and sp_mission(sp) == story.get('Mission.Library', '')

@@ -1705,6 +1705,19 @@ static void TC_Line(tcBuf *b, const char *line) {
 		TC_EntSnd(b, arg);
 		return;
 	}
+	/* listener: "ls <i> <x> <y> <z>" per sound listener, "cam <view> <name> <target>" per camera of the world */
+	if (!strcmp(line, "listener")) {
+		for (int i = 0; g_pSound && i <= g_pSound->lastListener; i++) {
+			const vec3_t *lp = &g_pSound->listeners[i].pos;
+			TC_Addf(b, "ls\t%d\t%.0f\t%.0f\t%.0f\n", i, (double)lp->x, (double)lp->y, (double)lp->z);
+		}
+		for (int i = 0; g_pWorld && i < 4; i++) {
+			cEntity *cam = g_pWorld->camName[i][0] ? World_FindEntity(g_pWorld->camName[i]) : NULL;
+			cEntity *t = cam && Entity_IsType(cam, "FCam") ? cCamEntity_GetTarget(cam) : NULL;
+			TC_Addf(b, "cam\t%d\t%s\t%s\n", i, g_pWorld->camName[i], t ? t->name : "-");
+		}
+		return;
+	}
 	if (TC_Verb(line, "sounds", &arg)) {
 		TC_Sounds(b, arg);
 		return;

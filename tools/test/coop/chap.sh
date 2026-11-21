@@ -12,7 +12,9 @@
 # env: COOP_SCRATCH (tools/test/coop/env.sh), BUILD, CHAP_ENV (more env of both players), CHAP_ABORT (a regex of the
 # polled log that fails the chapter at once), CHAP_KEEP=1 keeps the world running at the end, CHAP_RENDER=1 pa
 # rendered ("shot <name>" lines take screenshots into <scratch>/shots); "save <name>" lines keep the world's data as
-# <scratch>/<name>-data; CHAP_WORLD_ARGS more arguments of the coordinator; COOP_MP2=1: the second multiplayer design (-mp2 for the instances and both players)
+# <scratch>/<name>-data; CHAP_REARM, CHAP_REARM_LINES: test lines sent again after a pattern of the polled log (the
+# level starts again, a death);
+# CHAP_WORLD_ARGS more arguments of the coordinator; COOP_MP2=1: the second multiplayer design (-mp2 for the instances and both players)
 . "$(dirname "$(readlink -f "$0")")/env.sh"
 tag=$1 port=$2 data=$3 steps=$4
 B=${BUILD:-$R/build-linux64}
@@ -90,10 +92,29 @@ while IFS='|' read -r lg line pat secs what; do
 			echo "shot ${line#shot }"
 	elif [[ $line == poll\ * ]]; then
 		# the line again every 5 s until the pattern comes (a story variable that changes later)
-		end=$((SECONDS + ${secs:-30})) got=
+		end=$((SECONDS + ${secs:-30})) got= rearm=$mark
 		while [ $SECONDS -lt $end ]; do
 			"$T/send.sh" $tag "${line#poll }"
 			waitnew "$f" "$pat" 5 "$mark" && { got=1; break; }
+			# CHAP_REARM: a pattern of the polled log after which the instance starts again without the test lines (a
+			# super deal's next round or its retry loads its level again): the lines of CHAP_REARM_LINES (";" between
+			# them, $a, $b, $p3.. the members) are sent again once the members are back
+			if [ -n "$CHAP_REARM" ] && hit=$(tail -n +$((rearm + 1)) "$f" | grep -E "$CHAP_REARM"); then
+				rearm=$(wc -l < "$f")
+				# (a level that starts again: once pa is back in it)
+				if grep -q "level again" <<< "$hit"; then
+					waitnew "$f" "player [0-9]+ is pa " 60 "$rearm"
+				fi
+				timeout "$(awk -v n="${SCRAP_TIMESCALE:-1}" 'BEGIN { printf "%.2f", 10 / (n < 1 ? 1 : n) }')" tail -f /dev/null
+				a=$(idx "$lv" pa) b=$(idx "$lv" pb)
+				IFS=';' read -ra rl <<< "$CHAP_REARM_LINES"
+				for r in "${rl[@]}"; do
+					r=${r//\$a/$a} r=${r//\$b/$b}
+					for n in $more; do x=$(idx "$lv" $n); r=${r//\$$n/$x}; done
+					"$T/send.sh" $tag "$r"
+				done
+				echo "again: the test lines after the level started again"
+			fi
 			# CHAP_ABORT: a pattern that ends the chapter at once (the mission failed: the instance restarted without the
 			# test lines of the steps)
 			if [ -n "$CHAP_ABORT" ] && tail -n +$((mark + 1)) "$f" | grep -qE "$CHAP_ABORT"; then
