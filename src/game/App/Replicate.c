@@ -1577,8 +1577,17 @@ void Rep_OwnFrame(cEntity *e, float dt) {
 		return;
 	}
 	/* a player's entity without a step in this frame (the scripts gave it to the player a moment ago, the input step
-	 * adopts it next frame): the actions of its frame, as single player's */
+	 * adopts it next frame, or its first input has not come: the fall of a new character): the actions of its frame,
+	 * as single player's; what they present is its own player's client's own too */
+	int owner = -1;
+	for (int i = 0; i < PLAYERS_MAX && owner < 0; i++) {
+		if (rep.pl[i].used && rep.pl[i].own == e) {
+			owner = i;
+		}
+	}
+	Pres_OwnStep(owner >= 0 && WLife(e)->life > 0 ? owner : -1);
 	NetPl_Actions(e, dt);
+	Pres_OwnStep(-1);
 }
 
 byte Rep_Command(const char *line) {
