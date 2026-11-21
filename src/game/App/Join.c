@@ -275,6 +275,11 @@ static void Join_Ticket(NetRepReader *r) {
 		NetRep_GetStr(r, mode, sizeof(mode));
 	}
 	Places_WorldMode(r->bad ? "" : mode);
+	/* a group's instance "<map>#<session>" plays the map (include/scrap/coord.h) */
+	char *at = strchr(level, COORD_SESSION);
+	if (at) {
+		*at = 0;
+	}
 	join.played = 1;
 	join.ui = JOIN_UI_PLAYING;
 	join.instPort = (uint16_t)port;

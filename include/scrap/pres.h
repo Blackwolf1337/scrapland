@@ -168,6 +168,13 @@ void Pres_SimScriptEnd(presSaved_t saved);
 /* a call of the scripts' module.func begins / ends (Port_Entry): the HUD skeleton modules the client makes itself;
  * Pres_ModSite is the innermost call running ("module.func", "-" outside the scripts) for the audit keys */
 void Pres_ModCall(const char *module, const char *func);
+/* the mission's part of a HUD skeleton (Menu.MissionScorerCall: a race's timer and scores) goes to the player: the
+ * skeleton's suppression paused (the depth for Pres_SkelResume), resumed */
+int Pres_SkelPause(void);
+void Pres_SkelResume(int depth);
+/* the scripts drew the HUD of mode ("Walk", "Racer") for the current player (Menu.DrawScorer): its client builds the
+ * skeleton of that mode again after the instance's clear, before the mission's part comes */
+void Pres_HudMode(const char *mode);
 void Pres_ModLeave(const char *module);
 const char *Pres_ModSite(void);
 /* the HUD model of player i, made on its first use (i < 0: the current player's); NULL for none */

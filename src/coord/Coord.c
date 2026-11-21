@@ -66,6 +66,8 @@ typedef struct CoInst {
 	int stale;						/* coop: started before the story's mission changed (ends once empty) */
 	int fails;						/* starts in a row that ended before the instance connected */
 	uint64_t retryAt;				/* ms before which it is not started again after a failed start */
+	int session;					/* an instance of one group (COORD_SESSION in its level name) */
+	char deal[COORD_LEVEL + 1];		/* its -deal: the door of the first travel to it */
 } CoInst;
 
 struct Coord {
@@ -152,6 +154,53 @@ static void Co_AddLevel(const char *name) {
 	in->port = (uint16_t)(coord.cfg.instPort + coord.ninst);
 	in->conn = -1;
 	coord.ninst++;
+}
+
+/* a map one group may have an instance of (COORD_SESSION_MAPS) */
+static int co_sessionMap;
+static const char *co_sessionWant;
+
+static void Co_SessionMapIs(const char *name) {
+	co_sessionMap |= Coord_SameName(name, co_sessionWant);
+}
+
+/* the instance of a group's level "<map>#<session>": the one there is, else a new entry (a free one of an ended
+ * session first); -1 when the map allows none or there is no room */
+static int Co_Session(const char *level, const char *deal) {
+	char map[COORD_LEVEL + 1];
+	int k = Co_Level(level);
+	const char *at = strchr(level, COORD_SESSION);
+	if (k >= 0 || !at || !at[1] || at - level > COORD_LEVEL) {
+		return k;
+	}
+	snprintf(map, sizeof(map), "%.*s", (int)(at - level), level);
+	co_sessionMap = 0;
+	co_sessionWant = map;
+	Co_List(COORD_SESSION_MAPS, Co_SessionMapIs);
+	if (!co_sessionMap) {
+		return -1;
+	}
+	for (k = 0; k < coord.ninst; k++) {
+		CoInst *in = &coord.inst[k];
+		if (in->session && in->state == CI_DOWN && !in->players && !in->wanted) {
+			break;
+		}
+	}
+	if (k == coord.ninst) {
+		if (coord.ninst >= COORD_MAX_LEVELS) {
+			return -1;
+		}
+		coord.ninst++;
+	}
+	CoInst *in = &coord.inst[k];
+	memset(in, 0, sizeof(*in));
+	snprintf(in->level, sizeof(in->level), "%s", level);
+	snprintf(in->deal, sizeof(in->deal), "%s", deal);
+	in->port = (uint16_t)(coord.cfg.instPort + k);
+	in->conn = -1;
+	in->session = 1;
+	Co_Log("coordinator: an instance of %s for one group (%s)\n", level, deal);
+	return k;
 }
 
 static void Co_Keep(const char *name) {
@@ -252,7 +301,7 @@ static void Co_SetState(CoInst *in, int state) {
 static void Co_Start(CoInst *in) {
 	char exe[COORD_PATH + 16], cwd[COORD_PATH + 8], logPath[COORD_PATH + 64], token[65], key[65];
 	char a[12][96];
-	char extra[256], loop[48], story[COORD_PATH + 16];
+	char extra[256], loop[48], story[COORD_PATH + 16], deal[COORD_LEVEL + 8];
 	const char *argv[40];
 	int n = 0;
 
@@ -274,7 +323,9 @@ static void Co_Start(CoInst *in) {
 	Coord_Hex(in->token, 32, token);
 	Coord_Hex(coord.pub, NET2_KEY_SIZE, key);
 	argv[n++] = exe;
-	snprintf(a[0], sizeof(a[0]), "-instance:%s", in->level);
+	/* a group's instance: its map, its own id and the deal it plays */
+	const char *at = in->session ? strchr(in->level, COORD_SESSION) : NULL;
+	snprintf(a[0], sizeof(a[0]), "-instance:%.*s", at ? (int)(at - in->level) : (int)strlen(in->level), in->level);
 	snprintf(a[1], sizeof(a[1]), "-port:%u", in->port);
 	snprintf(a[2], sizeof(a[2]), "-id:%s", in->level);
 	Coord_Loopback(coord.cfg.bind, loop, sizeof(loop));
@@ -308,6 +359,10 @@ static void Co_Start(CoInst *in) {
 	if (Arena_ModeOf(coord.cfg.mode) >= 0 && coord.cfg.levels[0]) {
 		snprintf(a[11], sizeof(a[11]), "-maps:%.88s", coord.cfg.levels);
 		argv[n++] = a[11];
+	}
+	if (in->session && in->deal[0]) {
+		snprintf(deal, sizeof(deal), "-deal:%s", in->deal);
+		argv[n++] = deal;
 	}
 	snprintf(extra, sizeof(extra), "%s", coord.cfg.instArgs);
 	for (char *p = strtok(extra, " "); p && n < 38; p = strtok(NULL, " ")) {
@@ -761,6 +816,10 @@ static void Co_Join(int conn, NetRepReader *r) {
 		CoordKv_Set(p->text, &p->len, sizeof(p->text), "door", "");
 	}
 	int k = Co_Level(level);
+	/* a group's instance that ended: the start */
+	if (k >= 0 && coord.inst[k].session && coord.inst[k].state != CI_UP) {
+		k = -1;
+	}
 	int lead = coord.coop ? Co_LeaderInst(p) : -1;
 	if (lead >= 0 && lead != k) {
 		/* coop: a member starts where its party's leader plays */
@@ -849,7 +908,12 @@ static void Co_State(int conn, NetRepReader *r) {
 		break;
 	case COORD_SR_TRAVEL:
 	case COORD_SR_PARTY: {
-		int k = Co_Level(level);
+		/* a group's level: its own instance, the door is the deal it plays */
+		int session = strchr(level, COORD_SESSION) != NULL;
+		int k = session ? Co_Session(level, door) : Co_Level(level);
+		if (session) {
+			door[0] = 0;
+		}
 		if (k < 0 || coord.inst[k].fails >= CO_START_TRIES) {
 			const char *why = k < 0 ? "that level is closed in this world" : "that level does not start";
 			Co_Log("coordinator: %s (%.8s) cannot go to %s (%s)\n", p->name, p->hex, level, k < 0 ?

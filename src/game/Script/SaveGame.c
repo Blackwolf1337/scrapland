@@ -31,6 +31,7 @@
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
+#include "scrap/travel.h"
 #include "game/Script/levels/Levels.h"
 
 #define SG "SaveGame"
@@ -266,6 +267,9 @@ static byte SG_QLoad(const nativeVal_t *map, const nativeVal_t *useTime) {
 	 * the player of the mission (include/scrap/coop.h) */
 	if (g_Instance) {
 		const char *m = Native_Text(map);
+		if (m && Travel_QLoad(m)) {
+			return 1;
+		}
 		if (!m || !Coop_QLoad(m)) {
 			Con_Printf("instance: QLoad(%s) refused (the coordinator owns the level changes)\n", m ? m : "?");
 		}

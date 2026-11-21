@@ -47,6 +47,7 @@ static struct {
 	Net2Host *host;
 	uint16_t port;
 	char id[NET2_INFO_NAME + 1];
+	byte deal;						/* -deal: a group's super deal */
 	char bind[48];					/* numeric IPv4 or IPv6 address, "" for any address of both families */
 	int maxPlayers;
 	byte pvp;
@@ -78,6 +79,21 @@ byte Instance_ParseParam(const char *param, const char *ext) {
 	}
 	if (!crt_stricmp("id", param)) {
 		Str_Copy(inst.id, ext, sizeof(inst.id));
+		return 1;
+	}
+	/* a group's super deal (the coordinator's -deal:<type>,<library>,<map>,<reputation>): the world's save variables a
+	 * single player save game has when its level loads (MissionsFuncs.StartSuperDeal), before the level's modules
+	 * read them; the reputation of the player that started it */
+	if (!crt_stricmp("deal", param)) {
+		char type[64], lib[64], map[64], rep[16];
+		rep[0] = 0;
+		if (sscanf(ext, "%63[^,],%63[^,],%63[^,],%15s", type, lib, map, rep) >= 3) {
+			SaveVar_Set("SuperDealType", type);
+			SaveVar_Set("Mission.Library", lib);
+			SaveVar_Set("Mission.Map", map);
+			SaveVar_Set("BadReputation", rep[0] ? rep : "0");
+			inst.deal = 1;
+		}
 		return 1;
 	}
 	if (!crt_stricmp("bind", param)) {
@@ -120,6 +136,14 @@ double Instance_Time(void) {
 		return InputTape_SoloTime();
 	}
 	return (double)inst.ticks / INSTANCE_TICK_HZ;
+}
+
+byte Instance_Deal(void) {
+	return inst.deal;
+}
+
+const char *Instance_Id(void) {
+	return inst.id[0] ? inst.id : Instance_Level();
 }
 
 const char *Instance_Level(void) {
@@ -349,6 +373,10 @@ void Instance_Line(char *line) {
 	opt[0] = 0;
 	if (sscanf(line, "use %d %63s %63[^\n]", &player, ent, opt) >= 2) {
 		Travel_TestUse(player, ent, opt);
+		return;
+	}
+	if (sscanf(line, "kill %d %63s", &player, ent) == 2) {
+		Travel_TestKill(player, ent);
 		return;
 	}
 	float dx = 300.0f, dz = 0.0f;

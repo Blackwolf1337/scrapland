@@ -43,7 +43,8 @@ int main(void) {
 	EXPECT(NetClass_Find(NCT_ENTVAR, "Life") == NC_STATE);
 	EXPECT(NetClass_Find(NCT_ENTVAR, "ForceAction") == NC_EVENT);
 	EXPECT(NetClass_Find(NCT_MODVAR, "Parking.PlayerShip") == NC_PLAYER);
-	EXPECT(NetClass_Find(NCT_SAVEVAR, "Mission") == NC_STORY);
+	EXPECT(NetClass_Find(NCT_SAVEVAR, "GameAct") == NC_STORY);
+	EXPECT(NetClass_Find(NCT_SAVEVAR, "Mission") == NC_PARTY);
 	EXPECT(NetClass_Find(NCT_SAVEVAR, "Hangar") == NC_PLAYER);
 	EXPECT(NetClass_Find(NCT_MODULE, "Scene") == NC_SCENE);
 	EXPECT(!strcmp(NetClass_TagName(NC_ABSENT), "absent"));

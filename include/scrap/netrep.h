@@ -252,6 +252,9 @@ void NetRepSrv_Set(NetRepServer *s, int slot, int kind, int look, const NetRepSt
 /* the same with flags: NETREP_SET_LEVEL puts the entity in the interest of every client (the level's static things),
  * not in the grid */
 #define NETREP_SET_LEVEL 0x01
+/* NETREP_SET_ONLY(tag) shows the entity only to the clients of that tag (NetRepSrv_SetTag; 1..255): one player's
+ * private things */
+#define NETREP_SET_ONLY(tag) (((tag) & 0xff) << 8)
 void NetRepSrv_SetEx(NetRepServer *s, int slot, int kind, int look, const NetRepState *st, int flags);
 void NetRepSrv_End(NetRepServer *s);
 int NetRepSrv_Live(const NetRepServer *s);	/* entities of the last snapshot */
@@ -260,6 +263,8 @@ int NetRepSrv_NumLooks(const NetRepServer *s);
 NetRepClient *NetRepSrv_AddClient(NetRepServer *s, uint32_t rate);
 void NetRepSrv_RemoveClient(NetRepServer *s, NetRepClient *c);
 void NetRepSrv_SetView(NetRepClient *c, float x, float y, float z, float radius);
+/* the tag of the client (0 none): it gets the entities set with NETREP_SET_ONLY of its tag too */
+void NetRepSrv_SetTag(NetRepClient *c, int tag);
 /* the view point and the interest radius of the client */
 float NetRepSrv_GetView(const NetRepClient *c, float *pos);
 void NetRepSrv_Ack(NetRepServer *s, NetRepClient *c, uint16_t newest, uint32_t bits);
