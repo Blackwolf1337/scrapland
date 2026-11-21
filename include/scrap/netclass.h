@@ -38,6 +38,9 @@ typedef enum {
 	NC_PLAYER_SHARED = 22,
 	NC_PARTY_SHARED = 23,
 	NC_GROUP = 24,
+	NC_MENU = 25,
+	NC_DEAD = 26,
+	NC_ALL = 27,
 	NC_TAGS
 } netTag_t;
 

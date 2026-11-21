@@ -437,6 +437,8 @@ static void WL_RunFunc(cEntity *self, cPy_Function *own, size_t listOff, const i
 	presSaved_t pres = { 0, 0 };
 	if (!shot) {
 		pres = Pres_SimScript();
+	} else {
+		Pres_Derive();
 	}
 	cPy_Function_Execute(own, 0);
 	byte *list = self->listNode.node.target;
@@ -451,6 +453,8 @@ static void WL_RunFunc(cEntity *self, cPy_Function *own, size_t listOff, const i
 	}
 	if (!shot) {
 		Pres_SimScriptEnd(pres);
+	} else {
+		Pres_Underive();
 	}
 	Players_Leave(was);
 }

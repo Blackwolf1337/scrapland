@@ -1,0 +1,110 @@
+# The coop story's chapters from the new game to the credits, in the order of the campaign chain (docs/scripts.md,
+# round 8o): number|mission|level of the mission|part|story point|chapter of chapters.txt. A chapter is one autochain.sh
+# round (tools/test/coop: the automatic players play the mission until the story names the next one). The parts are
+# the three equal shares of stage 5b's parallel agents (alone, 2 and 8 players over the whole story): 1 = 1-36 (the
+# new game to the end of the twelve super deals), 2 = 37-68 (StupidMerc to GetAuthorization), 3 = 69-100 (TalkToBoss
+# to the credits). The story point is a saved coop world of --points-dir (MP2_COOP_POINTS) whose mission is that one
+# (empty: none yet; a chain from the part's first point saves every chapter's end as the next one's point). Part 1
+# starts from a new world (an empty data folder plays the intro and the new game in Orbit). A super deal starts in
+# GamblinDen and is fought in its arena (QF, OM, FZ, CA). The last chapter ends with the final fight (AB), ABIndoor
+# and the credits.
+1|MapDecont|Orbit|1|as1coop-data|
+2|Fake|Fake|1||
+3|Mission_RustyFirstContact|Junkyard|1||
+4|Mission_GoToOutskirts|Outskirts|1|k1st-data|
+5|Mission_CrazyGamblerFirstContact|GamblinDen|1||
+6|Mission_KillPolice|Outskirts|1||
+7|Mission_MeetBoss|Press|1||
+8|Mission_HumphreyRace|DownTown|1||
+9|Mission_MeetArchbishop|Temple|1||
+10|Mission_HumphreyArchbishopKilled|Press|1||
+11|Mission_ArchbishopDead|Temple|1||
+12|Mission_FirstMeetDeepThroat|Commercial|1||
+13|Mission_FicusBanker|Press|1||
+14|Mission_MultiplusRace|DownTown|1||
+15|Mission_FicusDead|Police|1||
+16|Mission_FunctionaryHunting|Outskirts|1||
+17|Mission_PoliceBossCheats|Police|1||
+18|Mission_SheriffMayor|TownHall|1||
+19|Mission_MosquitoClue|Scrapyard|1||
+20|Mission_CatchRudolph|Bank|1||
+21|Mission_KillRudolph|Outskirts|1||
+22|Mission_CatchTrurl|TownHall|1||
+23|Mission_StealMayorShip|DownTown|1||
+24|Mission_ThreeStooges|GamblinDen|1||
+25|SuperDeal_First|GamblinDen|1||
+26|SuperDeal_Second|GamblinDen|1||
+27|SuperDeal_Third|GamblinDen|1||
+28|SuperDeal_Fourth|GamblinDen|1||
+29|SuperDeal_Fifth|GamblinDen|1||
+30|SuperDeal_Sixth|GamblinDen|1||
+31|SuperDeal_Seventh|GamblinDen|1||
+32|SuperDeal_Eighth|GamblinDen|1||
+33|SuperDeal_Ninth|GamblinDen|1||
+34|SuperDeal_Tenth|GamblinDen|1||
+35|SuperDeal_Eleventh|GamblinDen|1||
+36|SuperDeal_Twelfth|GamblinDen|1||
+37|Mission_StupidMerc|Scrapyard|2||
+38|Mission_TransportKiller|Outskirts|2||
+39|Mission_IgorFirstContact|GamblinDen|2||
+40|Mission_StupidMercAgain|Scrapyard|2||
+41|Mission_Massacre|DownTown|2||
+42|Mission_ArrangeIgorCombat|GamblinDen|2||
+43|Mission_IgorCombat|CA|2||
+44|Mission_ArrangeBankersCombat|GamblinDen|2||
+45|Mission_BankersCombat|QF|2||
+46|Mission_PressMeeting|Press|2||
+47|Mission_FaceTheMayor|DownTown|2||
+48|Mission_ApologizeMayor|TownHall|2||
+49|Mission_ProtectMayorTransport|DownTown|2||
+50|Mission_Ambush|Scrapyard|2||
+51|Mission_AttackTraitorius|Outskirts|2|v2-3-data|
+52|Mission_BeatPickus|Police|2|d2-1-data|bp
+53|Mission_DestroyMickus|Commercial|2|as1bp-1-data|
+54|Mission_ArrangeBankersCTF|GamblinDen|2|c6-1-data|
+55|Mission_BankersCTF|OM|2||
+56|Mission_TalkToTraitoriusAfterCTF|GamblinDen|2||
+57|Mission_IdentifyMerc|Outskirts|2||
+58|Mission_ProtectGus|Commercial|2|c13-1-data|
+59|Mission_IntoTheGDB|GDB|2|c13-2-data|gdb
+60|Mission_AskGus|Temple|2|ag-data|
+61|Mission_FindDtritusMatrix|Scrapyard|2|c18-1-data|
+62|Mission_ReinsertOwnMatrix|GDB|2|r1-1-data|ro
+63|Mission_TalkToDeepThroat|Temple|2|mro-1-data|
+64|Mission_TalkToMayor|TownHall|2|tm-data|tm
+65|Mission_DestroyPorkinsTransports|Commercial|2|t5-1-data|pt
+66|Mission_IntroHuman|Orbit|2|mdp-1-data|
+67|Mission_IntroHuman2|Press|2|p1x-data|ih2
+68|Mission_GetAuthorization|Police|2|as1ih-1-data|
+69|Mission_TalkToBoss|Press|3|tb-data|tb
+70|Mission_GetDataPart1|DownTown|3|tb2-1-data|gd1
+71|Mission_GetDataPart2|Bank|3|gd-1-data|gd2
+72|Mission_GetDataPart3|Commercial|3|gd2-2-data|gd3
+73|Mission_DistractHumphrey|DownTown|3|g3d-1-data|
+74|Mission_GetCrazyData|Press|3||
+75|Mission_Win1stRace|Commercial|3||
+76|Mission_Win2ndRace|Outskirts|3||
+77|Mission_ArrangeMortalRace|GamblinDen|3||
+78|Mission_MortalRace|FZ|3||
+79|Mission_BackFromMortalRace|GamblinDen|3||
+80|Mission_DestroyBadDebtors|Outskirts|3||
+81|Mission_InfiltrateBank|Bank|3|c3-1-data|ib
+82|Mission_MeetBerto|Scrapyard|3||
+83|Mission_DestroyStupidus|Commercial|3||
+84|Mission_BertoMassacre|DownTown|3||
+85|Mission_ReinsertOwnMatrix2|GDB|3||
+86|Mission_GoToPress|Press|3||
+87|Mission_DefeatCrazyGambler1|DownTown|3||
+88|Mission_DefeatCrazyGambler2|Scrapyard|3||
+89|Mission_DefeatCrazyGambler3|Commercial|3||
+90|Mission_WhoIsDeepThroat|Press|3||
+91|Mission_InitEpilogue|Police|3||
+92|Mission_DestroyHumphrey|Outskirts|3||
+93|Mission_WhoIsTheBaddie|Press|3||
+94|Mission_GoToGamblinDen|GamblinDen|3||
+95|Mission_DestroyCommSats1|Outskirts|3||
+96|Mission_DestroyCommSats2|Commercial|3||
+97|Mission_DestroyCommSats3|DownTown|3||
+98|Mission_GoWithHuman|Press|3|d2-6-data|gw
+99|Mission_BeforeFinalFight|GamblinDen|3|mgw-1-data|
+100|Mission_AfterFinalFight|GamblinDen|3||

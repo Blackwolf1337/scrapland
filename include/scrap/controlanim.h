@@ -83,6 +83,9 @@ int CAnimCtrl_Reset(CAnimCtrl *self, float frame);
 void CAnimCtrl_SetFrames(CAnimCtrl *self, int firstFrame, int frames);
 /* playing from the first frame and the first event */
 void CAnimCtrl_Start(CAnimCtrl *self);
+/* not in the original: at frame, the next event the first one of the list at or after it (a -mp2 client's rollback
+ * sets the frame of its own entity's animation, include/scrap/play.h) */
+void CAnimCtrl_SeekFrame(CAnimCtrl *self, float frame);
 /* the root position and rotation at frame (0 and the identity without them) */
 byte CAnimCtrl_GetPosRot(CAnimCtrl *self, float frame, vec3_t *pos, quat_t *rot);
 void CAnimCtrl_Stop(CAnimCtrl *self);

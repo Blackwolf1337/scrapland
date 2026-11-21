@@ -229,6 +229,11 @@ static void cWalkCharEntity_UpdateModel(cEntity *self) {
 	cWalkCharEntity *w = WChar(self);
 	cObjEntity *o = &w->wl.obj;
 
+	/* not in the original: a -mp2 client's replica of a character whose class has no model here (GDB: a member as a
+	 * bishop, the coop stand-in) */
+	if (g_Mp2 && !o->model.Model) {
+		return;
+	}
 	vec3_t ang = o->renderAng;
 	d.x = w->renderView.x - o->renderAng.x;
 	d.y = w->renderView.y - o->renderAng.y;

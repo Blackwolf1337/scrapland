@@ -1,6 +1,7 @@
 # shellcheck shell=bash
-# pa into the conversor and on when its new character is there (AUTO_PRE "conv", in AUTO_MID as $CONV_A)
-export CONV_A='@|inst @ usenear $a DM_Conversion_Point|coop: player $a enters the conversor|30|pa uses the conversor;;@|-|coop: player $a plays as .*a character of the scripts|90|pa has its new character'
+# pa into the conversor and on when its new character is there (AUTO_PRE "conv", in AUTO_MID as $CONV_A); -mp2: the
+# conversor's interface goes by the UI channel
+export CONV_A='@|inst @ usenear $a DM_Conversion_Point|coop: player $a enters the conversor%ui: the conv opens on the client of player $a|30|pa uses the conversor;;@|-|coop: player $a plays as .*a character of the scripts|90|pa has its new character'
 export AUTO_PRE_Mission_IgorCombat='switch $a;switch $b' AUTO_A_Mission_IgorCombat='1 red' AUTO_B_Mission_IgorCombat='2 red'
 export AUTO_A_Mission_Massacre="1 @Traffic" AUTO_B_Mission_Massacre="2 @Traffic"
 export AUTO_PRE_Mission_BankersCombat='switch $a;switch $b' AUTO_B_Mission_BankersCombat='2 red'

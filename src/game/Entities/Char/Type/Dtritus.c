@@ -3,9 +3,12 @@
  * motion (include/scrap/chartype.h). The native DtritusActionPress sits in the code of Desktop.cpp.
  */
 #include "scrap/chartype.h"
+#include "scrap/fx.h"
 #include "scrap/fxelements.h"
 #include "scrap/play.h"
 #include "scrap/players.h"
+#include "scrap/pres.h"
+#include "scrap/repent.h"
 #include "scrap/primitive.h"
 #include "scrap/vehicleattack.h"
 #include "scrap/staticinit.h"
@@ -111,6 +114,11 @@ static void ChType_DtritusKill(cAbstractFile *params) {
 		cam->quakeTime = 0.0500000007f;
 		cPad_Rumble(&g_Pads[0], 1.0f, 0.5f, 0.5f);
 	}
+	FX_DtritusKill(g_DtritusEnt, e);
+}
+
+static void FX_DtritusKillRun(cEntity *d, cEntity *e) {
+	vec3_t t;
 	cObjElementFXKill *el = FX_DropNew(g_FXDTritusKillFile, 1.0f);
 	if (!el) {
 		return;
@@ -119,8 +127,17 @@ static void ChType_DtritusKill(cAbstractFile *params) {
 		el->started = 1;
 	}
 	cObjElementFXKill_Start(el, e);
-	const vec3_t *ma = Obj_GetAng(g_DtritusEnt, &t1);
+	const vec3_t *ma = Obj_GetAng(d, &t);
 	cObjElementFXKill_SetAngles(el, ma->x + 0.0f, ma->y + M_PI_F, ma->z + 0.0f);
+}
+
+void FX_DtritusKill(cEntity *d, cEntity *e) {
+	if (g_Mp2 && d && e) {
+		Pres_FxEnt(PRES_FX_KILL, d->name, e->name, 0.0f, 0, NULL);
+	}
+	g_PresIn++;
+	FX_DtritusKillRun(d, e);
+	g_PresIn--;
 }
 
 /* params: D-Tritus, an event, a float: he stops, the world speed and his view back */

@@ -21,6 +21,7 @@
 #include "scrap/model.h"
 #include "scrap/netaudit.h"
 #include "scrap/netclass.h"
+#include "scrap/coop.h"
 #include "scrap/netrep.h"
 #include "scrap/play.h"
 #include "scrap/players.h"
@@ -106,7 +107,7 @@ static byte RepEnt_Camera(cEntity *e) {
 }
 
 int RepEnt_Kind(cEntity *e) {
-	if (e->deadNode.target || !e->name || RepEnt_Camera(e)) {
+	if (e->deadNode.target || !e->name || RepEnt_Camera(e) || Coop_IsStandIn(e)) {
 		return 0;
 	}
 	if (Entity_IsType(e, TYEN_CAR)) {

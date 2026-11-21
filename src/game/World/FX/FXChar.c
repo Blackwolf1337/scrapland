@@ -2438,6 +2438,11 @@ static cEntity *FXC_ReadParams(cAbstractFile *f, char *name, char *name2, void *
 	cAbstractFile_ReadString(f, name2, 0x80);
 	VFile_Read(f, v, 4);
 	cEntity *ch = World_FindEntity(name);
+	/* not in the original: a -mp2 client's event of a character the server has already taken away (a possession's
+	 * old character): nothing */
+	if (!ch && g_Mp2) {
+		return NULL;
+	}
 	CHECK(ch);
 	return ch;
 }
@@ -2463,6 +2468,9 @@ static void FX_CharacterBlaBliBla(cAbstractFile *params) {
 	vec3_t tmp, rot, in, p, n;
 
 	cEntity *ch = FXC_ReadParams(params, name, name2, &unused);
+	if (!ch) {
+		return;
+	}
 	CHECK(Entity_IsType(ch, TYEN_WALKCHAR));
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXCharacterBlaBliBlaFile);
 	vec3_t cp = FXC_CamPos();
@@ -2538,6 +2546,9 @@ static void FX_CharacterDazed(cAbstractFile *params) {
 	vec3_t tmp, rot, in, off;
 
 	cEntity *ch = FXC_ReadParams(params, name, name2, &time);
+	if (!ch) {
+		return;
+	}
 	CHECK(Entity_IsType(ch, TYEN_WALKCHAR));
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXCharacterDazedFile);
 	vec3_t cp = FXC_CamPos();
@@ -2603,6 +2614,9 @@ static void FX_CharacterTeleport(cAbstractFile *params) {
 	vec3_t tmp;
 
 	cEntity *ch = FXC_ReadParams(params, name, name2, &mode);
+	if (!ch) {
+		return;
+	}
 	CHECK(Entity_IsType(ch, TYEN_WALKCHAR));
 	cEntity *tp = World_FindEntity(name2);
 	CHECK(tp);

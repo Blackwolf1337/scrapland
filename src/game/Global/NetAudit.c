@@ -99,6 +99,30 @@ static naEntry *NA_Find(netAuditCat_t cat, const char *prefix, const char *name,
 	return NULL;
 }
 
+/* SCRAP_AUDIT_LOG=<key start>[,<key start>...]: the first count of a key that starts so is written to the console
+ * ("audit: <key>"), so a gate finds it in the logs of every game of a run */
+static void NA_LogFirst(const char *prefix, const char *name) {
+	static const char *want;
+	char key[NA_KEY];
+	if (!want) {
+		want = getenv("SCRAP_AUDIT_LOG");
+		want = want ? want : "";
+	}
+	if (!*want) {
+		return;
+	}
+	snprintf(key, sizeof(key), "%s%s", prefix, name ? name : "");
+	for (const char *w = want; *w;) {
+		const char *end = strchr(w, ',');
+		size_t n = end ? (size_t)(end - w) : strlen(w);
+		if (n && !strncmp(key, w, n)) {
+			Con_Printf("audit: %s\n", key);
+			return;
+		}
+		w += end ? n + 1 : n;
+	}
+}
+
 static void NA_Count(netAuditCat_t cat, const char *prefix, const char *name, byte byText) {
 	/* a presentation sink a replay of a -mp2 client's own entity reached: played a second time (the replay's sinks
 	 * are muted before they count, include/scrap/play.h) */
@@ -112,7 +136,9 @@ static void NA_Count(netAuditCat_t cat, const char *prefix, const char *name, by
 		e = NA_Find(cat, prefix, "?", 0);
 	}
 	if (e) {
-		e->count++;
+		if (!e->count++) {
+			NA_LogFirst(prefix, e->name);
+		}
 	} else {
 		na_lost++;
 	}
