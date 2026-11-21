@@ -41,7 +41,9 @@
  * PYF_ENTRY; SScorer.Fade its engine entry, stage 7), the ones given to Scene, Alarm and CharConversor as callbacks
  * (PO_HOOK) are values of their variables (OBJLIB 5 (9c)). MapSnd.SndElements and MapPlanes are LevelCommon's.
  */
+#include "scrap/coop.h"
 #include "scrap/scrap.h"
+#include "scrap/party.h"
 #include "Levels.h"
 
 /* the level of the refs of this file's modules (PORT_LCALL, PORT_LOWN) */
@@ -1564,6 +1566,16 @@ static byte GetAuthorization_TalkPepe(const nativeVal_t *a, nativeVal_t *out) {
 		PORT_CALL(Speech, AutoSpeech, NULL, "vvvv", &a[0], &a[1], &a[2], &a[3]);
 }
 
+/* the player healed and out of harm for the way out of the jail (Party_All: every member of a coop party) */
+static byte Ga_Shield(void *ctx) {
+	nativeVal_t usr;
+	(void)ctx;
+	Native_SetNone(&usr);
+	byte ok = Mode_UsrHandle(&usr) && LvN_SetI(&usr, "Life", 100) && LvN_SetI(&usr, "Invulnerable", 1);
+	Native_Free(&usr);
+	return ok;
+}
+
 /* StartScene(Door, CharName): through the security door: the scene MeetHuman the first time (GoToPress at its
  * end), else straight to the metro */
 static byte GetAuthorization_StartScene(const nativeVal_t *a, nativeVal_t *out) {
@@ -1590,8 +1602,8 @@ static byte GetAuthorization_StartScene(const nativeVal_t *a, nativeVal_t *out) 
 			Mode_GVarSetS("EscapeEvent", "Scene.AbortScene");
 	}
 	Native_SetNone(&usr);
-	byte ok = LvN_PutI(GA, "scenePlayed", 1) && Po_Fade(lv_clear, lv_black, 0.5) && Mode_UsrHandle(&usr) && LvN_SetI(&usr, "Life", 100) &&
-		LvN_SetI(&usr, "Invulnerable", 1) && PO_LATER1(0.75, GA, "GoToPress", &usr);
+	byte ok = LvN_PutI(GA, "scenePlayed", 1) && Po_Fade(lv_clear, lv_black, 0.5) && Party_All(Ga_Shield, NULL) && Mode_UsrHandle(&usr) &&
+		PO_LATER1(0.75, GA, "GoToPress", &usr);
 	Native_Free(&usr);
 	return ok;
 }
@@ -1625,6 +1637,27 @@ static byte Po_OnFloor(const nativeVal_t *h) {
 	return ok;
 }
 
+/* the player (usr, or in a coop party each member, the later ones beside the first) out of harm, in front of the jail */
+typedef struct {
+	const nativeVal_t *usr;
+	int n;
+} gaOut_t;
+
+static byte Ga_OutOfJail(void *ctx) {
+	gaOut_t *o = ctx;
+	nativeVal_t m, an;
+	Native_SetNone(&m);
+	Native_SetNone(&an);
+	int same = Mode_UsrHandle(&m) && Mode_VGet(o->usr, "Name", &an) ? Mode_UsrNameIs(&m, &an) : -1;
+	const nativeVal_t *u = same ? o->usr : &m;
+	int k = same ? 0 : ++o->n;
+	byte ok = same < 0 ? 0 : !Native_True(u) || (LvN_SetI(u, "Invulnerable", 0) && LvN_SetInts3(u, "Pos", 4227 + 150 * k, -1771, 28400) &&
+		LvN_SetInts3(u, "Ang", 0, 160, 0) && Po_OnFloor(u));
+	Native_Free(&m);
+	Native_Free(&an);
+	return ok;
+}
+
 /* GoToPress(usr): the door closes; the player and the human out of the jail, the human follows him to the metro */
 static byte GetAuthorization_GoToPress(const nativeVal_t *a, nativeVal_t *out) {
 	nativeVal_t e, h;
@@ -1641,10 +1674,11 @@ static byte GetAuthorization_GoToPress(const nativeVal_t *a, nativeVal_t *out) {
 	if (!Native_True(&a[0])) {
 		return 1;
 	}
+	gaOut_t out1 = { &a[0], 0 };
 	int played = LvN_GEqI(GA, "scenePlayed", 0);
 	if (played < 0 || !LV_COM(played ? "Mission_FirstMeetHuman_RemoteMessage1" : "Mission_FirstMeetHuman_RemoteMessage2", "DeepThroat",
-		Mission_GetAuthorization, GoToPress2, LvN_NoArgs()) || !LvN_SetI(&a[0], "Invulnerable", 0) || !LvN_SetInts3(&a[0], "Pos", 4227, -1771, 28400) ||
-		!LvN_SetInts3(&a[0], "Ang", 0, 160, 0) || !Po_OnFloor(&a[0]) || !Mode_Import("MissionsFuncs") || !Mode_G(GA, "human", &h)) {
+		Mission_GetAuthorization, GoToPress2, LvN_NoArgs()) || !Party_All(Ga_OutOfJail, &out1) || !Mode_Import("MissionsFuncs") ||
+		!Mode_G(GA, "human", &h)) {
 		return 0;
 	}
 	ok = LvN_SetInts3(&h, "Pos", 4227, -1771, 28866) && LvN_SetInts3(&h, "Ang", 0, 0, 0);
@@ -2006,9 +2040,9 @@ static byte JailBreak_AfterBrowseNPC(const nativeVal_t *a, nativeVal_t *out) {
 		return 0;
 	}
 	if (in) {
-		SaveVar_Set("Char", "Dtritus");
+		Coop_SetChar("Dtritus");
 	} else {
-		SaveVar_Set("Char", "Berto");
+		Coop_SetChar("Berto");
 		Mode_Lang("Generics_NoMatrix", &v);
 		ok = Mode_SetSaveVar("InitialMessage", &v);
 		Native_Free(&v);
@@ -2727,7 +2761,7 @@ static byte PoliceBossCheats_InitAfterPhoto2(const nativeVal_t *a, nativeVal_t *
 	static const int to[4] = { 255, 255, 255, 0 };
 	nativeVal_t un, sp;
 	(void)out;
-	SaveVar_Set("Char", "Dtritus");
+	Coop_SetChar("Dtritus");
 	Native_SetNone(&un);
 	Native_SetNone(&sp);
 	byte ok = Mode_VGet(&a[0], "Name", &un) && Mode_G(PC, "SpawnConversionPoint", &sp) &&

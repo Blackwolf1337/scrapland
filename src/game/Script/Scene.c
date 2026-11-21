@@ -865,6 +865,13 @@ static byte Sc_Invulnerable(const char *module, const char *var, long i) {
 	return ok;
 }
 
+/* the ship of the player, the player and Sputnik cannot be hurt (i 1) or can again (i 0); not in the original: in a
+ * coop party every member's (Party_All, as Sc_HideMembers hides them all) */
+static byte Sc_InvulnerableAll(void *i) {
+	long on = *(const long *)i;
+	return Sc_Invulnerable("Parking", "PlayerShip", on) && Sc_Invulnerable(NULL, NULL, on) && Sc_Invulnerable("Sputnik", "spt", on);
+}
+
 /* not in the original: on a coop instance every member's entity hides with the player's, as the single player's input
  * stops for the scene (the other members would fight on: ProtectMayorTransport's mercenaries the scene shows) */
 static byte Sc_HideMembers(void) {
@@ -927,9 +934,11 @@ static byte Sc_InitOutDoorScene(const nativeVal_t *hide) {
 		if (!LvN_ModGet("Sputnik", "spt", o) || !Sc_HideOf(o)) {
 			return Mode_Done(&t, 0);
 		}
-	} else if (!Sc_Invulnerable("Parking", "PlayerShip", 1) || !Sc_Invulnerable(NULL, NULL, 1) ||
-		!Sc_Invulnerable("Sputnik", "spt", 1)) {
-		return Mode_Done(&t, 0);
+	} else {
+		long one = 1;
+		if (!Party_All(Sc_InvulnerableAll, &one)) {
+			return Mode_Done(&t, 0);
+		}
 	}
 	Native_Free(v);
 	Mode_ActionSetName(v);
@@ -945,7 +954,8 @@ static byte Sc_EndOutDoorScene(void) {
 		return Mode_Done(&t, 0);
 	}
 	if (Native_True(inv)) {
-		if (!Sc_Invulnerable("Parking", "PlayerShip", 0) || !Sc_Invulnerable(NULL, NULL, 0) || !Sc_Invulnerable("Sputnik", "spt", 0)) {
+		long zero = 0;
+		if (!Party_All(Sc_InvulnerableAll, &zero)) {
 			return Mode_Done(&t, 0);
 		}
 	} else if (!PORT_OWN(Scene, UnhideChars, NULL, "")) {

@@ -878,7 +878,7 @@ static byte Mf_StartSuperDeal(const nativeVal_t *map, const nativeVal_t *mission
 		return Mode_Done(&t, 0);
 	}
 	SaveVar_Set("Spawn", "DM_Player_Spawn_Beginning");
-	SaveVar_Set("Char", "Dtritus");
+	Coop_SetChar("Dtritus");
 	SaveVar_Set("ComeFrom", "");
 	return Mode_Done(&t, Mode_SetSaveVar("SuperDealType", type) && PORT_CALL(SaveGame, QWayPoint, NULL, "") &&
 		PORT_OWN(MissionsFuncs, SetNextMission, NULL, "vv", mission, map) && Mode_Cat(&t, level, 2, Mode_S(&t, "Levels/"), map) &&
