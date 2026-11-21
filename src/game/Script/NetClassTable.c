@@ -3142,6 +3142,7 @@ static const netClassRow_t nc_playerread[] = {
 	{ "Alarm.AbortMissionCallback", NC_WORLD },
 	{ "Alarm_SetOnIn", NC_NEAREST },
 	{ "Alarm_Update", NC_NEAREST },
+	{ "Ambush_CreateProbeN", NC_PARTY },
 	{ "Bankers_LaunchIgorDefeatedSpeechC", NC_PARTY },
 	{ "BeatPickus_OnThugRespawn", NC_PARTY },
 	{ "Bp_SetThugsState", NC_PARTY },

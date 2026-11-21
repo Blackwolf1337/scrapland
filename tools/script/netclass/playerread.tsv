@@ -272,3 +272,4 @@ Alarm.AbortMissionCallback	WORLD	a mission's callback of the world's context; a 
 Menu.MissionScorerCall	WORLD	the HUD callback of the world's context; a player's own HUD reads it in its context
 # stage 5b part 2, Mission_Ambush (50) after a member's flight out of DownTown
 Pk_Arrive	PARTY	a level's start after an arrival from another outdoor level: the player's ship there (none on a coop instance's start)
+Ambush_CreateProbeN	PARTY	a probe far from the player: from the party's member (a timer of the level, no member in context)
