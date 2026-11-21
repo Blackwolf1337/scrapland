@@ -1,7 +1,8 @@
 /*
  * The factions of the freeroam mode in the game: the instance's side (membership, abilities, crimes and the wanted
  * level, the status to the clients) and the client's (the keys, the text line, the siren of the players' ships), see
- * include/scrap/faction.h. Not in the original.
+ * include/scrap/faction.h. A player's state is its context's (cPlayer.fac); -mp2 sends the status through the
+ * presentation interface and takes the keys through the UI channel. Not in the original.
  */
 #include <math.h>
 #include <stdio.h>
@@ -29,6 +30,7 @@
 #include "scrap/nodesworld.h"
 #include "scrap/play.h"
 #include "scrap/players.h"
+#include "scrap/pres.h"
 #include "scrap/replicate.h"
 #include "scrap/repent.h"
 #include "scrap/scenelist.h"
@@ -40,6 +42,7 @@
 #include "scrap/text.h"
 #include "scrap/texts.h"
 #include "scrap/travel.h"
+#include "scrap/uichan.h"
 #include "scrap/vehicleattack.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
@@ -212,7 +215,6 @@ typedef struct FrYield {
 static struct {
 	byte freeroam;
 	byte policePvp, factionPvp;
-	FrPlayer pl[PLAYERS_MAX];
 	struct {
 		int8_t player;
 		int8_t crime;
@@ -253,7 +255,8 @@ const char *Faction_ModeName(void) {
 }
 
 FrPlayer *Fr_Player(int i) {
-	return i >= 0 && i < PLAYERS_MAX ? &fr.pl[i] : NULL;
+	cPlayer *c = Players_State(i);
+	return c ? &c->fac : NULL;
 }
 
 double Fr_Now(void) {
@@ -549,7 +552,7 @@ uint64_t Faction_DownedTicks(int i) {
 	}
 	/* while another player that can revive is in the level */
 	for (int j = 0; j < PLAYERS_MAX; j++) {
-		if (j != i && Players_Get(j) && Faction_Cooldown(t, fr.pl[j].faction, FA_REVIVE) >= 0.0f) {
+		if (j != i && Players_Get(j) && Faction_Cooldown(t, Fr_Player(j)->faction, FA_REVIVE) >= 0.0f) {
 			return (uint64_t)(t->downed * NETREP_TICK_HZ);
 		}
 	}
@@ -558,11 +561,23 @@ uint64_t Faction_DownedTicks(int i) {
 
 /* ---- the messages to the client ---- */
 
+/* a status message to player i: -mp2 as a record of the presentation interface (include/scrap/pres.h), in order with
+ * the player's other records, else on the faction's own channel */
+static void Fr_Out(int i, const uint8_t *buf, int size) {
+	if (g_Mp2) {
+		Pres_Faction((uint64_t)1 << i, buf, size);
+		return;
+	}
+	int conn = Rep_PlayerConn(i);
+	if (conn >= 0 && Instance_Host()) {
+		Net2_Send(Instance_Host(), conn, REP_CH_RELIABLE, buf, size);
+	}
+}
+
 static void Fr_SendText(int i, int kind, int text, int num, const char *name, const char *name2) {
 	uint8_t buf[192];
 	NetRepBuf w;
-	int conn = Rep_PlayerConn(i);
-	if (conn < 0 || !Instance_Host()) {
+	if (Rep_PlayerConn(i) < 0) {
 		return;
 	}
 	NetRepBuf_Init(&w, buf, sizeof(buf));
@@ -573,7 +588,7 @@ static void Fr_SendText(int i, int kind, int text, int num, const char *name, co
 	NetRep_PutStr(&w, name ? name : "");
 	NetRep_PutStr(&w, name2 ? name2 : "");
 	if (!w.bad) {
-		Net2_Send(Instance_Host(), conn, REP_CH_RELIABLE, buf, w.size);
+		Fr_Out(i, buf, w.size);
 	}
 }
 
@@ -587,7 +602,7 @@ void Fr_Notice(int i, int text, int num, const char *name, const char *name2) {
 void Fr_News(int text, int num, const char *name, const char *name2) {
 	char line[FR_TEXT];
 	for (int i = 0; i < PLAYERS_MAX; i++) {
-		if (Players_Get(i) || fr.pl[i].dead) {
+		if (Players_Get(i) || Fr_Player(i)->dead) {
 			Fr_SendText(i, FACTION_ST_NEWS, text, num, name, name2);
 		}
 	}
@@ -595,9 +610,45 @@ void Fr_News(int text, int num, const char *name, const char *name2) {
 	Con_Printf("factions: news: %s\n", line);
 }
 
+/* -mp2: the effect through its own sink, which sends it to the players near (include/scrap/pres.h) as single player
+ * plays it */
+static void Fr_FxSink(int fx, cEntity *a, cEntity *b) {
+	switch (fx) {
+	case FFX_HEAL:
+		FX_BishopSellLife(a, b);
+		break;
+	case FFX_RAY:
+		FX_BishopRay(a, b, &b->pos);
+		break;
+	case FFX_REVIVE:
+		FX_BishopSellLife(NULL, b);
+		break;
+	case FFX_STEAL:
+		FX_BankerSteal(a, b);
+		break;
+	case FFX_SUCK:
+		FX_BankMasterSuction(a, b);
+		break;
+	case FFX_MONEY:
+		FX_MoneyTransfer(a, b, 1.0f);
+		break;
+	case FFX_PHOTO:
+		FX_BertoFlash(a, b);
+		break;
+	default:
+		break;
+	}
+}
+
 void Fr_Fx(int fx, cEntity *a, cEntity *b) {
 	uint8_t buf[8];
 	NetRepBuf w;
+	if (g_Mp2) {
+		if (b && (a || fx == FFX_REVIVE || fx == FFX_HEAL)) {
+			Fr_FxSink(fx, a, b);
+		}
+		return;
+	}
 	if (!Instance_Host()) {
 		return;
 	}
@@ -619,7 +670,7 @@ void Fr_Fx(int fx, cEntity *a, cEntity *b) {
 static void Fr_SendState(Net2Host *host, int i) {
 	uint8_t buf[96];
 	NetRepBuf w;
-	FrPlayer *p = &fr.pl[i];
+	FrPlayer *p = Fr_Player(i);
 	const FactionTable *t = Faction_Table();
 	int conn = Rep_PlayerConn(i);
 	if (conn < 0 || !t) {
@@ -649,7 +700,8 @@ static void Fr_SendState(Net2Host *host, int i) {
 	if (w.bad || (p->sentLen == w.size && !memcmp(buf, p->sent, (size_t)w.size))) {
 		return;
 	}
-	Net2_Send(host, conn, REP_CH_RELIABLE, buf, w.size);
+	(void)host;
+	Fr_Out(i, buf, w.size);
 	memcpy(p->sent, buf, (size_t)w.size);
 	p->sentLen = w.size;
 }
@@ -703,7 +755,7 @@ int Fr_Nearest(int i, cEntity *e, float reach, float cone, byte (*test)(int i, i
 }
 
 static void Fr_Side(int i, FactionSide *s) {
-	FrPlayer *p = &fr.pl[i];
+	FrPlayer *p = Fr_Player(i);
 	s->faction = p->faction;
 	s->wanted = p->level;
 	s->bounty = p->bounty;
@@ -723,7 +775,7 @@ byte Fr_MayAffect(int i, int j, byte tell) {
 		return 1;
 	}
 	if (tell) {
-		Fr_Notice(i, FT_PROTECTED, 0, fr.pl[j].name, NULL);
+		Fr_Notice(i, FT_PROTECTED, 0, Fr_Player(j)->name, NULL);
 	}
 	return 0;
 }
@@ -738,7 +790,7 @@ int Faction_PvP(cEntity *attacker, cEntity *victim) {
 
 void Fr_Deed(int i) {
 	char rank[32];
-	FrPlayer *p = &fr.pl[i];
+	FrPlayer *p = Fr_Player(i);
 	const FactionTable *t = Faction_Table();
 	int before = Fr_Rank(p);
 	p->deeds++;
@@ -868,7 +920,7 @@ void Faction_Input(int i, cEntity *e, NetRepInput *in) {
 /* ---- the abilities of the police ---- */
 
 void Fr_Rebody(int i, const vec3_t *pos, float yaw) {
-	FrPlayer *p = &fr.pl[i];
+	FrPlayer *p = Fr_Player(i);
 	p->siren = 0;
 	p->ship = NULL;
 	Rep_Rebody(i, pos, yaw);
@@ -876,7 +928,7 @@ void Fr_Rebody(int i, const vec3_t *pos, float yaw) {
 
 static int Fr_Join(int i, cEntity *e) {
 	const FactionTable *t = Faction_Table();
-	FrPlayer *p = &fr.pl[i];
+	FrPlayer *p = Fr_Player(i);
 
 	if (NetPl_Kind(e) != NETREP_CHAR) {
 		Fr_Notice(i, FT_ON_FOOT, 0, NULL, NULL);
@@ -924,7 +976,7 @@ static const char *Fr_Model(cEntity *v) {
 }
 
 static int Fr_Siren(int i, cEntity *e) {
-	FrPlayer *p = &fr.pl[i];
+	FrPlayer *p = Fr_Player(i);
 	if (NetPl_Kind(e) != NETREP_SHIP || Faction_OfShip(Faction_Table(), Fr_Model(e)) != p->faction) {
 		Fr_Notice(i, FT_NEED_SHIP, 0, NULL, NULL);
 		return 0;
@@ -937,7 +989,7 @@ static int Fr_Siren(int i, cEntity *e) {
 }
 
 static int Fr_Armour(int i, cEntity *e) {
-	FrPlayer *p = &fr.pl[i];
+	FrPlayer *p = Fr_Player(i);
 	if (NetPl_Kind(e) != NETREP_CHAR) {
 		Fr_Notice(i, FT_ON_FOOT, 0, NULL, NULL);
 		return 0;
@@ -950,7 +1002,7 @@ static int Fr_Armour(int i, cEntity *e) {
 
 static byte Fr_IsWanted(int i, int j) {
 	(void)i;
-	return fr.pl[j].level > 0;
+	return Fr_Player(j)->level > 0;
 }
 
 /* the arrested player to the jail of the faction's office level: the travel there (a coordinator's world; the notice
@@ -974,9 +1026,9 @@ static void Fr_Jail(int j, const FactionDef *f, int fine) {
 		return;
 	}
 	/* the state the travel hands over carries the notice */
-	fr.pl[j].jailFine = fine;
+	Fr_Player(j)->jailFine = fine;
 	byte gone = Travel_Coordinated() && Travel_Request(e->name, f->office, f->jail, "");
-	fr.pl[j].jailFine = -1;
+	Fr_Player(j)->jailFine = -1;
 	if (gone) {
 		Con_Printf("factions: player %d sent to the jail of %s\n", j, f->office);
 		return;
@@ -988,7 +1040,7 @@ static void Fr_Jail(int j, const FactionDef *f, int fine) {
 
 static int Fr_Arrest(int i, cEntity *e) {
 	const FactionTable *t = Faction_Table();
-	FrPlayer *p = &fr.pl[i];
+	FrPlayer *p = Fr_Player(i);
 
 	if (p->level > 0) {
 		Fr_Notice(i, FT_YOU_ARE_WANTED, 0, NULL, NULL);
@@ -999,7 +1051,7 @@ static int Fr_Arrest(int i, cEntity *e) {
 		Fr_Notice(i, FT_NO_SUSPECT, 0, NULL, NULL);
 		return 0;
 	}
-	FrPlayer *q = &fr.pl[j];
+	FrPlayer *q = Fr_Player(j);
 	int level = q->level;
 	int fine = t->fine * level;
 	int has = Fr_Money(j);
@@ -1061,7 +1113,7 @@ static int Fr_Backup(int i, cEntity *e) {
 }
 
 static int Fr_Ship(int i, cEntity *e) {
-	FrPlayer *p = &fr.pl[i];
+	FrPlayer *p = Fr_Player(i);
 	const FactionTable *t = Faction_Table();
 	if (NetPl_Kind(e) != NETREP_CHAR) {
 		Fr_Notice(i, FT_ON_FOOT, 0, NULL, NULL);
@@ -1163,6 +1215,10 @@ static void Fr_Request(int i, int a) {
 	}
 }
 
+void Faction_Key(int i, int a) {
+	Fr_Request(i, a);
+}
+
 byte Faction_Message(Net2Host *host, int conn, const uint8_t *data, int size) {
 	(void)host;
 	if (size < 1 || data[0] != FACTION_MSG_REQ) {
@@ -1206,7 +1262,7 @@ static void Fr_CrimeOf(cEntity *victim, int j, int i, byte died) {
 	FrPlayer *p = Fr_Player(i);
 	int crime;
 	if (j >= 0) {
-		FrPlayer *q = &fr.pl[j];
+		FrPlayer *q = Fr_Player(j);
 		q->lastBy = i;
 		q->lastByJoin = Players_Joined(i);
 		q->lastByTime = Fr_Now();
@@ -1259,7 +1315,7 @@ static void Fr_Crimes(void) {
 	double now = Fr_Now();
 	for (int k = 0; k < fr.ncrimes; k++) {
 		int i = fr.crimes[k].player;
-		FrPlayer *p = &fr.pl[i];
+		FrPlayer *p = Fr_Player(i);
 		if (FactionWanted_Crime(t, &p->wanted, fr.crimes[k].crime, now)) {
 			p->lastCrime = now;
 			Con_Printf("factions: player %d crime %s, wanted points %.1f\n", i, Faction_CrimeName(fr.crimes[k].crime),
@@ -1268,7 +1324,7 @@ static void Fr_Crimes(void) {
 	}
 	fr.ncrimes = 0;
 	for (int i = 0; i < PLAYERS_MAX; i++) {
-		FrPlayer *p = &fr.pl[i];
+		FrPlayer *p = Fr_Player(i);
 		if (!Players_Get(i)) {
 			continue;
 		}
@@ -1301,7 +1357,7 @@ uint8_t Faction_Flags(cEntity *e) {
 	if (i < 0) {
 		return 0;
 	}
-	return (Entity_IsType(e, TYEN_CAR) && Fr_SirenShip(&fr.pl[i], i) ? NETREP_FL_SIREN : 0) | FrD_Flags(i);
+	return (Entity_IsType(e, TYEN_CAR) && Fr_SirenShip(Fr_Player(i), i) ? NETREP_FL_SIREN : 0) | FrD_Flags(i);
 }
 
 /* traffic within the siren's radius moves away from the ship for a while, then goes back to its route */
@@ -1325,7 +1381,7 @@ static void Fr_Sirens(uint64_t tick) {
 		return;
 	}
 	for (int i = 0; i < PLAYERS_MAX; i++) {
-		FrPlayer *p = &fr.pl[i];
+		FrPlayer *p = Fr_Player(i);
 		cEntity *s = Fr_SirenShip(p, i);
 		if (!s) {
 			p->siren = 0;
@@ -1371,7 +1427,7 @@ void Faction_Tick(Net2Host *host, uint64_t tick) {
 	Fr_Sirens(tick);
 	FrD_Tick(tick);
 	for (int i = 0; i < PLAYERS_MAX; i++) {
-		FrPlayer *p = &fr.pl[i];
+		FrPlayer *p = Fr_Player(i);
 		if (!host || !Players_Get(i)) {
 			continue;
 		}
@@ -1664,8 +1720,9 @@ void Faction_ClientMessage(const uint8_t *data, int size) {
 }
 
 static void Fr_ClientSend(int a) {
-	uint8_t buf[2] = { FACTION_MSG_REQ, (uint8_t)a };
-	if (a >= 0 && Watch_SendReliable(buf, sizeof(buf))) {
+	/* -mp2: the UI channel (include/scrap/uichan.h) */
+	uint8_t req[2] = { FACTION_MSG_REQ, (uint8_t)a }, key[3] = { UI_MSG, UI_C_KEY, (uint8_t)a };
+	if (a >= 0 && (g_Mp2 ? Watch_SendReliable(key, sizeof(key)) : Watch_SendReliable(req, sizeof(req)))) {
 		Con_Printf("factions: request %s\n", Faction_AbilityName(a));
 	}
 }
@@ -1857,6 +1914,7 @@ void Faction_EntityFlags(cEntity *e, uint8_t flags) {
 	byte on = (flags & NETREP_FL_SIREN) != 0;
 	if (s && s->siren != on) {
 		s->siren = on;
+		Con_Printf("factions: siren %s on %s\n", on ? "on" : "off", e->name);
 		if (strstr(Veh(e)->typeName, "Poli")) {
 			Fr_SirenSound(e, on);
 		}

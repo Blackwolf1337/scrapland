@@ -736,6 +736,14 @@ static void Rep_SetVarS(cEntity *e, const char *var, const char *value) {
 static void Rep_SetOwn(RepPlayer *pl, cEntity *e) {
 	pl->own = e;
 	Str_Copy(pl->ownName, e ? e->name : "", sizeof(pl->ownName));
+	/* -mp2: the player's follow camera (its viewer, include/scrap/viewers.h) follows its new entity, as single player's
+	 * scripts point it at a new character or ship; a character the instance made itself (a rebody of the factions, a
+	 * respawn) or a switch of the instance left it on the old one */
+	cPlayer *c = g_Mp2 ? Players_Ctx((int)(pl - rep.pl)) : NULL;
+	cEntity *cam = c && e && c->camName[0] ? World_FindEntity(c->camName) : NULL;
+	if (cam && Entity_IsType(cam, FCAM_CLASSNAME) && cCamEntity_GetTarget(cam) != e) {
+		cCamEntity_SetTarget(cam, e);
+	}
 }
 
 /* the entity the player was given while it is still in the world, else NULL */

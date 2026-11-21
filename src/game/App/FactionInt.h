@@ -11,7 +11,7 @@
 #include "scrap/mathlib.h"
 #include "scrap/players.h"
 
-#define FR_NAME 64
+#define FR_NAME FACTION_PLNAME
 #define FR_TEXT 160
 
 /* every text a player sees (g_FactionTexts of Faction.c; a writing pass comes later): notices, headlines (FN_), the
@@ -35,49 +35,8 @@ enum {
 	FT_HUD_KEYS, FT_DESK, FT_COUNT
 };
 
-/* a player of the instance */
-typedef struct FrPlayer {
-	int faction;					/* FACTION_NONE */
-	int deeds;
-	char name[FR_NAME];
-	char charCls[FACTION_NAME];		/* the class it spawns as when it is no member, "" Dtritus */
-	byte armoured;
-	byte siren;
-	byte callShip;					/* the next ship it calls is its faction's ship */
-	cEntity *ship;					/* its ship of the siren (compared, read while World_FindEntity(shipName) is it) */
-	char shipName[FR_NAME];
-	FactionWanted wanted;
-	int level;						/* the wanted level of the last tick */
-	int jailFine;					/* arrested and sent to the jail of another level with this fine: its notice
-									   there (state key jailfine), -1 */
-	double ready[FA_COUNT];			/* the instance time the ability is ready again */
-	uint8_t sent[96];				/* the last status sent */
-	int sentLen;
-	uint32_t requests, done;
-	/* the deeds of the other factions */
-	int bounty;						/* money on it */
-	int64_t bountyEnds;				/* s of the Unix epoch */
-	int debt;
-	byte permit;
-	int lastMoney;					/* the money of the last tick (a loan is paid from the income since) */
-	byte moneyKnown;
-	char jobLevel[FACTION_NAME], jobDummy[FACTION_NAME];	/* a courier job, "" none */
-	int64_t jobStart, jobEnds;		/* s of the Unix epoch */
-	double lastCrime;				/* the instance time of its last crime, < 0 none */
-	int lastBy;						/* the player that hurt it last, -1 */
-	uint16_t lastByJoin;
-	double lastByTime;
-	byte dead;						/* its body lies at deadPos (a revive brings it back there) */
-	vec3_t deadPos;
-	float deadYaw;
-	byte home;						/* its next character starts at the jail dummy of its faction */
-	byte revived;
-	int fullLife;					/* the life of its character when it was new */
-	byte useHeld;					/* the use button down on a desk */
-	double slowUntil;				/* its bullet time runs until then */
-	double asleepUntil;
-	byte slowed, asleep;			/* in a bullet time, asleep: the flags of its entity */
-} FrPlayer;
+/* a player of the instance: its context's state (cPlayer.fac) */
+typedef FactionPlayer FrPlayer;
 
 /* Faction.c */
 FrPlayer *Fr_Player(int i);

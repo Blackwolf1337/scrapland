@@ -29,9 +29,11 @@
  *   client -> instance  UI_C_DONE    ui u8, seq u16, then the fields of the transaction
  *                       UI_C_ASK     ui u8 (an interface the client opens itself and the instance fills: the mission
  *                                    pages)
+ *                       UI_C_KEY     ability u8 (a key of the freeroam factions, include/scrap/faction.h: the instance
+ *                                    checks and runs the ability in the player's context; its answer is a notice)
  *
  * Audit (include/scrap/netaudit.h, category NA_HUD): "ui.open:<ui>", "ui.done:<ui>", "ui.refuse:<ui>:<why>",
- * "ui.world:<ui>" (an interface opened in the world's context: its player resolved), on the client
+ * "ui.world:<ui>" (an interface opened in the world's context: its player resolved), "ui.key:<ability>", on the client
  * "ui.client.open:<ui>", "ui.client.done:<ui>". Test verb "ui" (TestChannel.c): the open interfaces, the counts, the
  * player's values ("ui state [player]"), a call of the scripts in a player's context ("ui call <player>
  * Module.Func|arg|...", the call table line format of include/scrap/scriptmodes.h).
@@ -52,7 +54,8 @@ enum {
 
 enum {
 	UI_C_DONE = 1,
-	UI_C_ASK
+	UI_C_ASK,
+	UI_C_KEY
 };
 
 /* the interfaces */

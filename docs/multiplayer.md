@@ -102,6 +102,8 @@ Crimes against players and NPCs raise your wanted points. The wanted level goes 
 
 Who may hurt whom. PvP off in the world: nobody, except police against wanted players (option `-policepvp`, default on). Hostile factions (Police and Mercs, Bishops and Bankers) may hurt each other if `-factionpvp` is on (default). Friends (Police with Bureaucracy, Bankers with Bureaucracy) and members of one faction never do.
 
+In a world of the `-mp2` server the factions work as in the other worlds. The faction, rank, deeds, wanted level, bounty, debt, permit and courier job of a player are its own and are saved with its progress, so leaving the world and joining again keeps them. Other players see the character class of a member (also the armour), the model and pilot of its faction ship and its siren, also players who join later. The effects of the abilities (heal, ray, revive, steal, suck, money, photo) show on the clients of the players near, as single player shows those effects. The police that the crimes of a wanted player call go after that player only, and they can kill a wanted player as they kill a wanted player in single player.
+
 ## Coop story
 
 Up to 8 players play the single player campaign together. There is one party per world. The story (the save variables of single player) belongs to the party and is saved with it. The first member that joins owns the story. A new world starts with the intro video and the start of a new game in Orbit.

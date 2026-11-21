@@ -11,6 +11,7 @@
 #include "scrap/coop.h"
 #include "scrap/coord.h"
 #include "scrap/crt.h"
+#include "scrap/faction.h"
 #include "scrap/fx.h"
 #include "scrap/fxmisc.h"
 #include "scrap/game.h"
@@ -64,7 +65,7 @@ byte g_PresHud;
 static const char *const pres_opNames[PRES_O_COUNT] = { "?", "soundat", "sound3d", "sound2d", "voiceopen", "voiceplay",
 	"voicestop", "music", "shipexpl", "fxent", "msgtext", "labeltext", "speech", "speechcancel", "chat", "head", "fade",
 	"cinema", "actionset", "hudadd", "hudclear", "hudshow", "hudset", "talk", "itemsnd", "scene", "sceneend", "campath",
-	"fxcall", "gvar", "charres", "time", "camvar", "savevar" };
+	"fxcall", "gvar", "charres", "time", "camvar", "savevar", "faction" };
 
 /* a voice of a -mp2 instance's model: nothing plays, the file's length and the time it started give what the scripts
  * read (VoiceRemain), the text what the talk voice's checks read */
@@ -838,6 +839,15 @@ void Pres_SaveVar(int i, const char *name, const char *value) {
 		Pres_PutStr(value);
 		Pres_Send();
 	}
+}
+
+void Pres_Faction(uint64_t mask, const uint8_t *data, int size) {
+	if (!g_PresHud || size <= 0 || size > PRES_REC - 8 || !Pres_BeginMask(mask, PRES_O_FACTION)) {
+		return;
+	}
+	NetRep_PutU16(&pres.w, (uint32_t)size);
+	CoordMsg_PutBytes(&pres.w, data, size);
+	Pres_Send();
 }
 
 static void Pres_PutHudAdd(const char *item, const char *type, byte append, byte level);
@@ -1619,6 +1629,19 @@ static void Pres_Play(int op, NetRepReader *r) {
 				Con_Printf("pres: camvar %s %s %.2f\n", name, kind ? s2 : "-", (double)f);
 			}
 			NetScene_ClientCamVar(name, kind ? s2 : NULL, f);
+		}
+		break;
+	}
+	case PRES_O_FACTION: {
+		static uint8_t bytes[PRES_REC];
+		int n = (int)NetRep_GetU16(r);
+		if (n > (int)sizeof(bytes)) {
+			r->bad = 1;
+			break;
+		}
+		CoordMsg_GetBytes(r, bytes, n);
+		if (!r->bad) {
+			Faction_ClientMessage(bytes, n);
 		}
 		break;
 	}
