@@ -677,6 +677,20 @@ static byte Cp_DealLeader(char *out, int size) {
 	return ok;
 }
 
+/* test: entity e carries a MortalRace deal's baton (MortalRace.shipWithBaton) */
+static byte Cp_BatonCarrier(const cEntity *e) {
+	const char *mode = SaveVar_Get("SuperDealType");
+	nativeVal_t v;
+	if (!mode || strcmp(mode, "MortalRace")) {
+		return 0;
+	}
+	Native_SetNone(&v);
+	byte is = Mode_ModGet("MortalRace", "shipWithBaton", &v) && v.type == NV_STR && !strcmp(Native_Text(&v), e->name);
+	Native_Free(&v);
+	Native_ErrClear();
+	return is;
+}
+
 /* test: no floor within CP_AIR under entity v (DistractHumphrey's meeting point: a ship takes it, the scripts' camera
  * travel moves a ship) */
 static byte Cp_InAir(const cEntity *v) {
@@ -1217,6 +1231,12 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	if (deal && !dealItem && g_Coop.pl[i].autoOn != 2 && Cp_DealLeader(leader, sizeof(leader))) {
 		Str_Copy(g_Coop.pl[i].fightList, leader, sizeof(g_Coop.pl[i].fightList));
 		Cp_TestFight(i, in, back);
+		return;
+	}
+	/* a helper that took a MortalRace deal's baton (flown over it where a member died) races with it: only the
+	 * carrier's checkpoints count */
+	if (deal && g_Coop.pl[i].autoOn == 2 && kind == NETREP_SHIP && Cp_BatonCarrier(e) && World_FindEntity(CP_CHECKPOINT)) {
+		Cp_TestRace(i);
 		return;
 	}
 	byte other = Cp_FightTargets("", all, 1, 0) || arrow || dealItem;
