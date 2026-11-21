@@ -742,6 +742,9 @@ static void EMI_OnHit(cAbstractFile *params) {
 	float dz = pb->z - pa->z;
 	float d = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
 	float r = Missile(emi)->radius;
+	if (Entity_IsType(e, TYEN_VEHICLE) && Play_IsOwn(e)) {
+		return;
+	}
 	if (Entity_IsType(e, TYEN_VEHICLE)) {
 		if (g_EMILowRadiusFactor * r >= d) {
 			Veh(e)->emi = 10.0f;

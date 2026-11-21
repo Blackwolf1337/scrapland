@@ -595,7 +595,9 @@ static void Cloud_OnHit(cAbstractFile *params) {
 		return;
 	}
 	if (Entity_IsType(e, TYEN_VEHICLE)) {
-		cVehicleEntity_SetCloud(e, strong ? 100.0f : 5.0f, 1);
+		if (!Play_IsOwn(e)) {
+			cVehicleEntity_SetCloud(e, strong ? 100.0f : 5.0f, 1);
+		}
 		return;
 	}
 	if (Entity_IsType(e, "Missile") && strong) {

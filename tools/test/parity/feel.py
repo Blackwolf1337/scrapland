@@ -28,7 +28,8 @@ put 15000 units up, W held 6 s (5 s with --no-boost), three times. The results g
 With --mp2 a client boards its own ship as single player does (the use of its ship's arrow, through the instance's
 test line "use <player> <ship>"): the switch key of the sandbox is off on that path.
 --mode sets the mode of the hosting game (freeroam by default); a PvP mode (include/scrap/arena.h: dm, tdm, ...)
-starts the player in its ship, so there are no walks and no boarding, the flights start at once. --fighters n joins n
+starts the player in its ship, so there are no walks and no boarding, the flights start at once, heading level for the
+middle of the arena's entities. --fighters n joins n
 headless bots (SCRAP_PLAYBOT=1, -mp2 with --mp2, the same network settings) to the hosting game's world, which fight
 the player: its corrections a minute then count the hits it takes and the ships it collides with.
 --delay, --jitter and --loss set SCRAP_NET2_DELAY (ms each way), SCRAP_NET2_JITTER (ms) and SCRAP_NET2_LOSS (percent)
@@ -36,11 +37,18 @@ on the client and the server of a multiplayer side (tools/test/mp2.sh feel runs 
 JSON files <side>-<cell>.json. FEEL_HOST_DEVICE in the environment puts the hosting game of the join side on another
 Vulkan device than --device (the measured games keep a device to themselves).
 
+--actions (brake, fire:<weapon>, cm:<weapon> or all) measures ship actions after the flights, each --action-reps times
+from the flight's start (action_trial): the brake (S) to the first frame off the path, the fire (left mouse button) to
+the first frame after a fire callback and to the first new missile near the own ship, the countermeasure (space) to
+the first new missile near it (the feel log's missiles column); the table "Ship actions" in feel.md.
+
   feel.py [--sides sp,host,join,menuhost] [--level DownTown] [--port 29960] [--build DIR] [--out DIR] [--scratch DIR]
           [--delay MS] [--jitter MS] [--loss PCT] [--cell NAME] [--no-boost] [--mode MODE] [--fighters N]
+          [--actions LIST] [--action-reps N]
 """
 import argparse
 import json
+import math
 import os
 import re
 import shutil
@@ -136,7 +144,8 @@ def read_log(path):
                 try:
                     rows.append(dict(t=int(p[0]), dt=float(p[1]), kind=p[2], pos=tuple(map(float, p[3:6])),
                                      cam=tuple(map(float, p[6:9])), yaw=float(p[9]), inp=float(p[10]),
-                                     corr=int(p[11]), fires=int(p[12]) if len(p) > 12 else 0))
+                                     corr=int(p[11]), fires=int(p[12]) if len(p) > 12 else 0,
+                                     missiles=int(p[14]) if len(p) > 14 else 0))
                 except ValueError:
                     pass
     except OSError:
@@ -179,14 +188,7 @@ def latency(rows, t0, auto=False, within=None):
 def fire_latency(rows, t0, within=1.0):
     """ms from the press at t0 to the first drawn frame after the own ship's weapon fired (the fires column grew),
     None when it did not fire within the window"""
-    before = [r for r in rows if r['t'] <= t0]
-    if not before:
-        return None
-    n0 = before[-1]['fires']
-    for r in rows:
-        if t0 < r['t'] <= t0 + within * 1e9 and r['fires'] > n0:
-            return (r['t'] - t0) / 1e6
-    return None
+    return count_latency(rows, t0, 'fires', within)
 
 
 def jitter(rows, key):
@@ -386,6 +388,7 @@ def run_side(a, side):
         boosts = []
         fires = []
         bumps = []
+        trials = []
         if ok:
             time.sleep(3.0)
             for k in range(3):
@@ -411,6 +414,10 @@ def run_side(a, side):
                 b = bump(a, g, inst_dir, side)
                 if b:
                     bumps.append(b)
+            for name in a.actions:
+                for _ in range(a.action_reps):
+                    trials.append((name,) + action_trial(a, g, inst_dir, side, name))
+                    time.sleep(1.0)
         time.sleep(0.5)
         rows = read_log(log)
         res['frames'] = frames([r for r in rows if r['kind'] != '-'])
@@ -430,6 +437,7 @@ def run_side(a, side):
             res['corrections'] = moving[-1]['corr'] - moving[0]['corr']
             res['corr_per_min'] = round(res['corrections'] / mins, 2) if mins > 0 else None
         res['bump'] = bump_result(rows, bumps)
+        res['actions'] = action_results(rows, trials)
     finally:
         for d in fighters:
             parity.stop_dir(d)
@@ -458,12 +466,16 @@ def player_car(ents, near):
 
 
 def own_ship(inst_dir, player):
-    """-mp2: the player's own ship of single player's flows (the instance's log line "player <i>'s own ship <name>")"""
-    try:
-        with open(inst_dir.log, errors='replace') as f:
-            found = re.findall(r"instance: player %d's own ship (\S+)" % player, f.read())
-    except OSError:
-        found = []
+    """-mp2: the player's own ship of single player's flows (the instance's log line "player <i>'s own ship <name>"; a
+    hosting game's instance writes its own log in the world's data folder)"""
+    found = []
+    logs = os.path.join(inst_dir.dir, 'xdg-data', 'MercurySteam', 'Scrapland', 'host', 'logs')
+    for path in [inst_dir.log] + ([os.path.join(logs, f) for f in sorted(os.listdir(logs))] if os.path.isdir(logs) else []):
+        try:
+            with open(path, errors='replace') as f:
+                found += re.findall(r"instance: player %d's own ship (\S+)" % player, f.read())
+        except OSError:
+            pass
     return found[-1] if found else None
 
 
@@ -500,30 +512,102 @@ def board_mp2(a, g, inst_dir, side):
     inst_dir.ask('iline switch %d' % player, inst=a.level)
 
 
+def own_ship_line(a, g, inst_dir, side):
+    """the place of the own entity (the feel log), the script expression of the own ship where the simulation runs
+    (single player's own; a client's: the instance's ship of the player nearest to it) and the function that runs a
+    test line there; (None, None, None) without them"""
+    rows = read_log(os.path.join(a.scratch, 'feel-%s%s.csv' % (side, '-' + a.cell if a.cell else '')))
+    if not rows:
+        return None, None, None
+    p = rows[-1]['pos']
+    if side == 'sp':
+        return p, 'Scrap.UsrEntity(0)', g.ask
+    ents = parity.parse_ents(inst_dir.try_ask('entinfo %.0f %.0f %.0f 6000' % p, inst=a.level, timeout=10))
+    car = player_car(ents, p)
+    if not car:
+        return p, None, None
+
+    def do(line):
+        return inst_dir.ask(line, inst=a.level)
+    return p, 'Scrap.GetEntity("%s")' % car['name'], do
+
+
+# the ship actions of --actions (XTEST names of single player's default keys, Scrap.cfg): the weapon keys of
+# Racer.Laser .. Racer.Inferno, the brake (Racer.Backward, S), the countermeasure (Racer.CM, the space bar); the full
+# thrust is the flights' own key (Racer.Forward, W: CTL_ACCEL2 sets it)
+WEAPON_KEYS = {'laser': '1', 'vulcan': '2', 'devastator': '3', 'tesla': '4', 'atpc': '5', 'swarm': '6', 'inferno': '7'}
+ACTIONS_ALL = ['brake'] + ['fire:' + w for w in WEAPON_KEYS] + ['cm:' + w for w in WEAPON_KEYS]
+
+
+def action_trial(a, g, inst_dir, side, name):
+    """one ship action from the flight's start: every weapon the ship's model has slots for and full ammo on the own
+    ship (where its simulation runs), the weapon key of a weapon action, W held 3 s and the action's key at 1.5 s;
+    (kind, press ns): kind 'move' (the path: the brake), 'fire' (the fire callbacks of the own ship; with them the first
+    new missile near it) or 'missile' (a new missile near it: a countermeasure's)"""
+    lift(a, g, inst_dir, side)
+    _, target, do = own_ship_line(a, g, inst_dir, side)
+    if target:
+        do('do e = %s; e.WeapList = "1,1,1,1,1,1,1"; e.Ammo00 = 1000; e.Ammo01 = 1000; e.Ammo02 = 1000' % target)
+    what, _, weap = name.partition(':')
+    if weap:
+        time.sleep(0.5)
+        key(g, WEAPON_KEYS[weap], 0.1)
+        time.sleep(1.0)
+    else:
+        time.sleep(1.5)
+    if what == 'fire':
+        _, (t,) = press_with(g, 'w', 3.0, [(1, 1.5, 0.3)])
+        return 'fire', t
+    with scrap_mcp.XInput(XGame(g)) as x:
+        w = x.keycode('w')
+        k = x.keycode({'brake': 's', 'cm': 'space'}[what])
+        t0 = time.monotonic_ns()
+        x.xtst.XTestFakeKeyEvent(x.dpy, w, 1, 0)
+        x.x11.XSync(x.dpy, 0)
+        time.sleep(max(0.0, t0 / 1e9 + 1.5 - time.monotonic_ns() / 1e9))
+        t = time.monotonic_ns()
+        x.xtst.XTestFakeKeyEvent(x.dpy, k, 1, 0)
+        x.x11.XSync(x.dpy, 0)
+        time.sleep(0.3 if what == 'cm' else 1.0)
+        x.xtst.XTestFakeKeyEvent(x.dpy, k, 0, 0)
+        x.x11.XSync(x.dpy, 0)
+        time.sleep(max(0.0, t0 / 1e9 + 3.0 - time.monotonic_ns() / 1e9))
+        x.xtst.XTestFakeKeyEvent(x.dpy, w, 0, 0)
+        x.x11.XSync(x.dpy, 0)
+    return ('missile' if what == 'cm' else 'move'), t
+
+
+def count_latency(rows, t0, col, within=1.0):
+    """ms from the press at t0 to the first drawn frame where the column col (fires, missiles) grew, None"""
+    before = [r for r in rows if r['t'] <= t0]
+    if not before:
+        return None
+    n0 = before[-1][col]
+    for r in rows:
+        if t0 < r['t'] <= t0 + within * 1e9 and r[col] > n0:
+            return (r['t'] - t0) / 1e6
+    return None
+
+
 def lift(a, g, inst_dir, side):
     """the own ship to the start of a flight, still: the first time 15000 units above where it is, each later time the
     same place with the same heading (a flight from where the last one ended runs into the walls; single player:
     through its channel; a client: the instance's ship of the player, nearest to the client's own entity)"""
-    rows = read_log(os.path.join(a.scratch, 'feel-%s%s.csv' % (side, '-' + a.cell if a.cell else '')))
-    if not rows:
+    p, target, do = own_ship_line(a, g, inst_dir, side)
+    if not target:
         return
-    p = rows[-1]['pos']
-    if side == 'sp':
-        target = 'Scrap.UsrEntity(0)'
-        do = g.ask
-    else:
-        ents = parity.parse_ents(inst_dir.try_ask('entinfo %.0f %.0f %.0f 6000' % p, inst=a.level, timeout=10))
-        car = player_car(ents, p)
-        if not car:
-            return
-        target = 'Scrap.GetEntity("%s")' % car['name']
-
-        def do(line):
-            return inst_dir.ask(line, inst=a.level)
     start = a.flight_start.get(side) or a.fly_from
     if not start:
         m = re.search(r'\(([-\d.e]+), ([-\d.e]+), ([-\d.e]+)\)', do(target + '.Ang') or '')
         ang = tuple(float(x) for x in m.groups()) if m else None
+        if a.mode in ARENA_MODES and ang:
+            # an arena is closed: the flight heads level for the middle of its entities (a player starts at an edge;
+            # a flight along a wall ran into it after 1.5 s and the boost measured the ship pinned there)
+            ents = parity.parse_ents(inst_dir.try_ask('entinfo', inst=a.level, timeout=20) if side != 'sp' else
+                                     g.try_ask('entinfo', timeout=20))
+            if ents:
+                mid = [(min(e['pos'][k] for e in ents) + max(e['pos'][k] for e in ents)) / 2.0 for k in range(3)]
+                ang = (0.0, math.atan2(-(mid[0] - p[0]), -(mid[2] - p[2])), 0.0)
         start = a.flight_start[side] = ((p[0], p[1] + 15000.0, p[2]), ang)
     a.flight_start[side] = start
     up, ang = start
@@ -594,6 +678,30 @@ def bump_result(rows, bumps):
     return out
 
 
+def action_results(rows, trials):
+    """per action: the latencies of its trials (the path's: off the line by four times its shake, as the boost)"""
+    out = {}
+    for name, kind, t in trials:
+        if kind == 'move':
+            lat = latency(rows, t, True, 1.0)[1]
+        else:
+            lat = count_latency(rows, t, 'fires' if kind == 'fire' else 'missiles')
+        r = out.setdefault(name, {'kind': kind, 'latencies': [], 'misses': 0, 'missiles': []})
+        if lat is None:
+            r['misses'] += 1
+        else:
+            r['latencies'].append(round(lat, 1))
+        if kind == 'fire':
+            # a missile weapon's missiles on the screen (single player's own, a client's replicas)
+            m = count_latency(rows, t, 'missiles')
+            if m is not None:
+                r['missiles'].append(round(m, 1))
+    for r in out.values():
+        r['latency_mean'] = round(statistics.mean(r['latencies']), 1) if r['latencies'] else None
+        r['missile_mean'] = round(statistics.mean(r['missiles']), 1) if r['missiles'] else None
+    return out
+
+
 def analyse(rows, presses, hold, auto=False, within=None):
     """within: seconds after a press in which the entity must leave its path (else a miss: the boost did nothing
     while the key was held)"""
@@ -651,6 +759,18 @@ def table(results, out):
             '%s, %s' % ((r.get('boost') or {}).get('latency_mean'), (r.get('boost') or {}).get('latency_p95')),
             '%s, %s' % ((r.get('fire') or {}).get('latency_mean'), (r.get('fire') or {}).get('latency_p95')),
             r.get('corr_per_min')))
+    names = []
+    for r in results:
+        names += [n for n in (r.get('actions') or {}) if n not in names]
+    if names:
+        lines += ['', 'Ship actions, ms from the key to the first drawn frame (mean; misses):', '',
+                  '| side | ' + ' | '.join(names) + ' |', '|---|' + '---|' * len(names)]
+        for r in results:
+            act = r.get('actions') or {}
+            lines.append('| %s | %s |' % (r['side'] + ('-' + r['cell'] if r.get('cell') else ''), ' | '.join(
+                '%s%s%s' % (act[n]['latency_mean'], ' (missile %s)' % act[n]['missile_mean'] if act[n].get('missile_mean')
+                            else '', '; %d' % act[n]['misses'] if act[n]['misses'] else '') if n in act
+                else '-' for n in names)))
     lines += ['', 'Frame time histogram (ms buckets <8, 8-12, 12-17.5, 17.5-20, 20-25, 25-34, 34-50, >50):', '']
     for r in results:
         if r.get('frames'):
@@ -683,8 +803,12 @@ def main():
     ap.add_argument('--fighters', type=int, default=0, help='headless bots that join the world and fight the player')
     ap.add_argument('--fly-from', dest='fly_from_json', default=None,
                     help='the JSON of an earlier side (single player): its flight start for every flight of this run')
+    ap.add_argument('--actions', default='', help='ship actions after the flights (comma list of %s, or all)' %
+                    ', '.join(ACTIONS_ALL))
+    ap.add_argument('--action-reps', type=int, default=3)
     ap.add_argument('--report-only', action='store_true')
     a = ap.parse_args()
+    a.actions = list(ACTIONS_ALL) if a.actions == 'all' else [x for x in a.actions.split(',') if x]
     a.net = {}
     a.flight_start = {}
     a.fly_from = None

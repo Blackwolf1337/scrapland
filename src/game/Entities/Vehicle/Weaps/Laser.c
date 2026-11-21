@@ -263,7 +263,7 @@ static void Hook_UpdateNative(cAbstractFile *f) {
 			Hook_Unlock(v);
 			return;
 		}
-		if (Entity_IsType(target, TYEN_VEHICLE)) {
+		if (Entity_IsType(target, TYEN_VEHICLE) && !Play_IsOwn(target)) {
 			Veh(target)->emi = World_IsEasySingle() &&
 				!Entity_GetAI(target) ? 0.25f : g_HookEMITime;
 		}

@@ -12,6 +12,9 @@ src/game/App/FeelLog.c) gives the latency: from the press to the first drawn fra
 before the press. The corrections of the client from the press to the end of the flow are counted (the hand-over).
 Afterwards the flow is ended (Escape in an interface) and the game waits until the walk controls are back.
 
+On DownTown the flows board and land (ship_flows): the own ship boarded through the test lines, then landed on its
+parking box with the vertical strafe key, the latency of each to the first changed view.
+
   flowfeel.py [--sides sp,join] [--level Townhall] [--flows conv,tele,metro,poss] [--reps 3] [--port 30300]
               [--build DIR] [--out DIR] [--scratch DIR] [--device ID] [--delay MS] [--jitter MS] [--loss PCT]
               [--cell NAME]
@@ -38,7 +41,15 @@ FLOWS = {
         'metro': (['DM_Door_Metro_Press'], 150, 0, 1, 4.0),
         'poss': (['Sentinel_01', 'Sentinel_02', 'Sentinel_03'], 0, -200, 3, 30.0),
     },
+    # the own ship (single player's PlayerShip, a client's PlayerShip<n> of the instance's log): boarded by the use of
+    # its arrow through the test lines (Parking.UseShip, the instance's "use"; the test goto selects no ship with the
+    # arrow), then the landing back on its parking box: the ship put still 3000 units above the place it stood, the
+    # vertical strafe down held (Racer.StrafeDown, the keypad's plus)
+    'DownTown': {
+        'board': (['@own'], 0, -700, 1, 0.0),
+    },
 }
+LAND_HIGH = 3000.0
 
 
 def read_view(path):
@@ -121,8 +132,13 @@ def run_side(a, side):
             return hostg.ask('iline goto %d %s %s %s' % (player, target, dx, dz), inst=a.level)
 
         for flow in a.flows:
+            if flow == 'land':
+                continue
             spec = FLOWS.get(a.level, FLOWS.get(a.level.capitalize(), {})).get(flow)
             if not spec:
+                continue
+            if flow == 'board':
+                ship_flows(a, g, hostg, side, player, log, res, goto, world, spec)
                 continue
             targets, dx, dz, button, settle = spec
             got = []
@@ -168,6 +184,73 @@ def run_side(a, side):
         if hostg:
             hostg.stop()
     return res
+
+
+def flow_result(got):
+    lats = [x['latency'] for x in got if x['latency'] is not None]
+    return {'reps': got, 'samples': len(lats), 'misses': len(got) - len(lats),
+            'latency_mean': round(statistics.mean(lats), 1) if lats else None,
+            'latency_max': max(lats) if lats else None, 'corrections': sum(x['corrections'] for x in got)}
+
+
+def ship_flows(a, g, hostg, side, player, log, res, goto, world, spec):
+    """board: the use of the own ship's arrow (test lines: the latency from the line to the first view change, the
+    boarding's camera path, includes the channel's own delay); land (with --flows ...,land): the own ship back on its
+    parking box, the latency from the strafe key to the first view change (the parking's camera and HUD); each
+    repetition boards and lands"""
+    _, dx, dz, _, _ = spec
+    ship = 'PlayerShip' if side == 'sp' else feel.own_ship(hostg, player)
+    if not ship:
+        res['error'] = 'no own ship'
+        return
+    m = parity.parse_ents(world('entinfo') or '')
+    spot = next((e['pos'] for e in m if e['name'] == ship), None)
+    boards, lands = [], []
+    for k in range(a.reps):
+        rows = feel.read_log(log)
+        if not rows or rows[-1]['kind'] != 'C':
+            print('flowfeel %s board %d: not on foot (%s)' % (side, k, rows[-1]['kind'] if rows else '-'), flush=True)
+            break
+        goto(ship, dx, dz)
+        time.sleep(2.0 + (k * 7 % 10) / 10.0 / 30.0)
+        t0 = time.monotonic_ns()
+        if side == 'sp':
+            g.ask('Parking.UseShip("Player0", "PlayerShip", "", "")')
+        else:
+            hostg.ask('iline use %d %s' % (player, ship), inst=a.level)
+        inship = parity.wait_for(lambda: feel.own_kind(feel.read_log(log), time.monotonic_ns()) == 'S', 40, 0.5)
+        time.sleep(2.0)
+        t1 = time.monotonic_ns()
+        rows = read_view(log)
+        lat = view_latency(rows, t0)
+        boards.append({'target': ship, 'latency': round(lat[0], 1) if lat else None, 'in_ship': bool(inship),
+                       'corrections': corrections(rows, t0, t1)})
+        print('flowfeel %s board %d: %s' % (side, k, boards[-1]), flush=True)
+        if not inship or 'land' not in a.flows or not spot:
+            break
+        target = 'Scrap.UsrEntity(0)' if side == 'sp' else 'Scrap.GetEntity("%s")' % ship
+        world('do e = %s; e.Pos = (%.1f, %.1f, %.1f); e.Vel = (0, 0, 0)' % (target, spot[0], spot[1] + LAND_HIGH, spot[2]))
+        time.sleep(2.5)
+        with scrap_mcp.XInput(feel.XGame(g)) as x:
+            code = x.keycode('KP_Add')
+            t0 = time.monotonic_ns()
+            x.xtst.XTestFakeKeyEvent(x.dpy, code, 1, 0)
+            x.x11.XSync(x.dpy, 0)
+            onfoot = parity.wait_for(lambda: feel.own_kind(feel.read_log(log), time.monotonic_ns()) == 'C', 15, 0.2)
+            x.xtst.XTestFakeKeyEvent(x.dpy, code, 0, 0)
+            x.x11.XSync(x.dpy, 0)
+        time.sleep(4.0)
+        t1 = time.monotonic_ns()
+        rows = read_view(log)
+        lat = view_latency(rows, t0, 6.0)
+        lands.append({'target': ship, 'latency': round(lat[0], 1) if lat else None, 'on_foot': bool(onfoot),
+                      'corrections': corrections(rows, t0, t1)})
+        print('flowfeel %s land %d: %s' % (side, k, lands[-1]), flush=True)
+        if not onfoot:
+            break
+    res['flows']['board'] = flow_result(boards)
+    if 'land' in a.flows:
+        res['flows']['land'] = flow_result(lands)
 
 
 def table(results, out, limit=16.7):

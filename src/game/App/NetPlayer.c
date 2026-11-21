@@ -626,6 +626,12 @@ byte NetPl_OwnSame(const NetRepOwn *a, const NetRepOwn *b) {
 	return 1;
 }
 
+byte NetPl_OwnEffect(const NetRepOwn *a, const NetRepOwn *b) {
+	return a->kind == NETREP_SHIP && b->kind == NETREP_SHIP && a->nf >= NETPL_O_SHIP && b->nf >= NETPL_O_SHIP &&
+		(NetPl_Off(a->f[NETPL_O_CLOUD], b->f[NETPL_O_CLOUD], NETPL_TOL_TIME) ||
+		NetPl_Off(a->f[NETPL_O_EMI], b->f[NETPL_O_EMI], NETPL_TOL_TIME) || ((a->flags ^ b->flags) & NETPL_OF_CLOUD));
+}
+
 int NetPl_OwnDiff(const NetRepOwn *a, const NetRepOwn *b) {
 	const float *x = a->f, *y = b->f;
 	int d = 0;

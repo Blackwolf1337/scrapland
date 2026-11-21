@@ -54,7 +54,11 @@
  * itself changes nothing drawn. The first state of a new own entity hands it over. A difference that comes with one
  * of the life (the server's damage: a hit and its push) is taken, not counted as a correction (pred.took:life|hit), as
  * is a state after a collision with another ship (NETPL_OF_TOUCHED: the rail traffic, a ship of no player or another
- * player, whose motion the server alone knows; pred.took:touch).
+ * player, whose motion the server alone knows; pred.took:touch), and one that differs in a cloud or EMI (the timed
+ * states a shot's hit sets: the server's, the client's replica of the shot leaves the own entity, Play_IsOwn;
+ * pred.took:effect). A state within the tolerances that is not the same is taken too, not counted (settled: the
+ * prediction stays equal after it). The own entity that leaves the snapshot (a death) stays a moment, inactive, for the
+ * records that name it (Play_Wreck).
  * Corrections by what differed: pred.corr:<pos|vel|ang|act|state|move>.
  *
  * Stage 3.5b: a player's ship touches the parking boxes in its step (every third slot, the 0.05 s of the box's own
@@ -212,6 +216,9 @@ void NetPl_OwnOf(struct cEntity *e, uint32_t tick, uint8_t moved, NetRepOwn *o);
 int NetPl_OwnDiff(const NetRepOwn *a, const NetRepOwn *b);
 /* a and b are the same state (every value equal, the touch flag aside) */
 byte NetPl_OwnSame(const NetRepOwn *a, const NetRepOwn *b);
+/* the ship states a (the client's) and b (the server's) differ in a timed state a shot's hit sets (a countermeasure's
+ * cloud, an EMI: the server's alone on a -mp2 client, Play_IsOwn) */
+byte NetPl_OwnEffect(const NetRepOwn *a, const NetRepOwn *b);
 /* the server's state into e (after NetPl_Restore of the client's own state of that tick) */
 void NetPl_OwnApply(struct cEntity *e, const NetRepOwn *o);
 /* -mp2: a random draw (0 to 0x7fff) of e's actions or slot while NetPl_StepPart steps it, the same on the server and
@@ -315,6 +322,9 @@ void Play_OwnGone(void);
  * HUD of single player shows them) */
 void Play_OwnStatus(const NetRepStatus *st);
 struct cEntity *Play_Entity(void);
+/* -mp2: e is the client's own predicted entity; the timed states a shot's hit sets on it (a countermeasure's cloud,
+ * an EMI) are the server's there (its rollback state), a replica's hit leaves them */
+byte Play_IsOwn(const struct cEntity *e);
 /* -mp2: the own entity that died a moment ago, for the records of its death by the instance's name (the player message
  * of the death comes before them; the server's entity goes inactive, no replica of it may come), NULL */
 struct cEntity *Play_Wreck(const char *name);

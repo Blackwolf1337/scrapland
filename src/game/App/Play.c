@@ -148,6 +148,7 @@ static struct {
 	uint32_t hits;						/* of the lives taken: with more than the life differing (the hit's push) */
 	uint32_t touches;					/* states taken after a collision with another ship (NETPL_OF_TOUCHED) */
 	uint32_t settles;					/* states taken within the tolerances (not the same, no correction) */
+	uint32_t effects;					/* states taken with a cloud or EMI of the server's shots */
 	cEntity *wreck;						/* -mp2: the own entity that died (inactive), Play_Wreck */
 	char wreckName[128];				/* its instance's name */
 	uint64_t wreckNs;
@@ -190,6 +191,10 @@ int Play_Player(void) {
 
 cEntity *Play_Entity(void) {
 	return play.e;
+}
+
+byte Play_IsOwn(const cEntity *e) {
+	return g_Mp2 && e && e == play.e;
 }
 
 cEntity *Play_Wreck(const char *name) {
@@ -1217,6 +1222,11 @@ void Play_OwnState(const uint8_t *data, int size) {
 			play.corrBy[6]++;
 			NetAudit_Name(NA_PREDICT, "pred.took:", d & ~NETPL_D_LIFE ? "hit" : "life");
 			play.hits += (d & ~NETPL_D_LIFE) != 0;
+		} else if (NetPl_OwnEffect(&mine, &o)) {
+			/* a cloud or EMI the server's shot set (the own countermeasure's cloud the ship flies in): its effect, as a
+			 * hit's, taken, counted apart */
+			play.effects++;
+			NetAudit_Name(NA_PREDICT, "pred.took:", "effect");
 		} else if (o.flags & NETPL_OF_TOUCHED) {
 			/* a collision with another ship, whose motion the server alone knows: its result taken (plan's Risks:
 			 * the server confirms), counted apart */
@@ -1291,9 +1301,9 @@ void Play_Status(void) {
 		play.st.corrections, (double)c[0], (double)c[1], (double)c[2], (double)c[3], play.st.replayed);
 	if (g_Mp2) {
 		Con_Printf("play: -mp2 corrections by pos %u vel %u ang %u act %u state %u move %u, life taken %u (%u with a "
-			"push), %u after a collision with a ship, %u jumps, %u handovers, %u settled\n", play.corrBy[0],
-			play.corrBy[1], play.corrBy[2], play.corrBy[3], play.corrBy[4], play.corrBy[5], play.corrBy[6], play.hits,
-			play.touches, play.jumps, play.handovers, play.settles);
+			"push), %u after a collision with a ship, %u with a cloud or EMI, %u jumps, %u handovers, %u settled\n",
+			play.corrBy[0], play.corrBy[1], play.corrBy[2], play.corrBy[3], play.corrBy[4], play.corrBy[5], play.corrBy[6],
+			play.hits, play.touches, play.effects, play.jumps, play.handovers, play.settles);
 	}
 }
 

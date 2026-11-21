@@ -4,8 +4,9 @@
  * of the system (ns, CLOCK_MONOTONIC on Linux: the tool's clock for its key presses) when the frame's state was drawn
  * (the engine draws a frame's update at the start of the next frame, App_Render before App_Update), the time from the
  * drawing before, the own entity's kind (C character, S ship, - none), its drawn position, the camera's
- * position and yaw, the walk/accelerate input of the frame, the corrections of the prediction so far and the shots
- * of the own ship's weapons so far (the fire callbacks it ran).
+ * position and yaw, the walk/accelerate input of the frame, the corrections of the prediction so far, the shots
+ * of the own ship's weapons so far (the fire callbacks it ran), what a flow changed on the screen and the missiles
+ * that came near the own entity so far (a countermeasure's, a missile weapon's).
  */
 #ifndef SCRAP_FEELLOG_H
 #define SCRAP_FEELLOG_H
