@@ -273,3 +273,7 @@ Merc_ScanShip	PARTY	every second the scan of the lonely mercenary by the player 
 Speech_CancelRemoteCom_E	PARTY	a Speech entry in the world's context (a remote talk cancelled: the final fight's hints): the acting member in coop
 Ff_BossAttacks	PARTY	the final fight (AB): the boss attacks the player, the acting member in coop (after a respawn the member's own context)
 Ff_OnPlayerDeath	PARTY	the final fight (AB): the party's death; the hook runs in the context of the member who died last (Chars.MainCharDeath)
+Hump_OnDeath	PARTY	DistractHumphrey (DownTown): a ship's death by no member (Humphrey, the traffic): its count against the acting member's name in coop
+Hump_OnGeneralDamage	PARTY	DistractHumphrey (DownTown): a ship hit by no member: the acting member's name in coop (no ship to taunt)
+Hump_OnHumphreyDamage	PARTY	DistractHumphrey (DownTown): Humphrey hit by no member: only a player hurts him, the acting member in coop
+Hump_OnStartDistraction	PARTY	DistractHumphrey (DownTown): the meeting point taken by no member's entity: the acting member in coop

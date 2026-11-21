@@ -1524,6 +1524,16 @@ static byte AIV_Viewer(cAIVehicle *self, AivViewer *v, byte repos) {
 	v->dir = view->dir;
 	v->fov = view->fov;
 	v->slow = AIV_Slow(view, g_VelReposBackAI);
+	/* not in the original: a viewer outside the box of the traffic's grid (a -mp2 player's camera pose: the camera
+	 * travelling of DistractHumphrey's start) is taken at the box's edge, the grid's node search checks a point inside
+	 * it (single player's camera stays inside: unchanged) */
+	const CNodesTraffic *t = repos ? AIV_Outdoor() : NULL;
+	const cGridElements *g = t ? t->grid : NULL;
+	if (g) {
+		v->pos.x = v->pos.x < g->min.x ? g->min.x : v->pos.x > g->max.x ? g->max.x : v->pos.x;
+		v->pos.y = v->pos.y < g->min.y ? g->min.y : v->pos.y > g->max.y ? g->max.y : v->pos.y;
+		v->pos.z = v->pos.z < g->min.z ? g->min.z : v->pos.z > g->max.z ? g->max.z : v->pos.z;
+	}
 	return 1;
 }
 

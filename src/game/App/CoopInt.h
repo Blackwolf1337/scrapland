@@ -115,6 +115,7 @@ typedef struct CoopState {
 		double walkBack;			/* since when it is next to its last follower that follows no more (0 not) */
 		float walkNear;				/* the nearest it came to its target on its walk */
 		double walkNearAt;			/* when (0 none yet) */
+		double usedAt;				/* when its auto play last used its target (a talk that starts after it) */
 		char walkShort[64];			/* the target its walk ended short of (the goto and the use come next) */
 		char fightList[CP_NAME];	/* "Module.var" (a list of the scripts), an entity, "" the mission's targets */
 		char fightAt[CP_NAME];		/* the target it turned to last */
