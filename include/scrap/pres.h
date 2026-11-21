@@ -32,8 +32,9 @@
  * Audit (include/scrap/netaudit.h, in the sink's category): on the instance "pres.unforwarded:<sink>:<site>" for a
  * call that has no route (a 3D sound whose position is unknown, a looping sound outside an entity's items),
  * "pres.sent:<op>" per record; on the client "pres.play:<op>", "pres.double:<name>" for a one-shot sound played from a
- * message and from the client's own state within PRES_DOUBLE_MS, "pres.missing:<op>:<name>" for a record whose
- * entity or item the client does not have (skipped, the game goes on).
+ * message and from the client's own state within PRES_DOUBLE_MS at the same place (the record's place within
+ * PRES_DOUBLE_NEAR of the client's own entity), "pres.missing:<op>:<name>" for a record whose entity or item the client
+ * does not have (skipped, the game goes on).
  *
  * Wire (reliable, channel 0, instance to client): PRES_MSG, then records until the end: op u8 and its fields
  * (strings NetRep_PutStr, floats f32 as u32, ints svarint), see Pres.c.
@@ -74,7 +75,7 @@ enum {
 	PRES_O_FADE,					/* from, to (packed colors), time */
 	PRES_O_CINEMA,					/* on, time */
 	PRES_O_ACTIONSET,				/* the set's name */
-	PRES_O_HUDADD,					/* item, type, append */
+	PRES_O_HUDADD,					/* item, type, append, level u8 (an item of the world's scorer) */
 	PRES_O_HUDCLEAR,
 	PRES_O_HUDSHOW,					/* on */
 	PRES_O_HUDSET,					/* item, var, kind u8 (1 text, 2 number), value */

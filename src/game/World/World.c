@@ -1022,13 +1022,9 @@ int cWorld_SetCam(cWorld *world, int i, const char *name) {
 		 * player, stage 4.5's: counted apart; no camera (a camera entity of view 0 deleted: the coop stand-in's at the
 		 * first member's join) shows nothing to any player */
 		if (g_Mp2 && !InitSteps_Entering() && *name && !world_camOwn) {
-			byte path = cam && Entity_IsType(cam, TYEN_CAMPATH);
-			/* a fixed camera goes to the clients as a path that holds it (include/scrap/netscene.h) */
-			if (path || !NetScene_CamFixed(cam)) {
-				Pres_NoRoute(NA_CAMERA, path ? "pres.scene:camera:" : "pres.unforwarded:camera:", Pres_ModSite());
-			}
-			/* the path goes to the player as a scene (include/scrap/netscene.h) */
-			NetScene_CamSet(cam);
+			/* the path (and a fixed camera) goes to the player as a scene (include/scrap/netscene.h) */
+			byte path = NetScene_CamSet(cam);
+			Pres_NoRoute(NA_CAMERA, path ? "pres.scene:camera:" : "pres.unforwarded:camera:", Pres_ModSite());
 		}
 	}
 	if (*name && (!cam || !Entity_IsType(cam, "Cam"))) {

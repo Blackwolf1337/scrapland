@@ -18,6 +18,7 @@
 #include "scrap/players.h"
 #include "scrap/pres.h"
 #include "scrap/repent.h"
+#include "scrap/replicate.h"
 #include "scrap/nodestraffic.h"
 #include "scrap/nodesworld.h"
 #include "scrap/nodesworld2d.h"
@@ -331,6 +332,11 @@ void cScorer_Clear(cScorer *scorer) {
 	cPy_Function_SetFunc(&scorer->onPrev, NULL);
 	cPy_Function_SetFunc(&scorer->onNext, NULL);
 	for (cScorerItem *it = scorer->items; it; it = it->next) {
+		/* not in the original: a -mp2 client's own clear keeps the items of the server's world scorer (the level's
+		 * start made them before the client's HUD: a race's timer); the server's clear takes them too */
+		if (it->level && g_Mp2 && g_Watch && !g_PresIn) {
+			continue;
+		}
 		it->delMe = 1;
 	}
 	scorer->cleared = 1;

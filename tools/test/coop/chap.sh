@@ -21,7 +21,7 @@ fail=0
 v2=; [ -n "$COOP_MP2" ] && v2=-mp2
 echo $$ > $S/$tag.script.pid
 log() { case $1 in w) echo $L;; pa|pb|p[0-9]) echo $S/$tag-$1.log;; *) echo $D/logs/$1.log;; esac; }
-# CHAP_MORE=<n>: more headless players p3..p<n> (new players of the party) after pa and pb
+# CHAP_MORE=<n>: more headless players p3..p<n> (new players of the party) after pa and pb; CHAP_PLAYERS=1: no pb
 more=""; for ((k = 3; k <= ${CHAP_MORE:-0}; k++)); do more="$more p$k"; done
 # a line matching pat in file after its first mark lines within secs
 waitnew() {
@@ -51,8 +51,8 @@ WORLD_KEEP_DATA=1 "$T/world.sh" $tag $port "$B" -mode:coop -stopinstances -grace
 "$T/wait.sh" $L "coordinator .*listening|instance .* up" 60
 player pa
 "$T/wait.sh" $L "pa .* is in " 150 || echo "FAIL: pa joins"
-# CHAP_ALONE=1: pa alone in the party
-if [ -z "$CHAP_ALONE" ]; then
+# CHAP_PLAYERS=1: pa alone
+if [ "${CHAP_PLAYERS:-2}" != 1 ]; then
 	player pb
 	"$T/wait.sh" $L "pb .* is in " 150 || echo "FAIL: pb joins"
 fi

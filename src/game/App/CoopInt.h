@@ -56,6 +56,8 @@ typedef struct CoopState {
 	byte started;					/* the level's first tick ran */
 	byte waiting;					/* the world waits for its first member (its time stands) */
 	cEntity *standIn;				/* the scripts' player of the level's start without a member (Coop_StandIn) */
+	cEntity *standInKept;			/* that entity, kept in the world for the next start (its name in standInName) */
+	char standInName[CP_NAME];
 	int ndirty;
 	struct {
 		char name[CP_NAME];
@@ -121,6 +123,7 @@ typedef struct CoopState {
 		char ammoTried[CP_AMMO_TRIED][CP_NAME];	/* the ammo boxes it took last (the oldest replaced) */
 		int ammoNext;
 		double ammoAt;				/* when it was put at a box last */
+		double lifeBoxAt;			/* when it was put at a life box last */
 		int lifeWeap;				/* the weapon of the watch of the target's life (-1 none) */
 		float lifeMark;				/* the target's life when that watch began */
 		double lifeSince;			/* when */

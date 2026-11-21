@@ -78,6 +78,8 @@
 #define CP_FIGHT_RANGE 8000.0f		/* test: it fires at a target this near and ahead */
 #define CP_FIGHT_MAX 64				/* test: the targets looked at */
 #define CP_AMMO_GAP 4.0				/* test: s between two ammo boxes */
+#define CP_WORLD_EDGE 200.0f		/* test: units a placed player keeps from the box of the level's grid of points */
+#define CP_LIFE_LOW 35				/* test: percent of its most life under which a ship takes a life box */
 #define CP_FIGHT_USELESS 10.0		/* test: s a weapon fires at a target near ahead that loses no life: not taken again */
 #define CP_FIGHT_RED "red"			/* test: the fight list of all the red ones (or enemies) of the level */
 #define CP_POSSESS_SECS 90.0		/* test: a possession is given up after this */
@@ -318,6 +320,53 @@ static byte Cp_FightAmmo(int i, cEntity *e, double now) {
 	return 1;
 }
 
+/* test: a ship under CP_LIFE_LOW percent of its most life is put at the nearest life box first, as a player flies to one
+ * between two attacks (alone the test player died in the mosquitoes of MosquitoClue); a taken box waits for its respawn */
+static byte Cp_FightLife(int i, cEntity *e, double now) {
+	int most = 0;
+	if (!Entity_VarI(e, "MaxLife", &most, 0) || most <= 0 || WLife(e)->life * 100 >= most * CP_LIFE_LOW ||
+		now - g_Coop.pl[i].lifeBoxAt < CP_AMMO_GAP) {
+		return 0;
+	}
+	cEntity *box = NULL;
+	float best = 0.0f;
+	for (cEntity *b = cWorld_GetFirstEntity(g_pWorld); b; b = cEntity_Next(b)) {
+		char *res = NULL;
+		if (!b->active || b->deadNode.target || !Entity_IsType(b, "item") || ((const cItemEntity *)b)->respawn > 0.0f ||
+			!Entity_VarS(b, "NetRes", &res, 0) || !res || strcmp(res, "Box:Life")) {
+			continue;
+		}
+		float dx = b->pos.x - e->pos.x, dy = b->pos.y - e->pos.y, dz = b->pos.z - e->pos.z, d = dx * dx + dy * dy + dz * dz;
+		if (!box || d < best) {
+			box = b;
+			best = d;
+		}
+	}
+	if (!box) {
+		return 0;
+	}
+	g_Coop.pl[i].lifeBoxAt = now;
+	e->pos = (vec3_t){ box->pos.x, box->pos.y + 200.0f, box->pos.z };
+	Obj(e)->vel = (vec3_t){ 0.0f, 0.0f, 0.0f };
+	Rep_Placed(i);
+	Con_Printf("coop: player %d: life %d of %d: life box %s\n", i, WLife(e)->life, most, box->name);
+	return 1;
+}
+
+/* test: p kept inside the box of the level's grid of points (a fighter put above a target at the box's top made the
+ * AI's grid lookups of the instance fail their check: FZ's racers) */
+static void Cp_InWorld(vec3_t *p) {
+	const cGridElements *g = g_NodesWorld ? g_NodesWorld->sup.grid : NULL;
+	if (!g) {
+		return;
+	}
+	float *v[3] = { &p->x, &p->y, &p->z };
+	const float lo[3] = { g->min.x, g->min.y, g->min.z }, hi[3] = { g->max.x, g->max.y, g->max.z };
+	for (int k = 0; k < 3; k++) {
+		*v[k] = *v[k] < lo[k] + CP_WORLD_EDGE ? lo[k] + CP_WORLD_EDGE : *v[k] > hi[k] - CP_WORLD_EDGE ? hi[k] - CP_WORLD_EDGE : *v[k];
+	}
+}
+
 static void Cp_Approach(cEntity *e, cEntity *t, float dist, float *dx, float *dz);
 
 /* test: player i on foot at character t (d away): next to it on a side with a free line to it, facing it, the action
@@ -400,6 +449,7 @@ static void Cp_Fight(int i, NetRepInput *in, double back) {
 		float k = near / d;
 		e->pos = (vec3_t){ t->pos.x + (e->pos.x - t->pos.x) * k, t->pos.y + (kind == NETREP_SHIP ? 300.0f : 100.0f),
 			t->pos.z + (e->pos.z - t->pos.z) * k };
+		Cp_InWorld(&e->pos);
 		/* a ship it stays with: at its speed, as a pilot behind it (a scan needs it near for seconds) */
 		Obj(e)->vel = g_Coop.pl[i].follow ? Obj(t)->vel : (vec3_t){ 0.0f, 0.0f, 0.0f };
 		/* facing it (yaw 0 looks to -z) */
@@ -411,7 +461,7 @@ static void Cp_Fight(int i, NetRepInput *in, double back) {
 		g_Coop.pl[i].fightSince = now;
 		d = near;
 	}
-	if (kind == NETREP_SHIP && Cp_FightAmmo(i, e, now)) {
+	if (kind == NETREP_SHIP && (Cp_FightLife(i, e, now) || Cp_FightAmmo(i, e, now))) {
 		return;
 	}
 	/* where its client shows it (the server's shot looks there) */
@@ -530,7 +580,13 @@ static cEntity *Cp_ArrowTarget(const cEntity *e) {
 	for (cEntity *v = cWorld_GetFirstEntity(g_pWorld); v; v = cEntity_Next(v)) {
 		if (!Entity_IsType(v, TYEN_WITH_LIFE) || !WLife(v)->arrow.canMission || (WLife(v)->life <= 0.0f && !Cp_Thing(v)) ||
 			v->deadNode.target ||
-			Obj(v)->replica || Players_Of(v) >= 0 || !strncmp(v->name, "DM_Door", 7)) {
+			Obj(v)->replica || Players_Of(v) >= 0) {
+			continue;
+		}
+		/* a door only when the mission took its use (a function of the mission, no port of the doors' modules Elevator,
+		 * Metro: GoToOutskirts' elevator to GamblinDen) */
+		const char *um = cPy_Function_Module(&WLife(v)->arrow.onUse);
+		if (!strncmp(v->name, "DM_Door", 7) && um[0] && strncmp(um, "Mission_", 8)) {
 			continue;
 		}
 		float dx = v->pos.x - e->pos.x, dz = v->pos.z - e->pos.z, d = dx * dx + dz * dz;
@@ -1062,7 +1118,9 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 		}
 		return;
 	}
-	if (World_FindEntity(CP_CHECKPOINT)) {
+	/* a race: the mission's member races, a helper that stays with a ship of the mission does not (eight ships put on
+	 * one checkpoint pushed one out of the level) */
+	if (World_FindEntity(CP_CHECKPOINT) && g_Coop.pl[i].autoOn != 2) {
 		if (kind == NETREP_SHIP) {
 			Cp_TestRace(i);
 		} else {
@@ -1354,6 +1412,18 @@ byte Coop_Command(const char *line) {
 		Players_Leave(was);
 		return 1;
 	}
+	if (sscanf(line, "arrow %63s", name) == 1) {
+		/* test: what the auto player sees of an entity (its arrow, life, radar mark, use function) */
+		cEntity *e = World_FindEntity(name);
+		if (!e || !Entity_IsType(e, TYEN_WITH_LIFE)) {
+			Con_Printf("coop: arrow %s: %s\n", name, e ? "no life" : "none");
+		} else {
+			Con_Printf("coop: arrow %s: mission %d use %d life %.0f radar %d active %d dead %d use module %s\n", name,
+				WLife(e)->arrow.canMission, WLife(e)->arrow.canUse, (double)WLife(e)->life, (int)Obj(e)->radarShow, e->active,
+				e->deadNode.target != NULL, cPy_Function_Module(&WLife(e)->arrow.onUse));
+		}
+		return 1;
+	}
 	if (sscanf(line, "show %63s", name) == 1 && strchr(name, '.')) {
 		/* a variable of a module of the scripts */
 		nativeVal_t v, r;
@@ -1595,6 +1665,19 @@ byte Coop_Command(const char *line) {
 		Con_Printf("coop: %s = %s\n", name, val);
 	} else if (sscanf(line, "story inc %63s %d", name, &i) == 2) {
 		Con_Printf("coop: %s = %d\n", name, SaveVar_Inc(name, i));
+	} else if (!strcmp(line, "story deals")) {
+		/* test: the three crazy deals done (the super deal's talk needs them: each deal's variable at its target) */
+		for (i = 1; i <= 3; i++) {
+			char var[32], tgt[32];
+			Str_PrintfQuiet(var, sizeof(var), "CrazyDeal.%d.Var", i);
+			Str_PrintfQuiet(tgt, sizeof(tgt), "CrazyDeal.%d.Tgt", i);
+			const char *v = SaveVar_Get(var), *t = SaveVar_Get(tgt);
+			if (v && t) {
+				Str_Copy(name, v, sizeof(name));
+				SaveVar_Set(name, t);
+				Con_Printf("coop: crazy deal %d: %s = %s\n", i, name, t);
+			}
+		}
 	} else if (sscanf(line, "story hold %d", &i) == 1) {
 		g_Coop.hold = (byte)(i != 0);
 		Con_Printf("coop: the story changes %s\n", g_Coop.hold ? "wait" : "go");

@@ -39,6 +39,7 @@
 #include "../Global/testchannel.h"
 
 #define NS_NAME 128
+#define NS_FIXED_SECS 600.0f		/* a fixed camera's path holds this long (a new camera of the server ends it) */
 #define NS_HIDE 256					/* entities a client hides for itself in a scene */
 #define NS_SHOTS 8
 #define NS_GONE_NS 2000000000ull	/* the scene entity's replica gone that long without an end: the end here */
@@ -58,9 +59,7 @@ static struct {
 	int flags;
 	int rule;						/* NS_SKIP_, -1 before the rules were read */
 	char path[PLAYERS_MAX][NS_NAME];	/* the camera path each player's view 0 shows now, to send */
-	char fixed[PLAYERS_MAX][NS_NAME];	/* the fixed camera each player's view 0 shows now, to send (NetScene_CamFixed) */
-	uint64_t fixedOn;				/* the players whose client holds a fixed camera */
-	uint64_t back;					/* the players whose client gets its own camera again, to send */
+	byte shown[PLAYERS_MAX];		/* a path or fixed camera of the server shows there ("@own" ends it) */
 	uint32_t fadeFrom, fadeTo;		/* the last fade of the scene (fadeAt < 0: none) */
 	float fadeTime;
 	double fadeAt;					/* Instance_Time it started */
@@ -278,63 +277,40 @@ byte NetScene_Message(Net2Host *host, int conn, const uint8_t *data, int size) {
 	return 1;
 }
 
-void NetScene_CamSet(cEntity *cam) {
-	int i = Players_Current();
-	if (!NetScene_Derives() || i < 0 || i >= PLAYERS_MAX || !cam || !Entity_IsType(cam, TYEN_CAMPATH)) {
-		return;
-	}
-	Str_Copy(ns.path[i], cam->name, sizeof(ns.path[i]));
+/* cam is a fixed camera of the scripts (a "Cam" that is no follow camera and no path: a super deal's scores) */
+static byte NetScene_Fixed(const cEntity *cam) {
+	return cam && Entity_IsType((cEntity *)cam, TYEN_CAM) && !Entity_IsType((cEntity *)cam, TYEN_FCAM) &&
+		!Entity_IsType((cEntity *)cam, TYEN_CAMPATH);
 }
 
-byte NetScene_CamFixed(cEntity *cam) {
+byte NetScene_CamSet(cEntity *cam) {
 	int i = Players_Current();
-	if (!NetScene_Derives() || !cam) {
+	byte fixed = NetScene_Fixed(cam), own = cam && Entity_IsType(cam, TYEN_FCAM);
+	if (!NetScene_Derives() || !cam || (!fixed && !own && !Entity_IsType(cam, TYEN_CAMPATH))) {
 		return 0;
 	}
-	uint64_t to = i >= 0 && i < PLAYERS_MAX ? (uint64_t)1 << i : Coop_On() && i == PLAYERS_NONE ? ~(uint64_t)0 : 0;
-	if (Entity_IsType(cam, TYEN_FCAM)) {
-		/* a player's own camera again after a fixed one */
-		ns.back |= to & ns.fixedOn;
-		return (to & ns.fixedOn) != 0;
-	}
-	if (!to || !Entity_IsType(cam, "Cam") || Entity_IsType(cam, TYEN_CAMPATH)) {
-		return 0;
-	}
+	/* a path of a player's context to that player; coop: the world's fixed camera (a super deal's end in the world's
+	 * context) is every member's */
+	byte back = 0;
 	for (int k = 0; k < PLAYERS_MAX; k++) {
-		if ((to >> k & 1) && Rep_PlayerConn(k) >= 0) {
-			Str_Copy(ns.fixed[k], cam->name, sizeof(ns.fixed[k]));
+		if (k != i && !(i == PLAYERS_NONE && (fixed || own) && Coop_On() && Rep_PlayerConn(k) >= 0)) {
+			continue;
 		}
+		/* the follow camera back after a path or a fixed one: the client's own camera again */
+		if (own) {
+			if (ns.shown[k]) {
+				ns.shown[k] = 0;
+				Str_Copy(ns.path[k], "@own", sizeof(ns.path[k]));
+				back = 1;
+			}
+			continue;
+		}
+		ns.shown[k] = 1;
+		Str_Copy(ns.path[k], cam->name, sizeof(ns.path[k]));
+		back |= fixed;
 	}
-	return 1;
-}
-
-/* the client of player i holds the fixed camera e as a path of two equal points (NETSCENE_HOLD seconds), or (e NULL)
- * shows its own camera again (one point "@own": the path ends at once) */
-static void NetScene_SendFixed(int i, cEntity *e) {
-	const CGameCamera *c = e ? &((const cCamControl *)e)->cam : NULL;
-	int n = c ? 2 : 1;
-	if (!Pres_BeginMask((uint64_t)1 << i, PRES_O_CAMPATH)) {
-		return;
-	}
-	Pres_PutStr(e ? e->name : "@own");
-	Pres_PutInt(n);
-	Pres_PutFloat(0.0f);
-	Pres_PutInt((int)(Instance_Time() * 1000.0));
-	for (int k = 0; k < n; k++) {
-		vec3_t none = { 0.0f, 0.0f, 0.0f };
-		Pres_PutStr(c ? "" : "@own");
-		Pres_PutVec(c ? &c->pos : &none);
-		Pres_PutVec(c ? &c->rot : &none);
-		Pres_PutFloat(c ? c->zNear : 10.0f);
-		Pres_PutFloat(c ? c->zFar : 40000.0f);
-		Pres_PutFloat(c ? c->fov : M_PI_F / 2.0f);
-		Pres_PutFloat(c && !k ? NETSCENE_HOLD : 0.0f);
-		Pres_PutFloat(0.0f);
-		Pres_PutInt(0);
-		Pres_PutInt(0);
-	}
-	Pres_Send();
-	NetAudit_Site(NA_CAMERA, e ? "scene.fixed" : "scene.fixed.back");
+	/* a path counts as a scene's camera as before, a fixed camera and the own one when they went to a player */
+	return !fixed && !own ? 1 : back;
 }
 
 /* cam is the camera of player i's view 0, or one a camera path there shows */
@@ -403,26 +379,41 @@ void NetScene_Flush(void) {
 		}
 	}
 	for (int i = 0; NetScene_Derives() && i < PLAYERS_MAX; i++) {
-		cEntity *e = ns.fixed[i][0] ? World_FindEntity(ns.fixed[i]) : NULL;
-		if (ns.fixed[i][0]) {
-			ns.fixed[i][0] = 0;
-			if (e && Entity_IsType(e, "Cam") && Rep_PlayerConn(i) >= 0) {
-				NetScene_SendFixed(i, e);
-				ns.fixedOn |= (uint64_t)1 << i;
-			}
-		}
-		if (ns.back >> i & 1) {
-			ns.back &= ~((uint64_t)1 << i);
-			ns.fixedOn &= ~((uint64_t)1 << i);
-			NetScene_SendFixed(i, NULL);
-		}
-	}
-	for (int i = 0; NetScene_Derives() && i < PLAYERS_MAX; i++) {
 		cEntity *e = ns.path[i][0] ? World_FindEntity(ns.path[i]) : NULL;
 		if (!ns.path[i][0]) {
 			continue;
 		}
+		/* a fixed camera: a path of two points at its place that holds; "@own": one point of the own camera, a path
+		 * that ends at once */
+		byte back = !strcmp(ns.path[i], "@own");
 		ns.path[i][0] = 0;
+		if (back || (e && NetScene_Fixed(e))) {
+			const CGameCamera *c = e && !back ? &((cCamControl *)e)->cam : NULL;
+			int n = back ? 1 : 2;
+			if (!Pres_BeginMask((uint64_t)1 << i, PRES_O_CAMPATH)) {
+				continue;
+			}
+			Pres_PutStr(back ? "@own" : e->name);
+			Pres_PutInt(n);
+			Pres_PutFloat(0.0f);
+			Pres_PutInt((int)(Instance_Time() * 1000.0));
+			for (int k = 0; k < n; k++) {
+				vec3_t zero = { 0.0f, 0.0f, 0.0f };
+				Pres_PutStr(back ? "@own" : "");
+				Pres_PutVec(c ? &c->pos : &zero);
+				Pres_PutVec(c ? &c->rot : &zero);
+				Pres_PutFloat(c ? c->zNear : 10.0f);
+				Pres_PutFloat(c ? c->zFar : 40000.0f);
+				Pres_PutFloat(c ? c->fov : 1.5707964f);
+				Pres_PutFloat(k == 0 && !back ? NS_FIXED_SECS : 0.0f);
+				Pres_PutFloat(0.0f);
+				Pres_PutInt(0);
+				Pres_PutInt(0);
+			}
+			Pres_Send();
+			NetAudit_Site(NA_CAMERA, back ? "scene.path.own" : "scene.path.fixed");
+			continue;
+		}
 		if (!e || !Entity_IsType(e, TYEN_CAMPATH)) {
 			continue;
 		}

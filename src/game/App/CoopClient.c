@@ -740,15 +740,47 @@ void Coop_ClientFrame(void) {
 	}
 	/* tests: the conversor's pick (as its button's Convert and ConvertExecute), Sputnik's screen closed; -mp2: the
 	 * interface of the UI channel (include/scrap/uichan.h) */
-	static double uiConvAt = -1.0;
-	byte uiConv = Ui_ClientIn(UI_K_CONV);
-	if (!uiConv) {
-		uiConvAt = -1.0;
-	} else if (uiConvAt < 0.0) {
-		uiConvAt = Watch_ShownTime();
+	static int uiKind;
+	static double uiAt;
+	int uk = 0;
+	for (int k = 1; k < UI_K_COUNT && !uk; k++) {
+		uk = Ui_ClientIn(k) ? k : 0;
+	}
+	if (uk != uiKind) {
+		uiKind = uk;
+		uiAt = Watch_ShownTime();
+	}
+	/* the test's answer once per interface shown (uiAt far ahead after it) */
+	double uiSecs = Watch_ShownTime() - uiAt;
+	if (answer >= 0 && uiKind == UI_K_YESNO && uiSecs >= answerSecs) {
+		uiAt = 1e30;
+		Ui_ClientYesNo((byte)answer);
+	}
+	if (editSecs > 0.0 && uiKind == UI_K_SHIPEDIT && uiSecs >= editSecs) {
+		uiAt = 1e30;
+		/* the hangar's spare ship is chosen (the old path's test: its own ship for the platform; the editor's exit
+		 * saves HangarTab.currentHangar as Hangar.iHangarShip) */
+		nativeVal_t spare;
+		Native_SetInt(&spare, 9);
+		if (SaveVar_Get(CP_HANGAR "HangarShipAux") && (!Mode_Import("HangarTab") ||
+			!Mode_SetModVar("HangarTab", "currentHangar", &spare))) {
+			Native_ErrPrint();
+		}
+		Con_Printf("coop: test: the ship editor closes\n");
+		if (!PORT_CALL(ShipEdit, ExitEditShipMenu, NULL, "is", 0L, "Exit")) {
+			Native_ErrPrint();
+		}
+	}
+	if (sputnikSecs > 0.0 && uiKind == UI_K_SPUTNIK && uiSecs >= sputnikSecs) {
+		uiAt = 1e30;
+		Con_Printf("coop: test: Sputnik's screen closes\n");
+		if (!PORT_CALL(SputnikInterface, ExitSputnikInterface, NULL, "is", 0L, "Exit")) {
+			Native_ErrPrint();
+		}
 	}
 	if (conv[0] && ((g_Coop.cmenu == COOP_MENU_CONV && Watch_ShownTime() - g_Coop.cmenuAt >= convSecs) ||
-		(uiConv && Watch_ShownTime() - uiConvAt >= convSecs))) {
+		(uiKind == UI_K_CONV && uiSecs >= convSecs))) {
+		uiAt = 1e30;
 		/* a list "A,B,...": each visit the next class of it, the last one again after its end */
 		char k[CP_NAME + 8], pick[CP_NAME];
 		const char *at = conv;
