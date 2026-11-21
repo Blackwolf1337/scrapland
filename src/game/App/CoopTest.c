@@ -91,6 +91,7 @@
 #define CP_FLY_STUCK 8.0			/* test: s, else it is placed CP_FIGHT_NEAR from its goal (as before) */
 #define CP_AUTO_SHIP 8000.0f		/* test: outdoors a target on foot further than this is flown to */
 #define CP_SHIP_ASK 12.0			/* test: s it asks for a ship (the switch) before it walks */
+#define CP_MSG_CARRY 600.0f			/* test: a messenger farther from its pack's goal is put next to it */
 #define CP_MSG_NEAR 700.0f			/* test: a messenger this near the pack's carrier is shot first */
 #define CP_MSG_SHOT 1500.0f			/* test: a messenger fires its lightning at a messenger this near (it reaches 2000) */
 #define CP_AIR 1500.0f				/* test: an item this high above the floor is flown onto */
@@ -1036,11 +1037,22 @@ static byte Cp_MessengerPack(int i, NetRepInput *in, cEntity *e, double now) {
 	/* one that comes for its own pack is shot where it stands (no chase away from the desk) */
 	byte keep = shoot && carrier == e;
 	float dx = to->pos.x - e->pos.x, dz = to->pos.z - e->pos.z, d = sqrtf(dx * dx + dz * dz);
+	/* its own pack is put next to its goal (a desk, the tube room) as the auto player's other moves are: the messengers
+	 * that chase a walking carrier flashed it on the way across the station every time (M7k) */
+	if (carrier == e && !shoot && d > CP_MSG_CARRY) {
+		if (now - g_Coop.pl[i].carryAt >= 2.0) {
+			g_Coop.pl[i].carryAt = now;
+			Travel_TestGoto(i, to->name, 0.0f, CP_MSG_CARRY * 0.5f);
+		}
+		return 1;
+	}
 	if (!keep && (!shoot || d > CP_MSG_SHOT) && Cp_WalkStep(i, in, e, to, now)) {
 		return 1;
 	}
-	float rot[2], dyaw = NetPl_Aim(e, &to->pos, rot, 1);
+	/* the lightning goes where it looks: up or down at the messenger too (one on a stair or a desk was missed) */
+	float rot[2], dyaw = NetPl_Aim(e, &to->pos, rot, 1), pitch = atan2f(to->pos.y - e->pos.y, d > 1.0f ? d : 1.0f) - WChar(e)->view.x;
 	in->rot[0] = NetRep_QRot(rot[0]);
+	in->rot[1] = shoot ? NetRep_QRot(pitch > 0.3f ? 0.6f : pitch < -0.3f ? -0.6f : pitch * 2.0f) : 0;
 	in->move[0] = NetRep_QMove(!keep && d > (shoot ? CP_MSG_SHOT * 0.25f : CP_MELEE * 0.5f) && fabsf(dyaw) < 0.6f ? 1.0f : 0.0f);
 	/* the messenger's lightning fires while the key is held */
 	vec3_t from = { e->pos.x, e->pos.y + 100.0f, e->pos.z }, at = { to->pos.x, to->pos.y + 100.0f, to->pos.z };

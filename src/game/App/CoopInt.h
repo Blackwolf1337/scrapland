@@ -100,6 +100,7 @@ typedef struct CoopState {
 		byte fight;					/* test: it fights the targets of fightList */
 		byte follow;				/* test: the fight only stays with its target (no shot: an escort, a ship to follow) */
 		int spare;					/* test: no shot at a ship whose life is at or under this percent of its most (0 off) */
+		double carryAt;				/* test: when the messenger last put itself with its pack at the pack's goal */
 		byte tough;					/* test: its entity takes no damage (a party of one against a police wave: TransportKiller) */
 		byte scan;					/* test: the mission's ships that are no foes are followed, not shot (a scan) */
 		byte waypoint;				/* test: the item of the scripts' waypoint is taken before the fights (CTF's flags) */
