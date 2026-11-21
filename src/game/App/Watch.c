@@ -43,6 +43,7 @@
 #include "scrap/weapons.h"
 #include "scrap/weaps.h"
 #include "scrap/weaps2.h"
+#include "scrap/viewers.h"
 #include "scrap/world.h"
 
 #define WATCH_SAMPLES 8
@@ -1350,7 +1351,7 @@ void Watch_PostFrame(void) {
 			newest = 0;
 			bits = 0;
 		}
-		int size = NetRep_WriteAckInput(buf, sizeof(buf), newest, bits, v, in, n, shown);
+		int size = NetRep_WriteAckInput(buf, sizeof(buf), newest, bits, v, in, n, shown, NULL);
 		if (size > 0) {
 			Net2_Send(watch.host, 0, REP_CH_UNRELIABLE, buf, size);
 		}
@@ -1358,14 +1359,28 @@ void Watch_PostFrame(void) {
 		watch.lastAck = ms;
 	} else if (watch.phase == WATCH_RUN && (watch.taken || ms - watch.lastAck >= WATCH_ACK_MS) &&
 		NetRepCli_Ack(watch.view, &newest, &bits)) {
-		float v[3] = { 0.0f, 0.0f, 0.0f };
-		if (watch.cam) {
-			const vec3_t *p = &((cCamControl *)watch.cam)->cam.pos;
-			v[0] = p->x;
-			v[1] = p->y;
-			v[2] = p->z;
+		float v[3] = { 0.0f, 0.0f, 0.0f }, dir[3];
+		/* -mp2: a player without an own entity sends the pose of its camera (the server's viewer of the player, what
+		 * it gets near: a spectator's or the death camera, the camera before the first entity) */
+		const cViewer *cv = g_Play && g_Mp2 && !Play_Entity() && Viewers_Count() ? Viewers_At(0) : NULL;
+		int size;
+		if (cv && cv->posed) {
+			v[0] = cv->pos.x;
+			v[1] = cv->pos.y;
+			v[2] = cv->pos.z;
+			dir[0] = cv->dir.x;
+			dir[1] = cv->dir.y;
+			dir[2] = cv->dir.z;
+			size = NetRep_WriteAckInput(buf, sizeof(buf), newest, bits, v, NULL, 0, 0, dir);
+		} else {
+			if (watch.cam) {
+				const vec3_t *p = &((cCamControl *)watch.cam)->cam.pos;
+				v[0] = p->x;
+				v[1] = p->y;
+				v[2] = p->z;
+			}
+			size = NetRep_WriteAck(buf, sizeof(buf), newest, bits, v);
 		}
-		int size = NetRep_WriteAck(buf, sizeof(buf), newest, bits, v);
 		Net2_Send(watch.host, 0, REP_CH_UNRELIABLE, buf, size);
 		watch.taken = 0;
 		watch.lastAck = ms;

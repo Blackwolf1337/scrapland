@@ -12,7 +12,8 @@
  *
  *   The instance (Players_Net) has one viewer per joined player, made once a frame after the owner scan: the pose of
  *   the player's camera (the camera of view 0 its context set, cPlayer.camName: the follow camera MainCam_<i> its
- *   startup made, a scene's camera), else its entity's eyes and heading with the field of view of a camera. "Seen" is
+ *   startup made, a scene's camera), else its entity's eyes and heading with the field of view of a camera; a player
+ *   without an entity has the pose of its client's camera (Viewers_SetFree), when it sent one. "Seen" is
  *   a frustum test against all viewers (the field of view widened as the AI does, the far clip of the camera, the
  *   sector of the point through the portals as cAI_IsVisible). The test command `viewers fake <n> [seed]` adds n test
  *   viewers on the nodes of the level's ground graph, spread as far apart as the graph allows, each turning slowly
@@ -86,6 +87,9 @@ byte Viewers_SeesSector(int sector);
 
 /* the instance: the set made again (after the owner scan of the frame) */
 void Viewers_Frame(float dt);
+/* the instance: the pose of player id's camera its client sent with its input (a spectator's or a dead player's free
+ * camera, a player before its first entity); its viewer while it has no entity; NULL clears it */
+void Viewers_SetFree(int id, const vec3_t *pos, const vec3_t *dir);
 /* the leaders (quotas): their count, and whether viewer i is one */
 int Viewers_Leaders(void);
 /* the index of the leader that the quota owner id (cAIVehicle.viewer - 1) names, -1 when it is no leader now */

@@ -199,13 +199,40 @@ byte Viewers_SeesSector(int sector) {
 
 /* ---- the instance's set ---- */
 
-/* the viewer of player i: its camera, else its entity's eyes */
+static struct {
+	vec3_t pos[PLAYERS_MAX], dir[PLAYERS_MAX];
+	byte on[PLAYERS_MAX];
+} g_Free;
+
+void Viewers_SetFree(int id, const vec3_t *pos, const vec3_t *dir) {
+	if (id < 0 || id >= PLAYERS_MAX) {
+		return;
+	}
+	g_Free.on[id] = pos && dir;
+	if (pos && dir) {
+		g_Free.pos[id] = *pos;
+		g_Free.dir[id] = *dir;
+	}
+}
+
+/* the viewer of player i: its camera, else its entity's eyes; without an entity the camera its client sent */
 static byte Viewers_Player(int i, cViewer *v) {
 	cPlayer *pl = Players_Ctx(i);
 	cEntity *e = pl ? pl->ent : NULL;
 
 	if (!e) {
-		return 0;
+		if (!pl || !g_Free.on[i]) {
+			return 0;
+		}
+		v->id = i;
+		v->posed = 1;
+		v->cam = NULL;
+		v->ent = NULL;
+		v->pos = g_Free.pos[i];
+		v->dir = g_Free.dir[i];
+		v->fov = VIEWERS_NET_FOV;
+		v->far = VIEWERS_NET_FAR;
+		return 1;
 	}
 	cEntity *cam = pl->camName[0] ? World_FindEntity(pl->camName) : NULL;
 	v->id = i;

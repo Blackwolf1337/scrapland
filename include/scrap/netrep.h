@@ -353,9 +353,10 @@ int NetRep_ReadAck(const uint8_t *data, int size, uint16_t *newest, uint32_t *bi
 /* ---- input and prediction (stage M3b) ---- */
 
 #define NETREP_INPUT_REDUNDANCY 4	/* inputs per ack message: the newest and the ones of the ticks before */
-/* the bytes of an ack with the most inputs (NetRep_WriteAckInput): the ack 19, the count, tick and shown time 9, per
- * input 16 */
-#define NETREP_ACKINPUT_MAX (28 + NETREP_INPUT_REDUNDANCY * 16)
+/* the bytes of an ack with the most inputs (NetRep_WriteAckInput): the ack 19, the count, tick and shown time 9, the
+ * camera's pose 7, per input 16 */
+#define NETREP_ACKINPUT_MAX (35 + NETREP_INPUT_REDUNDANCY * 16)
+#define NETREP_DIR_SCALE 32767.0f	/* a camera direction's components in an ack */
 #define NETREP_INBUF 64				/* ticks of input the server keeps per player */
 #define NETREP_INPUT_AHEAD 32		/* input more ticks ahead of the server than this is dropped */
 #define NETREP_PRED 64				/* ticks of predicted states the client keeps */
@@ -416,12 +417,14 @@ typedef struct NetRepInput {
 int8_t NetRep_QMove(float v);		/* -1..1 */
 int16_t NetRep_QRot(float v);
 /* an ack with the client's inputs, newest first (n <= NETREP_INPUT_REDUNDANCY), and the server time it shows the
- * other entities at (ms) */
+ * other entities at (ms); with dir (not NULL) the pose of the client's camera: view its place and dir its direction
+ * (length 1; a -mp2 player without an entity, include/scrap/viewers.h) */
 int NetRep_WriteAckInput(uint8_t *buf, int cap, uint16_t newest, uint32_t bits, const float *view,
-	const NetRepInput *in, int n, uint32_t shownMs);
-/* the inputs of an ack (0 in *n for an ack without), up to max; 0 for a bad message */
+	const NetRepInput *in, int n, uint32_t shownMs, const float *dir);
+/* the inputs of an ack (0 in *n for an ack without), up to max, and the camera's direction into dir (*posed 1) when it
+ * came; 0 for a bad message */
 int NetRep_ReadAckInput(const uint8_t *data, int size, uint16_t *newest, uint32_t *bits, float *view,
-	NetRepInput *in, int max, int *n, uint32_t *shownMs);
+	NetRepInput *in, int max, int *n, uint32_t *shownMs, float *dir, uint8_t *posed);
 
 /* the server's input of a player by tick */
 typedef struct NetRepInBuf {

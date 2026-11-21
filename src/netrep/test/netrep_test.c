@@ -609,18 +609,26 @@ static void Test_PlayerMessages(void) {
 		slot == NETREP_NO_SLOT && kind == NETREP_DEAD && tick == 77 && !nphys);
 	/* an ack of a watcher reads as one without input, with or without the count byte */
 	n = NetRep_WriteAck(buf, sizeof(buf), 5, 0xf0f0f0f0u, view);
-	CHECK(NetRep_ReadAckInput(buf, n, &newest, &bits, vp, out, 4, &kind, &shown) && kind == 0 && newest == 5);
-	n = NetRep_WriteAckInput(buf, sizeof(buf), 6, 1, view, in, 0, 0);
-	CHECK(NetRep_ReadAckInput(buf, n, &newest, &bits, vp, out, 4, &kind, &shown) && kind == 0 && newest == 6);
+	CHECK(NetRep_ReadAckInput(buf, n, &newest, &bits, vp, out, 4, &kind, &shown, NULL, NULL) && kind == 0 && newest == 5);
+	n = NetRep_WriteAckInput(buf, sizeof(buf), 6, 1, view, in, 0, 0, NULL);
+	CHECK(NetRep_ReadAckInput(buf, n, &newest, &bits, vp, out, 4, &kind, &shown, NULL, NULL) && kind == 0 && newest == 6);
 	for (uint32_t t = 1000; t < 1200; t += 13) {
 		for (int i = 0; i < NETREP_INPUT_REDUNDANCY; i++) {
 			in[i] = Test_MakeInput(t - (uint32_t)i * (1 + (t % 2)));
 		}
-		n = NetRep_WriteAckInput(buf, sizeof(buf), (uint16_t)t, t * 3, view, in, NETREP_INPUT_REDUNDANCY, t * 33);
+		/* every other one with the camera's pose */
+		const float camDir[3] = { 0.6f, -0.8f, 0.0f };
+		float gotDir[3] = { 0.0f, 0.0f, 0.0f };
+		uint8_t posed = 2;
+		int withPose = (t / 13) % 2;
+		n = NetRep_WriteAckInput(buf, sizeof(buf), (uint16_t)t, t * 3, view, in, NETREP_INPUT_REDUNDANCY, t * 33,
+			withPose ? camDir : NULL);
 		CHECK(n > 0 && n <= 220);
 		int got;
-		CHECK(NetRep_ReadAckInput(buf, n, &newest, &bits, vp, out, NETREP_INPUT_REDUNDANCY, &got, &shown));
+		CHECK(NetRep_ReadAckInput(buf, n, &newest, &bits, vp, out, NETREP_INPUT_REDUNDANCY, &got, &shown, gotDir, &posed));
 		CHECK(got == NETREP_INPUT_REDUNDANCY && newest == (uint16_t)t && bits == t * 3 && shown == t * 33);
+		CHECK(posed == withPose && (!withPose || (fabsf(gotDir[0] - 0.6f) < 1e-4f && fabsf(gotDir[1] + 0.8f) < 1e-4f &&
+			gotDir[2] == 0.0f)));
 		CHECK(vp[0] == 10.0f && vp[1] == -20.0f && vp[2] == 30.0f);
 		for (int i = 0; i < got; i++) {
 			CHECK(Test_SameInput(&in[i], &out[i]));
@@ -628,18 +636,19 @@ static void Test_PlayerMessages(void) {
 		CHECK(NetRep_ReadAck(buf, n, &newest, &bits, vp) && newest == (uint16_t)t);
 		/* every cut is refused */
 		for (int k = 20; k < n; k++) {
-			CHECK(!NetRep_ReadAckInput(buf, k, &newest, &bits, vp, out, NETREP_INPUT_REDUNDANCY, &got, &shown));
+			CHECK(!NetRep_ReadAckInput(buf, k, &newest, &bits, vp, out, NETREP_INPUT_REDUNDANCY, &got, &shown, NULL, NULL));
 		}
 	}
 	/* the most inputs fit NETREP_ACKINPUT_MAX */
 	for (int i = 0; i < NETREP_INPUT_REDUNDANCY; i++) {
 		in[i] = Test_MakeInput(5000 - (uint32_t)i);
 	}
-	n = NetRep_WriteAckInput(buf, NETREP_ACKINPUT_MAX, 1, 0, view, in, NETREP_INPUT_REDUNDANCY, 0);
-	CHECK(n > 0 && n <= NETREP_ACKINPUT_MAX && !NetRep_WriteAckInput(buf, n - 1, 1, 0, view, in, NETREP_INPUT_REDUNDANCY, 0));
+	const float fwd[3] = { 0.0f, 0.0f, 1.0f };
+	n = NetRep_WriteAckInput(buf, NETREP_ACKINPUT_MAX, 1, 0, view, in, NETREP_INPUT_REDUNDANCY, 0, fwd);
+	CHECK(n == NETREP_ACKINPUT_MAX && !NetRep_WriteAckInput(buf, n - 1, 1, 0, view, in, NETREP_INPUT_REDUNDANCY, 0, fwd));
 	/* inputs out of order or of the same tick are not written */
 	in[1] = in[0];
-	CHECK(!NetRep_WriteAckInput(buf, sizeof(buf), 1, 0, view, in, 2, 0));
+	CHECK(!NetRep_WriteAckInput(buf, sizeof(buf), 1, 0, view, in, 2, 0, NULL));
 	CHECK(NetRep_QMove(1.0f) == 127 && NetRep_QMove(-3.0f) == -127 && NetRep_QMove(0.5f) == 64);
 	CHECK(NetRep_QRot(1.0f) == 1024 && NetRep_QRot(100.0f) == 32767 && NetRep_QRot(-0.25f) == -256);
 }

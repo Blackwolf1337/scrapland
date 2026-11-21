@@ -44,6 +44,7 @@
 #include "scrap/scriptnative.h"
 #include "scrap/sputniks.h"
 #include "scrap/vehicleentity.h"
+#include "scrap/viewers.h"
 #include "scrap/walkcharentity.h"
 #include "scrap/weaps2.h"
 #include "scrap/world.h"
@@ -1360,6 +1361,7 @@ static void Rep_Leave(int i) {
 	Travel_Left(i);
 	Faction_Left(i);
 	Arena_Left(i);
+	Viewers_SetFree(i, NULL, NULL);
 	Rep_DropOwn(i);
 	Rep_DropCorpse(pl);
 	Sputniks_Left(i);
@@ -2006,7 +2008,8 @@ static void Rep_Inputs(RepPlayer *pl, const NetRepInput *in, int n, uint32_t sho
 byte Rep_Message(Net2Host *host, int conn, int channel, const uint8_t *data, int size) {
 	uint32_t rate, bits, shown;
 	uint16_t newest;
-	float view[3];
+	float view[3], dir[3];
+	uint8_t posed;
 	int flags, n;
 	NetRepInput in[NETREP_INPUT_REDUNDANCY];
 
@@ -2025,7 +2028,7 @@ byte Rep_Message(Net2Host *host, int conn, int channel, const uint8_t *data, int
 		return 0;
 	}
 	if (data[0] == NETREP_MSG_ACK &&
-		NetRep_ReadAckInput(data, size, &newest, &bits, view, in, NETREP_INPUT_REDUNDANCY, &n, &shown)) {
+		NetRep_ReadAckInput(data, size, &newest, &bits, view, in, NETREP_INPUT_REDUNDANCY, &n, &shown, dir, &posed)) {
 		NetRepSrv_Ack(rep.srv, rep.conn[conn].c, newest, bits);
 		if (!rep.conn[conn].statics && !g_Mp2) {
 			rep.conn[conn].statics = 1;
@@ -2036,6 +2039,13 @@ byte Rep_Message(Net2Host *host, int conn, int channel, const uint8_t *data, int
 			NetRepSrv_SetView(rep.conn[conn].c, view[0], view[1], view[2], 0.0f);
 		} else {
 			Rep_Inputs(&rep.pl[i], in, n, shown);
+			/* the camera of a player without an entity (a spectator, the dead, before the first entity): its viewer,
+			 * the centre of what it gets */
+			vec3_t p = { view[0], view[1], view[2] }, d = { dir[0], dir[1], dir[2] };
+			Viewers_SetFree(i, posed ? &p : NULL, posed ? &d : NULL);
+			if (posed && !Rep_Own(&rep.pl[i])) {
+				NetRepSrv_SetView(rep.conn[conn].c, view[0], view[1], view[2], 0.0f);
+			}
 		}
 	}
 	return 1;

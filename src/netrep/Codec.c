@@ -547,7 +547,7 @@ int NetRep_WriteAck(uint8_t *buf, int cap, uint16_t newest, uint32_t bits, const
 int NetRep_ReadAck(const uint8_t *data, int size, uint16_t *newest, uint32_t *bits, float *view) {
 	int n;
 	uint32_t shown;
-	return NetRep_ReadAckInput(data, size, newest, bits, view, NULL, 0, &n, &shown);
+	return NetRep_ReadAckInput(data, size, newest, bits, view, NULL, 0, &n, &shown, NULL, NULL);
 }
 
 int8_t NetRep_QMove(float v) {
@@ -563,7 +563,7 @@ int16_t NetRep_QRot(float v) {
 }
 
 int NetRep_WriteAckInput(uint8_t *buf, int cap, uint16_t newest, uint32_t bits, const float *view,
-	const NetRepInput *in, int n, uint32_t shownMs) {
+	const NetRepInput *in, int n, uint32_t shownMs, const float *dir) {
 	int size = NetRep_WriteAck(buf, cap, newest, bits, view);
 	NetRepBuf w;
 	if (!size) {
@@ -575,6 +575,10 @@ int NetRep_WriteAckInput(uint8_t *buf, int cap, uint16_t newest, uint32_t bits, 
 	if (n) {
 		NetRep_PutU32(&w, in[0].tick);
 		NetRep_PutU32(&w, shownMs);
+	}
+	NetRep_PutU8(&w, dir ? 1u : 0u);
+	for (int k = 0; dir && k < 3; k++) {
+		NetRep_PutU16(&w, (uint16_t)(int16_t)NetRep_Round(dir[k] * NETREP_DIR_SCALE, -32767.0f, 32767.0f));
 	}
 	for (int i = 0; i < n; i++) {
 		uint32_t back = i ? in[i - 1].tick - in[i].tick : 0;
@@ -598,11 +602,14 @@ int NetRep_WriteAckInput(uint8_t *buf, int cap, uint16_t newest, uint32_t bits, 
 }
 
 int NetRep_ReadAckInput(const uint8_t *data, int size, uint16_t *newest, uint32_t *bits, float *view,
-	NetRepInput *in, int max, int *n, uint32_t *shownMs) {
+	NetRepInput *in, int max, int *n, uint32_t *shownMs, float *dir, uint8_t *posed) {
 	NetRepReader r;
 	NetRepReader_Init(&r, data, size);
 	*n = 0;
 	*shownMs = 0;
+	if (posed) {
+		*posed = 0;
+	}
 	if (NetRep_GetU8(&r) != NETREP_MSG_ACK) {
 		return 0;
 	}
@@ -618,6 +625,19 @@ int NetRep_ReadAckInput(const uint8_t *data, int size, uint16_t *newest, uint32_
 	}
 	uint32_t tick = count ? NetRep_GetU32(&r) : 0;
 	*shownMs = count ? NetRep_GetU32(&r) : 0;
+	uint8_t pose = (uint8_t)NetRep_GetU8(&r);
+	if (pose > 1) {
+		return 0;
+	}
+	for (int k = 0; pose && k < 3; k++) {
+		float v = (float)(int16_t)NetRep_GetU16(&r) / NETREP_DIR_SCALE;
+		if (dir) {
+			dir[k] = v;
+		}
+	}
+	if (posed) {
+		*posed = pose;
+	}
 	for (int i = 0; i < count; i++) {
 		NetRepInput x;
 		uint32_t back = NetRep_GetU8(&r);
