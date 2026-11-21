@@ -921,13 +921,14 @@ static byte Elv_UnlinkIn(const nativeVal_t *name) {
 	return Mode_Done(&t, !LvN_EqI(ctrl, 0) || PORT_OWN(Elevator, ElevatorBackCamera, NULL, ""));
 }
 
-/* not in the original: the arrival frees the rider in its player's context (an elevator's events run in the world's:
- * the camera, the controls and the HUD of the instance's player who rode, include/scrap/players.h) */
-static byte Elv_UnlinkFromElevator(const nativeVal_t *name) {
+/* not in the original: the events of an elevator run in the world's context; on an instance they run in the context
+ * of its rider's player (LinkedElevator[name][0]): the camera, the controls and the HUD of the player who rides
+ * (include/scrap/players.h). The previous context, Players_Current() when there is no rider */
+static int Elv_RiderEnter(const nativeVal_t *name) {
 	nativeVal_t linked = { 0 }, rg = { 0 }, rider = { 0 };
 	cEntity *e = NULL;
 	if (!Players_Net()) {
-		return Elv_UnlinkIn(name);
+		return Players_Current();
 	}
 	if (Dr_G(ELV, "LinkedElevator", &linked) && Mode_Sub(&linked, name, &rg) && LvN_Item(&rg, 0, &rider) &&
 		rider.type == NV_STR) {
@@ -937,10 +938,35 @@ static byte Elv_UnlinkFromElevator(const nativeVal_t *name) {
 	Native_Free(&linked);
 	Native_Free(&rg);
 	Native_Free(&rider);
-	int was = e ? Players_EnterEntity(e) : Players_Current();
+	return e ? Players_EnterEntity(e) : Players_Current();
+}
+
+static byte Elv_UnlinkFromElevator(const nativeVal_t *name) {
+	int was = Elv_RiderEnter(name);
 	byte ok = Elv_UnlinkIn(name);
 	Players_Leave(was);
 	return ok;
+}
+
+/* the events of an elevator in its rider's context */
+#define ELV_RIDER(call) \
+	do { \
+		int was_ = Elv_RiderEnter(&a[0]); \
+		byte ok_ = (call); \
+		Players_Leave(was_); \
+		return ok_; \
+	} while (0)
+static byte Elv_HaveCloseRider(const nativeVal_t *a) {
+	ELV_RIDER(Elv_ElevatorHaveClose(&a[0], &a[1]));
+}
+static byte Elv_ReachUpRider(const nativeVal_t *a) {
+	ELV_RIDER(Elv_ElevatorReachUp(&a[0]));
+}
+static byte Elv_ReachDownRider(const nativeVal_t *a) {
+	ELV_RIDER(Elv_ElevatorReachDown(&a[0]));
+}
+static byte Elv_HaveOpenRider(const nativeVal_t *a) {
+	ELV_RIDER(Elv_ElevatorHaveOpen(&a[0], &a[1]));
 }
 
 /* Init(): the heights and cameras of the elevator classes */
@@ -1150,10 +1176,10 @@ MODE_FN(Elevator, ObjInitializatorNang, 2, Elv_ObjInitializatorNang(&a[0], &a[1]
 MODE_FN(Elevator, UseElevator, 4, Elv_UseElevator(&a[0], &a[1], &a[2], &a[3]))
 MODE_FN(Elevator, ElevatorActiveToGet, 1, Elv_Move(&a[0], "Up", "Upstairs"))
 MODE_FN(Elevator, ElevatorCloseToGo, 1, Elv_Move(&a[0], "Close", "Closed"))
-MODE_FN(Elevator, ElevatorHaveClose, 3, Elv_ElevatorHaveClose(&a[0], &a[1]))
-MODE_FN(Elevator, ElevatorReachUp, 3, Elv_ElevatorReachUp(&a[0]))
-MODE_FN(Elevator, ElevatorReachDown, 3, Elv_ElevatorReachDown(&a[0]))
-MODE_FN(Elevator, ElevatorHaveOpen, 3, Elv_ElevatorHaveOpen(&a[0], &a[1]))
+MODE_FN(Elevator, ElevatorHaveClose, 3, Elv_HaveCloseRider(a))
+MODE_FN(Elevator, ElevatorReachUp, 3, Elv_ReachUpRider(a))
+MODE_FN(Elevator, ElevatorReachDown, 3, Elv_ReachDownRider(a))
+MODE_FN(Elevator, ElevatorHaveOpen, 3, Elv_HaveOpenRider(a))
 MODE_FNOPT(Elevator, LinkToElevator, 3, 4, Elv_LinkToElevator(&a[0], &a[1], &a[2], MODE_OPT(3)))
 MODE_FN(Elevator, UnlinkFromElevator, 1, Elv_UnlinkFromElevator(&a[0]))
 MODE_FN(Elevator, Init, 0, Elv_Init())
