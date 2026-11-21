@@ -235,10 +235,10 @@ while [ $n -lt $max ]; do
 		if [ -n "$arena" ]; then
 			rearm="coop: the level again"
 			v=AUTO_PRE_$mis; IFS=';' read -ra pl <<< "${!v}"
-			for l in "${pl[@]}"; do [[ $l == wait\ * || $l == conv ]] || rlines="$rlines;inst $lv $l"; done
-			v=AUTO_A_$mis; rlines="$rlines;inst $lv auto \$a ${!v}"
-			v=AUTO_B_$mis; [ "$np" -ge 2 ] && [ "${!v}" != "-" ] && rlines="$rlines;inst $lv auto \$b ${!v:-2}"
-			v=AUTO_M_$mis; for m in $mp; do rlines="$rlines;inst $lv auto \$$m ${!v:-2}"; done
+			for l in "${pl[@]}"; do [[ $l == wait\ * || $l == conv ]] || rlines="$rlines;inst $arena $l"; done
+			v=AUTO_A_$mis; rlines="$rlines;inst $arena auto \$a ${!v}"
+			v=AUTO_B_$mis; [ "$np" -ge 2 ] && [ "${!v}" != "-" ] && rlines="$rlines;inst $arena auto \$b ${!v:-2}"
+			v=AUTO_M_$mis; for m in $mp; do rlines="$rlines;inst $arena auto \$$m ${!v:-2}"; done
 			rlines=${rlines#;}
 		fi
 		# AUTO_REARM_<Mission>: a pattern of the level's log after which the lines of AUTO_REARM_LINES_<Mission> are sent
