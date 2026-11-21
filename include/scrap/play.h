@@ -165,8 +165,8 @@ enum {
 #define NETPL_OF_NOCTRL 0x10		/* character: the scripts took its control (DisableControl, the control off) */
 #define NETPL_OF_ENERGYBAR 0x20		/* the world's EnergyBarActive (the character's energy and action presses read it) */
 #define NETPL_OF_TOUCHED 0x40		/* the server's state: a collision with another ship moved it since the last state
-									   (the rail traffic, a ship of no player, another player: their motion is the
-									   server's, the client takes its result, not compared) */
+									   or the one or two before (the rail traffic, a ship of no player, another player:
+									   their motion is the server's, the client takes its result, not compared) */
 /* what differs between two rollback states (NetPl_OwnDiff) */
 #define NETPL_D_POS 0x01
 #define NETPL_D_VEL 0x02

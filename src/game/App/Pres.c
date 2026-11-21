@@ -107,6 +107,8 @@ static struct {
 	uint64_t to;					/* the audience of the record begun */
 	int op;
 	int own;						/* the player whose own entity steps, -1 */
+	vec3_t lastView[PLAYERS_MAX];	/* each player's viewer when it last had one (Pres_Audience) */
+	byte haveView[PLAYERS_MAX];
 	int skel;						/* depth of the HUD skeleton modules */
 	int calls;						/* depth of the scripts' calls */
 	const char *callMod[PRES_CALLS], *callFunc[PRES_CALLS];
@@ -194,6 +196,17 @@ static byte Pres_Online(int i) {
 	return p && p->used && Rep_PlayerConn(i) >= 0;
 }
 
+/* the players' viewers of this frame as their last ones */
+static void Pres_Views(void) {
+	for (int k = Viewers_Count() - 1; k >= 0; k--) {
+		const cViewer *v = Viewers_At(k);
+		if (v->id >= 0 && v->id < PLAYERS_MAX) {
+			pres.lastView[v->id] = v->pos;
+			pres.haveView[v->id] = 1;
+		}
+	}
+}
+
 static uint64_t Pres_Audience(presTo_t to, const vec3_t *pos) {
 	uint64_t m = 0;
 	int cur = Players_Current();
@@ -204,13 +217,16 @@ static uint64_t Pres_Audience(presTo_t to, const vec3_t *pos) {
 		return Pres_Online(cur) ? (uint64_t)1 << cur : 0;
 	}
 	if (to == PRES_NEAR && pos) {
-		/* the players whose viewer (include/scrap/viewers.h: its camera's pose) is near the place */
-		for (int k = Viewers_Count() - 1; k >= 0; k--) {
-			const cViewer *v = Viewers_At(k);
-			float dx = v->pos.x - pos->x, dy = v->pos.y - pos->y, dz = v->pos.z - pos->z;
-			if (v->id >= 0 && v->id < PLAYERS_MAX && v->id != pres.own && Pres_Online(v->id) &&
+		/* the players whose viewer (include/scrap/viewers.h: its camera's pose) is near the place; a player without an
+		 * entity has none (dead, a spectator of the PvP modes, between two entities): its viewer of the last frame it
+		 * had one (its death camera looks at the place it died) */
+		Pres_Views();
+		for (int i = 0; i < PLAYERS_MAX; i++) {
+			const vec3_t *v = &pres.lastView[i];
+			float dx = v->x - pos->x, dy = v->y - pos->y, dz = v->z - pos->z;
+			if (pres.haveView[i] && i != pres.own && Pres_Online(i) &&
 				dx * dx + dy * dy + dz * dz <= NETREP_RADIUS * NETREP_RADIUS) {
-				m |= (uint64_t)1 << v->id;
+				m |= (uint64_t)1 << i;
 			}
 		}
 		return m;
@@ -316,6 +332,7 @@ void Pres_Send(void) {
 }
 
 void Pres_Flush(Net2Host *host) {
+	Pres_Views();
 	NetScene_Flush();
 	for (int i = 0; i < PLAYERS_MAX; i++) {
 		if (pres.size[i]) {
@@ -846,6 +863,7 @@ void Pres_Joined(int i) {
 	if (!Pres_Out() || i < 0 || i >= PLAYERS_MAX || !Pres_Online(i)) {
 		return;
 	}
+	pres.haveView[i] = 0;
 	int was = Players_Enter(i);
 	for (int k = 0; pres_saveVars[k]; k++) {
 		const char *v = SaveVar_Get(pres_saveVars[k]);

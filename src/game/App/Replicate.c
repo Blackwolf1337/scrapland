@@ -61,6 +61,8 @@
 #define REP_SPAWN_FALL 2500.0f			/* a new character that falls further in its first seconds stood over a
 										   shaft (an elevator's, which the instance does not make): that spawn
 										   point is not used again */
+#define REP_TOUCHED 3					/* rollback states that carry a collision with another ship: its own and two after
+										 * (the push of the contact goes on while the ships come apart) */
 #define REP_SPAWN_CHECK (4 * NETREP_TICK_HZ)
 #define REP_CALL_DROP 3000.0f			/* and below the place of a called ship */
 #define REP_INTEREST 100000.0f			/* units of a client's interest: what single player keeps around the camera
@@ -117,7 +119,7 @@ typedef struct RepPlayer {
 	byte step;						/* that step is due */
 	uint64_t stepTick;				/* the tick of its entity's last step */
 	uint8_t moved;					/* the scripts' moves of its entity (-mp2: its rollback state says so) */
-	byte touched;					/* -mp2: a collision with another ship since its last rollback state */
+	byte touched;					/* -mp2: rollback states left that carry a collision with another ship (REP_TOUCHED) */
 } RepPlayer;
 
 typedef struct RepRewind {
@@ -1774,7 +1776,7 @@ static void Rep_SendOwn(Net2Host *host, RepPlayer *pl, cEntity *e) {
 	NetPl_OwnOf(e, (uint32_t)rep.tick, pl->moved, &o);
 	if (pl->touched) {
 		o.flags |= NETPL_OF_TOUCHED;
-		pl->touched = 0;
+		pl->touched--;
 	}
 	int n = NetRep_WriteOwn(buf, sizeof(buf), &o);
 	if (n > 0) {
@@ -1785,7 +1787,7 @@ static void Rep_SendOwn(Net2Host *host, RepPlayer *pl, cEntity *e) {
 void Rep_OwnTouched(cEntity *e) {
 	for (int i = 0; i < PLAYERS_MAX; i++) {
 		if (rep.pl[i].used && rep.pl[i].own == e) {
-			rep.pl[i].touched = 1;
+			rep.pl[i].touched = REP_TOUCHED;
 		}
 	}
 }
