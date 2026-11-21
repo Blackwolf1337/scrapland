@@ -89,34 +89,30 @@ export AUTO_MID_Mission_RustyFirstContact='@|-|scene Mecanic ended|300|Berto'"'"
 # single player does), then the auto player goes on as Berto (the conversor back to D-Tritus, Humphrey)
 export AUTO_MID_Mission_MeetBoss='@|poll inst @ story get SpecialActionActive|SpecialActionActive = 2|1200|the possession task;;@|inst @ auto $a 0||||;;@|wait 3||||;;@|inst @ possess $a Berto_Default|player $a goes to possess|5|pa goes to possess Berto;;@|-|possession of Berto_Default done|120|pa possessed Berto (any time);;@|wait 5||||;;@|inst @ goto $a DM_Door_Metro_Press 0 400||||;;@|poll inst @ status|player $a \(NetPlayer[0-9_c]+\):.*alarm 0.00|400|the alarm of pa (Berto) fell by the metro station;;@|inst @ auto $a 1|player $a plays|5|pa plays on as Berto'
 # PoliceBossCheats: pa a policeman by the conversor (Ficus' friend wants it), the photo of the boss cheating at poker
-# (the use key when he cheats), the fight scene, then the auto player again
+# (the automatic player takes it: a step's own photo came after it and pressed on the conversor), the fight scene,
+# then the auto player again
 export AUTO_ENV_Mission_PoliceBossCheats="SCRAP_COOP_CONV=Police" AUTO_PRE_Mission_PoliceBossCheats='conv'
-export AUTO_MID_Mission_PoliceBossCheats='@|poll inst @ story get Mission_PoliceBossCheats|Mission_PoliceBossCheats = BossCheats|900|Ficus'"'"' friend: the boss cheats at poker (a photo);;@|inst @ auto $a 0||||;;@|wait 10||||;;@|inst @ goto $a DM_Mission_PoliceBoss_BossCheater 0 200|player $a next to|20|pa at the poker table;;@|wait 3||||;;@|poll inst @ press $a act3 -150|scene PoliFight|600|pa photographs the boss cheating: the fight scene;;@|-|scene PoliFight ended|600|the scene ends (any time);;@|wait 10||||;;@|inst @ auto $a|player $a plays|5|pa plays the mission'"'"'s targets again'
+export AUTO_MID_Mission_PoliceBossCheats='@|poll inst @ story get Mission_PoliceBossCheats|Mission_PoliceBossCheats = BossCheats|900|Ficus'"'"' friend: the boss cheats at poker (a photo);;@|-|scene PoliFight ended|900|pa photographs the boss cheating (the automatic player): the fight scene ends;;@|wait 10||||;;@|inst @ auto $a|player $a plays|5|pa plays the mission'"'"'s targets again'
 # FunctionaryHunting: in a stolen police ship (Ficus' disguise) to the meeting point, where the police friends come
-export AUTO_PRE_Mission_FunctionaryHunting='board $a POLI;wait 5;goto $a DM_Mission_FunctionaryHunting 0 0;wait 30'
+# (flown there by the automatic player: a ship put there by the test line goto died at once; the ship's life is
+# raised: alone the automatic player died against the functionaries that keep coming)
+export AUTO_PRE_Mission_FunctionaryHunting='board $a POLI;wait 5;life $a 20000'
 # SheriffMayor: the police boss is paid (the money of the party's member, as the earlier chains)
 export AUTO_PRE_Mission_SheriffMayor='money $a 50000'
 # CatchTrurl: after Trurl's talk the functionaries with his maps are possessed one after the other (their maps drop),
 # then D-Tritus again by the conversor, the auto player photographs the maps and talks to Trurl
 export AUTO_MID_Mission_CatchTrurl='@|poll inst @ story get CatchTrurlMissionData|CatchTrurlMissionData = KillFunctionaries|900|Trurl'"'"'s talk: the functionaries with his maps;;@|inst @ auto $a 0||||;;@|wait 5||||;;@|inst @ possess $a Functionary_10|the possession of Functionary_10 done|150|pa possesses Functionary_10;;@|inst @ possess $a Functionary_23|the possession of Functionary_23 done|150|pa possesses Functionary_23;;@|inst @ possess $a Functionary_25|the possession of Functionary_25 done|150|pa possesses Functionary_25;;@|wait 5||||;;'"$CONV_A"';;@|inst @ auto $a|player $a plays|5|pa photographs the maps and talks to Trurl again'
 # StealMayorShip: in the mayor's ship twenty police ships of the level to destroy, then the call once the alarm fell
-export AUTO_MID_Mission_StealMayorShip='@|wait 60||||;;@|inst @ auto $a 1 @OutCop|player $a plays|10|pa fights the police ships of the level;;@|poll inst @ show Mission_StealMayorShip.numCopsKilled|numCopsKilled = 20|2400|twenty police ships destroyed;;@|inst @ auto $a 0||||;;@|inst @ auto $b 0||||;;@|poll inst @ status|player $a \(.*alarm 0\.00|900|pa'"'"'s alarm falls before the call;;@|inst @ auto $a 1||||;;@|inst @ auto $b 2||||'
+export AUTO_MID_Mission_StealMayorShip='@|wait 60||||;;@|inst @ auto $a 1 @OutCop|player $a plays|10|pa fights the police ships of the level;;@|inst @ life $a 20000||||;;@|poll inst @ show Mission_StealMayorShip.numCopsKilled|numCopsKilled = 20|2400|twenty police ships destroyed;;@|inst @ auto $a 0||||;;@|inst @ auto $b 0||||;;@|poll inst @ status|player $a \(.*alarm 0\.00|900|pa'"'"'s alarm falls before the call;;@|inst @ auto $a 1||||;;@|inst @ auto $b 2||||'
 # StealMayorShip: only the kills of the mayor's ship count: the other members stay out of the fight (their kills of
 # the police would not count; alive they keep the party alive while pa fights)
 export AUTO_B_Mission_StealMayorShip='-'
-# ApologizeMayor: pb plays nothing (its helper's punches at the sentinels and gears of the town hall draw a fight the mayor
-# joins: he stays on a gear and does not talk again)
-export AUTO_B_Mission_ApologizeMayor='-'
-# DestroyPorkinsTransports: the bishops kill the whole party now and then (the mission starts again): pb takes no damage
-export AUTO_PRE_Mission_DestroyPorkinsTransports='switch $a;switch $b'
+# the mayor's ship's life is raised: with 2 and 8 players under load pa died in it, and a member's ship stays as a
+# wreck (single player's death loads the level again), so the mission makes no new mayor's ship; after a death pa
+# takes a mayor's ship again if there is one
+export AUTO_REARM_Mission_StealMayorShip='instance: player [0-9]+ died' AUTO_REARM_LINES_Mission_StealMayorShip='board $a MAYOR;auto $a 1 @OutCop'
 # the CTF super deals (FZ): pa flies onto the waypoint's item (the flag) as a player follows its arrow, the others fight
 export AUTO_PRE_SuperDeal_Fifth='switch $a;switch $b;waypoint $a 1' AUTO_PRE_SuperDeal_Ninth='switch $a;switch $b;waypoint $a 1'
-# the Domination super deals (OM): pa flies onto the waypoint's item (the baton, then the zones), the others fight
-export AUTO_PRE_SuperDeal_Sixth='switch $a;switch $b;waypoint $a 1' AUTO_PRE_SuperDeal_Tenth='switch $a;switch $b;waypoint $a 1'
-# the automatic player does not win a Domination deal (it does not hunt the enemy's baton carrier): after its try the
-# deal's victory is called as the campaign chain of round 8o does (the story goes on to the next deal)
-export AUTO_MID_SuperDeal_Sixth='@|wait 150||||;;@|inst @ call SuperDeal_Sixth.Victory|coop: call SuperDeal_Sixth.Victory: done|10|the deal'"'"'s victory (test line)'
-export AUTO_MID_SuperDeal_Tenth='@|wait 150||||;;@|inst @ call SuperDeal_Tenth.Victory|coop: call SuperDeal_Tenth.Victory: done|10|the deal'"'"'s victory (test line)'
 # ApologizeMayor: pb plays nothing (its helper's punches at the sentinels and gears of the town hall draw a fight the mayor
 # joins: he stays on a gear and does not talk again)
 export AUTO_B_Mission_ApologizeMayor='-'

@@ -847,6 +847,11 @@ static cEntity *Rep_EnterChar(int i, const vec3_t *pos, float yaw) {
 	}
 	vec3_t p;
 	Rep_SpawnPlace(i, pos, &p, &yaw);
+	/* another member that came in at the same entrance stands there: a free place around it (the two stood on each
+	 * other and fell together, the fall scene played twice) */
+	if (pos && !Rep_Clear(&p, REP_CHAR_CLEAR, e) && !Rep_FreeSpot(pos, 1, &p)) {
+		p = *pos;
+	}
 	Entity_SetPos(e, &p);
 	Rep_CharAt(i, e, yaw);
 	Con_Printf("instance: player %d's startup player %s\n", i, e->name);

@@ -227,10 +227,28 @@ while [ $n -lt $max ]; do
 	# again from its start, this many times at most (default 3)
 	for ((try = 1; try <= ${AUTO_TRIES:-3}; try++)); do
 		[ $try -gt 1 ] && echo "again: try $try"
-		# a lost super deal starts its level again (a new instance without the test lines): played again too
-		ab="${CHAP_ABORT-coop: the mission failed}"
-		[ -n "$arena" ] && [ -z "${CHAP_ABORT+x}" ] && ab="$ab|coop: the level again"
-		CHAP_ABORT="$ab" CHAP_ENV="$CHAP_ENV ${!envv}" "$T/chap.sh" "$tag$n" "$port" "$data" "$steps" > "$S/$tag$n.out" 2>&1
+		# a super deal's next round and its retry start its level again (a new instance without the test lines): the
+		# deal's lines again (chap.sh CHAP_REARM)
+		rearm= rlines=
+		if [ -n "$arena" ]; then
+			rearm="coop: the level again"
+			v=AUTO_PRE_$mis; IFS=';' read -ra pl <<< "${!v}"
+			for l in "${pl[@]}"; do [[ $l == wait\ * || $l == conv ]] || rlines="$rlines;inst $arena $l"; done
+			v=AUTO_A_$mis; rlines="$rlines;inst $arena auto \$a ${!v}"
+			v=AUTO_B_$mis; [ "$np" -ge 2 ] && [ "${!v}" != "-" ] && rlines="$rlines;inst $arena auto \$b ${!v:-2}"
+			v=AUTO_M_$mis; for m in $mp; do rlines="$rlines;inst $arena auto \$$m ${!v:-2}"; done
+			rlines=${rlines#;}
+		fi
+		# AUTO_REARM_<Mission>: a pattern of the level's log after which the lines of AUTO_REARM_LINES_<Mission> are sent
+		# again (StealMayorShip: pa back in the mayor's ship after a death)
+		v=AUTO_REARM_$mis
+		if [ -n "${!v}" ]; then
+			rearm=${!v} rlines=
+			v=AUTO_REARM_LINES_$mis; IFS=';' read -ra pl <<< "${!v}"
+			for l in "${pl[@]}"; do rlines="$rlines;inst $lv $l"; done
+			rlines=${rlines#;}
+		fi
+		CHAP_REARM="$rearm" CHAP_REARM_LINES="$rlines" CHAP_ABORT="${CHAP_ABORT-coop: the mission failed}" CHAP_ENV="$CHAP_ENV ${!envv}" "$T/chap.sh" "$tag$n" "$port" "$data" "$steps" > "$S/$tag$n.out" 2>&1
 		cp "$S/$tag$n.out" "$S/$tag$n-try$try.out"
 		grep -E "^(FAIL|chap )" "$S/$tag$n.out"
 		grep -q "ok: the next mission after" "$S/$tag$n.out" && break

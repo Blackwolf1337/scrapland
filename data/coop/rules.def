@@ -25,8 +25,10 @@ entry Map Spawn ComeFrom PrevMap
 #   each   for every member
 pilot first
 # A line "<rule> <value> <mission>" holds while the story's Mission.Library is that mission. MortalRace: every member
-# races for the baton, so each one's leaving drops a baton it carried (MortalRace.ReleaseBaton).
+# races for the baton, so each one's leaving drops a baton it carried (MortalRace.ReleaseBaton); the MortalRace deals too.
 pilot each Mission_MortalRace
+pilot each SuperDeal_Second
+pilot each SuperDeal_Seventh
 # The missions whose death hook (Chars.OnMainCharDeath) is no end of the mission but a player's loss of what it carried:
 # it runs at each member's death in that member's context, never as the party's death; the instance brings the member
 # back as after any death (the hook's own respawn of the player is left out). MortalRace: the baton drops where its
