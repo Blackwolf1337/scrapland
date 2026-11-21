@@ -56,6 +56,8 @@ typedef struct CoopState {
 	byte started;					/* the level's first tick ran */
 	byte waiting;					/* the world waits for its first member (its time stands) */
 	cEntity *standIn;				/* the scripts' player of the level's start without a member (Coop_StandIn) */
+	cEntity *standInKept;			/* that entity, kept in the world for the next start (its name in standInName) */
+	char standInName[CP_NAME];
 	int ndirty;
 	struct {
 		char name[CP_NAME];

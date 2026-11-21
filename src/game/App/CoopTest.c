@@ -526,7 +526,13 @@ static cEntity *Cp_ArrowTarget(const cEntity *e) {
 	for (cEntity *v = cWorld_GetFirstEntity(g_pWorld); v; v = cEntity_Next(v)) {
 		if (!Entity_IsType(v, TYEN_WITH_LIFE) || !WLife(v)->arrow.canMission || (WLife(v)->life <= 0.0f && !Cp_Thing(v)) ||
 			v->deadNode.target ||
-			Obj(v)->replica || Players_Of(v) >= 0 || !strncmp(v->name, "DM_Door", 7)) {
+			Obj(v)->replica || Players_Of(v) >= 0) {
+			continue;
+		}
+		/* a door only when the mission took its use (a function of the mission, no port of the doors' modules Elevator,
+		 * Metro: GoToOutskirts' elevator to GamblinDen) */
+		const char *um = cPy_Function_Module(&WLife(v)->arrow.onUse);
+		if (!strncmp(v->name, "DM_Door", 7) && um[0] && strncmp(um, "Mission_", 8)) {
 			continue;
 		}
 		float dx = v->pos.x - e->pos.x, dz = v->pos.z - e->pos.z, d = dx * dx + dz * dz;
@@ -1338,6 +1344,18 @@ byte Coop_Command(const char *line) {
 		Players_Leave(was);
 		return 1;
 	}
+	if (sscanf(line, "arrow %63s", name) == 1) {
+		/* test: what the auto player sees of an entity (its arrow, life, radar mark, use function) */
+		cEntity *e = World_FindEntity(name);
+		if (!e || !Entity_IsType(e, TYEN_WITH_LIFE)) {
+			Con_Printf("coop: arrow %s: %s\n", name, e ? "no life" : "none");
+		} else {
+			Con_Printf("coop: arrow %s: mission %d use %d life %.0f radar %d active %d dead %d use module %s\n", name,
+				WLife(e)->arrow.canMission, WLife(e)->arrow.canUse, (double)WLife(e)->life, (int)Obj(e)->radarShow, e->active,
+				e->deadNode.target != NULL, cPy_Function_Module(&WLife(e)->arrow.onUse));
+		}
+		return 1;
+	}
 	if (sscanf(line, "show %63s", name) == 1 && strchr(name, '.')) {
 		/* a variable of a module of the scripts */
 		nativeVal_t v, r;
@@ -1562,6 +1580,19 @@ byte Coop_Command(const char *line) {
 		Con_Printf("coop: %s = %s\n", name, val);
 	} else if (sscanf(line, "story inc %63s %d", name, &i) == 2) {
 		Con_Printf("coop: %s = %d\n", name, SaveVar_Inc(name, i));
+	} else if (!strcmp(line, "story deals")) {
+		/* test: the three crazy deals done (the super deal's talk needs them: each deal's variable at its target) */
+		for (i = 1; i <= 3; i++) {
+			char var[32], tgt[32];
+			Str_PrintfQuiet(var, sizeof(var), "CrazyDeal.%d.Var", i);
+			Str_PrintfQuiet(tgt, sizeof(tgt), "CrazyDeal.%d.Tgt", i);
+			const char *v = SaveVar_Get(var), *t = SaveVar_Get(tgt);
+			if (v && t) {
+				Str_Copy(name, v, sizeof(name));
+				SaveVar_Set(name, t);
+				Con_Printf("coop: crazy deal %d: %s = %s\n", i, name, t);
+			}
+		}
 	} else if (sscanf(line, "story hold %d", &i) == 1) {
 		g_Coop.hold = (byte)(i != 0);
 		Con_Printf("coop: the story changes %s\n", g_Coop.hold ? "wait" : "go");

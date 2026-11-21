@@ -65,3 +65,13 @@ export AUTO_PRE_Mission_DestroyHumphrey='switch $a;switch $b'
 # GoWithHuman: the human waits at the entrance and follows D-Tritus once he is near (CheckMaxDist), to the machine's
 # switch; he stops when D-Tritus is too far: pa goes to him first, then walks (test line walk)
 export AUTO_PRE_Mission_GoWithHuman='goto $a Human_Entrance 0 300;wait 5;walk $a 1 Human_Entrance'
+# Part 1 of the story (stage 5b), the intro's levels by their steps, as single player plays them (no mission targets):
+# Orbit: the gatekeeper's talk, the decontamination, the check-in, the fall to Fake
+export AUTO_A_MapDecont='-' AUTO_B_MapDecont='-'
+export AUTO_MID_MapDecont='@|inst @ use $a Decontamination_keyboard|scene Decontamination ended|120|the decontamination;;@|inst @ use $a Functionary_00|scene Functionary ended|200|the check-in;;@|inst @ use $a DownPanel_keyboard||||'
+# Fake: its scene chain plays by itself and ends in the Junkyard
+export AUTO_A_Fake='-' AUTO_B_Fake='-'
+# RustyFirstContact: Berto's scene, Rusty's talk, the keypad: the tutorial question and the ship editor on pa's client
+# (SCRAP_COOP_ANSWER, SCRAP_COOP_SHIPEDIT), the platform: Rusty's farewell, the elevator to Outskirts
+export AUTO_A_Mission_RustyFirstContact='-' AUTO_B_Mission_RustyFirstContact='-'
+export AUTO_MID_Mission_RustyFirstContact='@|-|scene Mecanic ended|300|Berto'"'"'s scene (any time);;@|inst @ goto $a Rusty_0 0 250||||;;@|wait 2||||;;@|inst @ use $a Rusty_0|player $a uses Rusty_0|10|pa talks to Rusty;;@|wait 25||||;;@|inst @ goto $a DM_EditKeyboard 0 250||||;;@|wait 3||||;;@|inst @ use $a DM_EditKeyboard|ui: the yesno opens on the client of player $a|20|the keypad asks pa;;@|-|ui: player $a closed the ship editor|120|pa'"'"'s editor closes;;@|inst @ goto $a DM_Door_EditShip_00 0 150||||;;@|wait 3||||;;@|inst @ use $a DM_Door_EditShip_00|scene MecanicFinal plays|30|Rusty'"'"'s farewell'

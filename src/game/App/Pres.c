@@ -51,6 +51,7 @@
 #define PRES_HOLD_NS 1000000000ull	/* how long: then it plays and counts what it misses */
 #define PRES_GVARS 64
 #define PRES_CHARRES 64
+#define PRES_WORLD_HUD 32			/* the items of the world's scorer a joining player gets */
 
 int g_PresIn;
 int g_PresDerived;
@@ -103,6 +104,12 @@ static struct {
 									 * go to the players that join later (C code sets some of them too) */
 	int numGVars;
 	char charRes[PRES_CHARRES][32];	/* the character classes of Pres_CharRes */
+	struct {						/* the items the world's scorer 0 has (added by the level's start before any
+									 * player came: the intro's Credits): a player that joins gets them */
+		char item[48], type[48];
+		byte append;
+	} worldHud[PRES_WORLD_HUD];
+	int numWorldHud;
 	int numCharRes;
 	uint32_t sent[PRES_O_COUNT], bytes, cut;
 	/* client */
@@ -811,6 +818,14 @@ void Pres_Joined(int i) {
 		Pres_PutFloat(pres.musicVolume);
 		Pres_Send();
 	}
+	for (int k = 0; k < pres.numWorldHud; k++) {
+		if (Pres_BeginTo((uint64_t)1 << i, PRES_O_HUDADD)) {
+			Pres_PutStr(pres.worldHud[k].item);
+			Pres_PutStr(pres.worldHud[k].type);
+			Pres_PutInt(pres.worldHud[k].append);
+			Pres_Send();
+		}
+	}
 	if (pres.music[0] && Pres_BeginTo((uint64_t)1 << i, PRES_O_MUSIC)) {
 		Pres_PutStr(pres.music);
 		Pres_PutStr("play");
@@ -946,7 +961,26 @@ void Pres_ActionSet(const char *name) {
 	}
 }
 
+/* the world's scorer item k out of the list of Pres_Joined */
+static void Pres_WorldHudDrop(int k) {
+	pres.numWorldHud--;
+	memmove(&pres.worldHud[k], &pres.worldHud[k + 1], (size_t)(pres.numWorldHud - k) * sizeof(pres.worldHud[0]));
+}
+
 void Pres_HudAdd(const cScorer *sc, const char *item, const char *type, byte append) {
+	if (Pres_Out() && !pres.skel && sc == Scorer_GetWorld(0) && item && type) {
+		for (int k = 0; k < pres.numWorldHud; k++) {
+			if (!strcmp(pres.worldHud[k].item, item)) {
+				Pres_WorldHudDrop(k);
+				break;
+			}
+		}
+		if (pres.numWorldHud < PRES_WORLD_HUD) {
+			Str_Copy(pres.worldHud[pres.numWorldHud].item, item, sizeof(pres.worldHud[0].item));
+			Str_Copy(pres.worldHud[pres.numWorldHud].type, type, sizeof(pres.worldHud[0].type));
+			pres.worldHud[pres.numWorldHud++].append = append;
+		}
+	}
 	if (Pres_BeginHud(sc, PRES_O_HUDADD, 1)) {
 		Pres_PutStr(item);
 		Pres_PutStr(type);
@@ -956,6 +990,9 @@ void Pres_HudAdd(const cScorer *sc, const char *item, const char *type, byte app
 }
 
 void Pres_HudClear(const cScorer *sc) {
+	if (Pres_Out() && sc == Scorer_GetWorld(0)) {
+		pres.numWorldHud = 0;
+	}
 	if (Pres_BeginHud(sc, PRES_O_HUDCLEAR, 1)) {
 		Pres_Send();
 	}
@@ -969,6 +1006,14 @@ void Pres_HudShow(const cScorer *sc, byte on) {
 }
 
 void Pres_HudSet(const cScorer *sc, const char *item, const char *var, const char *s, double d) {
+	if (Pres_Out() && sc == Scorer_GetWorld(0) && item && var && !crt_stricmp(var, "DelMe") && (s ? crt_atoi(s) : d) != 0) {
+		for (int k = 0; k < pres.numWorldHud; k++) {
+			if (!strcmp(pres.worldHud[k].item, item)) {
+				Pres_WorldHudDrop(k);
+				break;
+			}
+		}
+	}
 	if (Pres_BeginHud(sc, PRES_O_HUDSET, 1)) {
 		Pres_PutStr(item);
 		Pres_PutStr(var);

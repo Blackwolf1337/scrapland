@@ -9,8 +9,9 @@
 SceneSkip all
 
 # The save variables that are a member's own, not the story's (where it goes on, its character, money and alarm,
-# its time): they stay out of the party's story.
-local Map Spawn ComeFrom PrevMap Char AcBatteries Money Alarm GameplayTime
+# its time): they stay out of the party's story. On -mp2 every other variable is the party's, also those a sandbox
+# keeps per player (the PLAYER prefixes of tools/script/netclass/savevar.tsv: the hangar, the lives, the bets).
+local Map Spawn ComeFrom PrevMap Char AcBatteries Money Alarm AlarmActive AlarmStatus GameplayTime
 # The variables of the story the HUD shows: the clients get them and their globals of the same name (old path).
 hud EnergyBarActive SpecialActionActive
 # The variables of the story the clients' copies leave out: the mission (a client's level start would run it), the
