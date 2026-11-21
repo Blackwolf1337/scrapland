@@ -9,6 +9,7 @@
 #include "scrap/coord.h"
 #include "scrap/crt.h"
 #include "scrap/entity.h"
+#include "scrap/faction.h"
 #include "scrap/game.h"
 #include "scrap/instance.h"
 #include "scrap/net2.h"
@@ -669,6 +670,14 @@ byte Ui_Message(Net2Host *host, int conn, const uint8_t *data, int size) {
 	}
 	NetRepReader_Init(&r, data + 2, size - 2);
 	int k = (int)NetRep_GetU8(&r);
+	if (data[1] == UI_C_KEY) {
+		if (!r.bad) {
+			const char *a = Faction_AbilityName(k);
+			NetAudit_Func(NA_HUD, "ui.key:", a ? a : "?");
+			Faction_Key(i, k);
+		}
+		return 1;
+	}
 	if (data[1] == UI_C_ASK) {
 		if (k == UI_K_MISSION && !r.bad) {
 			static uint8_t buf[UI_MSGMAX];
