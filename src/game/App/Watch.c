@@ -1285,7 +1285,7 @@ void Watch_PreFrame(void) {
 	double rt = NetRepFollow_Step(&watch.follow, NetRepClock_Server(&watch.clock, now) - watch.rtt * 0.5 - delay, dt);
 	if (g_Mp2) {
 		/* tests: a scene screenshot due in this frame is drawn at its scene time exactly */
-		rt = NetScene_ShotServerTime(rt);
+		rt = NetScene_ShotServerTime(watch.shown, rt);
 	}
 	watch.shown = rt;
 	if (g_Mp2) {

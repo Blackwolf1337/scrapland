@@ -159,18 +159,19 @@ byte Scene_ClientEnd(void);
 
 /* ---- both ---- */
 
-/* the start of a level (before the module Init): SCRAP_TEST_SAVEVARS=<name>=<value>[;...] sets those save variables first, for a
- * test that plays a scene whose level state depends on the story (HumanCD needs the mental controller of the press of
- * GameAct 1stMurder to 3rdMurder) on every side alike */
+/* the start of a level (before the module Init): SCRAP_TEST_SAVEVARS=<name>=<value>[;...] sets those save variables
+ * first, for a test that plays a scene whose level state depends on the story (HumanCD needs the mental controller of
+ * the press of GameAct 1stMurder to 3rdMurder) on every side alike; Char also preloads that character's library, the
+ * pseudo name CharLib only preloads one (Bishop for GDB's scene, the player stays its character) */
 void NetScene_TestVars(void);
 /* each frame: the screenshots of SCRAP_SCENE_SHOTS */
 void NetScene_ShotFrame(void);
 /* the screenshots on the scene's own clock: a frame of dt s that would pass the time of the next shot of a camera
  * path or of single player's scene ends at it (the game's clock takes the rest in the next frame); the client draws
- * its frame at server time rt or earlier when the next shot of the server's scene falls before it. So a shot is of
- * its scene time also when the frames are long (SCRAP_TIMESCALE) */
+ * its frame at server time rt or earlier (not before prev, the frame before) when the next shot of the server's scene
+ * falls before it. So a shot is of its scene time also when the frames are long (SCRAP_TIMESCALE) */
 float NetScene_ShotStep(float dt);
-double NetScene_ShotServerTime(double rt);
+double NetScene_ShotServerTime(double prev, double rt);
 /* the test verb "scene" */
 void NetScene_Verb(struct tcBuf *b, const char *arg);
 

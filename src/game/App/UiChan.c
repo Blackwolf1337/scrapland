@@ -1026,6 +1026,10 @@ byte Ui_ClientHangar(int k) {
 	return 1;
 }
 
+void Ui_ClientHudCleared(void) {
+	ui.hudBack = 1;
+}
+
 void Ui_ClientControls(const char *set) {
 	/* the end of the machine's scene (CharConversor.EndOfScene) builds the HUD skeleton the instance does not send
 	 * (include/scrap/pres.h): the client's own, as Play.c builds it */

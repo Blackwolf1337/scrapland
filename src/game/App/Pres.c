@@ -1133,6 +1133,7 @@ static void Pres_HudPlay(int op, NetRepReader *r) {
 	}
 	case PRES_O_HUDCLEAR:
 		cScorer_Clear(sc);
+		Ui_ClientHudCleared();
 		break;
 	case PRES_O_HUDSHOW:
 		sc->visible = NetRep_GetSVar(r) != 0;

@@ -2,7 +2,7 @@
 """Plays scenes through the test verb "scene" and waits for each end (include/scrap/netscene.h, stage 4.5 of the
 second multiplayer design; the games run with the test channel, SCRAP_SCENE_SHOTS takes their screenshots).
 
-  scenes.py sp <game> <scene>...                        single player
+  scenes.py sp <game> <scene>...                        single player (each after the scene that plays, a level's own)
   scenes.py net <instance game> <level> <player|all> --clients <game>,<game> <scene>... [--out DIR]
       on a -mp2 instance (player: the context the scene starts in, sandbox); after each scene the instance's audit
       (pres.unforwarded, pres.double, scene keys) since the scene's start, each client's (pres.double, pres.missing,
@@ -80,6 +80,7 @@ def main():
     if a[0] == 'sp':
         game = a[1]
         for sc in a[2:]:
+            wait_end(game)
             r = ask(game, ['scene play %s' % sc])
             print(sc, r.strip(), flush=True)
             if 'playing' in r:
@@ -104,6 +105,7 @@ def main():
     if out:
         os.makedirs(out, exist_ok=True)
     for sc in scenes:
+        wait_end(game, level)
         ask(game, ['audit reset'], level)
         for c in clients:
             ask(c, ['audit reset'])

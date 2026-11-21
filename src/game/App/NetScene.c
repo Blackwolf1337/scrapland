@@ -733,9 +733,16 @@ void NetScene_TestVars(void) {
 		char *eq = strchr(item, '=');
 		if (eq) {
 			*eq = 0;
+		}
+		if (eq && !strcmp(item, "CharLib")) {
+			/* no save variable: only a character's library, as an outdoor level's start preloads the player's (Bishop
+			 * for GDB's scene, the player stays its character) */
+			SceneList_CharLib(eq + 1);
+			Con_Printf("scene: test character library %s\n", eq + 1);
+		} else if (eq) {
 			SaveVar_Set(item, eq + 1);
 			Con_Printf("scene: test save variable %s = %s\n", item, eq + 1);
-			/* the character's library, as an outdoor level's start preloads the player's (Bishop on GDB) */
+			/* the character's library, as an outdoor level's start preloads the player's */
 			if (!strcmp(item, "Char")) {
 				SceneList_CharLib(eq + 1);
 			}
@@ -881,14 +888,13 @@ float NetScene_ShotStep(float dt) {
 	return left > NS_SHOT_EPS && left < dt ? left : dt;
 }
 
-double NetScene_ShotServerTime(double rt) {
+double NetScene_ShotServerTime(double prev, double rt) {
 	nsShot_t s;
 	if (!ns.cOn || !NetScene_ShotSubject(&s, 0) || !s.due || !s.e) {
 		return rt;
 	}
-	/* the frames before were drawn before the shot's time (else it was taken): its moment may lie a little back when
-	 * the samples were late */
-	return Watch_ActAt(s.e, 0, s.at, rt - NS_SHOT_BACK, rt);
+	/* not before the frame before: the models' animations do not go back (their events would be behind them) */
+	return Watch_ActAt(s.e, 0, s.at, prev > rt - NS_SHOT_BACK ? prev : rt - NS_SHOT_BACK, rt);
 }
 
 /* ---- the test verb ---- */
