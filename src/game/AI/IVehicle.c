@@ -1520,6 +1520,11 @@ static byte AIV_Viewer(cAIVehicle *self, AivViewer *v, byte repos) {
 	if (!view || !view->posed) {
 		return 0;
 	}
+	/* -mp2: the instance's viewer of a new place (another leader than the one UpdateGraph checked) out of the graph's
+	 * grid failed the grid's check (a player's camera over the level's top, ProtectMayorTransport) */
+	if (repos && Viewers_Server() && !NodesWorld_InGrid(g_NodesWorld, &view->pos)) {
+		return 0;
+	}
 	v->pos = view->pos;
 	v->dir = view->dir;
 	v->fov = view->fov;
