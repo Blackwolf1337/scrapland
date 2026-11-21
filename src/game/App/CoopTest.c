@@ -1142,7 +1142,11 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	}
 	/* the mission's targets one after the other (the right one of three to talk to: ThreeStooges' mercenaries) */
 	int nt = Cp_FightTargets("", all, CP_FIGHT_MAX, 0);
-	if (g_Coop.pl[i].autoOn != 2 && Cp_BankerSlaps(i, in, e, all, nt, now)) {
+	/* a banker robs the mission's list of targets (TalkToMayor: Corruptus and Porkins), not a current target the list
+	 * left over (the mayor, who keeps his money) */
+	cEntity *rob[CP_FIGHT_MAX];
+	int nr = Cp_FightTargets("MissionsFuncs.targetsList", rob, CP_FIGHT_MAX, 0);
+	if (g_Coop.pl[i].autoOn != 2 && Cp_BankerSlaps(i, in, e, nr ? rob : all, nr ? nr : nt, now)) {
 		return;
 	}
 	cEntity *t = g_Coop.pl[i].autoOn == 2 ? escort : nt ? all[g_Coop.pl[i].autoTurn % nt] : NULL;
