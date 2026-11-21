@@ -6,8 +6,9 @@ export AUTO_PRE_Mission_IgorCombat='switch $a;switch $b' AUTO_A_Mission_IgorComb
 export AUTO_A_Mission_Massacre="1 @Traffic" AUTO_B_Mission_Massacre="2 @Traffic"
 export AUTO_PRE_Mission_BankersCombat='switch $a;switch $b' AUTO_B_Mission_BankersCombat='2 red'
 export AUTO_PRE_Mission_BankersCTF='switch $a;switch $b;waypoint $a 1' AUTO_B_Mission_BankersCTF='2 red'
-# MortalRace: the helpers take no damage (a member's death stopped the race's checkpoints for the party: open point)
-export AUTO_PRE_Mission_MortalRace='switch $a;switch $b;tough $b 1'
+# MortalRace: no member takes damage (the racers kill the baton's carrier again and again, and a member's death drops
+# the baton: the race's checkpoints stopped for the party), as a party of one plays it with CHAP_TOUGH
+export AUTO_PRE_Mission_MortalRace='switch $a;switch $b;tough $a 1;tough $b 1'
 export CHAP_SECS=1800 CHAP_ENV="SCRAP_COOP_CONV=Dtritus SCRAP_COOP_WARNING=3 SCRAP_COOP_ANSWER=yes"
 export AUTO_PRE_Mission_FaceTheMayor='switch $a;switch $b'
 export AUTO_PRE_Mission_AttackTraitorius='spare $a 30;spare $b 30'
@@ -121,3 +122,7 @@ export AUTO_MID1_Mission_GetDataPart2='@|wait 40||||;;@|inst @ auto $a 0||||;;@|
 # callback starts the data's waves again: after the boss' call it stops, waits for its alarm to fall, then goes to the
 # phone cab of the call on foot and uses it (test lines switch, target and usetarget)
 export AUTO_MID1_Mission_GetDataPart3='@|poll inst @ story get MissionState|MissionState = CallDeepThroat|1500|the data with the boss: Deep Throat to call;;@|inst @ auto $a 0||||;;@|poll inst @ status|player $a \(.*alarm 0\.00|900|pa'"'"'s alarm falls before the call;;@|inst @ switch $a|player $a out of|30|pa out of its ship;;@|wait 5||||;;@|inst @ target $a 0 150||||;;@|wait 3||||;;@|inst @ usetarget $a|player $a uses|10|pa calls Deep Throat'
+# DefeatCrazyGambler1 to 3: the crazy gambler's fights kill the party of two again and again (the mission starts
+# again): no member takes damage
+export AUTO_PRE_Mission_DefeatCrazyGambler1='tough $a 1;tough $b 1' AUTO_PRE_Mission_DefeatCrazyGambler2='tough $a 1;tough $b 1'
+export AUTO_PRE_Mission_DefeatCrazyGambler3='tough $a 1;tough $b 1'

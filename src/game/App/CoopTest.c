@@ -1099,6 +1099,19 @@ static byte Cp_MessengerPack(int i, NetRepInput *in, cEntity *e, double now) {
 	return 1;
 }
 
+/* test: player i's talk of a phone cab or a desktop plays (Speech.TalkNI of its context, deleted at the talk's end;
+ * the instance draws no talk scorer, g_RemainTalkTime stays 0 there) */
+static byte Cp_NITalk(int i) {
+	nativeVal_t v;
+	Native_SetNone(&v);
+	int was = Players_Enter(i);
+	byte on = Mode_ModGet("Speech", "TalkNI", &v) && v.type != NV_NONE;
+	Players_Leave(was);
+	Native_Free(&v);
+	Native_ErrClear();
+	return on;
+}
+
 /* test: the mission waits for the player to board (Parking.SwitchVehicleMissionCallback: GetDataPart1, the super
  * deals) */
 static byte Cp_WaitsForShip(void) {
@@ -1126,6 +1139,12 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	if (now < g_Coop.pl[i].talkUntil) {
 		/* a conversation of its own plays: it listens (single player's input stops there), its next use CP_AUTO_GAP after
 		 * it (a use between two lines started BeatPickus' talk with Traitorius again) */
+		g_Coop.pl[i].autoSince = now;
+		return;
+	}
+	if (Cp_NITalk(i)) {
+		/* its talk of a phone cab plays: it listens, as the single player's talk holds its input (a boarding during
+		 * MeetBerto's call left the talk's end on a ship: AutoSelect, the call's callback lost) */
 		g_Coop.pl[i].autoSince = now;
 		return;
 	}
