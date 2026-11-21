@@ -490,6 +490,9 @@ void cDebrisSys_SetName(cDebrisSys *sys, const char *name) {
 void cDebrisSys_Update(cDebrisSys *sys, float dt) {
 	cDebris *d;
 
+	/* not in the original: the elements' own steps are presentation (a -mp2 client runs the dropped element itself:
+	 * the gear missile's thunder was played twice, include/scrap/pres.h) */
+	Pres_Derive();
 	sys->time = dt + sys->time;
 	if (sys->time > DEBRIS_MAXSTEP) {
 		sys->time = DEBRIS_MAXSTEP;
@@ -511,6 +514,7 @@ void cDebrisSys_Update(cDebrisSys *sys, float dt) {
 	for (d = sys->active; d; d = d->next) {
 		cDebris_Step(d, sys->time);
 	}
+	Pres_Underive();
 }
 
 /* the vtable of cObjElementAbstract */

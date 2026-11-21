@@ -62,9 +62,11 @@ static byte Pk_NotOwn(void) {
 }
 
 /* Pk_NotOwn, but the coop story's party ship (the world's own Parking.PlayerShip of the level's start, Pk_BrowseItemPosN)
- * is single player's own ship in the world's context (a parking's callback for a ship no member owns) */
+ * is single player's own ship in the world's context (a parking's callback for a ship no member owns) while it lives
+ * (a destroyed one is none: its name read failed at every parking check) */
 static byte Pk_NotOwnShip(const nativeVal_t *ship) {
-	return Pk_NotOwn() && !(Coop_On() && Players_Current() == PLAYERS_NONE && Native_True(ship));
+	return Pk_NotOwn() && !(Coop_On() && Players_Current() == PLAYERS_NONE && Native_True(ship) &&
+		ship->type == NV_ENT && Native_Ent(ship));
 }
 
 /* Scrap.GetEntity(name) through its seam, the handle value (None for no entity) */

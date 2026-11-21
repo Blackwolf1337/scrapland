@@ -1062,7 +1062,11 @@ static void Rep_SwitchTo(int i, cEntity *e, cEntity *want) {
 		Coop_Boarded(i, best);
 		return;
 	}
-	if (NetPl_Kind(e) != NETREP_SHIP || Veh(e)->speed > PLAY_LEAVE_SPEED) {
+	/* the speed of its velocity: the ship's own speed is set by its collision step, which a ship the test line goto
+	 * stopped does not run while it stands (a stale 9545 kept the coop auto player in its ship) */
+	const vec3_t *v = &Obj(e)->vel;
+	if (NetPl_Kind(e) != NETREP_SHIP ||
+		v->x * v->x + v->y * v->y + v->z * v->z > PLAY_LEAVE_SPEED * PLAY_LEAVE_SPEED) {
 		return;
 	}
 	/* out to the right of the ship, on the floor below it; the ship stays parked */

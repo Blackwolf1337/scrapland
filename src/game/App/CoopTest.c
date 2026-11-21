@@ -1125,8 +1125,15 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 			byte pulse = fmod(now, 0.5) < 1.0 / INSTANCE_TICK_HZ;
 			in->buttons |= pulse ? NETREP_IN_SWITCH : 0;
 			if (pulse) {
-				Con_Printf("coop: player %d (auto) gets out of %s near %s (speed %.0f)\n", i, e->name, t->name,
-					(double)Veh(e)->speed);
+				/* a ship that does not come to rest near its goal (it circles at full speed on -mp2) is stopped: the
+				 * switch leaves only a slow ship */
+				const vec3_t *v = &Obj(e)->vel;
+				double speed = sqrt((double)(v->x * v->x + v->y * v->y + v->z * v->z));
+				Con_Printf("coop: player %d (auto) gets out of %s near %s (speed %.0f)\n", i, e->name, t->name, speed);
+				if (speed > PLAY_LEAVE_SPEED) {
+					vec3_t zero = { 0.0f, 0.0f, 0.0f };
+					Obj_SetVel(e, &zero);
+				}
 			}
 		}
 		return;

@@ -867,7 +867,10 @@ static void cMissileEntity_SetEmbeddedFX(cEntity *elem, const char *name) {
 			el->started = 1;
 		}
 		((cObjElementFXGearMissile *)el)->entity = (cEntity *)self;
+		/* its first steps (the bolts' thunder): the replica's own, as the drop */
+		Pres_Derive();
 		cObjElementFXGearMissile_Run(el, d);
+		Pres_Underive();
 		return;
 	}
 	if (!strcmp(name, "Cloud")) {
