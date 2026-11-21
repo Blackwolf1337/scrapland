@@ -26,6 +26,7 @@
  * 4: Port_Scheduled, PYF_ENTRY; the bound method e.Del stays Python, OBJLIB 7), the ones given to Speech, Parking and
  * Elevator as callbacks are values of their variables (OBJLIB 5 (9c)).
  */
+#include "scrap/coop.h"
 #include "scrap/scrap.h"
 #include "Levels.h"
 
@@ -212,7 +213,7 @@ static byte GDB_InitStatus(void) {
 	Native_SetInt(&v, 0);
 	ok = ok && Mode_SetModVar("OutPolice", "PoliceActive", &v) && Mode_GVarSetI("iTrafficNumber", 0);
 	if (ok) {
-		SaveVar_Set("Char", "Bishop");
+		Coop_SetChar("Bishop");
 		ok = PORT_CALL(Elevator, SetDef, NULL, "ss", "TempleTeleporter", "DM_Door_TempleTeleporter_Temple");
 	}
 	return ok;

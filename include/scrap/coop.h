@@ -212,6 +212,14 @@ void Coop_LevelStart(const char *level);
  * an instance (its members' characters are theirs) and of a member's client, which comes with its own (the leader's
  * level joined as D-Tritus): Chars.Init loads its scripts before the map's InitStatus makes the player the bishop */
 void Coop_LevelChar(const char *level);
+/* -mp2: the character the level's start made the player (the world's Char: GDB's bishop, ABIndoor's D-Tritus) is the
+ * character of member i that enters the level (its own Char, read by its player steps), as every single player's
+ * arrival there; nothing when the level's start set none */
+void Coop_EnterChar(int i);
+/* the scripts' SaveVar_Set("Char", cls) of "the player" (a level's start: GDB's bishop, ABIndoor's D-Tritus; a mission's
+ * end): -mp2 coop: the class every member carries (its state's char) and, in the world's context, the character of
+ * the members that enter later (Coop_EnterChar); single player: the save variable only */
+void Coop_SetChar(const char *cls);
 /* the scripts delete the save variables with prefix: 1 when they stay (all of them: the single player's end) */
 byte Coop_KeepStory(const char *prefix);
 /* a save variable was made (old NULL), changed or deleted by the game (SaveVars.c); inc: by SaveVar_Inc (a counter) */

@@ -37,6 +37,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "scrap/coop.h"
 #include "scrap/scrap.h"
 #include "Levels.h"
 
@@ -2753,7 +2754,7 @@ static byte MeetBoss_SetNextMission(const nativeVal_t *a, nativeVal_t *out) {
 		return 0;
 	}
 	if (!drives) {
-		SaveVar_Set("Char", "Dtritus");
+		Coop_SetChar("Dtritus");
 	}
 	return PORT_CALL(SaveGame, StartGame, NULL, "");
 }

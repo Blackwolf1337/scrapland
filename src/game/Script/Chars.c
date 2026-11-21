@@ -373,12 +373,18 @@ static byte Ch_MainCharDeath(const nativeVal_t *a) {
 	if (Coop_On() && !Coop_PartyDeath()) {
 		return 1;
 	}
+	/* not in the original: in coop the hook runs in the context of the member who died last (the looser: the
+	 * player of the mission's death code, the final fight's respawn) */
+	int was = Coop_On() && a[0].type == NV_STR ? Players_EnterOwner(World_FindEntity(Native_Text(&a[0]))) : -2;
 	byte ok = Mode_G(CH, "OnMainCharDeath", &hook);
 	if (ok) {
 		/* not in the original: single player's flows on an instance (a ship the player boarded is in the Players list):
 		 * without a mission's hook the death and its life less are the instance's (Rep_Death), no end of the game */
 		ok = Native_True(&hook) ? Mode_CallArgs(&hook, NULL, a, 2) :
 			Rep_SpFlows() || (Mode_Import("MissionsFuncs") && PORT_CALL(MissionsFuncs, FinishGame, NULL, "i", 0L));
+	}
+	if (was != -2) {
+		Players_Leave(was);
 	}
 	Native_Free(&hook);
 	return ok;

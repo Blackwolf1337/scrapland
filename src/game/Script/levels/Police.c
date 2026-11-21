@@ -41,6 +41,7 @@
  * PYF_ENTRY; SScorer.Fade its engine entry, stage 7), the ones given to Scene, Alarm and CharConversor as callbacks
  * (PO_HOOK) are values of their variables (OBJLIB 5 (9c)). MapSnd.SndElements and MapPlanes are LevelCommon's.
  */
+#include "scrap/coop.h"
 #include "scrap/scrap.h"
 #include "scrap/party.h"
 #include "Levels.h"
@@ -2039,9 +2040,9 @@ static byte JailBreak_AfterBrowseNPC(const nativeVal_t *a, nativeVal_t *out) {
 		return 0;
 	}
 	if (in) {
-		SaveVar_Set("Char", "Dtritus");
+		Coop_SetChar("Dtritus");
 	} else {
-		SaveVar_Set("Char", "Berto");
+		Coop_SetChar("Berto");
 		Mode_Lang("Generics_NoMatrix", &v);
 		ok = Mode_SetSaveVar("InitialMessage", &v);
 		Native_Free(&v);
@@ -2760,7 +2761,7 @@ static byte PoliceBossCheats_InitAfterPhoto2(const nativeVal_t *a, nativeVal_t *
 	static const int to[4] = { 255, 255, 255, 0 };
 	nativeVal_t un, sp;
 	(void)out;
-	SaveVar_Set("Char", "Dtritus");
+	Coop_SetChar("Dtritus");
 	Native_SetNone(&un);
 	Native_SetNone(&sp);
 	byte ok = Mode_VGet(&a[0], "Name", &un) && Mode_G(PC, "SpawnConversionPoint", &sp) &&

@@ -91,6 +91,9 @@
 #define CP_FLY_NEAR 400.0f			/* test: a point of its flight's path this near is passed */
 #define CP_FLY_STUCK 8.0			/* test: s, else it is placed CP_FIGHT_NEAR from its goal (as before) */
 #define CP_AUTO_SHIP 8000.0f		/* test: outdoors a target on foot further than this is flown to */
+#define CP_USE_BOARD 120.0			/* test: s after a use before it boards for a mission that starts so */
+#define CP_USE_HOLD 5.0				/* test: s it waits after a use (the talk of a call starts after it) */
+#define CP_SHIP_ITEM 1000.0f		/* test: outdoors an item this wide is a ship's (flown onto) */
 #define CP_SHIP_ASK 12.0			/* test: s it asks for a ship (the switch) before it walks */
 #define CP_ALARM_WAIT 40.0			/* test: s it waits for its alarm to fall before a use (a forbidden area keeps it on) */
 #define CP_DEAF_WAIT 15.0			/* test: s it waits for its character to listen again before a use */
@@ -135,6 +138,9 @@ static void Cp_TestRace(int i) {
 	g_Coop.pl[i].raceSince = now;
 	e->pos = c->pos;
 	Obj(e)->vel = (vec3_t){ 0.0f, 0.0f, 0.0f };
+	/* the placement goes to its client too (its own ship's step there would take it back: MortalRace's ship stood
+	 * short of its checkpoint) */
+	Rep_Placed(i);
 }
 
 /* test: a target of the mission to fight (its radar mark red, or in the scripts' list of enemies) */
@@ -577,10 +583,27 @@ static byte Cp_ShipFoe(cEntity *v) {
 /* test: the nearest entity to e the scripts marked with the mission arrow (MissionsFuncs.ActivateTarget: a clue to take,
  * a blueprint; things with life 0 too: GetDataPart2's desks), not a door of the level's exits; a ship to shoot down before the others (Ambush's probes while the
  * phone cab of the mission's start keeps its arrow); NULL */
+/* test: the entity of MissionsFuncs.currentTarget (the mission's target the arrow of the HUD shows), NULL */
+static cEntity *Cp_CurrentTarget(void) {
+	nativeVal_t v;
+	cEntity *t = NULL;
+	Native_SetNone(&v);
+	if (Mode_ModGet("MissionsFuncs", "currentTarget", &v)) {
+		t = v.type == NV_STR ? World_FindEntity(Native_Text(&v)) : v.type == NV_ENT ? Native_Ent(&v) : NULL;
+	}
+	Native_Free(&v);
+	Native_ErrClear();
+	return t;
+}
+
 static cEntity *Cp_ArrowTarget(const cEntity *e) {
 	cEntity *t = NULL;
 	float best = 0.0f;
 	byte ship = 0;
+	/* the mission's current target before the other marked ones (GetDataPart3's call to Deep Throat: the boss' phone
+	 * cab kept its arrow and its use, which starts the data's waves again) */
+	cEntity *cur = Cp_CurrentTarget();
+	byte curOk = 0;
 	for (cEntity *v = cWorld_GetFirstEntity(g_pWorld); v; v = cEntity_Next(v)) {
 		if (!Entity_IsType(v, TYEN_WITH_LIFE) || !WLife(v)->arrow.canMission || (WLife(v)->life <= 0.0f && !Cp_Thing(v)) ||
 			v->deadNode.target ||
@@ -593,6 +616,7 @@ static cEntity *Cp_ArrowTarget(const cEntity *e) {
 		if (!strncmp(v->name, "DM_Door", 7) && um[0] && strncmp(um, "Mission_", 8)) {
 			continue;
 		}
+		curOk |= v == cur;
 		float dx = v->pos.x - e->pos.x, dz = v->pos.z - e->pos.z, d = dx * dx + dz * dz;
 		byte s = Cp_ShipFoe(v);
 		if (!t || s > ship || (s == ship && d < best)) {
@@ -601,7 +625,8 @@ static cEntity *Cp_ArrowTarget(const cEntity *e) {
 			ship = s;
 		}
 	}
-	return t;
+	/* (a ship to shoot down still first) */
+	return curOk && !ship ? cur : t;
 }
 
 /* test: the nearest item to e the scripts show on the radar with a function of the mission for its taker
@@ -841,6 +866,12 @@ static byte Cp_WalkStep(int i, NetRepInput *in, cEntity *e, cEntity *t, double n
 		g_Coop.pl[i].walkNearAt = 0.0;
 		return 0;
 	}
+	/* a walk that ended short of this target stays ended (the goto and the use come next: its walk's restart took
+	 * them away, DistractHumphrey's phone cab with the party around it) while it stays that near */
+	if (!strcmp(g_Coop.pl[i].walkShort, t->name) && d <= CP_WALK_END) {
+		return 0;
+	}
+	g_Coop.pl[i].walkShort[0] = 0;
 	if (now - g_Coop.pl[i].autoSince >= CP_WALK_GAP) {
 		/* its followers (test line walk): the characters that follow it (or the one named by the test line) */
 		cEntity *back = NULL;
@@ -890,6 +921,7 @@ static byte Cp_WalkStep(int i, NetRepInput *in, cEntity *e, cEntity *t, double n
 			/* its way ends short of the target (BeatPickus' blueprints on a wall, the graph's last node 500 away): the
 			 * goto's last step, as at the end of a walk */
 			g_Coop.pl[i].walkNearAt = 0.0;
+			Str_Copy(g_Coop.pl[i].walkShort, t->name, sizeof(g_Coop.pl[i].walkShort));
 			return 0;
 		}
 		if (!Cp_PathPoint(e, &to->pos, &g_Coop.pl[i].walkTo)) {
@@ -1080,6 +1112,19 @@ static byte Cp_MessengerPack(int i, NetRepInput *in, cEntity *e, double now) {
 	return 1;
 }
 
+/* test: player i's talk of a phone cab or a desktop plays (Speech.TalkNI of its context, deleted at the talk's end;
+ * the instance draws no talk scorer, g_RemainTalkTime stays 0 there) */
+static byte Cp_NITalk(int i) {
+	nativeVal_t v;
+	Native_SetNone(&v);
+	int was = Players_Enter(i);
+	byte on = Mode_ModGet("Speech", "TalkNI", &v) && v.type != NV_NONE;
+	Players_Leave(was);
+	Native_Free(&v);
+	Native_ErrClear();
+	return on;
+}
+
 /* test: the mission waits for the player to board (Parking.SwitchVehicleMissionCallback: GetDataPart1, the super
  * deals) */
 static byte Cp_WaitsForShip(void) {
@@ -1110,6 +1155,13 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 		g_Coop.pl[i].autoSince = now;
 		return;
 	}
+	if (Cp_NITalk(i) || (g_Coop.pl[i].usedAt > 0.0 && now - g_Coop.pl[i].usedAt < CP_USE_HOLD)) {
+		/* its talk of a phone cab plays, or may start after its use: it listens, as the single player's talk holds its
+		 * input (a boarding during MeetBerto's call left the talk's end on a ship: AutoSelect, the call's callback and
+		 * the talk's end lost) */
+		g_Coop.pl[i].autoSince = now;
+		return;
+	}
 	byte pulse = fmod(now, 2.0) < 1.0 / INSTANCE_TICK_HZ;
 	/* the mission's targets to fight, else any red one of the level (a mission's enemies it marks without targets; not
 	 * while the mission has a target of another kind: a ship to follow, a character to talk to; the helper fights them) */
@@ -1132,9 +1184,11 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	/* a mission arrow to take (BankersCombat's blueprints while the bankers attack) before the level's red ones; one on
 	 * a ship to shoot down before the mission's targets to use (Ambush's probes, its phone cab still the target) */
 	cEntity *arrow = Cp_ArrowTarget(e);
-	/* in a super deal the mode's items (Domination's baton and zones) come before its red ones */
+	/* in a super deal the mode's items (Domination's baton and zones) come before its red ones, so does the mission
+	 * MortalRace's baton (dropped again at a member's death) */
 	const char *lib = SaveVar_Get("Mission.Library");
-	byte dealItem = g_Coop.pl[i].autoOn != 2 && lib && !strncmp(lib, "SuperDeal_", 10) && Cp_RadarItem(e);
+	byte dealItem = g_Coop.pl[i].autoOn != 2 && lib && (!strncmp(lib, "SuperDeal_", 10) || !strcmp(lib, "Mission_MortalRace")) &&
+		Cp_RadarItem(e);
 	byte other = Cp_FightTargets("", all, 1, 0) || arrow || dealItem;
 	const char *foes = Cp_FightTargets("", all, CP_FIGHT_MAX, 1) ? "" : arrow && Cp_ShipFoe(arrow) && !Cp_Scanned(i, arrow) ? arrow->name : (escort ? Cp_RedNear(escort) :
 		(g_Coop.pl[i].autoOn == 2 || !other) && Cp_FightTargets(CP_FIGHT_RED, all, CP_FIGHT_MAX, 1)) ? CP_FIGHT_RED : NULL;
@@ -1175,11 +1229,21 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	if (!t) {
 		t = Cp_ArrowTarget(e);
 	}
+	/* a talk plays, or one may start after its use: it listens (the call's talk of a phone cab: no ship and no item
+	 * meanwhile, GetDataPart3's boarding started the data's waves again) */
+	if (g_RemainTalkTime > 0.01f || (g_Coop.pl[i].usedAt > 0.0 && now - g_Coop.pl[i].usedAt < CP_USE_HOLD)) {
+		g_Coop.pl[i].autoSince = now;
+		return;
+	}
 	/* else, and before a target to use, an item on the radar: flown or walked onto, as a player takes it (DistractHumphrey's
 	 * meeting point while the phone cab of the call stays the mission's target) */
 	cEntity *item = t && Entity_IsType(t, TYEN_CAR) ? NULL : Cp_RadarItem(e);
-	if (item && kind == NETREP_CHAR && Cp_InAir(item)) {
-		/* one in the air is flown onto: into a ship first (the switch) */
+	float ix = item ? item->pos.x - e->pos.x : 0.0f, iz = item ? item->pos.z - e->pos.z : 0.0f;
+	if (item && kind == NETREP_CHAR && (Cp_InAir(item) || (!Cp_WalkGraph() && (ix * ix + iz * iz > CP_AUTO_SHIP * CP_AUTO_SHIP ||
+		((cItemEntity *)item)->radius >= CP_SHIP_ITEM)))) {
+		/* one in the air, far away outdoors or a ship's (a wide one: DistractHumphrey's meeting point, made for the
+		 * player's ship, on foot a point below the traffic's grid stopped the instance) is flown onto: into a ship
+		 * first (the switch) */
 		in->buttons |= pulse ? NETREP_IN_SWITCH : 0;
 		return;
 	}
@@ -1201,8 +1265,10 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 		if (g_Coop.pl[i].autoList[0]) {
 			Str_Copy(g_Coop.pl[i].fightList, g_Coop.pl[i].autoList, sizeof(g_Coop.pl[i].fightList));
 			Cp_TestFight(i, in, back);
-		} else if (kind == NETREP_CHAR && Cp_WaitsForShip()) {
-			/* the mission starts when the player boards (its level again after a failure): into a ship */
+		} else if (kind == NETREP_CHAR && Cp_WaitsForShip() &&
+			(g_Coop.pl[i].usedAt <= 0.0 || now - g_Coop.pl[i].usedAt >= CP_USE_BOARD)) {
+			/* the mission starts when the player boards (its level again after a failure): into a ship; not soon after a
+			 * use (GetDataPart3's call to Deep Throat: the boarding's callback started the data's waves again) */
 			in->buttons |= pulse ? NETREP_IN_SWITCH : 0;
 		}
 		return;
@@ -1250,7 +1316,9 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	/* outdoors a target far away: into a ship first (the switch: a parked one near, else its called ship), as a player
 	 * flies there; it walks when it gets none */
 	float fx = t->pos.x - e->pos.x, fz = t->pos.z - e->pos.z;
-	if (Cp_WalkGraph() || Entity_IsType(t, TYEN_CAR) || fx * fx + fz * fz <= CP_AUTO_SHIP * CP_AUTO_SHIP) {
+	if (Cp_WalkGraph() || Entity_IsType(t, TYEN_CAR) || fx * fx + fz * fz <= CP_AUTO_SHIP * CP_AUTO_SHIP ||
+		(g_Coop.pl[i].usedAt > 0.0 && now - g_Coop.pl[i].usedAt < CP_USE_BOARD)) {
+		/* (not soon after a use: GetDataPart3's boarding callback starts the data's waves again during the call) */
 		g_Coop.pl[i].shipAsk = 0.0;
 	} else if (g_Coop.pl[i].shipAsk <= 0.0) {
 		g_Coop.pl[i].shipAsk = now;
@@ -1270,11 +1338,6 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 		}
 		return;
 	}
-	/* a talk plays: it listens */
-	if (g_RemainTalkTime > 0.01f) {
-		g_Coop.pl[i].autoSince = now;
-		return;
-	}
 	/* its character does not listen (a radio talk runs, Speech.ForceRemoteComunication): the arrow is off for its
 	 * player but on the ones always to use (WalkCharEntity's use); a use then cut the talk before its RestoreSpeech and
 	 * the character listened no more (ReinsertOwnMatrix's next message never came); CP_DEAF_WAIT s at most */
@@ -1292,11 +1355,11 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	/* a phone cab, a desktop or a character to talk to while the police is after it: it waits for the alarm to fall, as
 	 * the single player does after the call's "the police is still after you" (PhoneCab.UseAudioCom, the missions'
 	 * UsePhoneCab; ApologizeMayor's mayor only warns while the alarm of a stapler's death is on), CP_ALARM_WAIT s at most
- * (the forbidden area at ApologizeMayor's start keeps it on until the mayor's talk) */
+	 * (a forbidden area keeps it on until the talk) */
 	char *fn = NULL;
 	const cAlarm *al = Players_Alarm(i);
-	if (al && al->on && ((Entity_VarS(t, "UseFunc", &fn, 0) && fn && (strstr(fn, "Phone") || strstr(fn, "AudioCom") ||
-		strstr(fn, "Desktop"))) || (Entity_IsType(t, TYEN_WALKCHAR) && !Cp_Foe(t))) &&
+	if (al && al->on && Entity_VarS(t, "UseFunc", &fn, 0) && fn && (strstr(fn, "Phone") || strstr(fn, "AudioCom") ||
+		strstr(fn, "Desktop") || strstr(fn, "Speech")) &&
 		(g_Coop.pl[i].alarmSince <= 0.0 || now - g_Coop.pl[i].alarmSince < CP_ALARM_WAIT)) {
 		if (g_Coop.pl[i].alarmSince <= 0.0) {
 			g_Coop.pl[i].alarmSince = now;
@@ -1325,6 +1388,7 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 			g_Coop.pl[i].pressPulse = 1;
 		} else {
 			Travel_TestUse(i, t->name, "");
+			g_Coop.pl[i].usedAt = now;
 		}
 	}
 	/* not while its photo's press runs (the walk to the next target would turn it away); outdoors (no graph of the
