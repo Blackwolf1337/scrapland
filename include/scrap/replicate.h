@@ -106,7 +106,8 @@ uint16_t Rep_ActIndex(const cActClass *cls, const cAction *a);
 float Rep_SampleDtOf(struct cEntity *e);
 /* a free place for a character around at (the place k of the rings around it on, 0 at itself): 1 with *out */
 byte Rep_FreeSpot(const vec3_t *at, int first, vec3_t *out);
-/* tests: the switch of player i (into the nearest parked ship or out of its ship), or a ship called beside it */
+/* tests: the switch of player i (call 0: into the nearest parked ship or out of its ship; 2: into its own ship, see
+ * Rep_TestOwnShip), or (call 1) a ship called beside it */
 void Rep_TestSwitch(int i, byte call);
 
 /* ---- watcher (Watch.c) ---- */

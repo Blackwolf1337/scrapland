@@ -62,6 +62,7 @@
 										   shaft (an elevator's, which the instance does not make): that spawn
 										   point is not used again */
 #define REP_SPAWN_CHECK (4 * NETREP_TICK_HZ)
+#define REP_OWN_NEAR 3000.0f			/* test: units to an own parked ship the test switch boards */
 #define REP_CALL_DROP 3000.0f			/* and below the place of a called ship */
 #define REP_INTEREST 100000.0f			/* units of a client's interest: what single player keeps around the camera
 										   (TrafficRemovalDist, MaxDistReposAI) */
@@ -1021,6 +1022,19 @@ static cEntity *Rep_CallShip(int i, cEntity *ch, byte side) {
 	return ship && Rep_IsParked(ship, i) ? ship : NULL;
 }
 
+/* test: the own ship of player i on foot (character e): a parked one it owns near it, else a called one (the coop
+ * story's: the party's hangar ship), else NULL (the nearest parked one) */
+static cEntity *Rep_TestOwnShip(int i, cEntity *e) {
+	for (int k = 0; k < rep.pl[i].nships; k++) {
+		cEntity *s = Rep_OwnedShip(&rep.pl[i], k);
+		float dx = s ? s->pos.x - e->pos.x : 0.0f, dz = s ? s->pos.z - e->pos.z : 0.0f;
+		if (s && Rep_IsParked(s, i) && dx * dx + dz * dz < REP_OWN_NEAR * REP_OWN_NEAR) {
+			return s;
+		}
+	}
+	return Rep_CallShip(i, e, 0);
+}
+
 /* the switch: into want (else the nearest parked ship, a new one when none is near), out of the ship */
 static void Rep_SwitchTo(int i, cEntity *e, cEntity *want) {
 	RepPlayer *pl = &rep.pl[i];
@@ -1380,7 +1394,9 @@ void Rep_TestSwitch(int i, byte call) {
 		return;
 	}
 	int was = Players_Enter(i);
-	if (!call) {
+	if (call == 2 && NetPl_Kind(e) == NETREP_CHAR) {
+		Rep_SwitchTo(i, e, Rep_TestOwnShip(i, e));
+	} else if (call != 1) {
 		Rep_SwitchTo(i, e, NULL);
 	} else if (NetPl_Kind(e) == NETREP_CHAR) {
 		Rep_CallShip(i, e, 0);
@@ -1607,7 +1623,8 @@ void Rep_PreFrame(uint64_t tick) {
 			!Rep_SpFlows()) {
 			pl->buttons = in.buttons;
 			Players_Cur()->input = NULL;
-			Rep_SwitchTo(i, e, NULL);
+			/* the coop story's automatic test player boards its own ship, as single player flies its hangar ship */
+			Rep_SwitchTo(i, e, NetPl_Kind(e) == NETREP_CHAR && Coop_TestOwnShip(i) ? Rep_TestOwnShip(i, e) : NULL);
 			continue;
 		}
 		pl->buttons = in.buttons;

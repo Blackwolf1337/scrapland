@@ -1167,6 +1167,9 @@ void Pres_ClientSound(const char *name) {
 		if (r->hash == h && r->msg != msg && r->ns && now - r->ns < (uint64_t)PRES_DOUBLE_MS * 1000000u &&
 			(!hasPos || !r->hasPos || dx * dx + dy * dy + dz * dz <= PRES_DOUBLE_NEAR * PRES_DOUBLE_NEAR)) {
 			NetAudit_Name(NA_SOUND, "pres.double:", name);
+			Con_Printf("pres: double %s: kinds %d and %d (op %d), %s apart %.0f, %.0f ms\n", name, r->msg, msg, pres.recOp,
+				hasPos && r->hasPos ? "places" : "no place", hasPos && r->hasPos ? sqrt((double)(dx * dx + dy * dy + dz * dz)) : 0.0,
+				(double)(now - r->ns) / 1e6);
 			break;
 		}
 	}

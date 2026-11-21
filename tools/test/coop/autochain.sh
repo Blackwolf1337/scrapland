@@ -61,8 +61,6 @@ endsteps() {
 		echo "AB|inst AB switch \$b||||"
 		# no member takes damage: a death of the whole party heals the boss (single player's rule), and the automatic
 		# players died faster than their weapons took its shield (the chain's test help, as CHAP_TOUGH)
-		echo "AB|inst AB tough \$a 1||||"
-		echo "AB|inst AB tough \$b 1||||"
 		echo "AB|wait 5||||"
 		echo "AB|inst AB show MapFinalFight.bossName|bossName = '|10|the boss is there"
 		echo "AB|inst AB fight \$a MapFinalFight.bossName|player \$a fights MapFinalFight.bossName|5|pa fights the boss"

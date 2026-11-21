@@ -86,13 +86,26 @@ static void Party_Read(void) {
 }
 
 const char *Party_Rule(const char *key, const char *def) {
+	const char *any = NULL, *mission = NULL;
 	Party_Read();
 	for (int i = party.nlines - 1; i >= 0; i--) {
-		if (!strcmp(party.line[i].key, key) && party.line[i].nwords) {
+		if (strcmp(party.line[i].key, key) || !party.line[i].nwords) {
+			continue;
+		}
+		if (party.line[i].nwords < 2) {
+			any = any ? any : party.line[i].word[0];
+			continue;
+		}
+		/* "<key> <value> <mission>": the value while the story's Mission.Library is that mission */
+		if (!mission) {
+			mission = SaveVar_Get("Mission.Library");
+			mission = mission ? mission : "";
+		}
+		if (!strcmp(party.line[i].word[1], mission)) {
 			return party.line[i].word[0];
 		}
 	}
-	return def;
+	return any ? any : def;
 }
 
 double Party_RuleNum(const char *key, double def) {

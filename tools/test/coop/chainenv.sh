@@ -8,9 +8,8 @@ export AUTO_PRE_Mission_BankersCombat='switch $a;switch $b' AUTO_B_Mission_Banke
 export AUTO_PRE_Mission_BankersCTF='switch $a;switch $b;waypoint $a 1' AUTO_B_Mission_BankersCTF='2 red'
 # MortalRace: no member takes damage (the racers kill the baton's carrier again and again, and a member's death drops
 # the baton: the race's checkpoints stopped for the party), as a party of one plays it with CHAP_TOUGH
-export AUTO_PRE_Mission_MortalRace='switch $a;switch $b;tough $a 1;tough $b 1'
+export AUTO_PRE_Mission_MortalRace='switch $a;switch $b'
 # (the other members play nothing: with eight a helper took the baton and pa's checkpoints did not count)
-export AUTO_B_Mission_MortalRace='-'
 export CHAP_SECS=1800 CHAP_ENV="SCRAP_COOP_CONV=Dtritus SCRAP_COOP_WARNING=3 SCRAP_COOP_ANSWER=yes"
 export AUTO_PRE_Mission_FaceTheMayor='switch $a;switch $b'
 export AUTO_PRE_Mission_AttackTraitorius='spare $a 30;spare $b 30'
@@ -58,7 +57,6 @@ export AUTO_B_Mission_GetDataPart2='1'
 export AUTO_MID_Mission_DistractHumphrey='@|poll inst @ story get DistractionStart|DistractionStart = 1|900|the distraction starts at the meeting point;;@|inst @ upto $a Mission_DistractHumphrey.shipsKilledPlayer 6||||;;@|inst @ upto $b Mission_DistractHumphrey.shipsKilledPlayer 8||||;;@|inst @ fight $a @Traffic|player $a fights|5|pa fights the traffic;;@|inst @ fight $b red|player $b fights|5|pb fights the police the shots bring;;@|poll inst @ story get MissionState|MissionState = CallDeepThroat|1200|Humphrey kept busy until Deep Throat has the code;;@|inst @ upto $a 0 0||||;;@|inst @ upto $b 0 0||||;;@|inst @ fight $b @Traffic||||;;@|poll inst @ show Mission_DistractHumphrey.missionComplete|missionComplete = 0|900|the round finished (ten ships);;@|inst @ fight $a 0||||;;@|inst @ fight $b 0||||;;@|inst @ auto $b 0||||'
 # with eight members only pa and pb play it (their counts and the police the shots bring; six more helpers kept the
 # police and the alarms up): the more members stay idle
-export AUTO_EACH_Mission_DistractHumphrey=0 AUTO_M_Mission_DistractHumphrey=0
 # (the helpers stop after the round: with eight members their fights kept the police and pa's alarm up, and the call
 # to Deep Throat waits for the alarm to fall)
 # DestroyBadDebtors: pa shoots the money transports (the mission's targets), pb keeps the mercenaries off the treasures
@@ -72,7 +70,7 @@ export AUTO_MID_Mission_InfiltrateBank='@|poll inst @ show MissionsFuncs.current
 export AUTO_PRE_Mission_ReinsertOwnMatrix2='usenear $a DM_Mission_RestoreMatrix;wait 30' AUTO_B_Mission_ReinsertOwnMatrix2='0'
 # DestroyHumphrey: Humphrey attacks once the player boards a ship (Parking.SwitchVehicleMissionCallback StartMission)
 # (part 3: with two members Humphrey killed the party again and again: no member takes damage, as the 8 player chain needs none)
-export AUTO_PRE_Mission_DestroyHumphrey='switch $a;switch $b;tough $a 1;tough $b 1'
+export AUTO_PRE_Mission_DestroyHumphrey='switch $a;switch $b'
 # GoWithHuman: the human waits at the entrance and follows D-Tritus once he is near (CheckMaxDist), to the machine's
 # switch; he stops when D-Tritus is too far: pa goes to him first, then walks (test line walk)
 export AUTO_PRE_Mission_GoWithHuman='goto $a Human_Entrance 0 300;wait 5;walk $a 1 Human_Entrance'
@@ -110,7 +108,7 @@ export AUTO_B_Mission_StealMayorShip='-'
 # joins: he stays on a gear and does not talk again)
 export AUTO_B_Mission_ApologizeMayor='-'
 # DestroyPorkinsTransports: the bishops kill the whole party now and then (the mission starts again): pb takes no damage
-export AUTO_PRE_Mission_DestroyPorkinsTransports='switch $a;switch $b;tough $b 1'
+export AUTO_PRE_Mission_DestroyPorkinsTransports='switch $a;switch $b'
 # the CTF super deals (FZ): pa flies onto the waypoint's item (the flag) as a player follows its arrow, the others fight
 export AUTO_PRE_SuperDeal_Fifth='switch $a;switch $b;waypoint $a 1' AUTO_PRE_SuperDeal_Ninth='switch $a;switch $b;waypoint $a 1'
 # the Domination super deals (OM): pa flies onto the waypoint's item (the baton, then the zones), the others fight
@@ -123,7 +121,7 @@ export AUTO_MID_SuperDeal_Tenth='@|wait 150||||;;@|inst @ call SuperDeal_Tenth.V
 # joins: he stays on a gear and does not talk again)
 export AUTO_B_Mission_ApologizeMayor='-'
 # DestroyPorkinsTransports: the bishops kill the whole party now and then (the mission starts again): pb takes no damage
-export AUTO_PRE_Mission_DestroyPorkinsTransports='switch $a;switch $b;tough $b 1'
+export AUTO_PRE_Mission_DestroyPorkinsTransports='switch $a;switch $b'
 # Part 3 of the story (stage 5b), chapters 69 to 100
 # GetDataPart2 alone: the three downloads run only together and each functionary goes back to stop his; the single
 # member starts them, knocks the functionaries down on foot, then starts the downloads again
@@ -132,13 +130,8 @@ export AUTO_MID1_Mission_GetDataPart2='@|wait 40||||;;@|inst @ auto $a 0||||;;@|
 # call waits for the alarm to fall), and the fighters left of the last wave draw it back into a ship, whose boarding
 # callback starts the data's waves again: after the boss' call it stops, waits for its alarm to fall, then goes to the
 # phone cab of the call on foot and uses it (test lines switch, target and usetarget)
-export AUTO_MID1_Mission_GetDataPart3='@|poll inst @ story get MissionState|MissionState = CallDeepThroat|1500|the data with the boss: Deep Throat to call;;@|inst @ auto $a 0||||;;@|poll inst @ status|player $a \(.*alarm 0\.00|900|pa'"'"'s alarm falls before the call;;@|inst @ switch $a|player $a out of|30|pa out of its ship;;@|wait 5||||;;@|inst @ target $a 0 150||||;;@|wait 3||||;;@|inst @ usetarget $a|player $a uses|10|pa calls Deep Throat'
 # DefeatCrazyGambler1 to 3: the crazy gambler's fights kill the party of two again and again (the mission starts
 # again): no member takes damage
-export AUTO_PRE_Mission_DefeatCrazyGambler1='tough $a 1;tough $b 1' AUTO_PRE_Mission_DefeatCrazyGambler2='tough $a 1;tough $b 1'
-export AUTO_PRE_Mission_DefeatCrazyGambler3='tough $a 1;tough $b 1'
 # WhoIsDeepThroat: the gatekeeper of the boss room's teleporter lets only D-Tritus' group pass; the members are still
 # the GDB's bishops (single player's player too, until the conversor): pa into D-Tritus by the conversor first
-export AUTO_PRE_Mission_WhoIsDeepThroat='conv'
 # BertoMassacre: the Berto waves killed the party of two three times in a row in a run (passed in others): no damage
-export AUTO_PRE_Mission_BertoMassacre='tough $a 1;tough $b 1'

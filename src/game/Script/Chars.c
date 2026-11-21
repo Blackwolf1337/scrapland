@@ -381,7 +381,7 @@ static byte Ch_MainCharDeath(const nativeVal_t *a) {
 		/* not in the original: single player's flows on an instance (a ship the player boarded is in the Players list):
 		 * without a mission's hook the death and its life less are the instance's (Rep_Death), no end of the game */
 		ok = Native_True(&hook) ? Mode_CallArgs(&hook, NULL, a, 2) :
-			Rep_SpFlows() || (Mode_Import("MissionsFuncs") && PORT_CALL(MissionsFuncs, FinishGame, NULL, "i", 0L));
+			Rep_SpFlows() || Coop_MemberDeath() || (Mode_Import("MissionsFuncs") && PORT_CALL(MissionsFuncs, FinishGame, NULL, "i", 0L));
 	}
 	if (was != -2) {
 		Players_Leave(was);

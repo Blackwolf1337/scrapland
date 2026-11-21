@@ -38,9 +38,11 @@
 #include "scrap/logic.h"
 #include "scrap/nodesworld.h"
 #include "scrap/party.h"
+#include "scrap/players.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
+#include "scrap/world.h"
 
 #define DM "DeathMatch"
 #define TDM "TeamDeathMatch"
@@ -3243,6 +3245,17 @@ static byte Mr_ReleaseBatonC(void) {
 		Native_Free(&v);
 		return 1;
 	}
+	Native_Free(&v);
+	/* not in the original: in coop every member's leaving runs it (rules.def pilot each): the baton drops only when its
+	 * ship has no member in it any more */
+	if (Coop_On()) {
+		cEntity *ship = Mode_Read(MR, "shipWithBaton", &v) && v.type == NV_STR ? World_FindEntity(Native_Text(&v)) : NULL;
+		Native_Free(&v);
+		Native_ErrClear();
+		if (ship && Players_Of(ship) >= 0) {
+			return 1;
+		}
+	}
 	if (!Mode_Later(0.3, MR, "LostBatonMessage", NULL, 0, NULL) || !Sd_BatonFree(MR) || !Mode_Read(MR, "iStartPos", &v)) {
 		Native_Free(&v);
 		return 0;
@@ -3978,8 +3991,9 @@ static byte Mr_OnPlayerDeathC(const nativeVal_t *loser) {
 		ok = Sd_BatonFree(MR) && Mr_DropBaton(&e);
 	}
 	Native_Copy(&args[0], loser);
-	ok = ok && Mode_VGet(&e, "Pos", &args[1]) && Mode_VGet(&e, "Ang", &args[2]) && Mode_Read(MR, "respawnTime", &g) &&
-		Sd_LaterV(&g, MR, "RespawnPlayer", args, 3);
+	/* not in the original: a coop member's death (rules.def memberdeath): the instance brings the member back */
+	ok = ok && (Coop_MemberDeath() || (Mode_VGet(&e, "Pos", &args[1]) && Mode_VGet(&e, "Ang", &args[2]) &&
+		Mode_Read(MR, "respawnTime", &g) && Sd_LaterV(&g, MR, "RespawnPlayer", args, 3)));
 	Native_Free(&e);
 	Native_Free(&g);
 	for (int i = 0; i < 3; i++) {

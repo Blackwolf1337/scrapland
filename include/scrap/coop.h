@@ -264,10 +264,12 @@ byte Coop_PartyTravel(const char *level);
  * its name is kept for the clients (COOP_Y_GONE at their join) */
 void Coop_EntityGone(struct cEntity *e);
 /* player i died (Rep_Death, entity e): when every member here is dead the single player's death runs (the mission's
- * hook Chars.OnMainCharDeath, else the end of the game); Coop_PartyDeath: it runs (Chars.MainCharDeath of a member
- * does nothing otherwise) */
+ * hook Chars.OnMainCharDeath, else the end of the game); in a mission of rules.def's memberdeath list the hook runs
+ * at each member's death in its context. Coop_PartyDeath: it runs (Chars.MainCharDeath of a member does nothing
+ * otherwise); Coop_MemberDeath: it runs for one member (the hook leaves the respawn to the instance) */
 void Coop_Died(int i, struct cEntity *e);
 byte Coop_PartyDeath(void);
+byte Coop_MemberDeath(void);
 /* the scripts' end of the game (MissionsFuncs.FinishGame) on a coop instance: the mission failed, the members are
  * told and the level starts again for them at the way point after CP_FAIL_SECS; 1 there */
 byte Coop_MissionFailed(void);
@@ -314,6 +316,8 @@ void Coop_ActCtrlSet(struct cEntity *e);
 /* test: the buttons of a test press into player i's input of the tick (the line "press"), the race and the fight
  * helpers; back: how far back its client shows the other entities (s, the shots' lag compensation) */
 void Coop_TestInput(int i, struct NetRepInput *in, double back);
+/* test: player i's automatic test player wants its own ship at a switch (Replicate.c Rep_TestOwnShip) */
+byte Coop_TestOwnShip(int i);
 /* the level's start of the missions (MissionsFuncs.Init: the challenge's race and the mission arrow are placed
  * around the player; the Init of the map and of the mission libraries: a mission's race) on a coop instance without
  * a member yet: a stand-in character at the level's first spawn is the scripts' player meanwhile (on 1, gone with

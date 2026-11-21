@@ -172,7 +172,8 @@ typedef struct CoopState {
 	int remote;						/* a remote communication of the scripts is told (Coop_RemoteCom, nested) */
 	int sceneWas;					/* the context before the scene's member entered for the scene's end */
 	int remoteWas;					/* the context before it */
-	byte partyDead;					/* every member here died: the single player's death runs (Coop_Died) */
+	byte partyDead;					/* the single player's death runs (Coop_Died): 1 every member here died, 2 a member's
+									 * death in a mission of rules.def's memberdeath */
 	char gone[CP_GONE][CP_NAME];	/* the entities the level's start deleted (the mission's removals), for the clients */
 	int ngone;
 	int starting;					/* the level's Init runs (Coop_StandIn, nested) */

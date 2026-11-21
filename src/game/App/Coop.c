@@ -849,17 +849,24 @@ void Coop_Died(int i, cEntity *e) {
 	if (!Coop_On() || g_Coop.partyDead) {
 		return;
 	}
-	for (int k = 0; k < PLAYERS_MAX; k++) {
+	/* a mission of rules.def's memberdeath list: its hook is each member's death, never the party's */
+	const char *mis = SaveVar_Get("Mission.Library");
+	byte member = mis && Party_RuleHas("memberdeath", mis);
+	for (int k = 0; !member && k < PLAYERS_MAX; k++) {
 		if (k != i && Rep_PlayerConn(k) >= 0 && !Rep_PlayerDead(k) && Players_Get(k)) {
 			return;
 		}
 	}
 	/* the party died: the single player's death (the mission's hook, else the end of the game: Coop_MissionFailed) */
-	Con_Printf("coop: every member here died (player %d last)\n", i);
+	if (member) {
+		Con_Printf("coop: player %d died: the mission's death hook for the member\n", i);
+	} else {
+		Con_Printf("coop: every member here died (player %d last)\n", i);
+	}
 	nativeVal_t a[2];
 	Native_SetStr(&a[0], e->name);
 	Native_SetStr(&a[1], "");
-	g_Coop.partyDead = 1;
+	g_Coop.partyDead = member ? 2 : 1;
 	int was = Players_Enter(i);
 	if (!Mode_Import("Chars") || !PORT_CALL(Chars, MainCharDeath, NULL, "vv", &a[0], &a[1])) {
 		Native_ErrPrint();
@@ -871,7 +878,11 @@ void Coop_Died(int i, cEntity *e) {
 }
 
 byte Coop_PartyDeath(void) {
-	return g_Coop.partyDead;
+	return g_Coop.partyDead != 0;
+}
+
+byte Coop_MemberDeath(void) {
+	return g_Coop.partyDead == 2;
 }
 
 byte Coop_MissionFailed(void) {

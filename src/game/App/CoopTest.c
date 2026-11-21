@@ -80,7 +80,7 @@
 #define CP_FIGHT_MAX 64				/* test: the targets looked at */
 #define CP_AMMO_GAP 4.0				/* test: s between two ammo boxes */
 #define CP_WORLD_EDGE 200.0f		/* test: units a placed player keeps from the box of the level's grid of points */
-#define CP_LIFE_LOW 35				/* test: percent of its most life under which a ship takes a life box */
+#define CP_LIFE_LOW 50				/* test: percent of its most life under which a ship takes a life box */
 #define CP_FIGHT_USELESS 10.0		/* test: s a weapon fires at a target near ahead that loses no life: not taken again */
 #define CP_FIGHT_RED "red"			/* test: the fight list of all the red ones (or enemies) of the level */
 #define CP_POSSESS_SECS 90.0		/* test: a possession is given up after this */
@@ -523,8 +523,8 @@ static void Cp_Fight(int i, NetRepInput *in, double back) {
 	}
 	if (now - g_Coop.pl[i].fightTold >= 5.0) {
 		g_Coop.pl[i].fightTold = now;
-		Con_Printf("coop: player %d at %s: %.0f away, yaw %.2f, its life %.0f, weapon %d, ammo %.0f\n", i, t->name,
-			(double)d, (double)dyaw, (double)WLife(t)->life, kind == NETREP_SHIP ? Veh(e)->controls.weapon : -1,
+		Con_Printf("coop: player %d (life %.0f) at %s: %.0f away, yaw %.2f, its life %.0f, weapon %d, ammo %.0f\n", i,
+			(double)WLife(e)->life, t->name, (double)d, (double)dyaw, (double)WLife(t)->life, kind == NETREP_SHIP ? Veh(e)->controls.weapon : -1,
 			kind == NETREP_SHIP ? (double)cWeaponManager_GetWeapAmmo(&Veh(e)->weapons, (uint32_t)Veh(e)->controls.weapon) : 0.0);
 	}
 }
@@ -1135,6 +1135,66 @@ static byte Cp_WaitsForShip(void) {
 	return set;
 }
 
+/* test: door t is one a gatekeeper guards (GateKeeper.GKDoors) whose foe type does not take the class of player e: the
+ * gatekeeper refuses it, as single player's player hears (WhoIsDeepThroat: only D-Tritus' group to the boss room) */
+static byte Cp_GateRefuses(cEntity *e, cEntity *t) {
+	nativeVal_t name, key, gks, gc, foe, ctrl, empty;
+	char *cls = NULL;
+	if (!Entity_VarS(e, "ActCtrl", &cls, 0) || !cls) {
+		return 0;
+	}
+	Native_SetStr(&name, t->name);
+	Native_SetNone(&key);
+	Native_SetNone(&gks);
+	Native_SetNone(&gc);
+	Native_SetNone(&foe);
+	Native_SetEmpty(&empty, NV_TUPLE);
+	Native_SetStr(&ctrl, cls);
+	byte refuses = Mode_HasKey("GateKeeper", "GKDoors", 1, &name) > 0 && Mode_G("GateKeeper", "GKDoors", &gks) &&
+		Mode_Sub(&gks, &name, &key) && (Native_Free(&gks), Mode_G("GateKeeper", "GateKeepers", &gks)) &&
+		Mode_Sub(&gks, &key, &gc) && Mode_VObj(&gc, "FoeType", &foe) && Mode_Cmp(&foe, "!=", &empty) > 0 &&
+		Mode_In(&foe, &ctrl) == 0;
+	Native_ErrClear();
+	Native_Free(&name);
+	Native_Free(&key);
+	Native_Free(&gks);
+	Native_Free(&gc);
+	Native_Free(&foe);
+	Native_Free(&ctrl);
+	Native_Free(&empty);
+	return refuses;
+}
+
+/* test: the nearest conversor of the level (DM_Conversion_Point*), NULL for none */
+static cEntity *Cp_Conversor(const cEntity *e) {
+	cEntity *best = NULL;
+	float bestD = 0.0f;
+	for (cEntity *v = cWorld_GetFirstEntity(g_pWorld); v; v = cEntity_Next(v)) {
+		float dx = v->pos.x - e->pos.x, dz = v->pos.z - e->pos.z, d = dx * dx + dz * dz;
+		if (!strncmp(v->name, "DM_Conversion_Point", 19) && Entity_IsType(v, TYEN_WITH_LIFE) && (!best || d < bestD)) {
+			best = v;
+			bestD = d;
+		}
+	}
+	return best;
+}
+
+/* test: the member whose ship carries MortalRace's baton (its race counts that ship's checkpoints), -1 for none or a
+ * racer */
+static int Cp_BatonCarrier(void) {
+	nativeVal_t v;
+	const char *lib = SaveVar_Get("Mission.Library");
+	if (!lib || strcmp(lib, "Mission_MortalRace")) {
+		return -1;
+	}
+	Native_SetNone(&v);
+	cEntity *ship = Mode_ModGet("MortalRace", "shipWithBaton", &v) && v.type == NV_STR && Native_Text(&v)[0] ?
+		World_FindEntity(Native_Text(&v)) : NULL;
+	Native_Free(&v);
+	Native_ErrClear();
+	return ship ? Players_Of(ship) : -1;
+}
+
 /* test: player i plays the mission's targets on its own: fights the ones to fight, flies a race of RaceMaker, else
  * goes to the target (out of its ship) and uses its arrow, again every CP_AUTO_GAP s while no talk plays; a green ship
  * of the mission is escorted as a player does: the red ones near it fought first, else it stays with it (the helper
@@ -1175,6 +1235,21 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 			Con_Printf("coop: player %d (auto) goes onto %s (the waypoint)\n", i, wp->name);
 			Travel_TestGoto(i, wp->name, 0.0f, 0.0f);
 		}
+		return;
+	}
+	/* MortalRace: the member with the baton races (any member may take it up), the others keep the racers off it */
+	int carrier = g_Coop.pl[i].autoOn ? Cp_BatonCarrier() : -1;
+	if (carrier == i) {
+		if (kind == NETREP_SHIP) {
+			Cp_TestRace(i);
+		} else {
+			in->buttons |= pulse ? NETREP_IN_SWITCH : 0;
+		}
+		return;
+	}
+	if (carrier >= 0) {
+		Str_Copy(g_Coop.pl[i].fightList, "@Race", sizeof(g_Coop.pl[i].fightList));
+		Cp_TestFight(i, in, back);
 		return;
 	}
 	/* a messenger plays the pack's game before the fights (the messengers attack the one that carries the pack) */
@@ -1280,6 +1355,19 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 		Cp_TestFight(i, in, back);
 		return;
 	}
+	/* a door whose gatekeeper refuses its class: the conversor first (the class its client picks), as single player
+	 * does after the gatekeeper's no */
+	byte toConv = 0;
+	if (kind == NETREP_CHAR && Cp_GateRefuses(e, t)) {
+		cEntity *conv = Cp_Conversor(e);
+		if (conv) {
+			if (strcmp(g_Coop.pl[i].autoAt, conv->name)) {
+				Con_Printf("coop: player %d (auto): the gatekeeper of %s refuses its class: the conversor\n", i, t->name);
+			}
+			t = conv;
+			toConv = 1;
+		}
+	}
 	if (strcmp(g_Coop.pl[i].autoAt, t->name) && now - g_Coop.pl[i].autoTold >= 10.0) {
 		g_Coop.pl[i].autoTold = now;
 		Con_Printf("coop: player %d (auto) at the target %s\n", i, t->name);
@@ -1355,10 +1443,11 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	/* a phone cab, a desktop or a character to talk to while the police is after it: it waits for the alarm to fall, as
 	 * the single player does after the call's "the police is still after you" (PhoneCab.UseAudioCom, the missions'
 	 * UsePhoneCab; ApologizeMayor's mayor only warns while the alarm of a stapler's death is on), CP_ALARM_WAIT s at most
-	 * (a forbidden area keeps it on until the talk) */
+	 * (a forbidden area keeps it on until the talk); not in a guarded area its character is not let into (GuaranteedChars
+	 * without its class: ApologizeMayor's town hall, the alarm falls only after the mayor's talk) */
 	char *fn = NULL;
 	const cAlarm *al = Players_Alarm(i);
-	if (al && al->on && Entity_VarS(t, "UseFunc", &fn, 0) && fn && (strstr(fn, "Phone") || strstr(fn, "AudioCom") ||
+	if (al && al->on && !(al->hasGuaranteed && al->notGuaranteed) && Entity_VarS(t, "UseFunc", &fn, 0) && fn && (strstr(fn, "Phone") || strstr(fn, "AudioCom") ||
 		strstr(fn, "Desktop") || strstr(fn, "Speech")) &&
 		(g_Coop.pl[i].alarmSince <= 0.0 || now - g_Coop.pl[i].alarmSince < CP_ALARM_WAIT)) {
 		if (g_Coop.pl[i].alarmSince <= 0.0) {
@@ -1402,7 +1491,7 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	Str_Copy(g_Coop.pl[i].autoAt, t->name, sizeof(g_Coop.pl[i].autoAt));
 	g_Coop.pl[i].autoSince = now;
 	/* a target without a use or a photo (the arrow over an item to take) is walked onto */
-	byte use = WLife(t)->arrow.canUse || WLife(t)->arrow.canPhoto;
+	byte use = toConv || WLife(t)->arrow.canUse || WLife(t)->arrow.canPhoto;
 	g_Coop.pl[i].autoUse = use ? now + 2.0 : 0.0;
 	float dx = 0.0f, dz = 0.0f;
 	if (use) {
@@ -1436,6 +1525,10 @@ static void Cp_TestPossess(int i, NetRepInput *in) {
 		g_Coop.pl[i].possessAt = now;
 		Travel_TestGoto(i, c->name, 0.0f, 150.0f);
 	}
+}
+
+byte Coop_TestOwnShip(int i) {
+	return i >= 0 && i < PLAYERS_MAX && (g_Coop.pl[i].autoOn || g_Coop.pl[i].fight);
 }
 
 void Coop_TestInput(int i, NetRepInput *in, double back) {

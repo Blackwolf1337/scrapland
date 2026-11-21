@@ -795,6 +795,11 @@ void Scorer_Done(void) {
 		CHECK(g_Scorers != NULL);
 		sc = g_Scorers;
 	}
+	/* not in the original: the HUD models of a -mp2 instance's players go with the world's scorers (their images were
+	 * left at the shutdown's check of the count of images) */
+	for (int i = 0; g_PresHud && i < PLAYERS_MAX; i++) {
+		Pres_HudReset(i);
+	}
 	if (sc) {
 		Delete_Objects(sc, sizeof(cScorer), (void *)cScorer_dtor);
 	}

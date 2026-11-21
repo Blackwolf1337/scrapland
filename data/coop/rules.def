@@ -24,6 +24,14 @@ entry Map Spawn ComeFrom PrevMap
 #   first  single player has one pilot: they run for the first member in a ship, leaving for that member
 #   each   for every member
 pilot first
+# A line "<rule> <value> <mission>" holds while the story's Mission.Library is that mission. MortalRace: every member
+# races for the baton, so each one's leaving drops a baton it carried (MortalRace.ReleaseBaton).
+pilot each Mission_MortalRace
+# The missions whose death hook (Chars.OnMainCharDeath) is no end of the mission but a player's loss of what it carried:
+# it runs at each member's death in that member's context, never as the party's death; the instance brings the member
+# back as after any death (the hook's own respawn of the player is left out). MortalRace: the baton drops where its
+# carrier died, the party races on.
+memberdeath Mission_MortalRace
 # Seconds until a failed mission's level starts again (single player's game over), a super deal's scores stand
 # before their Continue, units between the members placed next to the member of a scene after it.
 failsecs 5
