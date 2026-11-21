@@ -4129,6 +4129,10 @@ static byte Mr_RespawnPlayerC(const nativeVal_t *name, const nativeVal_t *pos, c
 	nativeVal_t *usr = Mode_V(&t), *un = Mode_V(&t), *bp = Mode_V(&t), *d = Mode_V(&t), *dsq = Mode_V(&t), *r = Mode_V(&t);
 	nativeVal_t *rf = Mode_V(&t), *i = Mode_V(&t), *sp = Mode_V(&t), *sa = Mode_V(&t), *a2 = Mode_V(&t), *g = Mode_V(&t);
 	const nativeVal_t *spawnPos = pos, *spawnAng = ang;
+	/* not in the original: no ship of a dead coop member comes back (include/scrap/coop.h) */
+	if (!Coop_Revives(name)) {
+		return Mode_Done(&t, 1);
+	}
 	if (!Mode_Import("Vehicles") || !Mode_Import("OutMap") || !Mode_Import("RaceMaker") || !Mode_EntityH(name, usr) ||
 		!Mode_VGet(usr, "Name", un) || !PORT_CALL(Vehicles, ReSpawnShip, NULL, "v", un) || !Mode_Read(MR, "baton", g)) {
 		return Mode_Done(&t, 0);
