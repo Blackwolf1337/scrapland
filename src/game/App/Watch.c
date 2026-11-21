@@ -440,7 +440,7 @@ static void Ev_Remove(void *ctx, int slot) {
 		ReplicaEnt_Unwant(slot);
 	}
 	if (slot == Play_OwnSlot()) {
-		Play_OwnRemove();
+		Play_OwnGone();
 	}
 	Watch_MissileHit(&watch.px[slot], NULL, 1);
 	Watch_Free(slot);

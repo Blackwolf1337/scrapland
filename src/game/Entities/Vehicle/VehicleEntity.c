@@ -374,6 +374,10 @@ static void cVehicleEntity_UpdateTrust(cVehicleEntity *self) {
 	self->backTrust = frw * 0.21428572f;
 }
 
+void cVehicleEntity_UpdateFlight(cEntity *self) {
+	cVehicleEntity_UpdateTrust(Veh(self));
+}
+
 void cVehicleEntity_UpdateSpeed(cEntity *self) {
 	Veh_ResetHistory(Veh(self));
 }

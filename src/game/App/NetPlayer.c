@@ -608,6 +608,24 @@ static byte NetPl_Off(float a, float b, float tol) {
 	return fabsf(a - b) > tol;
 }
 
+byte NetPl_OwnSame(const NetRepOwn *a, const NetRepOwn *b) {
+	if (a->kind != b->kind || ((a->flags ^ b->flags) & ~NETPL_OF_TOUCHED) || a->nf != b->nf || a->layers != b->layers ||
+		a->defLoop != b->defLoop) {
+		return 0;
+	}
+	for (int k = 0; k < a->nf; k++) {
+		if (a->f[k] != b->f[k]) {
+			return 0;
+		}
+	}
+	for (int k = 0; k < a->layers; k++) {
+		if (a->act[k] != b->act[k]) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
 int NetPl_OwnDiff(const NetRepOwn *a, const NetRepOwn *b) {
 	const float *x = a->f, *y = b->f;
 	int d = 0;
@@ -720,6 +738,8 @@ void NetPl_OwnApply(cEntity *e, const NetRepOwn *o) {
 		v->cloud = f[NETPL_O_CLOUD];
 		v->emi = f[NETPL_O_EMI];
 		v->cloudOn = (o->flags & NETPL_OF_CLOUD) != 0;
+		/* the server's step after this tick flies with the trusts of this life (its armour weighs) and cloud */
+		cVehicleEntity_UpdateFlight(e);
 		n = NETPL_O_SHIP;
 	} else {
 		n = NETPL_O_COMMON;

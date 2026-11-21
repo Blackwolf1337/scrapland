@@ -779,7 +779,12 @@ cEntity *ReplicaEnt_Find(const char *name) {
 	if (own >= 0 && own < NETREP_MAX_ENTS && !strcmp(rc.s[own].name, name) && Play_Entity()) {
 		return Play_Entity();
 	}
-	return World_FindEntity(name);
+	cEntity *e = World_FindEntity(name);
+	return e ? e : Play_Wreck(name);
+}
+
+const char *ReplicaEnt_SlotName(int slot) {
+	return slot >= 0 && slot < NETREP_MAX_ENTS ? rc.s[slot].name : "";
 }
 
 void ReplicaEnt_Reset(void) {

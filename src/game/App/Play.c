@@ -46,6 +46,7 @@
 
 #define PLAY_CAM "PlayCam"
 #define PLAY_FLOW_SECS 12.0				/* s it waits for the server's hand-over of such a flow, then gives it up */
+#define PLAY_WRECK_NS 1000000000ull	/* how long the own entity that died is kept for the records of its death */
 #define PLAY_DEATH_CAM "PlayDeathCam"
 #define PLAY_DEATH_DIST 1800.0f			/* units of the death camera from the place of the death */
 #define PLAY_DEATH_HIGH 900.0f
@@ -144,8 +145,12 @@ static struct {
 	byte haveMoved;						/* 0 for a new own entity: its first state hands it over (smoothed, no correction) */
 	uint32_t jumps;						/* the server's moves taken as jumps */
 	uint32_t handovers;
-	uint32_t hits;
-	uint32_t touches;					/* states taken after a collision with another ship (NETPL_OF_TOUCHED) */						/* of the lives taken: with more than the life differing (the hit's push) */
+	uint32_t hits;						/* of the lives taken: with more than the life differing (the hit's push) */
+	uint32_t touches;					/* states taken after a collision with another ship (NETPL_OF_TOUCHED) */
+	uint32_t settles;					/* states taken within the tolerances (not the same, no correction) */
+	cEntity *wreck;						/* -mp2: the own entity that died (inactive), Play_Wreck */
+	char wreckName[128];				/* its instance's name */
+	uint64_t wreckNs;
 	uint32_t corrBy[NETPL_D_BITS];		/* corrections by NETPL_D_ bit */
 } play = { .slot = -1, .player = -1 };
 
@@ -185,6 +190,33 @@ int Play_Player(void) {
 
 cEntity *Play_Entity(void) {
 	return play.e;
+}
+
+cEntity *Play_Wreck(const char *name) {
+	return play.wreck && !strcmp(play.wreckName, name) ? play.wreck : NULL;
+}
+
+static void Play_WreckDrop(void) {
+	if (play.wreck && World_FindEntity(play.wreck->name) == play.wreck) {
+		cEntity_Del(play.wreck);
+	}
+	play.wreck = NULL;
+}
+
+/* the own entity that died stays a moment, inactive as the server's goes, for the records of its death that name it
+ * (the weapon change of its controls' reset): the snapshot without it and the player message of the death come
+ * before them */
+static void Play_KeepWreck(void) {
+	Play_WreckDrop();
+	if (!play.e) {
+		return;
+	}
+	play.wreck = play.e;
+	Str_Copy(play.wreckName, ReplicaEnt_SlotName(play.slot), sizeof(play.wreckName));
+	play.wreckNs = Plat_RealNs();
+	Entity_SetActive(play.wreck, 0);
+	play.e = NULL;
+	play.tick = 0;
 }
 
 double Play_OwnTime(void) {
@@ -308,6 +340,14 @@ void Play_OwnRemove(void) {
 	play.tick = 0;
 }
 
+void Play_OwnGone(void) {
+	if (g_Mp2) {
+		Play_KeepWreck();
+	} else {
+		Play_OwnRemove();
+	}
+}
+
 void Play_SetOwn(int player, int slot, int kind, uint32_t tick, const float *phys, int nphys) {
 	play.player = player;
 	if (slot == NETREP_NO_SLOT) {
@@ -339,7 +379,11 @@ void Play_SetOwn(int player, int slot, int kind, uint32_t tick, const float *phy
 		if (g_Mp2) {
 			/* -mp2: the slot's replica is made again as the server's (its name, its journal with the variables the
 			 * prediction left out: a wreck of the own ship showed the predicted entity's stale angles and move) */
-			Play_OwnRemove();
+			if (slot < 0 && kind == NETREP_DEAD) {
+				Play_KeepWreck();
+			} else {
+				Play_OwnRemove();
+			}
 			ReplicaEnt_Want(play.slot);
 		} else {
 			play.e->pos = play.truePos;
@@ -876,6 +920,9 @@ static void Play_Bot(double now) {
 }
 
 void Play_PreFrame(double now, double rtt, double rttVar, float loss) {
+	if (play.wreck && (Plat_RealNs() - play.wreckNs > PLAY_WRECK_NS || World_FindEntity(play.wreckName))) {
+		Play_WreckDrop();
+	}
 	if (play.dead && !play.e) {
 		Play_DeathCam((float)(now - play.tickLocal));
 		play.tickLocal = now;
@@ -1145,13 +1192,19 @@ void Play_OwnState(const uint8_t *data, int size) {
 	play.haveMoved = 1;
 	NetRepOwn mine = play.own[o.tick % NETREP_PRED];
 	int d = jump ? 0 : NetPl_OwnDiff(&mine, &o);
-	if (!jump && !d) {
+	/* a state within the tolerances but not the same (the hand-over from the quantised snapshot, an angle the server
+	 * keeps unwrapped): taken as well, not counted; the step is the same code on both sides, so the prediction stays
+	 * equal after it (a difference left there grew in flight until it was a correction a few seconds later) */
+	byte settle = !jump && !d && !NetPl_OwnSame(&mine, &o);
+	if (!jump && !d && !settle) {
 		return;
 	}
 	uint32_t replayed;
 	float corr = Play_Rollback(o.tick, NULL, &o, jump, &replayed);
 	play.st.replayed += replayed;
-	if (jump) {
+	if (settle) {
+		play.settles++;
+	} else if (jump) {
 		play.jumps++;
 		NetAudit_Name(NA_PREDICT, "pred.jump:", play.kind == NETREP_SHIP ? "ship" : "char");
 	} else if (handover) {
@@ -1181,7 +1234,7 @@ void Play_OwnState(const uint8_t *data, int size) {
 			}
 		}
 	}
-	if (play.log) {
+	if (play.log && !settle) {
 		fprintf(play.log, "%u,%d,%d,%.2f,%u,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f\n", o.tick, play.kind, jump ? -1 : d,
 			(double)corr, replayed, (double)o.f[0], (double)o.f[1], (double)o.f[2], (double)p->pos[0],
 			(double)p->pos[1], (double)p->pos[2]);
@@ -1238,9 +1291,9 @@ void Play_Status(void) {
 		play.st.corrections, (double)c[0], (double)c[1], (double)c[2], (double)c[3], play.st.replayed);
 	if (g_Mp2) {
 		Con_Printf("play: -mp2 corrections by pos %u vel %u ang %u act %u state %u move %u, life taken %u (%u with a "
-			"push), %u after a collision with a ship, %u jumps, %u handovers\n", play.corrBy[0], play.corrBy[1],
-			play.corrBy[2], play.corrBy[3], play.corrBy[4], play.corrBy[5], play.corrBy[6], play.hits, play.touches,
-			play.jumps, play.handovers);
+			"push), %u after a collision with a ship, %u jumps, %u handovers, %u settled\n", play.corrBy[0],
+			play.corrBy[1], play.corrBy[2], play.corrBy[3], play.corrBy[4], play.corrBy[5], play.corrBy[6], play.hits,
+			play.touches, play.jumps, play.handovers, play.settles);
 	}
 }
 
@@ -1258,6 +1311,7 @@ byte Play_TestPress(const char *name, int ticks) {
 }
 
 void Play_Reset(void) {
+	Play_WreckDrop();
 	Play_OwnRemove();
 	NetRepFollow_Init(&play.clock, PLAY_CLOCK_JUMP);
 	play.half = 0;

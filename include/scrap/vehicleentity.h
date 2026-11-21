@@ -224,6 +224,9 @@ cNetVController *cNetVController_ctor(void *mem, cEntity *v);
 
 /* the speed history restarted from the velocity (AvoidCrash) */
 void cVehicleEntity_UpdateSpeed(cEntity *self);
+/* MaxSpeed, Fric, AcMass and the trusts again from the mass, life, engine, style and cloud (the step does it at the
+ * end of each slot; a -mp2 client that took the server's life does it before the slots it runs again) */
+void cVehicleEntity_UpdateFlight(cEntity *self);
 /* the debris cloud on a vehicle for time */
 void cVehicleEntity_SetCloud(cEntity *self, float time, byte on);
 /* a state flag for the network game */

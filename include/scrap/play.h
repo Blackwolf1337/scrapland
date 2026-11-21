@@ -210,6 +210,8 @@ void NetPl_Restore(struct cEntity *e, const NetPlMotion *m);
 void NetPl_OwnOf(struct cEntity *e, uint32_t tick, uint8_t moved, NetRepOwn *o);
 /* NETPL_D_* of what differs between the client's state a and the server's b beyond the tolerances */
 int NetPl_OwnDiff(const NetRepOwn *a, const NetRepOwn *b);
+/* a and b are the same state (every value equal, the touch flag aside) */
+byte NetPl_OwnSame(const NetRepOwn *a, const NetRepOwn *b);
 /* the server's state into e (after NetPl_Restore of the client's own state of that tick) */
 void NetPl_OwnApply(struct cEntity *e, const NetRepOwn *o);
 /* -mp2: a random draw (0 to 0x7fff) of e's actions or slot while NetPl_StepPart steps it, the same on the server and
@@ -307,10 +309,15 @@ void Play_OwnUpdate(uint32_t tick, const NetRepState *st);
  * difference beyond the tolerances goes back to it and runs the inputs after it again */
 void Play_OwnState(const uint8_t *data, int size);
 void Play_OwnRemove(void);
+/* the server's own entity left the snapshot (a death, the scripts deleted it); -mp2: kept a moment (Play_Wreck) */
+void Play_OwnGone(void);
 /* the status message: the money, the alarm and the ammo of the own player into the world and the own ship (the
  * HUD of single player shows them) */
 void Play_OwnStatus(const NetRepStatus *st);
 struct cEntity *Play_Entity(void);
+/* -mp2: the own entity that died a moment ago, for the records of its death by the instance's name (the player message
+ * of the death comes before them; the server's entity goes inactive, no replica of it may come), NULL */
+struct cEntity *Play_Wreck(const char *name);
 /* the server time (s) the own entity is predicted for now, 0 without one */
 double Play_OwnTime(void);
 /* the death camera looks at the place of the own death (no own entity yet) */

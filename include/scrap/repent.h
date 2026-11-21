@@ -170,8 +170,11 @@ void ReplicaEnt_ModLeave(const char *module);
 byte ReplicaEnt_Busy(void);
 /* the connection is gone (a travel): everything of it */
 void ReplicaEnt_Reset(void);
-/* the entity of the instance's name: its replica, or the own entity for the name of the own slot; NULL */
+/* the entity of the instance's name: its replica, or the own entity for the name of the own slot (or the own entity
+ * that just died, Play_Wreck); NULL */
 struct cEntity *ReplicaEnt_Find(const char *name);
+/* the instance's name of a slot ("" none) */
+const char *ReplicaEnt_SlotName(int slot);
 /* the slot of a replica, -1 */
 int ReplicaEnt_SlotOf(const struct cEntity *e);
 /* a text entry of the journal of replica e (an entity variable or a REPENT_J_ name, as the server set it), NULL */
