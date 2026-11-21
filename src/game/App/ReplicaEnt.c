@@ -265,10 +265,11 @@ static void ReplicaEnt_Links(void) {
 /* the variables of the client's own entity its prediction runs (stage 3.5): the rollback state brings the server's at
  * the tick they were set (a journal entry would set them again when it comes: a boost of the client started again).
  * Vel stays: a velocity the scripts set again and again (the brake of a parking box, Parking.OnPark) keeps the
- * prediction nearer to the server when it comes than without it (fewer corrections in the stage 3.5 tests) */
+ * prediction nearer to the server when it comes than without it (fewer corrections in the stage 3.5 tests). The cloud
+ * and EMI counters (MotorDCnt, EMICounter) come with the rollback state: a late entry set the own cloud back */
 static byte ReplicaEnt_Predicted(const char *name) {
 	static const char *const names[] = { "Pos", "Ang", "ViewAng", "isBoost", "Life", "Energy", "MoveTime", "MovePos",
-		"MoveAng" };
+		"MoveAng", "MotorDCnt", "EMICounter" };
 	for (size_t k = 0; k < sizeof(names) / sizeof(names[0]); k++) {
 		if (!strcmp(name, names[k])) {
 			return 1;

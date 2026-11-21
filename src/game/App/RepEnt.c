@@ -370,6 +370,11 @@ static void RepEnt_Tap(cEntity *e, const char *name, int type, const void *value
 		Entity_IsType(e, TYEN_WITH_LIFE) && Obj(e)->netStep) {
 		Rep_OwnMoved(e);
 	}
+	/* a push of a shot the scripts give a player's ship (Sonic.SonicHit: Vel, then ForceVel): its client takes the
+	 * result as a collision's (NETPL_OF_TOUCHED) */
+	if (!strcmp(name, "ForceVel") && Entity_IsType(e, TYEN_WITH_LIFE) && Obj(e)->netStep) {
+		Rep_OwnTouched(e);
+	}
 	netTag_t tag = NetClass_Find(NCT_ENTVAR, name);
 	if (tag != NC_STATE && tag != NC_EVENT) {
 		if (tag == NC_ABSENT || tag == NC_UNTAGGED) {
