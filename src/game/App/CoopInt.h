@@ -48,6 +48,7 @@ typedef struct CpScene {
 typedef struct CoopState {
 	byte on;
 	char story[COORD_PATH];			/* the file of -story */
+	char levelChar[64];				/* the character the level's scripts made the player (Coop_SetChar), "" none */
 	byte applying;					/* the coordinator's story goes in: not sent back */
 	byte synced;					/* the whole story came since the coordinator connected */
 	byte overflow;					/* more changes than the list holds: the whole story goes */
@@ -114,6 +115,7 @@ typedef struct CoopState {
 		double walkBack;			/* since when it is next to its last follower that follows no more (0 not) */
 		float walkNear;				/* the nearest it came to its target on its walk */
 		double walkNearAt;			/* when (0 none yet) */
+		char walkShort[64];			/* the target its walk ended short of (the goto and the use come next) */
 		char fightList[CP_NAME];	/* "Module.var" (a list of the scripts), an entity, "" the mission's targets */
 		char fightAt[CP_NAME];		/* the target it turned to last */
 		double fightSince;			/* when it was put near a target last (instance time) */

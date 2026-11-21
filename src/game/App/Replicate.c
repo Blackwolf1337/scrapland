@@ -829,6 +829,7 @@ static cEntity *Rep_EnterChar(int i, const vec3_t *pos, float yaw) {
 	}
 	pl->spawnAt = -1;
 	Str_PrintfQuiet(rep_enterName, sizeof(rep_enterName), REP_PLAYER_PREFIX "%d_%u", i, ++pl->spawns);
+	Coop_EnterChar(i);
 	cEntity *e = InitSteps_Enter(i) ? World_FindEntity(rep_enterName) : NULL;
 	if (!e || !Entity_IsType(e, TYEN_WALKCHAR)) {
 		return Rep_SpawnChar(i, pos, yaw);

@@ -28,6 +28,7 @@
 
 /* the level of the refs of this file's modules (PORT_LCALL, PORT_LOWN) */
 #define PORT_LEVEL orbit
+#include "scrap/coop.h"
 #include "scrap/input.h"
 #include "scrap/scrap.h"
 #include "scrap/scorer.h"
@@ -1234,7 +1235,7 @@ static byte Intro_SetNextMissionN(void) {
 		!PORT_CALL(MissionsFuncs, SetNextMission, NULL, "ss", "Mission_IntroHuman2", "Press")) {
 		return 0;
 	}
-	SaveVar_Set("Char", "Dtritus");
+	Coop_SetChar("Dtritus");
 	if (!PORT_CALL(SaveGame, MarkWayPoint, NULL, "sss", "Levels/Press", "DM_Player_Spawn_Press", "")) {
 		return 0;
 	}

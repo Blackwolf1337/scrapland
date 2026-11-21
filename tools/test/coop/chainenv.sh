@@ -109,3 +109,7 @@ export AUTO_MID_SuperDeal_Tenth='@|wait 150||||;;@|inst @ call SuperDeal_Tenth.V
 export AUTO_B_Mission_ApologizeMayor='-'
 # DestroyPorkinsTransports: the bishops kill the whole party now and then (the mission starts again): pb takes no damage
 export AUTO_PRE_Mission_DestroyPorkinsTransports='switch $a;switch $b;tough $b 1'
+# Part 3 of the story (stage 5b), chapters 69 to 100
+# GetDataPart2 alone: the three downloads run only together and each functionary goes back to stop his; the single
+# member starts them, knocks the functionaries down on foot, then starts the downloads again
+export AUTO_MID1_Mission_GetDataPart2='@|wait 40||||;;@|inst @ auto $a 0||||;;@|inst @ fight $a Mission_GetDataPart2.funcNames|player $a fights|5|pa fights the functionaries;;@|wait 150||||;;@|inst @ fight $a 0||||;;@|inst @ auto $a|player $a plays|5|pa starts the downloads again'

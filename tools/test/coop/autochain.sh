@@ -41,6 +41,44 @@ each() {
 		for m in $mp; do echo "${l//\$b/\$$m}"; done
 	done
 }
+# the steps of the story's end ($endch 99: the teleporter to the AB, every member boards, the boss comes and is fought
+# down by the members' weapons, the party in ABIndoor with the story at AfterFinalFight; 100: TheEndA, pa uses D-Tritus'
+# ship, TheEndB, the instance ends the story, every member's client goes to the credits)
+endsteps() {
+	local p all="pa"
+	[ "$np" -ge 2 ] && all="pa pb$mp"
+	if [ "$endch" = 99 ]; then
+		for p in $all; do echo "w|-|$p .* is in $lv|150|$p in $lv (any time)"; done
+		echo "$lv|inst $lv goto \$a DM_Door_Teleporter_00 0 200||||"
+		echo "$lv|wait 3||||"
+		echo "$lv|inst $lv use \$a DM_Door_Teleporter_00|player \$a uses DM_Door_Teleporter_00|10|pa uses the teleporter to the AB"
+		for p in $all; do echo "w|-|$p .* is in AB|240|$p in the AB (any time)"; done
+		echo "AB|wait 20||||"
+		echo "AB|inst AB switch \$a|player \$a into|30|pa gets into a ship"
+		echo "AB|-|player \$a into a ship: Parking.SwitchVehicleMissionCallback|10|the boarding's mission callback: the boss comes (any time)"
+		echo "AB|inst AB switch \$b||||"
+		echo "AB|wait 5||||"
+		echo "AB|inst AB show MapFinalFight.bossName|bossName = '|10|the boss is there"
+		echo "AB|inst AB fight \$a MapFinalFight.bossName|player \$a fights MapFinalFight.bossName|5|pa fights the boss"
+		echo "AB|inst AB fight \$b MapFinalFight.bossName||||"
+		echo "AB|-|hit by player \$a .* on Boss|400|pa's shots hit the boss (any time)"
+		for p in $all; do echo "w|-|$p .* is in ABIndoor|${CHAP_SECS:-1500}|$p in ABIndoor: the boss destroyed (any time)"; done
+		echo "ABIndoor|poll inst ABIndoor story get Mission.Library|Mission.Library = Mission_AfterFinalFight|60|the next mission after $mis"
+	else
+		echo "ABIndoor|-|scene TheEndA plays on the clients|300|the end's first scene (any time)"
+		echo "ABIndoor|-|scene TheEndA ended|600|the first scene ends (any time)"
+		echo "ABIndoor|wait 5||||"
+		echo "ABIndoor|inst ABIndoor auto \$a|player \$a plays the mission's targets|5|pa goes to D-Tritus' ship (the mission's target) and uses it"
+		echo "ABIndoor|-|scene TheEndB plays on the clients|300|the last scene (any time)"
+		echo "ABIndoor|-|the story is finished: the credits on the clients|900|the instance ends the story"
+		# the last member's step is the chapter's end (the chain's pass)
+		for p in $all; do
+			w="$p's client goes to the credits"
+			[ "$p" = "${all##* }" ] && w="the next mission after $mis: the credits on every client ($w last)"
+			echo "$p|-|coop: the story is finished: the credits|60|$w (any time)"
+		done
+	fi
+}
 n=0
 while [ $n -lt $max ]; do
 	n=$((n + 1))
@@ -79,8 +117,16 @@ while [ $n -lt $max ]; do
 		if [[ $nd == SuperDeal_* ]]; then endpoll="story get SuperDeal.Library|SuperDeal.Library = $nd"
 		else endpoll="story get JackInTheBox.Active|JackInTheBox.Active = 2"; fi
 	fi
+	# the story's end: BeforeFinalFight from GamblinDen through the final fight (AB) to ABIndoor, where the story names
+	# AfterFinalFight; AfterFinalFight from ABIndoor (its party is there, not in the story's GamblinDen) to the credits
+	endch=
+	case $mis in
+	Mission_BeforeFinalFight) endch=99 extra="AB ABIndoor";;
+	Mission_AfterFinalFight) endch=100 lv=ABIndoor extra=GamblinDen;;
+	*) extra=;;
+	esac
 	if [ "$CHAP_LEVELS" = auto ]; then
-		ls=$(printf '%s\n' "$from" "$lv" "$arena" "$(nextlv "$mis")" | grep -v '^$' | grep -vx Orbit | awk '!s[$0]++' | paste -sd,)
+		ls=$(printf '%s\n' "$from" "$lv" "$arena" "$(nextlv "$mis")" $extra | grep -v '^$' | grep -vx Orbit | awk '!s[$0]++' | paste -sd,)
 		export CHAP_WORLD_ARGS="$worldargs -instport:$((port + 1)) -levels:${ls:-Orbit}${arena:+ -keep:$arena,$lv}"
 	fi
 	steps=$S/$tag-$n.steps
@@ -93,6 +139,9 @@ while [ $n -lt $max ]; do
 			for m in $mp; do echo "w|inst $from leader \$$m|$m .* is in $lv|150|$m goes to its leader in $lv (any time)"; done
 		fi
 		echo "$lv|wait 15||||"
+		if [ -n "$endch" ]; then
+			endsteps
+		else
 		if [ -n "$arena" ]; then
 			g=CrazyGambler_Default
 			echo "$lv|inst $lv story deals|crazy deal 3|10|the crazy deals done (test)"
@@ -118,6 +167,9 @@ while [ $n -lt $max ]; do
 			v=AUTO_M_$mis; [ -n "${!v}" ] || printf -v "$v" '%s' "2 red"
 		fi
 		pre=AUTO_PRE_$mis
+		# alone (CHAP_PLAYERS=1) AUTO_PRE1_<Mission> and AUTO_MID1_<Mission> take the place of AUTO_PRE and AUTO_MID: a
+		# party of one plays some missions another way (GetDataPart2's three downloads)
+		v=AUTO_PRE1_$mis; [ "$np" = 1 ] && [ -n "${!v}" ] && pre=$v
 		if [ -n "${!pre}" ]; then
 			IFS=';' read -ra lines <<< "${!pre}"
 			for l in "${lines[@]}"; do
@@ -144,6 +196,7 @@ while [ $n -lt $max ]; do
 		# AUTO_MID_<Mission>: more steps after the auto lines, separated by ";;" ("@|" and " @ " stand for the level), e.g. a poll of
 		# a step of the mission, then the conversor again (BeatPickus: a functionary for Traitorius, Dtritus for the thugs)
 		mid=AUTO_MID_$mis
+		v=AUTO_MID1_$mis; [ "$np" = 1 ] && [ -n "${!v}" ] && mid=$v
 		if [ -n "${!mid}" ]; then
 			v=${!mid}; v=${v//@\|/$lv\|}; v=${v// @ / $lv }
 			awk -v RS=';;' '{ sub(/^\n+/, ""); sub(/\n+$/, ""); if (length) print }' <<< "$v"
@@ -160,6 +213,7 @@ while [ $n -lt $max ]; do
 		echo "$lv|inst $lv auto \$a 0||||"
 		[ "$np" -ge 2 ] && echo "$lv|inst $lv auto \$b 0||||"
 		for m in $mp; do echo "$lv|inst $lv auto \$$m 0||||"; done
+		fi
 		echo "w|wait 8||||"
 		echo "w|save $tag-$n||||"
 	} | each > "$steps"

@@ -828,6 +828,12 @@ static byte Cp_WalkStep(int i, NetRepInput *in, cEntity *e, cEntity *t, double n
 		g_Coop.pl[i].walkNearAt = 0.0;
 		return 0;
 	}
+	/* a walk that ended short of this target stays ended (the goto and the use come next: its walk's restart took
+	 * them away, DistractHumphrey's phone cab with the party around it) while it stays that near */
+	if (!strcmp(g_Coop.pl[i].walkShort, t->name) && d <= CP_WALK_END) {
+		return 0;
+	}
+	g_Coop.pl[i].walkShort[0] = 0;
 	if (now - g_Coop.pl[i].autoSince >= CP_WALK_GAP) {
 		/* its followers (test line walk): the characters that follow it (or the one named by the test line) */
 		cEntity *back = NULL;
@@ -877,6 +883,7 @@ static byte Cp_WalkStep(int i, NetRepInput *in, cEntity *e, cEntity *t, double n
 			/* its way ends short of the target (BeatPickus' blueprints on a wall, the graph's last node 500 away): the
 			 * goto's last step, as at the end of a walk */
 			g_Coop.pl[i].walkNearAt = 0.0;
+			Str_Copy(g_Coop.pl[i].walkShort, t->name, sizeof(g_Coop.pl[i].walkShort));
 			return 0;
 		}
 		if (!Cp_PathPoint(e, &to->pos, &g_Coop.pl[i].walkTo)) {
