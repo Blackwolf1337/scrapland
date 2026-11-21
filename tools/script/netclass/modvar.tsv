@@ -1108,7 +1108,7 @@ PCMenu.optionsChar	CLIENT	menu or interface state of the client
 PCMenu.optionsShip	CLIENT	menu or interface state of the client
 Parking.AlarmProbOnParkedShipDeath	WORLD	one value for the world (SIM module)
 Parking.AllShips	WORLD	one value for the world (SIM module)
-Parking.DtritusPlate	WORLD	one value for the world (SIM module)
+Parking.DtritusPlate	PLAYER	the plate of the player's own ship (a plate per player, Parking.PlayerJoin)
 Parking.DtritusPlateModel	WORLD	one value for the world (SIM module)
 Parking.DtritusPlateNode	WORLD	one value for the world (SIM module)
 Parking.LastCamera	PLAYER	state of one player (its conversation, ship, machine or race)

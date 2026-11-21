@@ -126,6 +126,11 @@ static void cItemEntity_Touch(cEntity *elem, cEntity *other, const vec3_t *point
 	if (self->base.deadNode.target || !(other->mask & 0x11) || !(byte)cPy_Function_IsValid(&self->onTake)) {
 		return;
 	}
+	/* not in the original: on an instance one taker; an item taken by one player in its test of this step (its respawn
+	 * time set by the take) is no longer there for a second player in the same sphere */
+	if (Players_Net() && self->respawn > 0.0f && Players_Is(other)) {
+		return;
+	}
 	if (self->taker.target) {
 		CHECK(self->taker.data);
 		Nto1Node_Unlink(&self->taker);

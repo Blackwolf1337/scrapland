@@ -554,6 +554,15 @@ void Travel_Joined(int player) {
 		Alarm_Set(Players_CurAlarm(), (float)crt_atof(v));
 		Players_Leave(was);
 	}
+	/* single player's flows: the way point of the trip as single player's MarkWayPoint leaves it (Spawn, ComeFrom of
+	 * the player): the junkyard's platform arrives at DM_Player_Spawn_Junkyard, where Parking.PlayerJoin puts the
+	 * player's ship on the junker parking */
+	if (Rep_SpFlows() && !strncmp(p->entrance, "DM_Player_Spawn_", 16)) {
+		int was = Players_Enter(player);
+		SaveVar_Set("Spawn", p->entrance);
+		SaveVar_Set("ComeFrom", p->door);
+		Players_Leave(was);
+	}
 	cEntity *door = e && p->door[0] ? Tr_Door(p->door, &e->pos) : NULL;
 	if (door) {
 		int was = Players_Enter(player);

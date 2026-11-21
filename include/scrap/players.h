@@ -151,10 +151,15 @@ int Players_ActingAt(const char *site);
 /* the own ship of player i (a ship it called): its Parking.PlayerShip of the scripts (an overlay per player of the
  * module variables, include/scrap/modvars.h); NULL for none */
 void Players_SetShip(int i, struct cEntity *ship);
+/* the scripts wrote player i's Parking.PlayerShip (its overlay, ModVars.c): its own ship from now on (NULL none) */
+void Players_NoteShip(int i, struct cEntity *ship);
 /* player i's own ship while it is in the world, NULL */
 struct cEntity *Players_Ship(int i);
 /* the player whose own ship e is, -1 */
 int Players_ShipOwner(struct cEntity *e);
+/* single player's flows on an instance (Rep_SpFlows): the entity name is another player's than the current one's
+ * (its own ship or its Sputnik): the scripts' use of it is refused */
+byte Players_OthersOwn(const char *name);
 /* the current context and the context of player i (PLAYERS_NONE: the world's own); NULL for an unused player */
 cPlayer *Players_Cur(void);
 cPlayer *Players_Ctx(int i);

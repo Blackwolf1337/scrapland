@@ -486,6 +486,9 @@ byte HangarTab_TextCost(const char *text, int *cost);
  * ran on its client (include/scrap/uichan.h), in the player's context: the editor's way point, the player's ship on the
  * platform (Junkyard_PlatformShip), EndShipEditCallBack(0, ""); 0 with the error of the scripts */
 byte ShipEdit_ClientEnded(void);
+/* a -mp2 client's editor: ShipEdit.editPlatform and editShipPosDummy from the platform's replica (the platform's class
+ * initializer of the level's start is the server's) */
+byte ShipEdit_ClientPlatform(struct cEntity *elv);
 extern const portFn_t g_RaceMakerMethods[];
 
 /* the general sounds: the sound files of a level, the ship and damage sounds, the point sounds of the maps and the door

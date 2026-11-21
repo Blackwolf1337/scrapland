@@ -581,6 +581,13 @@ void Players_SetShip(int i, cEntity *ship) {
 	Players_Leave(was);
 }
 
+void Players_NoteShip(int i, cEntity *ship) {
+	if (Players_Used(i)) {
+		g_Pl[i].ship = ship;
+		Str_Copy(g_Pl[i].shipName, ship ? ship->name : "", sizeof(g_Pl[i].shipName));
+	}
+}
+
 cEntity *Players_Ship(int i) {
 	if (!Players_Used(i) || !g_Pl[i].ship) {
 		return NULL;
@@ -597,6 +604,31 @@ int Players_ShipOwner(cEntity *e) {
 		}
 	}
 	return -1;
+}
+
+byte Players_OthersOwn(const char *name) {
+	cEntity *e = name ? World_FindEntity(name) : NULL;
+	int cur = Players_Current();
+	if (!e || !Rep_SpFlows()) {
+		return 0;
+	}
+	for (int i = 0; i < PLAYERS_MAX; i++) {
+		if (i == cur || !Players_Used(i)) {
+			continue;
+		}
+		nativeVal_t v;
+		Native_SetNone(&v);
+		int was = Players_Enter(i);
+		byte spt = Mode_ModGet("Sputnik", "spt", &v) && v.type == NV_ENT && Native_Ent(&v) == e;
+		Native_ErrClear();
+		Native_Free(&v);
+		Players_Leave(was);
+		if (spt || Players_Ship(i) == e) {
+			Con_Printf("instance: %s is player %d's, not player %d's\n", name, i, cur);
+			return 1;
+		}
+	}
+	return 0;
 }
 
 byte Players_InUse(int i) {

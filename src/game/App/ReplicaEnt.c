@@ -96,7 +96,10 @@ void ReplicaEnt_Created(const char *name, const char *type) {
 		!crt_stricmp(type, TYEN_CAMPATH)) {
 		return;
 	}
-	ReplicaEnt_Count(rc.railDepth ? "client.rail.create:" : "client.script.create:", type, name);
+	/* an interface of the instance shown here (Sputnik's hangar screen, the ship editor) makes its own hidden ships
+	 * of the hangar, as single player's does: the interface's, not the world's */
+	ReplicaEnt_Count(rc.railDepth ? "client.rail.create:" : Ui_ClientIn(0) ? "client.ui.create:" : "client.script.create:", type,
+		name);
 }
 
 /* the modules of the rail traffic (the server's since stage 2.2: their calls on the client are counted apart) */
@@ -119,6 +122,9 @@ void ReplicaEnt_ModCall(const char *module, const char *func) {
 		Str_PrintfQuiet(key, sizeof(key), "%s.%s", module, func);
 		if (rail || rc.railDepth) {
 			NetAudit_Name(NA_CREATE, "client.rail.call:", key);
+		} else if (Ui_ClientIn(0)) {
+			/* a helper of the simulation an interface of the instance calls here for its own screen and ships */
+			NetAudit_Name(NA_CREATE, "client.ui.call:", key);
 		} else {
 			NetAudit_Name(NA_CREATE, "client.sim.call:", key);
 			rc.simCalls++;

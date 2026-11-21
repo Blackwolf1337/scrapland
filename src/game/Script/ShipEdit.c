@@ -715,13 +715,12 @@ static byte Se_DoorInitializator(const nativeVal_t *cls) {
 	return Mode_Done(&t, ok && LvN_SetAct("EventFunc", v));
 }
 
-/* ObjInitializator(elv, ExtraInfo): the platform entity: editPlatform, and editShipPosDummy (the place of the ship) */
-static byte Se_ObjInitializator(const nativeVal_t *elv, const nativeVal_t *extra) {
+/* editPlatform elv and editShipPosDummy (the place of the ship on it) */
+static byte Se_Platform(const nativeVal_t *elv) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *ang = Mode_V(&t), *a0 = Mode_V(&t), *a1 = Mode_V(&t), *ang2 = Mode_V(&t), *name = Mode_V(&t);
 	nativeVal_t *link = Mode_V(&t), *dummy = Mode_V(&t);
-	byte ok = Mode_Import("Elevator") && PORT_CALL(Elevator, ObjInitializator, NULL, "vv", elv, extra) &&
-		LvN_SetI(elv, "UseAngSel", 0) && Mode_VGet(elv, "Ang", ang) && LvN_Item(ang, 0, a0);
+	byte ok = Mode_VGet(elv, "Ang", ang) && LvN_Item(ang, 0, a0);
 	Native_Free(ang);
 	ok = ok && Mode_VGet(elv, "Ang", ang) && LvN_Item(ang, 1, a1) && Mode_VGet(elv, "Name", name) &&
 		Mode_VGet(elv, "NodePos_DC_ShipLink", link);
@@ -737,6 +736,22 @@ static byte Se_ObjInitializator(const nativeVal_t *elv, const nativeVal_t *extra
 	Native_Copy(Native_Append(dummy), ang2);
 	Native_SetInt(Native_Append(dummy), 1);
 	return Mode_Done(&t, Mode_Put(SE, "editShipPosDummy", NULL, dummy) && Mode_Put(SE, "editPlatform", NULL, elv));
+}
+
+/* ObjInitializator(elv, ExtraInfo): the platform entity: editPlatform, and editShipPosDummy (the place of the ship) */
+static byte Se_ObjInitializator(const nativeVal_t *elv, const nativeVal_t *extra) {
+	return Mode_Import("Elevator") && PORT_CALL(Elevator, ObjInitializator, NULL, "vv", elv, extra) &&
+		LvN_SetI(elv, "UseAngSel", 0) && Se_Platform(elv);
+}
+
+byte ShipEdit_ClientPlatform(cEntity *elv) {
+	nativeVal_t v;
+	if (!elv || !Native_SetEnt(&v, elv->name)) {
+		return 0;
+	}
+	byte ok = Se_Platform(&v);
+	Native_Free(&v);
+	return ok;
 }
 
 /* ---- the turning ship ---- */
