@@ -1281,9 +1281,9 @@ static cEntity *Cp_Conversor(const cEntity *e) {
 	return best;
 }
 
-/* test: player i's character e low on life (CP_LIFE_LOW percent of the most it had) while the police is after it hides
- * as a player runs off: at a player spawn of the level far from it (put there, as a walker that knows the way) until
- * its alarm falls, CP_HIDE_SECS at most; 1 while it hides */
+/* test: player i's character e low on life (CP_LIFE_LOW percent of the most it had) while the police is after it, the
+ * party's last living member, hides as a player runs off: at a player spawn of the level far from it (put there, as a
+ * walker that knows the way) until its alarm falls, CP_HIDE_SECS at most; 1 while it hides */
 static byte Cp_Hide(int i, cEntity *e, double now) {
 	const cAlarm *al = Players_Alarm(i);
 	float life = WLife(e)->life;
@@ -1302,6 +1302,13 @@ static byte Cp_Hide(int i, cEntity *e, double now) {
 	}
 	if (!al || !al->on || al->locked || (al->hasGuaranteed && al->notGuaranteed) || life * 100.0f >= g_Coop.pl[i].lifeTop * CP_LIFE_LOW) {
 		return 0;
+	}
+	/* only the party's last living member hides (its death would fail the mission; another member's death is no loss
+	 * and its hiding broke off TalkToMayor's robbery) */
+	for (int k = 0; k < PLAYERS_MAX; k++) {
+		if (k != i && Rep_PlayerConn(k) >= 0 && !Rep_PlayerDead(k) && Players_Get(k)) {
+			return 0;
+		}
 	}
 	char name[CP_NAME], best[CP_NAME];
 	vec3_t pos, ang, at = e->pos;
