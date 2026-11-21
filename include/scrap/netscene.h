@@ -60,6 +60,7 @@
 #define NETSCENE_C_SKIP 1
 
 #define NETSCENE_PATH_POINTS 12		/* the points of a camera path a record carries */
+#define NETSCENE_HOLD 3600.0f		/* the seconds a client holds a fixed camera of the server (NetScene_CamFixed) */
 
 #define NETSCENE_F_LOCALHIDE 1		/* the client hides the walking characters itself (sandbox) */
 #define NETSCENE_F_OUTDOOR 2		/* an outdoor level: the ships too */
@@ -98,6 +99,10 @@ void NetScene_Ending(void);
 /* view 0 of the current player's context shows camera cam (cWorld_SetCam): a camera path of the scripts (boarding,
  * parking, a race's start) is sent to that player with the records of the frame (NetScene_Flush) */
 void NetScene_CamSet(struct cEntity *cam);
+/* a -mp2 instance: view 0 shows the fixed camera cam (a "Cam" entity: a super deal's end view) in a player's context,
+ * or in coop's world context for every member: it goes to the clients as a camera path that holds it; a player's
+ * follow camera after one is the client's own camera again. 1 when it is sent so, 0 for another camera */
+byte NetScene_CamFixed(struct cEntity *cam);
 /* the scripts set a variable of a follow camera (FollowCamEntity.c: CamDist, CamAng, CamRot, AddTurn, Target,
  * MainTarget; s the entity name of Target and MainTarget, else d the number as the scripts gave it): when it is the
  * camera of a player's view (its own camera, also while a camera path of the player shows it) the setting goes to

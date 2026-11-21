@@ -65,3 +65,6 @@ export AUTO_PRE_Mission_DestroyHumphrey='switch $a;switch $b'
 # GoWithHuman: the human waits at the entrance and follows D-Tritus once he is near (CheckMaxDist), to the machine's
 # switch; he stops when D-Tritus is too far: pa goes to him first, then walks (test line walk)
 export AUTO_PRE_Mission_GoWithHuman='goto $a Human_Entrance 0 300;wait 5;walk $a 1 Human_Entrance'
+# ApologizeMayor: pb plays nothing (its helper's punches at the sentinels and gears of the town hall draw a fight the mayor
+# joins: he stays on a gear and does not talk again)
+export AUTO_B_Mission_ApologizeMayor='-'

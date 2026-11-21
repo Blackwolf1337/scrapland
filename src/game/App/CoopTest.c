@@ -954,6 +954,11 @@ static byte Cp_MessengerPack(int i, NetRepInput *in, cEntity *e, double now) {
 		/* the messengers go for the one that carries it: one near it (not flashed) is shot first, as a player keeps them
 		 * off its own pack or a member's; else its own pack goes to the desk, a member's is escorted */
 		cEntity *m = Cp_MessengerNear(carrier);
+		/* one behind a wall cannot be hit: its own pack goes on to the desk (alone it waited there for ever) */
+		if (m && carrier == e) {
+			vec3_t from = { e->pos.x, e->pos.y + 100.0f, e->pos.z }, at = { m->pos.x, m->pos.y + 100.0f, m->pos.z };
+			m = Engine_TestLine(&from, &at, NULL, NULL) ? NULL : m;
+		}
 		to = m ? m : carrier == e ? Cp_ArrowTarget(e) : carrier;
 		shoot = m != NULL;
 	} else if (shoot) {

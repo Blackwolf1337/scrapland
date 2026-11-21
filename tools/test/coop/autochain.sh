@@ -21,7 +21,8 @@ more=""; for ((k = 3; k <= ${CHAP_MORE:-0}; k++)); do more="$more p$k"; done
 each() {
 	local l k
 	while IFS= read -r l; do
-		if [[ $l != *'$b'* ]]; then echo "$l"; continue; fi
+		# (the players p3.. have their own leader lines)
+		if [[ $l != *'$b'* ]] || [[ $l == *'leader $b'* ]]; then echo "$l"; continue; fi
 		[ -n "$CHAP_ALONE" ] && continue
 		echo "$l"
 		for k in $more; do echo "${l//\$b/\$$k}"; done
@@ -73,7 +74,7 @@ while [ $n -lt $max ]; do
 			awk -v RS=';;' '{ sub(/^\n+/, ""); sub(/\n+$/, ""); if (length) print }' <<< "$v"
 		fi
 		# (or the scripts take the party to another level: the next mission's level, its instance has the story now)
-		echo "$lv|poll inst $lv story get Mission.Library|Mission.Library = ($others)\$%travels to .* with its party|${CHAP_SECS:-1500}|the next mission after $mis"
+		echo "$lv|poll inst $lv story get Mission.Library|Mission.Library = ($others)\$%travels to .* with its party%coop: mission level change of player|${CHAP_SECS:-1500}|the next mission after $mis"
 		echo "$lv|inst $lv auto \$a 0||||"
 		echo "$lv|inst $lv auto \$b 0||||"
 		echo "w|wait 8||||"

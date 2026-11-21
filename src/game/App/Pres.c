@@ -1113,6 +1113,12 @@ static void Pres_FxPlay(NetRepReader *r) {
 			FX_BishopRay(ea, eb, &v);
 		}
 		break;
+	case PRES_FX_MSGATTACK:
+		eb = *b ? Pres_Ent(PRES_O_FXENT, b, TYEN_OBJECT) : NULL;
+		if ((ea = Pres_Ent(PRES_O_FXENT, a, TYEN_WALKCHAR)) && (eb || !*b)) {
+			FX_MessengerAttack(ea, eb, &v);
+		}
+		break;
 	case PRES_FX_STEAL:
 	case PRES_FX_SUCTION:
 	case PRES_FX_FLASH:

@@ -1023,7 +1023,10 @@ int cWorld_SetCam(cWorld *world, int i, const char *name) {
 		 * first member's join) shows nothing to any player */
 		if (g_Mp2 && !InitSteps_Entering() && *name && !world_camOwn) {
 			byte path = cam && Entity_IsType(cam, TYEN_CAMPATH);
-			Pres_NoRoute(NA_CAMERA, path ? "pres.scene:camera:" : "pres.unforwarded:camera:", Pres_ModSite());
+			/* a fixed camera goes to the clients as a path that holds it (include/scrap/netscene.h) */
+			if (path || !NetScene_CamFixed(cam)) {
+				Pres_NoRoute(NA_CAMERA, path ? "pres.scene:camera:" : "pres.unforwarded:camera:", Pres_ModSite());
+			}
 			/* the path goes to the player as a scene (include/scrap/netscene.h) */
 			NetScene_CamSet(cam);
 		}
