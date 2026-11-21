@@ -27,6 +27,7 @@
 #include <string.h>
 
 #include "scrap/script.h"
+#include "scrap/players.h"
 #include "scrap/scriptmodes.h"
 #include "game/Script/levels/Levels.h"
 #include "scrap/instance.h"
@@ -905,7 +906,7 @@ static byte Elv_LinkToElevator(const nativeVal_t *usrName, const nativeVal_t *el
 }
 
 /* UnlinkFromElevator(EntityName): the rider is free again (the walk controls and the camera for the player) */
-static byte Elv_UnlinkFromElevator(const nativeVal_t *name) {
+static byte Elv_UnlinkIn(const nativeVal_t *name) {
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *linked = Mode_V(&t), *rg = Mode_V(&t), *rider = Mode_V(&t), *ch = Mode_V(&t), *zero = Mode_V(&t);
 	nativeVal_t *c2 = Mode_V(&t), *el = Mode_V(&t), *ctrl = Mode_V(&t);
@@ -918,6 +919,28 @@ static byte Elv_UnlinkFromElevator(const nativeVal_t *name) {
 		return Mode_Done(&t, 0);
 	}
 	return Mode_Done(&t, !LvN_EqI(ctrl, 0) || PORT_OWN(Elevator, ElevatorBackCamera, NULL, ""));
+}
+
+/* not in the original: the arrival frees the rider in its player's context (an elevator's events run in the world's:
+ * the camera, the controls and the HUD of the instance's player who rode, include/scrap/players.h) */
+static byte Elv_UnlinkFromElevator(const nativeVal_t *name) {
+	nativeVal_t linked = { 0 }, rg = { 0 }, rider = { 0 };
+	cEntity *e = NULL;
+	if (!Players_Net()) {
+		return Elv_UnlinkIn(name);
+	}
+	if (Dr_G(ELV, "LinkedElevator", &linked) && Mode_Sub(&linked, name, &rg) && LvN_Item(&rg, 0, &rider) &&
+		rider.type == NV_STR) {
+		e = World_FindEntity(Native_Text(&rider));
+	}
+	Native_ErrClear();
+	Native_Free(&linked);
+	Native_Free(&rg);
+	Native_Free(&rider);
+	int was = e ? Players_EnterEntity(e) : Players_Current();
+	byte ok = Elv_UnlinkIn(name);
+	Players_Leave(was);
+	return ok;
 }
 
 /* Init(): the heights and cameras of the elevator classes */

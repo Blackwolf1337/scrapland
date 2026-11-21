@@ -1080,6 +1080,7 @@ static void Ui_State(tcBuf *b, int i) {
 		cls = WLife(e)->actCtrl->cls->name;
 	}
 	TC_Addf(b, "money\t%d\n", *Players_CurMoney());
+	TC_Addf(b, "alarm\t%.2f %d\n", (double)Players_CurAlarm()->value, Players_CurAlarm()->on);
 	TC_Addf(b, "class\t%s\n", cls);
 	TC_Addf(b, "entity\t%s\n", !e ? "none" : Entity_IsType(e, TYEN_CAR) ? "ship" : Entity_IsType(e, TYEN_WALKCHAR) ?
 		"char" : "other");

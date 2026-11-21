@@ -1762,6 +1762,19 @@ static void TC_Line(tcBuf *b, const char *line) {
 		TC_Add(b, "used\n", -1);
 		return;
 	}
+	/* goto <entity> [dx dz]: player 0 next to it, facing it (the instance line goto of include/scrap/travel.h) */
+	if (TC_Verb(line, "goto", &arg)) {
+		char ent[0x40];
+		float dx = 300.0f, dz = 0.0f;
+		if (!TC_Word(&arg, ent, sizeof(ent))) {
+			TC_Add(b, "error: goto <entity> [dx dz]\n", -1);
+			return;
+		}
+		sscanf(arg, "%f %f", &dx, &dz);
+		Travel_TestGoto(0, ent, dx, dz);
+		TC_Add(b, "ok\n", -1);
+		return;
+	}
 	/* pres: the records of the presentation interface sent and played (include/scrap/pres.h) */
 	if (TC_Verb(line, "pres", &arg)) {
 		if (arg && !strncmp(arg, "ship ", 5)) {

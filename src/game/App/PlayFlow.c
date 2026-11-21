@@ -46,13 +46,13 @@ static void PF_Controls(const char *set) {
 	}
 }
 
-/* the HUD of a movie (Menu.MovieScorer of the scripts: the HUD cleared, its record PRES_O_HUDCLEAR) and no controls */
+/* the HUD of a movie (Menu.MovieScorer as the scripts call it: the HUD cleared, the cinema bars, the talk lines; the
+ * server's records of it come later and make the same) and no controls */
 static void PF_Movie(void) {
-	cScorer *sc = Scorer_Get(0);
-	if (sc) {
-		cScorer_Clear(sc);
-		Ui_ClientHudCleared();
+	if (!Mode_Import("Menu") || !PORT_CALL(Menu, MovieScorer, NULL, "i", 0L)) {
+		Native_ErrPrint();
 	}
+	Ui_ClientHudCleared();
 	PF_Controls("Inactive");
 }
 

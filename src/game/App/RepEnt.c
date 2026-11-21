@@ -342,9 +342,11 @@ static void RepEnt_Tap(cEntity *e, const char *name, int type, const void *value
 	if (!g_Instance || e->deadNode.target || RepEnt_Camera(e)) {
 		return;
 	}
-	/* a player's entity the scripts move or start or end a scripted move of: its client takes its next rollback state
-	 * as the hand-over of a flow (include/scrap/play.h) */
-	if ((!strcmp(name, "Pos") || !strcmp(name, "Ang") || !strcmp(name, "ViewAng") || !strcmp(name, "MoveTime")) &&
+	/* a player's entity the scripts move or start or end a scripted move of, or force an action on (the possession's
+	 * FlashedEnd, the conversor's Relax): its client takes its next rollback state as the hand-over of a flow
+	 * (include/scrap/play.h) */
+	if ((!strcmp(name, "Pos") || !strcmp(name, "Ang") || !strcmp(name, "ViewAng") || !strcmp(name, "MoveTime") ||
+		!strcmp(name, "ForceAction") || !strcmp(name, "ForceDefLoop")) &&
 		Entity_IsType(e, TYEN_WITH_LIFE) && Obj(e)->netStep) {
 		Rep_OwnMoved(e);
 	}

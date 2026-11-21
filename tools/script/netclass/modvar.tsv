@@ -1139,7 +1139,7 @@ Parking.SwitchVehicleMissionCallbackAux	WORLD	one value for the world (SIM modul
 PhoneCab.audioComEntity	PLAYER	the communicator one player uses (its use runs in its context; stage 4.4)
 Police.FXPoliceGearConversionFile	WORLD	one value for the world (DEF module)
 Police.FXPoliceStealFile	WORLD	one value for the world (DEF module)
-Police.ResState	WORLD	one value for the world (DEF module)
+Police.ResState	PLAYER	the bribe of one player (its speech and the end of it run in the context of the player that talks; stage 6b)
 PoliceBoss.BrupBaseFile	WORLD	one value for the world (DEF module)
 PoliceBossSound.isPC	WORLD	one value for the world (DEF module)
 PoliceSound.isPC	WORLD	one value for the world (DEF module)
