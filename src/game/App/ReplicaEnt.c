@@ -388,6 +388,13 @@ void ReplicaEnt_Message(const uint8_t *data, int size) {
 			break;
 		}
 		RcSlot *s = &rc.s[slot];
+		if (kind == REPENT_K_DROP) {
+			/* the entity is gone on the server: its journal too (its replica, if any, goes with the snapshots) */
+			if (gen == s->gen) {
+				NetRepJ_Clear(j, (int)slot);
+			}
+			continue;
+		}
 		if (kind == REPENT_K_EVENT) {
 			if (!NetRep_GetJVal(&r, &v)) {
 				break;
@@ -783,8 +790,9 @@ void ReplicaEnt_Mirror(tcBuf *b) {
 		view[2] = own->pos.z;
 	}
 	TC_Addf(b, "{\"side\":\"client\",\"view\":[%.0f,%.0f,%.0f],\"own\":%d,\"tag\":%d,\"made\":%u,\"waits\":%u,\"fails\":%u,"
-		"\"purged\":%u,\"simcalls\":%u,\"linkwaits\":%u,\"linklost\":%u,\"ents\":[", (double)view[0], (double)view[1],
-		(double)view[2], Play_OwnSlot(), Play_Player() + 1, rc.made, rc.waits, rc.fails, rc.purged, rc.simCalls, rc.linkWaits, rc.linkLost);
+		"\"purged\":%u,\"simcalls\":%u,\"linkwaits\":%u,\"linklost\":%u,\"jused\":%d,\"jlost\":%u,\"ents\":[",
+		(double)view[0], (double)view[1], (double)view[2], Play_OwnSlot(), Play_Player() + 1, rc.made, rc.waits, rc.fails,
+		rc.purged, rc.simCalls, rc.linkWaits, rc.linkLost, rc.j ? NetRepJ_Used(rc.j) : 0, rc.j ? NetRepJ_Lost(rc.j) : 0u);
 	int n = 0;
 	for (int s = 0; s < NETREP_MAX_ENTS; s++) {
 		cEntity *e = rc.s[s].made && s != Play_OwnSlot() ? Watch_SlotEntity(s) : NULL;

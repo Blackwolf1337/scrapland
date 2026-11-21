@@ -38,6 +38,7 @@
 #define SCRAP_PLAYERS_H
 
 #include "scrap/alarm.h"
+#include "scrap/faction.h"
 #include "scrap/mathlib.h"
 #include "scrap/shared.h"
 
@@ -73,6 +74,8 @@ typedef struct cPlayer {
 	struct cEntity *machine;		/* the machine it uses (Players_SetMachine): compared, read while
 									   World_FindEntity(machineName) is it */
 	char machineName[64];
+	FactionPlayer fac;				/* its faction state in the freeroam mode (include/scrap/faction.h), kept from its
+									   admission until it leaves */
 } cPlayer;
 
 /* the instance's table is in use (the headless instance) */
@@ -175,6 +178,9 @@ byte Players_OthersOwn(const char *name);
 /* the current context and the context of player i (PLAYERS_NONE: the world's own); NULL for an unused player */
 cPlayer *Players_Cur(void);
 cPlayer *Players_Ctx(int i);
+/* the context of player slot i whether it is used or not (0..PLAYERS_MAX-1: the state a player gets before its join,
+ * the faction state of its ticket), NULL out of range */
+cPlayer *Players_State(int i);
 /* the player whose overlay holds the module variable module.name (tagged PLAYER, or PARTY outside coop: ModVars.c)
  * now: the current player, in the world's context of the instance the player of the rule of "module.name"; -1 for
  * the module (single player, the rule WORLD) */

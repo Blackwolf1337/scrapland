@@ -42,6 +42,7 @@
 #define RE_MSG 8192					/* a reliable message is sent when it is this long */
 #define RE_REC (NET2_MAX_MESSAGE - 16)	/* the longest record */
 #define RE_RESYNC 32				/* entities whose journal numbers are read back per snapshot */
+#define RE_DROPS 1024				/* slots freed between two flushes */
 
 byte g_Mp2;
 
@@ -68,6 +69,12 @@ static struct {
 	int ndirty;
 	ReEvent ev[RE_EVENTS];
 	int nev;
+	struct {
+		uint16_t slot;
+		uint32_t gen;
+	} drop[RE_DROPS];				/* the slots freed since the last flush: their clients forget the journal */
+	int ndrop;
+	uint32_t lostDrops;
 	uint32_t *jsent[RE_CONNS];		/* per connection and slot: the generation whose create message it got */
 	uint32_t lostSlots, lostLooks, lostEvents, longNames, cutTexts, bigRecords;
 	uint32_t creates, updates, events;	/* records sent */
@@ -263,7 +270,19 @@ static int RepEnt_SlotFor(cEntity *e) {
 	return -1;
 }
 
+/* slot s's entity of this generation goes: its journal on the clients too (at the next flush) */
+static void RepEnt_Forget(int s) {
+	if (re.ndrop < RE_DROPS) {
+		re.drop[re.ndrop].slot = (uint16_t)s;
+		re.drop[re.ndrop].gen = re.rec[s].gen;
+		re.ndrop++;
+	} else {
+		re.lostDrops++;
+	}
+}
+
 static void RepEnt_Free(int s) {
+	RepEnt_Forget(s);
 	NetRepJ_Clear(re.j, s);
 	re.rec[s].e->netSlot = 0;
 	re.rec[s].e = NULL;
@@ -500,6 +519,7 @@ void RepEnt_Gather(NetRepServer *srv, uint32_t tick) {
 			RepEnt_Move(s, n);
 			/* the create message of the new slot carries all of it: no change to send */
 			NetRepJ_Clean(re.j, n);
+			RepEnt_Forget(s);
 			NetRepJ_Clear(re.j, s);
 			re.rec[s].e = NULL;
 			re.rec[s].dirty = 0;
@@ -634,7 +654,23 @@ void RepEnt_Flush(Net2Host *host, int conns) {
 			re.events++;
 		}
 		RepEnt_MsgFlush(&m);
+		m.kind = REPENT_K_DROP;
+		RepEnt_MsgFlush(&m);
+		for (int i = 0; i < re.ndrop; i++) {
+			int s = re.drop[i].slot;
+			if (sent[s] != re.drop[i].gen) {
+				continue;
+			}
+			NetRepBuf w;
+			NetRepBuf_Init(&w, re.rec1, sizeof(re.rec1));
+			NetRep_PutVar(&w, (uint32_t)s);
+			NetRep_PutVar(&w, re.drop[i].gen);
+			RepEnt_MsgAdd(&m, re.rec1, w.size);
+			sent[s] = 0;
+		}
+		RepEnt_MsgFlush(&m);
 	}
+	re.ndrop = 0;
 	for (int i = 0; i < re.ndirty; i++) {
 		int s = re.dirty[i];
 		if (re.rec[s].dirty) {
@@ -676,8 +712,8 @@ void RepEnt_Status(void) {
 		return;
 	}
 	Con_Printf("repent: %d journal entries (%u lost), %u creates %u updates %u events sent, %llu bytes, %u slots %u looks "
-		"%u events lost, %u long names, %u cut texts, %u big records\n", NetRepJ_Used(re.j), NetRepJ_Lost(re.j),
-		re.creates, re.updates, re.events, (unsigned long long)re.bytes, re.lostSlots, re.lostLooks, re.lostEvents,
+		"%u events %u drops lost, %u long names, %u cut texts, %u big records\n", NetRepJ_Used(re.j), NetRepJ_Lost(re.j),
+		re.creates, re.updates, re.events, (unsigned long long)re.bytes, re.lostSlots, re.lostLooks, re.lostEvents, re.lostDrops,
 		re.longNames, re.cutTexts, re.bigRecords);
 }
 

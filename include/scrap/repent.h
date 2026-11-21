@@ -31,6 +31,9 @@
  *                    varint, the journal values (NetRep_PutJVal)
  *   REPENT_K_VARS    records: slot varint, generation varint, count varint, the changed values in journal order
  *   REPENT_K_EVENT   records: slot varint, generation varint, a value
+ *   REPENT_K_DROP    records: slot varint, generation varint: the entity of that generation is gone on the server,
+ *                    the client forgets its journal (a client that saw many entities come and go kept the journals of
+ *                    all of them and its pool ran full)
  *
  * Test verb "mirror json" (both sides): every replicated entity with slot, generation, class, name, the declared
  * state (the state the server would send of it now, made by the same function on both sides), its journal, and the
@@ -92,6 +95,7 @@ enum {
 #define REPENT_K_CREATE 'c'
 #define REPENT_K_VARS 'v'
 #define REPENT_K_EVENT 'e'
+#define REPENT_K_DROP 'd'
 
 /* -mp2 on the command line */
 extern byte g_Mp2;

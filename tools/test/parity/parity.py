@@ -21,7 +21,10 @@ did not run.
 
   parity.py [--levels DownTown,Outskirts,MCA:dm,...] [--port 29940] [--build build-linux64] [--out DIR]
             [--scratch DIR] [--points 4] [--radius 30000] [--settle 25] [--settle-point 12] [--no-join] [--no-shots]
-            [--mp2]
+            [--mp2] [--inst-lines "faction 0 set Police;..."]
+
+--inst-lines: test lines for the level's instance after the join, before the route (the host's player is player 0,
+the joined one player 1), for a faction member in view of the joined client.
 
 --mp2: the replication v2 (-mp2 for the host, its instance and the joined client, include/scrap/repent.h); at the
 end of each level's route also the mirror diff (mirror.py: the declared state of every replicated entity, instance
@@ -282,10 +285,15 @@ def label_proxies(ents, inst):
             e['name'] = 'proxy?' + base(e['model'])
 
 
+# the instance's names of the players' entities of the level being walked (a player's ship of another name than
+# PlayerShip, such as a faction ship it called: the player's, not a parked ship)
+PLAYER_NAMES = set()
+
+
 def count(ents, at, radius):
     kinds = {}
     for e in ents:
-        if dist(e['pos'], at) > radius:
+        if dist(e['pos'], at) > radius or e['name'] in PLAYER_NAMES:
             continue
         k = kind_of(e)
         if k is None:
@@ -595,10 +603,22 @@ def run_level(a, spec, routes=None):
         near = [('host', (own(host) or me)['pos'])] + ([('join', jme['pos'])] if jme else [])
         pents = player_entities(iel, near)
         res['players'] = pents
+        PLAYER_NAMES.clear()
+        PLAYER_NAMES.update(pents.values())
         # the audit counts cover the route (n/a without the verb)
         res['audit_verb'] = audit(host, level, 'reset') is not None
         if a.mp2 and join:
             audit(join, None, 'reset')
+        # lines for the instance before the route (--inst-lines: a faction member in view, its ship, its siren)
+        for line in [l.strip() for l in (a.inst_lines or '').split(';') if l.strip()]:
+            host.ask('iline ' + line, inst=level)
+            gameclock.sleep(2.0)
+        if a.inst_lines:
+            iel = parse_ents(host.try_ask('entinfo', inst=level, timeout=10))
+            pents = player_entities(iel, [('host', (own(host) or me)['pos'])] + ([('join', jme['pos'])] if jme else []))
+            res['players'] = pents
+            PLAYER_NAMES.clear()
+            PLAYER_NAMES.update(pents.values())
         points = [('spawn', 'host spawn', at)] + [(n, an, (x, y + 150.0, z)) for n, an, (x, y, z) in
                                                   (routes or {}).get(level, [])]
         for k, (name, anchor, pos) in enumerate(points[:a.points]):
@@ -1082,6 +1102,8 @@ def main():
     ap.add_argument('--settle-point', type=float, default=12.0, help='seconds at each further point')
     ap.add_argument('--timeout', type=int, default=1200)
     ap.add_argument('--device', default=None, help='Vulkan device (default the RTX with >= 3000 MiB free, else the AMD)')
+    ap.add_argument('--inst-lines', default=None, help='test lines of the instance before the route, separated by ";" '
+                    '(the host is player 0, the joined client player 1: "faction 0 set Police;faction 0 ship")')
     ap.add_argument('--no-join', dest='join', action='store_false')
     ap.add_argument('--no-shots', dest='shots', action='store_false')
     ap.add_argument('--mp2', action='store_true', help='the replication v2 (-mp2 for the host, its instance and the '
