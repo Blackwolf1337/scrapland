@@ -22,5 +22,6 @@ void FX_DtritusKill(cEntity *dtritus, cEntity *killed);
 void FX_BishopRay(cEntity *bishop, cEntity *target, const vec3_t *hit);
 void FX_MessengerTake(cEntity *messenger, cEntity *dataPack);
 void FX_PoliceSteal(cEntity *attacker, cEntity *attacked);
+void FX_NurseHammer(cEntity *nurse);
 
 #endif

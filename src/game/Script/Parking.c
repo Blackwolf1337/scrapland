@@ -861,10 +861,17 @@ static byte Pk_OnParkingOccupiedN(const nativeVal_t *a) {
 	if (park <= 0) {
 		return Mode_Done(&t, park == 0);
 	}
-	if (!Pk_G("PlayerShip", ship)) {
+	/* not in the original: in coop the party's ship is the world's Parking.PlayerShip (the parking's check may run in a
+	 * member's context, whose own one is none: the party's ship far from the members was deleted) */
+	int was = Coop_On() ? Players_Enter(PLAYERS_NONE) : PLAYERS_NONE;
+	byte got = Pk_G("PlayerShip", ship);
+	byte none = got && Pk_NotOwnShip(ship);
+	if (Coop_On()) {
+		Players_Leave(was);
+	}
+	if (!got) {
 		return Mode_Done(&t, 0);
 	}
-	byte none = Pk_NotOwnShip(ship);
 	if ((!none && !Mode_VObjRead(ship, "Name", x)) || !Pk_Ent(&a[0], e)) {
 		return Mode_Done(&t, 0);
 	}

@@ -818,17 +818,36 @@ static void Cp_TellGone(int i) {
 	}
 }
 
+/* a super deal whose mode drops the baton or the flag at the player's death and brings the player back (its
+ * Chars.OnMainCharDeath: CTF, Domination, MortalRace; the others count the death against the party) */
+static byte Cp_DealDeathHook(void) {
+	const char *lib = SaveVar_Get("Mission.Library"), *type = SaveVar_Get("SuperDealType");
+	nativeVal_t hook;
+	if (!lib || strncmp(lib, "SuperDeal_", 10) || !type ||
+		(strcmp(type, "CTF") && strcmp(type, "Domination") && strcmp(type, "MortalRace")) || !Mode_Import("Chars")) {
+		return 0;
+	}
+	Native_SetNone(&hook);
+	byte has = Mode_ModGet("Chars", "OnMainCharDeath", &hook) && hook.type != NV_NONE;
+	Native_Free(&hook);
+	Native_ErrClear();
+	return has;
+}
+
 void Coop_Died(int i, cEntity *e) {
 	if (!Coop_On() || g_Coop.partyDead) {
 		return;
 	}
-	for (int k = 0; k < PLAYERS_MAX; k++) {
+	/* a super deal's mode hears every member's death (a member that carried the baton dropped it; it was lost with
+	 * him) */
+	byte deal = Cp_DealDeathHook();
+	for (int k = 0; !deal && k < PLAYERS_MAX; k++) {
 		if (k != i && Rep_PlayerConn(k) >= 0 && !Rep_PlayerDead(k) && Players_Get(k)) {
 			return;
 		}
 	}
 	/* the party died: the single player's death (the mission's hook, else the end of the game: Coop_MissionFailed) */
-	Con_Printf("coop: every member here died (player %d last)\n", i);
+	Con_Printf(deal ? "coop: player %d died in the super deal\n" : "coop: every member here died (player %d last)\n", i);
 	nativeVal_t a[2];
 	Native_SetStr(&a[0], e->name);
 	Native_SetStr(&a[1], "");

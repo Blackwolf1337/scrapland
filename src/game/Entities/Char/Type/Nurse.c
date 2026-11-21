@@ -6,10 +6,13 @@
 #include <string.h>
 
 #include "scrap/chartype.h"
+#include "scrap/fx.h"
 #include "scrap/fxelements.h"
 #include "scrap/primitive.h"
 #include "scrap/staticinit.h"
 #include "scrap/players.h"
+#include "scrap/pres.h"
+#include "scrap/repent.h"
 
 #define g_FXHammerHitFile (GVar_FXHammerHitFile.value.s)
 #define g_NurseAlarmHit (GVar_NurseAlarmHit.value.f)
@@ -433,6 +436,16 @@ static void ChType_NurseBackHitControl(cAbstractFile *params) {
 	WChar(v)->disableControl = 0;
 }
 
+/* the hammer effect sent to the players of a -mp2 instance (include/scrap/pres.h), the sinks inside it not again */
+void FX_NurseHammer(cEntity *v) {
+	if (g_Mp2 && v) {
+		Pres_FxEnt(PRES_FX_HAMMER, v->name, "", 0.0f, 0, NULL);
+	}
+	g_PresIn++;
+	Nurse_HammerFX(v);
+	g_PresIn--;
+}
+
 /* params: the nurse, an event, a float: the hammer effect and a shake of the camera */
 static void ChType_NurseDoHammerHit(cAbstractFile *params) {
 	char name[0x80], event[0x80];
@@ -440,7 +453,7 @@ static void ChType_NurseDoHammerHit(cAbstractFile *params) {
 	ChType_ReadParams(params, name, event);
 	cEntity *v = ChType_CheckChar(name);
 	WChar(v)->disableControl = 0;
-	Nurse_HammerFX(v);
+	FX_NurseHammer(v);
 	cFollowCamEntity *cam = (cFollowCamEntity *)WChar(v)->wl.obj.cam;
 	if (cam) {
 		cam->quakeFactor = 0.05235987901687622f;

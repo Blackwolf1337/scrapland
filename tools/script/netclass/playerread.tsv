@@ -223,3 +223,4 @@ Parking.SwitchVehicleMissionCallback	WORLD	a mission's callback of the world's c
 Parking.SwitchCharMissionCallback	WORLD	a mission's callback of the world's context; a player's own is read in its context
 Alarm.AbortMissionCallback	WORLD	a mission's callback of the world's context; a player's own is read in its context
 Menu.MissionScorerCall	WORLD	the HUD callback of the world's context; a player's own HUD reads it in its context
+Chal_SetRevenge	PARTY	HumphreyRace (DownTown), a challenge: the lost race's revenge call at the phone cab nearest to the player, the acting member in coop
