@@ -1140,7 +1140,7 @@ static void Vko_Upload(VkImg *im, uint32_t level, uint32_t fmt, const byte *data
 /* reads the image of a GPU surface into memory in the D3D format fmt (pitch); waits for the GPU */
 static void Vko_Readback(VkImg *im, uint32_t level, uint32_t fmt, byte *mem, uint32_t pitch, uint32_t w, uint32_t h) {
 	VkBuf tmp;
-	if (!Vk_CreateBuffer(&tmp, (VkDeviceSize)w * h * 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT, 1)) {
+	if (!Vk_CreateBuffer(&tmp, (VkDeviceSize)w * h * 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_BUF_READBACK)) {
 		return;
 	}
 	Vkd_End();

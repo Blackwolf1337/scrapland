@@ -138,15 +138,26 @@ void ReplicaEnt_ModLeave(const char *module) {
 static void ReplicaEnt_Apply(cEntity *e, const NetRepJVal *v);
 
 /* the replicas linked to the server's entity of slot own (their LinkModel names it) linked again: the own entity made
- * from that slot is another entity of the client (a ship the player boarded: the plate on it) */
+ * from that slot is another entity of the client (a ship the player boarded: the plate on it), or a new replica of it
+ * (the ship parked again) */
 static void ReplicaEnt_Relink(int own) {
 	size_t n = strlen(rc.s[own].name);
 	for (int slot = 0; n && rc.j && slot < NETREP_MAX_ENTS; slot++) {
 		cEntity *e = slot != own && rc.s[slot].made ? Watch_SlotEntity(slot) : NULL;
+		byte linked = 0;
 		for (int k = e ? NetRepJ_First(rc.j, slot) : -1; k >= 0; k = NetRepJ_Next(rc.j, k)) {
 			const NetRepJVal *v = NetRepJ_Get(rc.j, k);
 			if (v->type == NETREP_JS && !strcmp(v->name, "LinkModel") && !strncmp(v->u.s, rc.s[own].name, n) &&
 				v->u.s[n] == ',') {
+				ReplicaEnt_Apply(e, v);
+				linked = 1;
+			}
+		}
+		/* the link's weight as the server's: without its entity between the replica's deletion and the own entity
+		 * it went to 0 (cModMove_Update), the plate would grow in again */
+		for (int k = linked ? NetRepJ_First(rc.j, slot) : -1; k >= 0; k = NetRepJ_Next(rc.j, k)) {
+			const NetRepJVal *v = NetRepJ_Get(rc.j, k);
+			if (!strcmp(v->name, "OffMul")) {
 				ReplicaEnt_Apply(e, v);
 			}
 		}
@@ -325,6 +336,11 @@ static void ReplicaEnt_Apply(cEntity *e, const NetRepJVal *v) {
 				char *un = ",";
 				Entity_VarS(e, name, &un, 1);
 			}
+		} else if (!strcmp(name, "ActCtrl") && rc.creating && Entity_IsType(e, TYEN_WITH_LIFE) && WLife(e)->actCtrl &&
+			!strcmp(WLife(e)->actCtrl->cls->name, v->u.s)) {
+			/* the replica was made with that class: a second one would make the model's embedded effect again (a
+			 * scene's effect, FXScene_Create, played twice: twice the steam of Yakuzzi) */
+			break;
 		} else {
 			Str_Copy(buf, v->u.s, sizeof(buf));
 		}
@@ -565,6 +581,9 @@ void ReplicaEnt_Frame(void) {
 				e->netSlot = (uint16_t)(slot + 1);
 				ReplicaEnt_Journal(slot, e);
 				Watch_Attach(slot, e, kind, tick, st);
+				/* the replicas linked to this slot's entity link to the new replica (the plate when the own ship
+				 * becomes a parked replica again) */
+				ReplicaEnt_Relink(slot);
 			}
 		}
 		rc.creating = 0;
@@ -593,6 +612,13 @@ static uint32_t ReplicaEnt_Act(const NetRepState *s, int l) {
 
 static float ReplicaEnt_ActTime(const NetRepState *s, int l) {
 	return (float)(l < NETREP_LAYERS ? s->actTime[l] : (uint32_t)s->x[g_LayerX[l - NETREP_LAYERS][1]]) / 1000.0f;
+}
+
+float ReplicaEnt_LayerTarget(const NetRepState *a, const NetRepState *b, float f, int l, uint32_t *act) {
+	uint32_t ia = ReplicaEnt_Act(a, l), ib = ReplicaEnt_Act(b, l);
+	float ta = ReplicaEnt_ActTime(a, l), tb = ReplicaEnt_ActTime(b, l);
+	*act = ia;
+	return ia && ia == ib && tb >= ta ? ta + (tb - ta) * f : ia ? ta : -1.0f;
 }
 
 /* a ship's layers: the actions of its parts the class shows from the ship's state (cActCtrl_Present) */
@@ -647,8 +673,18 @@ void ReplicaEnt_Present(cEntity *e, int kind, const NetRepState *a, const NetRep
 	}
 	if (kind == NETREP_ITEM) {
 		cItemEntity *it = (cItemEntity *)e;
+		byte was = it->respawn > 0.0f;
 		it->respawn = ReplicaEnt_Sec(a->x[REPX_ITEM]);
 		it->blink = (byte)a->x[REPX_BLINK];
+		/* the model hidden while the item waits to come back, as cItemEntity_SetRespawn hides it (the parking box
+		 * of a boarded ship, rTime 0.5); a take's or a return's fade effect comes as its record before that */
+		if (was != (it->respawn > 0.0f) && CGameModel_IsLoaded(&o->model)) {
+			if (it->respawn > 0.0f) {
+				CGameModel_Disable(&o->model);
+			} else {
+				CGameModel_Enable(&o->model);
+			}
+		}
 		return;
 	}
 	if (kind == REPENT_OBJECT) {
@@ -672,14 +708,15 @@ void ReplicaEnt_Present(cEntity *e, int kind, const NetRepState *a, const NetRep
 		uint16_t act[4];
 		float rates[4], target[4];
 		for (int l = 0; l < 4; l++) {
-			uint32_t ia = ReplicaEnt_Act(a, l), ib = ReplicaEnt_Act(b, l);
+			uint32_t ia;
+			target[l] = ReplicaEnt_LayerTarget(a, b, f, l, &ia);
+			uint32_t ib = ReplicaEnt_Act(b, l);
 			float ta = ReplicaEnt_ActTime(a, l), tb = ReplicaEnt_ActTime(b, l);
 			act[l] = (uint16_t)ia;
 			/* the rate of the server between the samples (0 for one sample: no record since, so its time stands),
 			 * not known (-1) when the action changed or went round between them */
 			rates[l] = ia == ib && tb >= ta ? (span > 0.0f ? (tb - ta) / span : 0.0f) : -1.0f;
 			rates[l] = rates[l] > 4.0f ? 4.0f : rates[l];
-			target[l] = ia && ia == ib && tb >= ta ? ta + (tb - ta) * f : ia ? ta : -1.0f;
 		}
 		w->actCtrl->walkSpeed = ReplicaEnt_Sec(a->x[REPX_WALK]);
 		if (NetScene_Exact(e)) {
@@ -711,12 +748,13 @@ void ReplicaEnt_Present(cEntity *e, int kind, const NetRepState *a, const NetRep
 }
 
 cEntity *ReplicaEnt_Find(const char *name) {
-	cEntity *e = World_FindEntity(name);
+	/* the own slot's name is the own entity first: the replica of that name (the parked ship the player boards) is
+	 * deleted after the frame, a link to it now would go with it (the plate on the boarded ship) */
 	int own = Play_OwnSlot();
-	if (!e && own >= 0 && own < NETREP_MAX_ENTS && !strcmp(rc.s[own].name, name)) {
-		e = Play_Entity();
+	if (own >= 0 && own < NETREP_MAX_ENTS && !strcmp(rc.s[own].name, name) && Play_Entity()) {
+		return Play_Entity();
 	}
-	return e;
+	return World_FindEntity(name);
 }
 
 void ReplicaEnt_Reset(void) {

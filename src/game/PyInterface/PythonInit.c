@@ -5,6 +5,7 @@
 #include "scrap/console.h"
 #include "scrap/modvars.h"
 #include "scrap/nativeobj.h"
+#include "scrap/netscene.h"
 #include "scrap/pyfunction.h"
 #include "scrap/mempool.h"
 #include "scrap/scrap.h"
@@ -228,6 +229,9 @@ void Python_Init(void) {
 		Native_Free(&a[0]);
 		Native_Free(&a[1]);
 		Line_End(Line_Call("Scrap.ClosePack", NULL, 0));
+		/* not in the original: the save variables of a test before Init's module code reads them (SCRAP_TEST_SAVEVARS,
+		 * include/scrap/netscene.h: Char=Bishop for the character libraries of GDB's scene) */
+		NetScene_TestVars();
 		Line_End(Line_Import(init));
 		Line_End(Line_CallText("Init.Init", g_pApp->levelPath));
 	}

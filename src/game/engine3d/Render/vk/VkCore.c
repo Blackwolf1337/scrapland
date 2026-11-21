@@ -528,10 +528,15 @@ int Vk_CreateBuffer(VkBuf *b, VkDeviceSize size, VkBufferUsageFlags usage, int h
 	VkMemoryPropertyFlags want = hostVisible
 		? VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
 		: VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+	uint32_t type = UINT32_MAX;
+	if (hostVisible == VK_BUF_READBACK) {
+		/* the CPU reads it: cached memory where there is some (uncached reads of a screenshot took 0.3 s) */
+		type = Vk_MemoryType(req.memoryTypeBits, want | VK_MEMORY_PROPERTY_HOST_CACHED_BIT);
+	}
 	VkMemoryAllocateInfo ai = {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
 		.allocationSize = req.size,
-		.memoryTypeIndex = Vk_MemoryType(req.memoryTypeBits, want),
+		.memoryTypeIndex = type != UINT32_MAX ? type : Vk_MemoryType(req.memoryTypeBits, want),
 	};
 	if (ai.memoryTypeIndex == UINT32_MAX || vkAllocateMemory(vk.device, &ai, NULL, &b->mem) < 0) {
 		vkDestroyBuffer(vk.device, b->buf, NULL);

@@ -101,6 +101,9 @@ int Vk_QueuePresent(uint32_t index);
 /* submits what is recorded and waits until the GPU is done (for a readback) */
 void Vk_Flush(void);
 
+/* hostVisible: 0 device memory, 1 mapped (coherent), VK_BUF_READBACK mapped and cached where the device has such
+ * memory (the CPU reads what the GPU wrote) */
+#define VK_BUF_READBACK 2
 int Vk_CreateBuffer(VkBuf *b, VkDeviceSize size, VkBufferUsageFlags usage, int hostVisible);
 void Vk_DestroyBuffer(VkBuf *b);
 int Vk_CreateImage(VkImg *im, VkFormat format, uint32_t w, uint32_t h, uint32_t levels, VkImageUsageFlags usage,

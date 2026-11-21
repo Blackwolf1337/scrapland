@@ -858,9 +858,9 @@ static byte Sc_HideOf(const nativeVal_t *o) {
 /* module.var.Invulnerable = i (a handle of another module, Scrap.UsrEntity(0) for module NULL) */
 static byte Sc_Invulnerable(const char *module, const char *var, long i) {
 	nativeVal_t e = { 0 };
-	/* not in the original: a coop instance may have none (a member without an own ship, IdentifyMerc's scene) */
+	/* not in the original: a -mp2 instance may have none (a player without an own ship, IdentifyMerc's scene) */
 	byte ok = (module ? LvN_ModGet(module, var, &e) : Mode_UsrHandle(&e)) &&
-		((Coop_On() && !Native_True(&e)) || LvN_SetI(&e, "Invulnerable", i));
+		(((Coop_On() || NetScene_Derives()) && !Native_True(&e)) || LvN_SetI(&e, "Invulnerable", i));
 	Native_Free(&e);
 	return ok;
 }

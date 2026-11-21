@@ -86,6 +86,10 @@ enum {
 	PRES_O_FXCALL,					/* name, the parameter bytes: a C effect function the scripts call (Scrap.Execute) */
 	PRES_O_GVAR,					/* name, kind u8 (1 text, 2 number), value: an engine variable (Pres_GVar) */
 	PRES_O_CHARRES,					/* name: a character class the server's scripts loaded (Pres_CharRes) */
+	PRES_O_TIME,					/* ms (svarint): the server time of the message's records (first record of a message
+									 * to a player a scene plays for: its client plays them at that time drawn) */
+	PRES_O_CAMVAR,					/* name, kind (svarint: 0 number, 1 entity name), value (f32 or str): a setting
+									 * the scripts gave the player's follow camera (include/scrap/netscene.h) */
 	PRES_O_COUNT
 };
 
@@ -251,6 +255,8 @@ void Pres_Message(const uint8_t *data, int size);
 /* each frame: the effect records held until the client has their entities (a replica made again under a new slot),
  * played once it has them, else after a second (counted missing then) */
 void Pres_ClientFrame(void);
+/* each frame after the server time drawn is known (rt, s): the held messages of that time play */
+void Pres_ClientShown(double rt);
 /* a presentation event on a -mp2 client misses the entity name (what: the function; NULL: counted already): 1 counted
  * there ("pres.missing:<what>:<name>"; the caller returns), 0 elsewhere (the caller's CHECK stays) */
 byte Pres_ClientMissing(const char *what, const char *name);

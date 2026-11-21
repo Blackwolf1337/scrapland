@@ -1004,6 +1004,27 @@ static byte TC_EntVar(tcBuf *b, cEntity *e, const char *var) {
 	if (!e) {
 		return 0;
 	}
+	/* not variables of the entity: its model's drawn place, its link and whether the model is drawn */
+	if (var[0] == '@' && Entity_IsType(e, "Obj")) {
+		const cObjEntity *o = Obj(e);
+		if (!strcmp(var, "@render")) {
+			TC_Addf(b, "(%.1f, %.1f, %.1f)", (double)o->renderPos.x, (double)o->renderPos.y, (double)o->renderPos.z);
+		} else if (!strcmp(var, "@link")) {
+			const cEntity *l = o->mod.link.target;
+			TC_AddRepr(b, l && l->name ? l->name : "");
+		} else if (!strcmp(var, "@model") && CGameModel_IsLoaded(&o->model)) {
+			vec3_t mp;
+			CGameModel_GetPos((CGameModel *)&o->model, &mp);
+			TC_Addf(b, "(%.1f, %.1f, %.1f)", (double)mp.x, (double)mp.y, (double)mp.z);
+		} else if (!strcmp(var, "@addr")) {
+			TC_Addf(b, "'%p'", (const void *)e);
+		} else if (!strcmp(var, "@shown")) {
+			TC_Addf(b, "%d", CGameModel_IsLoaded(&o->model) && CGameModel_IsEnabled(&o->model));
+		} else {
+			return 0;
+		}
+		return 1;
+	}
 	if (Entity_VarI(e, var, &i, 0)) {
 		TC_Addf(b, "%d", i);
 	} else if (Entity_VarF(e, var, &d, 0)) {

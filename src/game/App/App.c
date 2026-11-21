@@ -641,8 +641,18 @@ static byte CApp_FrameRun(CApp *self) {
 		return 0;
 	}
 	self->lastFrame = t;
-	if (!flags && dt > 0.1f && !g_DisableSkipSlot) {
-		dt = 0.1f;
+	/* not in the original: SCRAP_TIMESCALE (tests) makes the frames that many times longer, the cap as well, so the
+	 * game's time keeps the clock's (a camera path of the server on a client as long as on the server) */
+	float cap = 0.1f * (float)Plat_TimeScale();
+	if (!flags && dt > cap && !g_DisableSkipSlot) {
+		dt = cap;
+	}
+	/* not in the original: a scene screenshot of the tests ends the frame at its scene time, the clock takes the rest
+	 * in the next frame */
+	float shotDt = NetScene_ShotStep(dt);
+	if (shotDt < dt) {
+		self->lastFrame = t - (double)(dt - shotDt);
+		dt = shotDt;
 	}
 	self->gameTime = (double)dt + self->gameTime;
 	if (!App_Headless()) {
