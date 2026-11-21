@@ -29,6 +29,7 @@
 #include "scrap/nativeobj.h"
 #include "scrap/places.h"
 #include "scrap/scrap.h"
+#include "scrap/repent.h"
 #include "scrap/replicate.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -100,6 +101,11 @@ static int In_IsMission(void) {
 	/* not in the original: no story in the levels of a sandbox or freeroam world (include/scrap/places.h), but the
 	 * mission of the super deal a group's instance plays (include/scrap/instance.h) */
 	if (Places_On() && !Instance_Deal()) {
+		return 0;
+	}
+	/* nor on a -mp2 client: the story's mission is its instance's (the client gets Mission.Map for the metro's map, and
+	 * its level start preloaded the default mission's library, MapDecont, which is no C module) */
+	if (g_Mp2 && g_Watch) {
 		return 0;
 	}
 	if (!Mode_Import("string")) {
@@ -324,10 +330,14 @@ static byte In_InitN(const nativeVal_t *path) {
 	/* not in the original: the steps of the start (include/scrap/initsteps.h) */
 	InitSteps_Begin(path->type == NV_STR ? Native_Text(path) : NULL);
 	/* the map scripts of the level and its libraries */
-	if (!Native_Arith('+', path, Mode_S(&t, "/Scripts"), dir) || !Mode_Append("sys", "path", dir) || !Mode_Pack(dir) ||
-		!PORT_CALL(Scrap, PreloadLibrary, NULL, "ss", "Map", "Map.pyc") ||
-		!PORT_CALL(Scrap, PreloadLibrary, NULL, "ss", "MapSnd", "MapSnd.pyc") ||
-		!PORT_OWN(Init, PreloadMlibs, NULL, "v", path) || !Mode_Pack(NULL) || !Native_GVarGet("IsXbox", x)) {
+	if (!Native_Arith('+', path, Mode_S(&t, "/Scripts"), dir) || !Mode_Append("sys", "path", dir) || !Mode_Pack(dir)) {
+		return Mode_Done(&t, 0);
+	}
+	byte loaded = PORT_CALL(Scrap, PreloadLibrary, NULL, "ss", "Map", "Map.pyc") &&
+		PORT_CALL(Scrap, PreloadLibrary, NULL, "ss", "MapSnd", "MapSnd.pyc") && PORT_OWN(Init, PreloadMlibs, NULL, "v", path);
+	/* not in the original: the pack closed when a library fails too (a -mp2 client's failed preload left it open, and
+	 * the next file of the client's records, a character class, failed FileIO_Open's check) */
+	if (!Mode_Pack(NULL) || !loaded || !Native_GVarGet("IsXbox", x)) {
 		return Mode_Done(&t, 0);
 	}
 	int xb = Native_True(x);
