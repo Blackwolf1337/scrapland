@@ -15,6 +15,18 @@ tag=$1 port=$2 data=$3 max=${4:-99}
 echo $$ > $S/$tag.chain.pid
 levels="Orbit Fake Junkyard AB ABIndoor QF OM FZ CA DownTown Outskirts Police Bank Press Temple TownHall GamblinDen Commercial Scrapyard GDB"
 missions=$(grep -ohE '"Mission_[A-Za-z0-9]+"' $R/src/game/Script/ModuleFiles.inc | tr -d '"' | sort -u)
+# CHAP_ALONE=1: pa alone (lines for pb are left out); CHAP_MORE=<n>: players p3..p<n> join too (chap.sh) and get
+# every line for pb with their own index (they go to the leader and help as pb does)
+more=""; for ((k = 3; k <= ${CHAP_MORE:-0}; k++)); do more="$more p$k"; done
+each() {
+	local l k
+	while IFS= read -r l; do
+		if [[ $l != *'$b'* ]]; then echo "$l"; continue; fi
+		[ -n "$CHAP_ALONE" ] && continue
+		echo "$l"
+		for k in $more; do echo "${l//\$b/\$$k}"; done
+	done
+}
 lvname() { for l in $levels; do [ "${l,,}" = "${1,,}" ] && { echo $l; return; }; done; echo "$1"; }
 val() { grep -a "^$2=" "$1" | head -1 | cut -d= -f2-; }
 n=0
@@ -32,6 +44,7 @@ while [ $n -lt $max ]; do
 		if [ "$from" != "$lv" ]; then
 			echo "w|inst $from travel \$a $lv|pa .* is in $lv|150|pa travels to $lv (any time)"
 			echo "w|inst $from leader \$b|pb .* is in $lv|150|pb goes to its leader in $lv (any time)"
+			for k in $more; do echo "w|inst $from leader \$$k|$k .* is in $lv|150|$k goes to its leader in $lv (any time)"; done
 		fi
 		echo "$lv|wait 15||||"
 		pre=AUTO_PRE_$mis
@@ -44,6 +57,9 @@ while [ $n -lt $max ]; do
 				elif [[ $l == wait\ * ]]; then echo "$lv|$l||||"; else echo "$lv|inst $lv $l||||"; echo "$lv|wait 5||||"; fi
 			done
 		fi
+		# CHAP_TOUGH=1: pa takes no damage (test line tough: a party of one dies where two members take turns, the
+		# police waves and the smart mercenaries of the fights; deaths are played with 2 and 8 players)
+		[ -n "$CHAP_TOUGH" ] && echo "$lv|inst $lv tough \$a 1||||"
 		va=AUTO_A_$mis vb=AUTO_B_$mis
 		echo "$lv|inst $lv auto \$a ${!va}|player \$a plays the mission's targets|5|pa plays the mission's targets"
 		# AUTO_B_<Mission>="-": pb plays nothing (its helper's fights would draw the alarm: TalkToMayor's robbery)
@@ -62,14 +78,21 @@ while [ $n -lt $max ]; do
 		echo "$lv|inst $lv auto \$b 0||||"
 		echo "w|wait 8||||"
 		echo "w|save $tag-$n||||"
-	} > "$steps"
+	} | each > "$steps"
 	echo "== $n: $mis in $lv (party in $from)"
+	# CHAP_LEVELS=1: a small world, only the party's level, the mission's and the next mission's of story.txt (and
+	# CHAP_LEVELS_MORE): -levels for the coordinator, so its instances take a few ports after -instport, not 20
+	wargs=
+	if [ -n "$CHAP_LEVELS" ]; then
+		nxt=$(awk -F'|' -v m="$mis" '$2 == m { getline; print $3; exit }' "$T/story.txt")
+		wargs="-levels:$(echo $from $lv $nxt ${CHAP_LEVELS_MORE//,/ } | tr ' ' '\n' | awk 'NF && !s[$0]++' | paste -sd,)"
+	fi
 	envv=AUTO_ENV_$mis
 	# AUTO_TRIES: a chapter whose mission failed (the party died: the instance restarts without the test lines) is played
 	# again from its start, this many times at most (default 3)
 	for ((try = 1; try <= ${AUTO_TRIES:-3}; try++)); do
 		[ $try -gt 1 ] && echo "again: try $try"
-		CHAP_ABORT="${CHAP_ABORT-coop: the mission failed}" CHAP_ENV="$CHAP_ENV ${!envv}" "$T/chap.sh" "$tag$n" "$port" "$data" "$steps" > "$S/$tag$n.out" 2>&1
+		CHAP_ABORT="${CHAP_ABORT-coop: the mission failed}" CHAP_ENV="$CHAP_ENV ${!envv}" CHAP_WORLD_ARGS="$CHAP_WORLD_ARGS $wargs" "$T/chap.sh" "$tag$n" "$port" "$data" "$steps" > "$S/$tag$n.out" 2>&1
 		cp "$S/$tag$n.out" "$S/$tag$n-try$try.out"
 		grep -E "^(FAIL|chap )" "$S/$tag$n.out"
 		grep -q "ok: the next mission after" "$S/$tag$n.out" && break

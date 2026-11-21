@@ -51,8 +51,11 @@ WORLD_KEEP_DATA=1 "$T/world.sh" $tag $port "$B" -mode:coop -stopinstances -grace
 "$T/wait.sh" $L "coordinator .*listening|instance .* up" 60
 player pa
 "$T/wait.sh" $L "pa .* is in " 150 || echo "FAIL: pa joins"
-player pb
-"$T/wait.sh" $L "pb .* is in " 150 || echo "FAIL: pb joins"
+# CHAP_ALONE=1: pa alone in the party
+if [ -z "$CHAP_ALONE" ]; then
+	player pb
+	"$T/wait.sh" $L "pb .* is in " 150 || echo "FAIL: pb joins"
+fi
 for n in $more; do rm -f $S/$tag-$n.log; rm -rf $S/g-$tag-$n; player $n; "$T/wait.sh" $L "$n .* is in " 150 || echo "FAIL: $n joins"; done
 grep -oE "p[ab] \([0-9a-f]+\) is in [A-Za-z]+" $L | tail -2
 while IFS='|' read -r lg line pat secs what; do

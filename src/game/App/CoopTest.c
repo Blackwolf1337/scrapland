@@ -905,7 +905,9 @@ static byte Cp_BankerSlaps(int i, NetRepInput *in, cEntity *e, cEntity **all, in
 	}
 	float dyaw = NetPl_Aim(e, &t->pos, rot, 1);
 	in->rot[0] = NetRep_QRot(rot[0]);
-	in->move[0] = NetRep_QMove(d > CP_MELEE && fabsf(dyaw) < 0.6f ? 1.0f : 0.0f);
+	/* it stands while its arrow is on the victim: running into it (the two radii keep it about 160 away) plays Run
+	 * over the banker's ActionInit and the slap never comes */
+	in->move[0] = NetRep_QMove(!reach && d > CP_MELEE && fabsf(dyaw) < 0.6f ? 1.0f : 0.0f);
 	/* the banker's action loops while the key is held, each loop robs once */
 	if (reach && fabsf(dyaw) < 0.3f) {
 		in->buttons |= NETREP_IN_ACT;
@@ -1002,6 +1004,9 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	int kind = NetPl_Kind(e);
 	if (!kind || Coop_Holds(i)) {
 		return;
+	}
+	if (g_Coop.pl[i].tough && Entity_IsType(e, TYEN_WITH_LIFE)) {
+		WLife(e)->god = 1;
 	}
 	double now = Instance_Time();
 	if (now < g_Coop.pl[i].talkUntil) {
@@ -1466,6 +1471,15 @@ byte Coop_Command(const char *line) {
 	if (sscanf(line, "spare %d %d", &i, &pct) == 2 && i >= 0 && i < PLAYERS_MAX) {
 		g_Coop.pl[i].spare = pct;
 		Con_Printf("coop: player %d spares a ship under %d%% of its life\n", i, pct);
+		return 1;
+	}
+	if (sscanf(line, "tough %d %d", &i, &pct) == 2 && i >= 0 && i < PLAYERS_MAX) {
+		cEntity *e = Players_Get(i);
+		g_Coop.pl[i].tough = pct != 0;
+		if (!pct && e && Entity_IsType(e, TYEN_WITH_LIFE)) {
+			WLife(e)->god = 0;
+		}
+		Con_Printf("coop: player %d %s\n", i, pct ? "takes no damage" : "takes damage again");
 		return 1;
 	}
 	if (sscanf(line, "possess %d %63s", &i, name) == 2 && i >= 0 && i < PLAYERS_MAX) {
