@@ -715,8 +715,11 @@ static void Watch_Place(int slot, WatchProxy *p, double rt, float dt) {
 	}
 	if (g_Mp2 && o->mod.link.target) {
 		/* a replica linked to another model's node (a scene's actors) is placed by its link in its update; a jump
-		 * to the samples' place and back each frame would lose the model's room of an indoor level */
+		 * to the samples' place and back each frame would lose the model's room of an indoor level. Its own angles
+		 * stay the server's (drawn by them without UseLinkAng: Junkyard's lifeboat on its platform) */
 		e->pos = pos;
+		o->ang = ang;
+		o->slotAng = ang;
 	} else {
 		Entity_SetPos(e, &pos);
 		o->slotPos = pos;

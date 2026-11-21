@@ -138,7 +138,8 @@ void ReplicaEnt_ModLeave(const char *module) {
 static void ReplicaEnt_Apply(cEntity *e, const NetRepJVal *v);
 
 /* the replicas linked to the server's entity of slot own (their LinkModel names it) linked again: the own entity made
- * from that slot is another entity of the client (a ship the player boarded: the plate on it) */
+ * from that slot is another entity of the client (a ship the player boarded: the plate on it), or a new replica of it
+ * (the ship parked again) */
 static void ReplicaEnt_Relink(int own) {
 	size_t n = strlen(rc.s[own].name);
 	for (int slot = 0; n && rc.j && slot < NETREP_MAX_ENTS; slot++) {
@@ -580,6 +581,9 @@ void ReplicaEnt_Frame(void) {
 				e->netSlot = (uint16_t)(slot + 1);
 				ReplicaEnt_Journal(slot, e);
 				Watch_Attach(slot, e, kind, tick, st);
+				/* the replicas linked to this slot's entity link to the new replica (the plate when the own ship
+				 * becomes a parked replica again) */
+				ReplicaEnt_Relink(slot);
 			}
 		}
 		rc.creating = 0;
