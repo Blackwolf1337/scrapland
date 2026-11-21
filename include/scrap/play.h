@@ -52,7 +52,9 @@
  * Rep_OwnMoved) counts in the state's moved: the client takes the next state as a jump, not smoothed and not a
  * correction (the hand-over of a flow: boarding, parking, possession, an elevator); a move the client made the same
  * itself changes nothing drawn. The first state of a new own entity hands it over. A difference that comes with one
- * of the life (the server's damage: a hit and its push) is taken, not counted as a correction (pred.took:life|hit).
+ * of the life (the server's damage: a hit and its push) is taken, not counted as a correction (pred.took:life|hit), as
+ * is a state after a collision with another ship (NETPL_OF_TOUCHED: the rail traffic, a ship of no player or another
+ * player, whose motion the server alone knows; pred.took:touch).
  * Corrections by what differed: pred.corr:<pos|vel|ang|act|state|move>.
  *
  * Stage 3.5b: a player's ship touches the parking boxes in its step (every third slot, the 0.05 s of the box's own
