@@ -248,3 +248,11 @@ Speech.OnEndOfSpeechParamsNI	PARTY	the talk of the player read by a mission or a
 # stage 5b part 2, Mission_IntroHuman (66)
 Speech_PerformAnswer_E	PARTY	a Speech entry in the world's context (the answer of a mission's talk): the acting member in coop
 Speech_RestartMenuEvents_E	PARTY	a Speech entry in the world's context (the end of a talk's answers): the acting member in coop
+# stage 5b part 2, the super deals' ends (Mission_IgorCombat 43 and the deals of part 1)
+Sd_UsrSafeOne	ALL	a super deal's end: the player's ship at its most life and the player cannot be hurt (every member in coop, Party_All)
+Sd_UsrInvulnerableOne	ALL	a super deal lost: the player cannot be hurt (every member in coop, Party_All)
+Speech_ForceRemoteCom_E	PARTY	a Speech entry in the world's context (a forced remote talk): the acting member in coop
+# stage 5b part 2, the sites of the 8 player chains: StupidMerc (37), AttackTraitorius (51), IdentifyMerc (57)
+Merc_OnStupidMercDeathN	PARTY	the stupid mercenary died by no member's hand: was it the player (the party's acting member)
+Traitorius_OnTraitoriusDamage	PARTY	Traitorius hit by no member: the player's hint (the party's acting member)
+Merc_ScanShip	PARTY	every second the scan of the lonely mercenary by the player (the party's acting member, its mission's)

@@ -1250,12 +1250,13 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 		g_Coop.pl[i].autoSince = now;
 		return;
 	}
-	/* a phone cab or a desktop while the police is after it: it waits for the alarm to fall, as the single player
-	 * does after the call's "the police is still after you" (PhoneCab.UseAudioCom, the missions' UsePhoneCab) */
+	/* a phone cab, a desktop or a character to talk to while the police is after it: it waits for the alarm to fall, as
+	 * the single player does after the call's "the police is still after you" (PhoneCab.UseAudioCom, the missions'
+	 * UsePhoneCab; ApologizeMayor's mayor only warns while the alarm of a stapler's death is on) */
 	char *fn = NULL;
 	const cAlarm *al = Players_Alarm(i);
 	if (al && al->on && Entity_VarS(t, "UseFunc", &fn, 0) && fn && (strstr(fn, "Phone") || strstr(fn, "AudioCom") ||
-		strstr(fn, "Desktop"))) {
+		strstr(fn, "Desktop") || strstr(fn, "Speech"))) {
 		if (now - g_Coop.pl[i].autoTold >= 10.0) {
 			g_Coop.pl[i].autoTold = now;
 			Con_Printf("coop: player %d (auto) waits for its alarm to fall before %s\n", i, t->name);

@@ -37,6 +37,7 @@
 #include "scrap/input.h"
 #include "scrap/logic.h"
 #include "scrap/nodesworld.h"
+#include "scrap/party.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -262,9 +263,11 @@ static byte Sd_Finish(const char *how, const nativeVal_t *cad, long win, const c
 	return ok;
 }
 
-/* usr = Scrap.UsrEntity(0); if usr: (if usr.IsType("Car"): usr.Life = usr.MaxLife); usr.Invulnerable = 1 */
-static byte Sd_UsrSafe(void) {
+/* usr = Scrap.UsrEntity(0); if usr: (if usr.IsType("Car"): usr.Life = usr.MaxLife); usr.Invulnerable = 1; not in the
+ * original: every member of a coop party (Sd_UsrSafe, Party_All) */
+static byte Sd_UsrSafeOne(void *ctx) {
 	nativeVal_t usr, life;
+	(void)ctx;
 	Native_SetNone(&life);
 	if (!Mode_UsrHandle(&usr)) {
 		return 0;
@@ -280,15 +283,24 @@ static byte Sd_UsrSafe(void) {
 	return ok;
 }
 
-/* usr = Scrap.UsrEntity(0); if usr: usr.Invulnerable = 1 */
-static byte Sd_UsrInvulnerable(void) {
+static byte Sd_UsrSafe(void) {
+	return Party_All(Sd_UsrSafeOne, NULL);
+}
+
+/* usr = Scrap.UsrEntity(0); if usr: usr.Invulnerable = 1 (every member of a coop party) */
+static byte Sd_UsrInvulnerableOne(void *ctx) {
 	nativeVal_t usr;
+	(void)ctx;
 	if (!Mode_UsrHandle(&usr)) {
 		return 0;
 	}
 	byte ok = !Native_True(&usr) || Mode_VSetI(&usr, "Invulnerable", 1);
 	Native_Free(&usr);
 	return ok;
+}
+
+static byte Sd_UsrInvulnerable(void) {
+	return Party_All(Sd_UsrInvulnerableOne, NULL);
 }
 
 /* if (Parking.PlayerShip): Parking.PlayerShip.Invulnerable = 1 */

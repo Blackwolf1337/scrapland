@@ -20,9 +20,10 @@ export AUTO_MID_Mission_IdentifyMerc='@|poll inst @ story get MissionState|Missi
 export AUTO_PRE_Mission_ProtectGus='switch $a;switch $b;scan $a 1;scan $b 1'
 export AUTO_PRE_Mission_IntoTheGDB='switch $a;switch $b;scan $a 1;scan $b 1'
 export AUTO_PRE_Mission_TalkToMayor='conv'
-# TalkToMayor: Dtritus for the mayor, a banker robs Corruptus (the banker's slaps), Dtritus again for the mayor; pb idle
+# TalkToMayor: Dtritus for the mayor, a banker robs Corruptus (the banker's slaps), Dtritus again for the mayor; pb idle;
+# the end of the slaps is the state's own log line, not a poll (in a poll's gap the banker robbed the mayor: no more talk)
 export AUTO_ENV_Mission_TalkToMayor="SCRAP_COOP_CONV=Dtritus,BankDirector,Dtritus" AUTO_B_Mission_TalkToMayor='-'
-export AUTO_MID_Mission_TalkToMayor='@|poll inst @ story get MissionState|MissionState = StealFunctionary|900|the mayor asks for the functionary'"'"'s money;;@|inst @ auto $a 0||||;;@|wait 5||||;;'"$CONV_A"';;@|inst @ auto $a|player $a plays|5|pa plays on as a banker;;@|poll inst @ story get MissionState|MissionState = TalkToMayor2|900|Corruptus emptied by the slaps;;@|inst @ auto $a 0||||;;@|wait 5||||;;'"$CONV_A"';;@|inst @ auto $a|player $a plays|5|pa plays on as Dtritus'
+export AUTO_MID_Mission_TalkToMayor='@|poll inst @ story get MissionState|MissionState = StealFunctionary|900|the mayor asks for the functionary'"'"'s money;;@|inst @ auto $a 0||||;;@|wait 5||||;;'"$CONV_A"';;@|inst @ auto $a|player $a plays|5|pa plays on as a banker;;@|-|coop: MissionState = TalkToMayor2|900|Corruptus emptied by the slaps (any time);;@|inst @ auto $a 0||||;;@|wait 5||||;;'"$CONV_A"';;@|inst @ auto $a|player $a plays|5|pa plays on as Dtritus'
 # BeatPickus: pb plays nothing (its helper's punches at the police and sentinels of the station draw the alarm)
 export AUTO_B_Mission_BeatPickus='-'
 # IntoTheGDB: once the scan found the traitor ("Destroy him"), he is shot down (he stays a bishop that is no foe)

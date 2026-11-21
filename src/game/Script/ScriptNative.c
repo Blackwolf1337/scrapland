@@ -15,10 +15,12 @@
 
 #include "scrap/actions.h"
 #include "scrap/console.h"
+#include "scrap/coop.h"
 #include "scrap/global.h"
 #include "scrap/modvars.h"
 #include "scrap/nativeobj.h"
 #include "scrap/netaudit.h"
+#include "scrap/players.h"
 #include "scrap/pres.h"
 #include "scrap/repent.h"
 #include "scrap/pyentity.h"
@@ -2688,7 +2690,22 @@ int Native_ScorerStore(int id, const char *item, const char *var, const nativeVa
 	cScorer *sc = Scorer_Get(id);
 	cScorerItem *it = sc ? cScorer_FindItem(sc, item) : NULL;
 	if (!it) {
-		return 0;
+		/* not in the original: a coop party's mission HUD made in one member's context (its model) is set from another
+		 * context (IdentifyMerc's scan bar shown by the scan's check in the world's context): every model that has it */
+		byte any = 0;
+		for (int k = -1; g_PresHud && !id && Coop_On() && k < PLAYERS_MAX; k++) {
+			cScorer *o = k < 0 ? Scorer_GetWorld(0) : Pres_HudMade(k);
+			cScorerItem *oi = o && o != sc ? cScorer_FindItem(o, item) : NULL;
+			if (oi) {
+				char *os = s;
+				double od = d;
+				int oint = i;
+				Pres_HudSet(o, item, var, s, d);
+				*r = s ? ScorerItem_Var(oi, var, 1, &os, NULL, NULL) : ScorerItem_Var(oi, var, 1, NULL, &od, &oint);
+				any = 1;
+			}
+		}
+		return any;
 	}
 	if (g_Mp2) {
 		Pres_HudSet(sc, item, var, s, d);
