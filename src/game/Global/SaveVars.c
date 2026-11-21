@@ -106,6 +106,8 @@ static cSaveVar *SV_OverSet(int i, const char *name, const char *value) {
 		Pres_SaveVar(i, name, value);
 	} else {
 		cString_Set(&v->value, NULL);
+		/* the coordinator's copy keeps no value either (a text the player's next level reads as empty) */
+		Travel_SetVar(i, name, "");
 	}
 	return v;
 }
@@ -229,6 +231,19 @@ void SaveVars_Each(void (*fn)(const char *name, const char *value, void *u), voi
 	}
 }
 
+static struct {
+	void (*fn)(const char *name, const char *value, void *u);
+	void *u;
+	int i;
+} sv_each;
+
+static void SV_EachKept(const char *key, const char *value, void *u) {
+	(void)u;
+	if (SaveVar_OverOwner(key) == sv_each.i && !SaveVar_Find(key) && !SV_OverFind(sv_each.i, key)) {
+		sv_each.fn(key, value, sv_each.u);
+	}
+}
+
 void SaveVars_EachSeen(void (*fn)(const char *name, const char *value, void *u), void *u) {
 	for (cSaveVar *v = g_SaveVars; v; v = v->next) {
 		const char *seen = SaveVar_Get(v->name);
@@ -245,6 +260,11 @@ void SaveVars_EachSeen(void (*fn)(const char *name, const char *value, void *u),
 			fn(v->name, v->value, u);
 		}
 	}
+	/* the player's own ones its state of the coordinator keeps that it has not read here yet */
+	sv_each.fn = fn;
+	sv_each.u = u;
+	sv_each.i = i;
+	Travel_EachVar(i, SV_EachKept, NULL);
 }
 
 /* deletes the variables whose name starts with prefix ("" all); a player's own prefix in its context: its variables

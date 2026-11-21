@@ -110,6 +110,8 @@ byte Travel_MetroUse(const char *usr, const char *door);
 void Travel_Boarded(int player, struct cEntity *ship);
 /* a key of player's state text (the coordinator's store): 1 with it (out "" without) */
 byte Travel_GetVar(int player, const char *key, char *out, int cap);
+/* fn for each key of player's state text (tests: the save variables the coordinator keeps for it) */
+void Travel_EachVar(int player, void (*fn)(const char *key, const char *value, void *u), void *u);
 /* a key of player's state text set: 1 when it fits */
 byte Travel_SetVar(int player, const char *key, const char *value);
 /* a parked ship of the player's owned ship at pos, NULL when it has none */

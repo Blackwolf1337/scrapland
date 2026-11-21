@@ -43,6 +43,7 @@
 #define TR_CHANNEL 0				/* REP_CH_RELIABLE, also the coordinator's */
 #define TR_STATIONS 16
 #define TR_DOOR_NEAR 3000.0f		/* units from the entrance to its door */
+#define SV_TEXT 1024				/* a value of a player's state the tests list */
 #define TR_GROUP_NEAR 3000.0f		/* units: the players beside one who starts a super deal play it with it */
 
 typedef struct TrPlayer {
@@ -848,6 +849,16 @@ byte Travel_GetVar(int player, const char *key, char *out, int cap) {
 		return 0;
 	}
 	return CoordKv_Get(tr.pl[player].state, tr.pl[player].len, key, out, cap) != 0;
+}
+
+void Travel_EachVar(int player, void (*fn)(const char *key, const char *value, void *u), void *u) {
+	static char key[COORD_LEVEL * 2], val[SV_TEXT];
+	if (player < 0 || player >= PLAYERS_MAX || !tr.pl[player].used) {
+		return;
+	}
+	for (int pos = 0; CoordKv_Next(tr.pl[player].state, tr.pl[player].len, &pos, key, sizeof(key), val, sizeof(val));) {
+		fn(key, val, u);
+	}
 }
 
 byte Travel_SetVar(int player, const char *key, const char *value) {

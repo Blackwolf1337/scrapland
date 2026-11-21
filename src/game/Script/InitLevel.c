@@ -24,6 +24,7 @@
 
 #include "scrap/coop.h"
 #include "scrap/initsteps.h"
+#include "scrap/instance.h"
 #include "scrap/modvars.h"
 #include "scrap/nativeobj.h"
 #include "scrap/places.h"
@@ -96,8 +97,9 @@ static byte In_ForLibs(const nativeVal_t *path, const char *func) {
 /* isMission(): the level is the map of the current mission (1, 0, -1 with the error) */
 static int In_IsMission(void) {
 	nativeVal_t mm = { 0 }, a = { 0 }, lv = { 0 }, b = { 0 };
-	/* not in the original: no story in the levels of a sandbox or freeroam world (include/scrap/places.h) */
-	if (Places_On()) {
+	/* not in the original: no story in the levels of a sandbox or freeroam world (include/scrap/places.h), but the
+	 * mission of the super deal a group's instance plays (include/scrap/instance.h) */
+	if (Places_On() && !Instance_Deal()) {
 		return 0;
 	}
 	if (!Mode_Import("string")) {

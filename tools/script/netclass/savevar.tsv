@@ -5,7 +5,7 @@
 Char	PLAYER	one player's progress (plan: Player, Hangar, Char, Challenge, Revenge, Conversor)
 Spawn	PLAYER	where the player enters the level
 ComeFrom	PLAYER	the level the player came from
-Mission	STORY	the story (missions, map state, deals, counters)
+Mission	PARTY	the story's in coop, one player's own in a free world (stage 6c: a super deal keeps the player's mission aside)
 Hangar	PLAYER	one player's progress (plan: Player, Hangar, Char, Challenge, Revenge, Conversor)
 Conversor	PLAYER	one player's progress (plan: Player, Hangar, Char, Challenge, Revenge, Conversor)
 Stats	PARTY	the story's in coop, one player's progress in a free world (stage 6c: the deals, counters, secondary mission)
