@@ -254,6 +254,7 @@ void Players_Join(int i, int money) {
 	s->used = 1;
 	ModVar_OverClearPlayer(i);
 	SaveVar_OverClear(i);
+	SaveVar_LevelGive(i);
 	Ui_PlayerGone(i);
 }
 

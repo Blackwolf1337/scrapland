@@ -774,7 +774,9 @@ static void Rep_CharAt(int i, cEntity *e, float yaw) {
 	const char *cls = Faction_CharClass(i);
 	Faction_EnsureClass(cls);
 	if (!WLife(e)->actCtrl || !WLife(e)->actCtrl->cls || strcmp(WLife(e)->actCtrl->cls->name, cls)) {
-		WithLife_SetActCtrl(e, cls);
+		/* as a set of the scripts: the entity's journal carries the class (a joining client's own character had the
+		 * class of the startup step, Char of the save game) */
+		Rep_SetVarS(e, "ActCtrl", cls);
 	}
 	Rep_SetVarS(e, "TgType", "Green");
 	/* its death is the instance's (Rep_Death), not an NPC's of the scripts (CharAct: respawn from CharsNPC) nor single
