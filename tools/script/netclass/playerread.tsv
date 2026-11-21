@@ -256,6 +256,7 @@ Speech_ForceRemoteCom_E	PARTY	a Speech entry in the world's context (a forced re
 Merc_OnStupidMercDeathN	PARTY	the stupid mercenary died by no member's hand: was it the player (the party's acting member)
 Traitorius_OnTraitoriusDamage	PARTY	Traitorius hit by no member: the player's hint (the party's acting member)
 Merc_ScanShip	PARTY	every second the scan of the lonely mercenary by the player (the party's acting member, its mission's)
+Merc_OnLonelyMercDamage	PARTY	the lonely mercenary hit by no member: the player's hint (the party's acting member)
 Dom_TakeBatonC	PARTY	a Domination super deal: the baton taken by the player, the acting member in coop
 Dom_TakeZoneC	PARTY	a Domination super deal: a zone taken with the player's baton, the acting member in coop
 Rudolph_InitRace	PARTY	CatchRudolph, KillRudolph: Rudolph's race starts for the player, the acting member in coop

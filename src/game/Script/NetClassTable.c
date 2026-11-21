@@ -3205,6 +3205,7 @@ static const netClassRow_t nc_playerread[] = {
 	{ "Massacre_OnVehicleCallback", NC_PARTY },
 	{ "Menu.MissionScorerCall", NC_WORLD },
 	{ "Merc_InitIdentifyMerc", NC_PARTY },
+	{ "Merc_OnLonelyMercDamage", NC_PARTY },
 	{ "Merc_OnStupidMercDeathN", NC_PARTY },
 	{ "Merc_ScanShip", NC_PARTY },
 	{ "Messenger_Deliver", NC_NEAREST },
