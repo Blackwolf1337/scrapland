@@ -21,9 +21,10 @@ more=""; for ((k = 3; k <= ${CHAP_MORE:-0}; k++)); do more="$more p$k"; done
 each() {
 	local l k
 	while IFS= read -r l; do
-		# (the players p3.. have their own leader lines)
-		if [[ $l != *'$b'* ]] || [[ $l == *'leader $b'* ]]; then echo "$l"; continue; fi
+		if [[ $l != *'$b'* ]]; then echo "$l"; continue; fi
 		[ -n "$CHAP_ALONE" ] && continue
+		# (the players p3.. have their own leader lines)
+		if [[ $l == *'leader $b'* ]]; then echo "$l"; continue; fi
 		echo "$l"
 		for k in $more; do echo "${l//\$b/\$$k}"; done
 	done

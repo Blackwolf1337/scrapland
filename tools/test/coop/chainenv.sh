@@ -16,7 +16,7 @@ export AUTO_ENV_Mission_ArrangeBankersCTF="SCRAP_COOP_CONV=Functionary" AUTO_PRE
 # BeatPickus from a story point at GetFuncShipPlans (bp2-data): BPTAIL
 export BP_TAIL=';;@|poll inst @ story get MissionState|MissionState = TalkToTraitoriusAgain|1200|the plans photographed;;@|inst @ auto $a 0||||;;@|inst @ walk $a 0||||;;@|wait 5||||;;'"$CONV_A"';;@|inst @ auto $a|player $a plays|5|pa plays on as a functionary'
 export AUTO_PRE_Mission_DestroyMickus='switch $a;switch $b;scan $a 1;scan $b 1'
-export AUTO_MID_Mission_IdentifyMerc='@|poll inst @ story get MissionState|MissionState = IdentifyMerc2|600|the scene of the mercenary;;@|inst @ switch $a||||;;@|wait 3||||;;@|inst @ switch $b||||;;@|inst @ scan $a 1||||;;@|inst @ scan $b 1||||'
+export AUTO_MID_Mission_IdentifyMerc='@|poll inst @ story get MissionState|MissionState = IdentifyMerc2|600|the scene of the mercenary;;@|inst @ ship $a||||;;@|wait 3||||;;@|inst @ ship $b||||;;@|inst @ scan $a 1||||;;@|inst @ scan $b 1||||'
 export AUTO_PRE_Mission_ProtectGus='switch $a;switch $b;scan $a 1;scan $b 1'
 export AUTO_PRE_Mission_IntoTheGDB='switch $a;switch $b;scan $a 1;scan $b 1'
 export AUTO_PRE_Mission_TalkToMayor='conv'
@@ -68,3 +68,5 @@ export AUTO_PRE_Mission_GoWithHuman='goto $a Human_Entrance 0 300;wait 5;walk $a
 # ApologizeMayor: pb plays nothing (its helper's punches at the sentinels and gears of the town hall draw a fight the mayor
 # joins: he stays on a gear and does not talk again)
 export AUTO_B_Mission_ApologizeMayor='-'
+# DestroyPorkinsTransports: the bishops kill the whole party now and then (the mission starts again): pb takes no damage
+export AUTO_PRE_Mission_DestroyPorkinsTransports='switch $a;switch $b;tough $b 1'

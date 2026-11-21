@@ -179,6 +179,9 @@ static int Cp_FightTargets(const char *src, cEntity **out, int max, int foes) {
 	}
 	Native_SetNone(&v);
 	Str_Copy(mod, src[0] ? src : "MissionsFuncs.currentTarget", sizeof(mod));
+	/* a character the mission wants dead is its current target only (not one of the list while the current one is
+	 * chosen: ApologizeMayor's mayor between two staplers was punched and fought back for good) */
+	byte wanted = 1;
 	char *dot = strchr(mod, '.');
 	if (!dot) {
 		Native_SetText(&v, src, (int)strlen(src));
@@ -190,6 +193,7 @@ static int Cp_FightTargets(const char *src, cEntity **out, int max, int foes) {
 			if (!src[0] && !Mode_ModGet("MissionsFuncs", "targetsList", &v)) {
 				Native_SetNone(&v);
 			}
+			wanted = src[0] != 0;
 		}
 	}
 	int k = v.type == NV_STR ? 1 : v.type == NV_NONE ? 0 : Mode_Loop(&v);
@@ -200,7 +204,7 @@ static int Cp_FightTargets(const char *src, cEntity **out, int max, int foes) {
 		/* the mission's target whose radar mark and arrow the scripts took away (ActivateTarget 0: DistractHumphrey's phone
 		 * cab after the call, IntoTheGDB's scanned bishops) is none for a player */
 		if (e && Entity_IsType(e, TYEN_WITH_LIFE) && (WLife(e)->life > 0.0f || Cp_Thing(e)) && !e->deadNode.target &&
-			Players_Of(e) < 0 && (foes < 0 || (Cp_Foe(e) || Cp_DeathWanted(e)) == foes) &&
+			Players_Of(e) < 0 && (foes < 0 || (Cp_Foe(e) || (wanted && Cp_DeathWanted(e))) == foes) &&
 			(src[0] || Obj(e)->radarShow || WLife(e)->arrow.canMission)) {
 			out[n++] = e;
 		}
@@ -1289,8 +1293,8 @@ static uint16_t Cp_Buttons(const char *names) {
 	return b;
 }
 
-/* test line "where <prefix>": the place, life and logic target of the entities whose names start with it (the
- * followers of a walk, a mission's characters) */
+/* test line "where <prefix>": the place, life, logic target, target type and entity list of the entities whose names
+ * start with it (the followers of a walk, a mission's characters) */
 static byte Cp_TestWhere(const char *line) {
 	char name[CP_NAME];
 	if (sscanf(line, "where %63s", name) != 1) {
@@ -1298,15 +1302,17 @@ static byte Cp_TestWhere(const char *line) {
 	}
 	size_t n = strlen(name);
 	for (cEntity *v = cWorld_GetFirstEntity(g_pWorld); v; v = cEntity_Next(v)) {
-		char *tgt = NULL;
+		char *tgt = NULL, *tg = NULL, *list = NULL;
 		if (strncmp(v->name, name, n)) {
 			continue;
 		}
 		Entity_VarS(v, "LLogicTarget", &tgt, 0);
-		Con_Printf("coop: %s at %.0f %.0f %.0f, %s, life %.0f, player %d, logic target %s\n", v->name, (double)v->pos.x,
-			(double)v->pos.y, (double)v->pos.z, v->active ? "active" : "inactive",
+		Entity_VarS(v, "TgType", &tg, 0);
+		Entity_VarS(v, "EntityList", &list, 0);
+		Con_Printf("coop: %s at %.0f %.0f %.0f, %s, life %.0f, player %d, logic target %s, target type %s, list %s\n", v->name,
+			(double)v->pos.x, (double)v->pos.y, (double)v->pos.z, v->active ? "active" : "inactive",
 			Entity_IsType(v, TYEN_WALKCHAR) || Entity_IsType(v, TYEN_CAR) ? (double)WLife(v)->life : 0.0, Players_Of(v),
-			tgt ? tgt : "-");
+			tgt ? tgt : "-", tg ? tg : "-", list ? list : "-");
 	}
 	return 1;
 }
@@ -1476,6 +1482,14 @@ byte Coop_Command(const char *line) {
 	if (sscanf(line, "spare %d %d", &i, &pct) == 2 && i >= 0 && i < PLAYERS_MAX) {
 		g_Coop.pl[i].spare = pct;
 		Con_Printf("coop: player %d spares a ship under %d%% of its life\n", i, pct);
+		return 1;
+	}
+	if (sscanf(line, "ship %d", &i) == 1 && i >= 0 && i < PLAYERS_MAX) {
+		/* into the nearest parked ship (or a called one) when it is on foot; nothing in a ship */
+		cEntity *e = Players_Get(i);
+		if (e && NetPl_Kind(e) == NETREP_CHAR) {
+			Rep_TestSwitch(i, 0);
+		}
 		return 1;
 	}
 	if (sscanf(line, "tough %d %d", &i, &pct) == 2 && i >= 0 && i < PLAYERS_MAX) {

@@ -226,3 +226,6 @@ Speech.CurrNI	PARTY	the talk of the player read by a mission or a character scri
 Speech.OnEndOfSpeechNI	PARTY	the talk of the player read by a mission or a character script: the acting member in coop
 Speech.OnEndOfSpeechParamsNI	PARTY	the talk of the player read by a mission or a character script: the acting member in coop
 Tdm_Death	PARTY	a ship of the team fight died by no member's hand: is the loser the player (a member's death runs in its context)
+# stage 5b part 2, Mission_IntroHuman (66)
+Speech_PerformAnswer_E	PARTY	a Speech entry in the world's context (the answer of a mission's talk): the acting member in coop
+Speech_RestartMenuEvents_E	PARTY	a Speech entry in the world's context (the end of a talk's answers): the acting member in coop
