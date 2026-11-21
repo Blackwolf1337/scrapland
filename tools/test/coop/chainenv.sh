@@ -135,3 +135,5 @@ export AUTO_PRE_Mission_DefeatCrazyGambler3='tough $a 1;tough $b 1'
 # WhoIsDeepThroat: the gatekeeper of the boss room's teleporter lets only D-Tritus' group pass; the members are still
 # the GDB's bishops (single player's player too, until the conversor): pa into D-Tritus by the conversor first
 export AUTO_PRE_Mission_WhoIsDeepThroat='conv'
+# BertoMassacre: the Berto waves killed the party of two three times in a row in a run (passed in others): no damage
+export AUTO_PRE_Mission_BertoMassacre='tough $a 1;tough $b 1'
