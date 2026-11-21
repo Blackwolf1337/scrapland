@@ -1142,11 +1142,11 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	}
 	/* the mission's targets one after the other (the right one of three to talk to: ThreeStooges' mercenaries) */
 	int nt = Cp_FightTargets("", all, CP_FIGHT_MAX, 0);
-	/* a banker robs the mission's list of targets (TalkToMayor: Corruptus and Porkins), not a current target the list
-	 * left over (the mayor, who keeps his money) */
+	/* a banker robs only the mission's list of targets (TalkToMayor: Corruptus and Porkins), never a single current
+	 * target (the mayor of TalkToMayor2, robbed in the moment before the conversor, talked no more) */
 	cEntity *rob[CP_FIGHT_MAX];
 	int nr = Cp_FightTargets("MissionsFuncs.targetsList", rob, CP_FIGHT_MAX, 0);
-	if (g_Coop.pl[i].autoOn != 2 && Cp_BankerSlaps(i, in, e, nr ? rob : all, nr ? nr : nt, now)) {
+	if (g_Coop.pl[i].autoOn != 2 && Cp_BankerSlaps(i, in, e, rob, nr, now)) {
 		return;
 	}
 	cEntity *t = g_Coop.pl[i].autoOn == 2 ? escort : nt ? all[g_Coop.pl[i].autoTurn % nt] : NULL;
@@ -1259,8 +1259,8 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	 * UsePhoneCab; ApologizeMayor's mayor only warns while the alarm of a stapler's death is on) */
 	char *fn = NULL;
 	const cAlarm *al = Players_Alarm(i);
-	if (al && al->on && Entity_VarS(t, "UseFunc", &fn, 0) && fn && (strstr(fn, "Phone") || strstr(fn, "AudioCom") ||
-		strstr(fn, "Desktop") || strstr(fn, "Speech"))) {
+	if (al && al->on && ((Entity_VarS(t, "UseFunc", &fn, 0) && fn && (strstr(fn, "Phone") || strstr(fn, "AudioCom") ||
+		strstr(fn, "Desktop"))) || (Entity_IsType(t, TYEN_WALKCHAR) && !Cp_Foe(t)))) {
 		if (now - g_Coop.pl[i].autoTold >= 10.0) {
 			g_Coop.pl[i].autoTold = now;
 			Con_Printf("coop: player %d (auto) waits for its alarm to fall before %s\n", i, t->name);
