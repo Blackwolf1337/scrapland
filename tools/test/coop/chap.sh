@@ -12,12 +12,13 @@
 # env: COOP_SCRATCH (tools/test/coop/env.sh), BUILD, CHAP_ENV (more env of both players), CHAP_ABORT (a regex of the
 # polled log that fails the chapter at once), CHAP_KEEP=1 keeps the world running at the end, CHAP_RENDER=1 pa
 # rendered ("shot <name>" lines take screenshots into <scratch>/shots); "save <name>" lines keep the world's data as
-# <scratch>/<name>-data
+# <scratch>/<name>-data; CHAP_WORLD_ARGS more arguments of the coordinator; COOP_MP2=1: the second multiplayer design (-mp2 for the instances and both players)
 . "$(dirname "$(readlink -f "$0")")/env.sh"
 tag=$1 port=$2 data=$3 steps=$4
 B=${BUILD:-$R/build-linux64}
 L=$S/$tag.log D=$S/$tag-data
 fail=0
+v2=; [ -n "$COOP_MP2" ] && v2=-mp2
 echo $$ > $S/$tag.script.pid
 log() { case $1 in w) echo $L;; pa|pb|p[0-9]) echo $S/$tag-$1.log;; *) echo $D/logs/$1.log;; esac; }
 # CHAP_MORE=<n>: more headless players p3..p<n> (new players of the party) after pa and pb
@@ -36,9 +37,9 @@ player() {
 	local n=$1; shift
 	[ -f "$keys/$n.key" ] && set -- SCRAP_PLAYER_KEY="$keys/$n.key" "$@"
 	if [ -n "$CHAP_RENDER" ] && [ $n = pa ]; then
-		env PLAYER_NAME=$n WATCH_SECS=${CHAP_WATCH:-6000} SCRAP_BUILD=$B SCRAP_COOP_ANSWER=no SCRAP_COOP_SHIPEDIT=6 $CHAP_ENV "$@" "$T/join.sh" "$tag-$n" "$port" > /dev/null
+		env PLAYER_NAME=$n WATCH_SECS=${CHAP_WATCH:-6000} SCRAP_BUILD=$B SCRAP_COOP_ANSWER=no SCRAP_COOP_SHIPEDIT=6 $CHAP_ENV "$@" "$T/join.sh" "$tag-$n" "$port" $v2 > /dev/null
 	else
-		env PLAYER_NAME=$n SCRAP_COOP_ANSWER=no SCRAP_COOP_SHIPEDIT=6 $CHAP_ENV "$@" "$T/hjoin.sh" "$tag-$n" "$port" "$B" > /dev/null
+		env PLAYER_NAME=$n SCRAP_COOP_ANSWER=no SCRAP_COOP_SHIPEDIT=6 $CHAP_ENV "$@" "$T/hjoin.sh" "$tag-$n" "$port" "$B" $v2 > /dev/null
 	fi
 }
 "$T/stopw.sh" $tag $tag-pa $tag-pb ${more//p/$tag-p}
@@ -46,7 +47,7 @@ player() {
 keys=${COOP_KEYS:-$(dirname "$(readlink -f "$data")")/keys}
 rm -f $L $S/$tag-pa.log $S/$tag-pb.log
 rm -rf $D && cp -a "$data" $D && rm -f $D/logs/*.log || exit 1
-WORLD_KEEP_DATA=1 "$T/world.sh" $tag $port "$B" -mode:coop -stopinstances -grace:20 > /dev/null
+WORLD_KEEP_DATA=1 "$T/world.sh" $tag $port "$B" -mode:coop -stopinstances -grace:20 ${v2:+-instargs:$v2} $CHAP_WORLD_ARGS > /dev/null
 "$T/wait.sh" $L "coordinator .*listening|instance .* up" 60
 player pa
 "$T/wait.sh" $L "pa .* is in " 150 || echo "FAIL: pa joins"

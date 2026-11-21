@@ -10,7 +10,8 @@ without a result).
                                                         per cell of delay (each way), jitter and loss
   mp2.py coop <chapter> [--points DIR]                 a chapter of tools/test/coop/chapters.txt from its story point
                                                         (tools/test/coop/autochain.sh), then coopparity.py at the
-                                                        chapter's start and end
+                                                        chapter's start and end; with --mp2 on -mp2 (instances and
+                                                        players), the audit keys of every game of the chapter count
   mp2.py sp [--lanes a,b,c] [--levels-time 30]         single player: regress.py check, golden.sh, levels.sh
   mp2.py classes [--levels A,B] [--bot idle]           tools/test/parity/classes.py (stages 4.1, 4.2): per world level a
                                                         -mp2 instance and a joined client: mirror, census by class, the
@@ -25,6 +26,7 @@ Common options: --out DIR (default build-linux64/mp2), --scratch DIR, --build DI
 40 ports from BASE: a free world's coordinator at BASE and its instances from BASE + 8; one world at a time), --device.
 The audit column of parity is the instance's `audit json` (stage 0.1); a build without that verb shows n/a."""
 import argparse
+import glob
 import json
 import os
 import re
@@ -327,11 +329,35 @@ def story_val(data, key):
     return ''
 
 
+def res_old(out):
+    try:
+        return json.load(open(os.path.join(out, 'coop.json')))
+    except (OSError, ValueError):
+        return {}
+
+
 def level_name(name):
     for lv in parity.world_levels():
         if lv.lower() == name.lower():
             return lv
     return name
+
+
+# the audit keys every game of a coop chapter writes on their first count (SCRAP_AUDIT_LOG, src/game/Global/NetAudit.c):
+# unresolved reads of "the player" and presentation calls without a route or played twice (-mp2)
+COOP_AUDIT_LOG = 'player.world.norule,pres.unforwarded,pres.double'
+
+
+def coop_audit(scratch, tag):
+    """the audit lines of a chapter's logs (the players' and the instances'): {key: games that counted it}"""
+    keys = {}
+    for f in glob.glob(os.path.join(scratch, tag + '1*.log')) + glob.glob(os.path.join(scratch, tag + '1-data', 'logs',
+                                                                                         '*.log')):
+        for line in open(f, errors='replace'):
+            if line.startswith('audit: '):
+                k = line[7:].strip()
+                keys[k] = keys.get(k, 0) + 1
+    return keys
 
 
 def gate_coop(a):
@@ -348,6 +374,9 @@ def gate_coop(a):
     scratch = os.path.join(a.scratch, 'coop')
     tag = 'g' + a.chapter
     env = {'COOP_SCRATCH': scratch, 'COOP_KEYS': os.path.join(a.points_dir, 'keys'), 'BUILD': a.build}
+    if a.mp2:
+        env['COOP_MP2'] = '1'
+        env.setdefault('SCRAP_AUDIT_LOG', COOP_AUDIT_LOG)
     log = os.path.join(out, 'chain.log')
     t0 = time.time()
     if not a.report_only:
@@ -398,6 +427,8 @@ def gate_coop(a):
             cmd += ['--point', '%s=%s:%s:%s' % (name, d, lv, os.path.join(a.points_dir, 'keys', 'pa.key'))]
         if a.report_only:
             cmd.append('--report-only')
+        if a.mp2:
+            cmd.append('--mp2')
         run(cmd, log=os.path.join(out, 'coopparity.log'), timeout=3600)
         for name, d, lv in pts:
             try:
@@ -412,10 +443,16 @@ def gate_coop(a):
             res['parity'].append(dict(s, point=name, level=lv, mission=r.get('mission'), sp_ok=sp_ok))
     nfail = sum(1 for s in steps if not s['ok'])
     gaps = sum(p.get(c, 0) for p in res['parity'] if 'error' not in p for c in parity.SUMMARY_COLS)
-    status = 'error' if not steps else 'fail' if nfail or not reached or gaps else 'pass'
+    if a.mp2:
+        res['audit'] = coop_audit(scratch, tag) if not a.report_only else res_old(out).get('audit', {})
+    nkeys = len(res.get('audit') or {})
+    status = 'error' if not steps else 'fail' if nfail or not reached or gaps or nkeys else 'pass'
     table = ['# Coop chapter %s: %s (%s, from %s)' % (a.chapter, what, res['mission'], point), '',
              '| step | result |', '|---|---|']
     table += ['| %s | %s |' % (s['step'], 'pass' if s['ok'] else 'FAIL') for s in steps] or ['| (no steps ran) | |']
+    if a.mp2:
+        table += ['', 'Audit of the chapter\'s games (%s): %s' % (COOP_AUDIT_LOG, ', '.join(
+            '%s (%d)' % kv for kv in sorted(res['audit'].items())) or 'none')]
     table += ['', 'Next mission: %s; %d s.' % (res['next'] or 'not reached', secs), '',
               '| story point | level | entity gaps | radar gaps | HUD gaps | sound gaps | particle gaps |',
               '|---|---|---|---|---|---|---|']
@@ -656,8 +693,10 @@ def main():
     ap.add_argument('--port', type=int, default=29940)
     ap.add_argument('--device', default=None)
     ap.add_argument('--report-only', action='store_true', help='the tables of the JSON files already in --out')
-    ap.add_argument('--mp2', action='store_true', help='parity and feel on the replication v2 (-mp2 for the host, its '
-                    'instance and the joined client); parity adds the mirror diff and the sound census')
+    ap.add_argument('--mp2', action='store_true', help='parity, feel and coop on the replication v2 (-mp2 for the host, '
+                    'its instance and the joined client; coop: the instances and both players); parity adds the mirror '
+                    'diff and the sound census, coop the audit keys (unresolved player reads, presentation without a '
+                    'route or twice)')
     # parity
     ap.add_argument('--levels', default=None, help='parity: Level or Level:mode, comma separated')
     ap.add_argument('--points', dest='route_points', type=int, default=4, help='parity: the points of a route at most')

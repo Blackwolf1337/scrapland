@@ -15,7 +15,12 @@ items, the sounds and the particle systems, plus screenshots side by side. Outpu
 <point>-shots.png and report.md.
 
   coopparity.py --point NAME=DATA:LEVEL[:KEY] ... [--port 29860] [--build DIR] [--coord DIR/src/coord/ScrapCoord]
-                [--out DIR] [--scratch DIR] [--radius 30000] [--settle 25]
+                [--out DIR] [--scratch DIR] [--radius 30000] [--settle 25] [--mp2]
+
+--mp2: the second multiplayer design (-mp2 for the instances and the member; the kinds of the moment against the
+instance's count, the sounds and particle systems the instance played near a player, as parity.py --mp2).
+
+--one-level: the world hosts only the point's level (coordinator on --port, its instance on --port + 1).
 
 KEY is the member's player.key (default: the owner of the party, found as <scratch>/key-<owner>.key or given). Network
 only on loopback (--port and the 28 ports after it)."""
@@ -60,8 +65,8 @@ def lit(v):
 class World:
     """ScrapCoord -mode:coop with its instances in the game folder g-world (test channel on)"""
 
-    def __init__(self, a, data):
-        self.a, self.data = a, data
+    def __init__(self, a, data, level=''):
+        self.a, self.data, self.level = a, data, level
         self.dir = os.path.join(a.scratch, 'g-world')
         self.proc = None
 
@@ -88,7 +93,9 @@ class World:
         self.proc = subprocess.Popen([self.a.coord, '-port:%d' % self.a.port, '-bind:127.0.0.1', '-name:coopparity',
                                       '-data:' + self.data, '-gamedir:' + self.dir,
                                       '-exe:' + os.path.join(self.dir, 'Bin', 'ScrapC'), '-mode:coop',
-                                      '-stopinstances', '-grace:5'],
+                                      '-stopinstances', '-grace:5'] + (['-instargs:-mp2'] if self.a.mp2 else []) +
+                                     (['-instport:%d' % (self.a.port + 1), '-levels:' + self.level]
+                                      if self.a.one_level else []),
                                      env=env, stdin=subprocess.PIPE, stdout=self.log, stderr=subprocess.STDOUT,
                                      start_new_session=True)
 
@@ -170,10 +177,10 @@ def run_point(a, name, data, level, key):
     res['mission'] = '%s (%s) in %s' % (story.get('Mission.Library', '-'), story.get('MissionState', '-'),
                                         story.get('Mission.Map', '-'))
     wdata = prepare_data(a, name, data, level)
-    world = World(a, wdata)
+    world = World(a, wdata, level)
     sp = parity.Game(a, 'cs', ['-imap:Levels/' + level])
-    member = parity.Game(a, 'cm', ['-join:127.0.0.1', '-port:%d' % a.port, '-name:' + (own.get('name') or 'pa')],
-                         env={'SCRAP_PLAYER_KEY': key})
+    member = parity.Game(a, 'cm', ['-join:127.0.0.1', '-port:%d' % a.port, '-name:' + (own.get('name') or 'pa')] +
+                         (['-mp2'] if a.mp2 else []), env={'SCRAP_PLAYER_KEY': key})
     try:
         world.start()
         sp.start()
@@ -208,6 +215,8 @@ def run_point(a, name, data, level, key):
         sp.ask('do e = Scrap.UsrEntity(0); e.Pos = (%.1f, %.1f, %.1f); e.Ang = (%.3f, %.3f, %.3f)' % (at + ang))
         # the instance's audit counts over the wait (stage 0.1; None without the verb)
         res['audit_verb'] = parity.audit(world, level, 'reset') is not None
+        if a.mp2:
+            parity.audit(member, None, 'reset')
         gameclock.sleep(a.settle)
         def inst_now():
             return parity.parse_ents(world.ask('entinfo %.0f %.0f %.0f %.0f' % (at[0], at[1], at[2], a.radius * 1.2),
@@ -228,11 +237,18 @@ def run_point(a, name, data, level, key):
             inst = inst_now()
         res['sp_same_level'] = same_level(sp, inst) and sp_mission(sp) == story.get('Mission.Library', '')
         res['instance'] = {'kinds': parity.count(inst, at, a.radius)}
+        if a.mp2:
+            # -mp2: the moment is the server's (parity.py --mp2): its kinds well inside the radius and what it played
+            res['mp2'] = True
+            res['instance']['kinds_inner'] = parity.count(inst, at, a.radius * 0.8)
+            res['instance'].update(parity.instance_evidence(world, level, at, a.radius))
         res['sp'] = parity.collect(sp, at, a.radius)
         # the instance's entities of the member's moment (parity.collect labels the proxies by them, M11)
         res['join'] = parity.collect(member, at, a.radius, inst_now)
         res['sp_mission'] = (sp.try_ask('Scrap.GetSaveVar("Mission.Library")') or '').strip()
         res['audit'] = parity.audit(world, level, 'json')
+        if a.mp2:
+            res['jaudit'] = parity.audit(member, None, 'json')
         shots = []
         for g in (sp, member):
             p = os.path.join(a.out, '%s-%s.png' % (name, g.name))
@@ -313,6 +329,10 @@ def main():
     ap.add_argument('--timeout', type=int, default=900)
     ap.add_argument('--device', default=None)
     ap.add_argument('--report-only', action='store_true')
+    ap.add_argument('--one-level', action='store_true', help='the world hosts the point\'s level alone (its instance '
+                    'on --port + 1): two ports instead of 28')
+    ap.add_argument('--mp2', action='store_true', help='the second multiplayer design: -mp2 for the instances and the '
+                    'member, the moment of the server as parity.py --mp2 has it')
     a = ap.parse_args()
     a.build = os.path.abspath(a.build)
     a.coord = a.coord or os.path.join(a.build, 'src', 'coord', 'ScrapCoord')
