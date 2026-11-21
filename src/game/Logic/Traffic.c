@@ -277,8 +277,9 @@ static Nto1Node *Traffic_UpdateFighter(cEnemiesTraffic *self, Nto1Node *n, cEnti
 /* the fallback of the load probe (stage 2.0: 64 viewers on DownTown had a tick p99 of 36 ms with a whole quota per
  * viewer): the leaders that get a whole quota (more share them), a ship of the traffic farther from every viewer than
  * g_CheapDist runs its slots every g_CheapSlot s (single player's 0.05); the test line "traffic cap <leaders> cheap
- * <units> <slot>" changes them (cap 0: no limit, units 0: no cheap ships) */
-static int g_TrafficCap = 16;
+ * <units> <slot>" changes them (cap 0: no limit, units 0: no cheap ships). The cap was 16 after the probe; with 64
+ * joined players the replication and the players' own steps came on top (stage 9: tick 27 ms at cap 16, 14 ms at 8) */
+static int g_TrafficCap = 8;
 static float g_CheapDist = 37500.0f;
 static float g_CheapSlot = 0.15f;
 

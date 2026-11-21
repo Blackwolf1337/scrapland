@@ -20,7 +20,7 @@
  *
  * Quotas (stage 2.2): the traffic that single player keeps around its camera (rail traffic, sky traffic) is kept around
  * every viewer. Viewers nearer than VIEWERS_SHARE to a viewer before them in the set share its quota (a leader and its
- * followers); every leader gets single player's count, up to 16 leaders (more share the counts of 16), and a ship
+ * followers); every leader gets single player's count, up to 8 leaders (more share the counts of 8), and a ship
  * far from every viewer runs its slots slower (src/game/Logic/Traffic.c, the fallback of the load probe of stage 2.0).
  * A ship belongs to a leader (cAIVehicle.viewer) and is placed around it as single player places it around the
  * camera; the repositionings per MinTimeReposAI are single player's for each leader.

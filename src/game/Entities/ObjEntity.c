@@ -740,23 +740,37 @@ static void Obj_SlotJump(cEntity *self) {
 
 /* the frame: the halves of include/scrap/objentity.h in single player's order; the slot step of the class (Obj_Tick)
  * runs its own pieces by the mode, a player's entity of the network steps by tick (NetPl_Step) */
+static const cEntity *g_ObjLean;
+
+void Obj_SetLean(const cEntity *e) {
+	g_ObjLean = e;
+}
+
 void cObjEntity_Update(cEntity *self) {
 	cObjEntity *o = Obj(self);
 	byte adv = Obj_Advances(self);
+	byte lean = self == g_ObjLean;
 
 	cObjEntity_UpdateTimer(self);
 	float dt = cTimer_GetDelta(&o->timer);
 	if (OBJ_MIN_DT >= dt) {
 		return;
 	}
-	cSndInterface_Tick(&o->snd, dt);
+	if (!lean) {
+		cSndInterface_Tick(&o->snd, dt);
+	}
 	float f = o->slot->time / o->slot->interval;
 	Obj_RenderLerp(self, f);
 	/* a replica follows the node of the model it is linked to as well (a scene's actors, Present) */
 	if (adv || o->replica) {
 		cModMove_Update(&o->mod, dt);
 	}
-	Obj_UpdateModel(self);
+	if (lean) {
+		/* the model's place only: the viewers' frustum tests read it (Viewers_SeesModel) */
+		cObjEntity_UpdateModel(self);
+	} else {
+		Obj_UpdateModel(self);
+	}
 	if (o->cam) {
 		CamCtl_Lerp(o->cam, f);
 	}
@@ -781,7 +795,7 @@ void cObjEntity_Update(cEntity *self) {
 		}
 		Obj_SlotJump(self);
 	}
-	if (o->fx) {
+	if (o->fx && !lean) {
 		/* presentation: a replica has its own (include/scrap/pres.h) */
 		Pres_Derive();
 		EFX_Update(o->fx, dt);

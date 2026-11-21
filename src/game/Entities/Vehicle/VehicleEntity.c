@@ -24,6 +24,7 @@
 #include "scrap/vehiclemotors.h"
 #include "scrap/vehicletraffic.h"
 #include "scrap/vehicleentity.h"
+#include "scrap/viewers.h"
 #include "scrap/weapons.h"
 #include "scrap/weaps2.h"
 #include "scrap/world.h"
@@ -774,6 +775,17 @@ void cVehicleEntity_ReadControls(cEntity *base, float dt) {
 	}
 }
 
+/* not in the original: a rail traffic ship on an instance with several viewers runs no presentation (Obj_SetLean); the
+ * solo instance and single player run all of it */
+static byte cVehicleEntity_Lean(cVehicleEntity *self) {
+	if (!g_Instance || self->wl.obj.cam || Viewers_Count() < 2) {
+		return 0;
+	}
+	cAIVehicle *ai = Entity_GetAI(Veh_Ent(self));
+	int st = ai ? cAIVehicle_GetState(ai) : -1;
+	return st == AIV_TRAFFIC || st == AIV_TRAFFIC_INDOOR;
+}
+
 static void cVehicleEntity_Update(cEntity *base) {
 	cVehicleEntity *self = (cVehicleEntity *)base;
 	cObjEntity_UpdateTimer(Veh_Ent(self));
@@ -781,13 +793,20 @@ static void cVehicleEntity_Update(cEntity *base) {
 	if (1e-06f >= dt) {
 		return;
 	}
-	cVehicleEffects_UpdateState(&self->effects, dt);
+	byte lean = cVehicleEntity_Lean(self);
+	if (!lean) {
+		cVehicleEffects_UpdateState(&self->effects, dt);
+	}
 	/* not in the original: a client's own ship read them before its step (Play_PreFrame) */
 	if (!(g_Play && self->wl.obj.netStep)) {
 		cVehicleEntity_ReadControls(base, dt);
 	}
+	Obj_SetLean(lean ? base : NULL);
 	cWithLifeEntity_Update(Veh_Ent(self));
-	cVehicleEntity_UpdateSounds(self, dt);
+	Obj_SetLean(NULL);
+	if (!lean) {
+		cVehicleEntity_UpdateSounds(self, dt);
+	}
 	cVehicleEntity_Smooth(self, dt);
 }
 

@@ -254,6 +254,12 @@ static inline cObjEntity *Obj(const void *e) {
 }
 
 /* 1 when the Advance half of the update runs: not on a replica */
+/* e's next cObjEntity_Update runs without its sound items, the class's model update (the model is placed) and its
+ * embedded effect (NULL: none): the rail
+ * traffic of an instance with several viewers (cVehicleEntity_Update; stage 9, the presentation of 2000 traffic ships
+ * that nobody on the instance hears or sees was a fifth of its tick) */
+void Obj_SetLean(const struct cEntity *e);
+
 static inline byte Obj_Advances(const void *e) {
 	return !Obj(e)->replica;
 }

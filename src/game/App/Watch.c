@@ -1175,6 +1175,39 @@ double Watch_Delay(void) {
 double Watch_ShownTime(void) {
 	return watch.shown;
 }
+/* SCRAP_NETTALLY=1 (tests): the bytes of the messages that came, by channel and type (a REPENT_MSG or PRES_MSG by its
+ * kind too), a log line every WATCH_TALLY_SECS s of the real clock */
+#define WATCH_TALLY_SECS 10
+static void Watch_Tally(const Net2Event *ev, uint64_t ns) {
+	static signed char on = -1;
+	static uint64_t bytes[2][256][256], since;
+	if (on < 0) {
+		const char *v = getenv("SCRAP_NETTALLY");
+		on = v && v[0] == '1';
+		since = ns;
+	}
+	if (!on) {
+		return;
+	}
+	int sub = (ev->data[0] == REPENT_MSG || ev->data[0] == PRES_MSG) && ev->size > 1 ? ev->data[1] : 0;
+	bytes[ev->channel == REP_CH_RELIABLE][ev->data[0]][sub] += (uint64_t)ev->size;
+	if (ns - since < WATCH_TALLY_SECS * 1000000000ull) {
+		return;
+	}
+	since = ns;
+	for (int c = 0; c < 2; c++) {
+		for (int t = 0; t < 256; t++) {
+			for (int k = 0; k < 256; k++) {
+				if (bytes[c][t][k]) {
+					Con_Printf("watch: tally %s %c%c %llu bytes\n", c ? "reliable" : "unreliable", t, k ? k : ' ',
+						(unsigned long long)bytes[c][t][k]);
+					bytes[c][t][k] = 0;
+				}
+			}
+		}
+	}
+}
+
 
 void Watch_PreFrame(void) {
 	Net2Event ev;
@@ -1223,6 +1256,7 @@ void Watch_PreFrame(void) {
 			if (ev.size < 1) {
 				break;
 			}
+			Watch_Tally(&ev, ns);
 			if (ev.channel == REP_CH_RELIABLE && ev.data[0] == NETREP_MSG_WELCOME) {
 				Watch_Welcome(ev.data, ev.size);
 			} else if (ev.channel == REP_CH_RELIABLE && ev.data[0] == NETREP_MSG_PLAYER) {
