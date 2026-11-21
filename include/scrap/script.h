@@ -504,6 +504,9 @@ extern const portFn_t g_ParkingMethods[];
  * own ship (Parking.PlayerShip) and Sputnik at the parking nearest to its character, as Parking.BrowseItemPos gives
  * single player's at the level's start; 0 with the error set */
 byte Parking_PlayerJoin(void);
+/* a -mp2 client's prediction of a parking: the own ship (slow enough) on the parking box starts the move of
+ * Parking.OnPark (still, down onto the ground under the box in 2.5 s) as the server's script does in the same slot */
+byte Parking_PredictPark(struct cEntity *box, struct cEntity *ship);
 extern const portFn_t g_AcceleratorMethods[];
 /* the game modes of the single player super deals (src/game/Script/SuperDeals.c) */
 extern const portFn_t g_DeathMatchMethods[];

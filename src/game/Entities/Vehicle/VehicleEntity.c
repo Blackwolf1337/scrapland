@@ -19,6 +19,7 @@
 #include "scrap/scoreritems.h"
 #include "scrap/missileentity.h"
 #include "scrap/play.h"
+#include "scrap/repent.h"
 #include "scrap/players.h"
 #include "scrap/vehiclemotors.h"
 #include "scrap/vehicletraffic.h"
@@ -280,6 +281,11 @@ static void cVehicleEntity_Touch(cEntity *elem, cEntity *e, const vec3_t *point,
 	self->hitTime = Timer_GetTime(&self->wl.obj.timer);
 	CHECK(Entity_IsType(e, TYEN_VEHICLE));
 	cVehicleEntity *o = Veh(e);
+	/* not in the original: a -mp2 player's client takes the result of a collision with another ship (play.h) */
+	if (g_Mp2 && g_Instance) {
+		Rep_OwnTouched(elem);
+		Rep_OwnTouched(e);
+	}
 	vec3_t selfVel = self->wl.obj.vel;
 	vec3_t otherVel = o->wl.obj.vel;
 	float dvx = self->wl.obj.vel.x - o->wl.obj.vel.x;
@@ -761,6 +767,13 @@ static void cVehicleEntity_Tick(cEntity *elem, float dt) {
 
 static void cVehicleEntity_UpdateSounds(cVehicleEntity *self, float dt);
 
+void cVehicleEntity_ReadControls(cEntity *base, float dt) {
+	cVehicleEntity *self = (cVehicleEntity *)base;
+	if (Veh_IsPlayerSlot(self->slot) && Obj_Advances(base)) {
+		cVehicleControls_Tick(&self->controls, Veh_Ent(self), dt);
+	}
+}
+
 static void cVehicleEntity_Update(cEntity *base) {
 	cVehicleEntity *self = (cVehicleEntity *)base;
 	cObjEntity_UpdateTimer(Veh_Ent(self));
@@ -769,8 +782,9 @@ static void cVehicleEntity_Update(cEntity *base) {
 		return;
 	}
 	cVehicleEffects_UpdateState(&self->effects, dt);
-	if (Veh_IsPlayerSlot(self->slot) && Obj_Advances(base)) {
-		cVehicleControls_Tick(&self->controls, Veh_Ent(self), dt);
+	/* not in the original: a client's own ship read them before its step (Play_PreFrame) */
+	if (!(g_Play && self->wl.obj.netStep)) {
+		cVehicleEntity_ReadControls(base, dt);
 	}
 	cWithLifeEntity_Update(Veh_Ent(self));
 	cVehicleEntity_UpdateSounds(self, dt);

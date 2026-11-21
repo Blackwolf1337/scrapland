@@ -325,6 +325,7 @@ Init.SetArrowSize	DEF	the models of the arrows
 Init.LoadCharLib	DEF	the script of a character class and its sounds (a preload)
 Init.SetMapLabelText	UI	the station label on the screen at the start
 Init.Close	UI	the progress bar of the next level
+Parking.SetCameraStart	UI	the first point of the boarding's camera path beside the ship (a -mp2 client starts it for the eye, Play.c)
 OutMap.Init	DEF	the outdoor start: the client runs its DEF steps (initstep.tsv)
 OutMap.InitOutMap	DEF	a group of steps of the outdoor start (initstep.tsv)
 OutMap.BrowseAtmospherePos	DEF	the atmosphere limits from the dummies
