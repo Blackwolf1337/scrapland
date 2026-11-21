@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "scrap/arena.h"
 #include "scrap/console.h"
 #include "scrap/coord.h"
 #include "scrap/crt.h"
@@ -666,6 +667,10 @@ byte Ui_Message(Net2Host *host, int conn, const uint8_t *data, int size) {
 	}
 	int i = Rep_ConnPlayer(conn);
 	if (!g_Mp2 || i < 0 || i >= PLAYERS_MAX) {
+		return 1;
+	}
+	if (data[1] == UI_C_ARENA) {
+		Arena_UiRequest(i, data + 2, size - 2);
 		return 1;
 	}
 	NetRepReader_Init(&r, data + 2, size - 2);

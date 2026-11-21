@@ -211,6 +211,27 @@ int Arena_Rows(const ArenaState *s, int you, int *rows, int max) {
 	return n;
 }
 
+void Arena_Place(const ArenaState *s, int you, int *pos, int *score, int *winner) {
+	int rows[ARENA_MEMBERS];
+	int n = Arena_Rows(s, you, rows, ARENA_MEMBERS);
+	*pos = 1;
+	*score = 0;
+	*winner = -1;
+	for (int r = 0; r < n; r++) {
+		if (rows[r] == you) {
+			*pos = r + 1;
+			*score = s->m[you].score;
+		}
+	}
+	if (n && you >= 0) {
+		int top = s->m[rows[0]].score, same = 0;
+		for (int r = 0; r < n; r++) {
+			same += s->m[rows[r]].score == top && !(s->m[rows[r]].flags & ARENA_MF_SPECT);
+		}
+		*winner = *score != top ? -1 : same == 1 ? 1 : 0;
+	}
+}
+
 /* ---- the wire ---- */
 
 int Arena_WriteState(uint8_t *buf, int cap, const ArenaState *s, int you) {
