@@ -1308,6 +1308,11 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 	float dx = 0.0f, dz = 0.0f;
 	if (use) {
 		Cp_Approach(e, t, CP_AUTO_NEAR, &dx, &dz);
+		/* each use turns a quarter round it: from one side its arrow went to something beside it for good
+		 * (GetAuthorization's gatekeeper and a news panel: his talk never started) */
+		float q = (float)(g_Coop.pl[i].autoTurn % 4) * (M_PI_F / 2.0f), rx = dx * cosf(q) - dz * sinf(q);
+		dz = dx * sinf(q) + dz * cosf(q);
+		dx = rx;
 	}
 	Travel_TestGoto(i, t->name, dx, dz);
 }
