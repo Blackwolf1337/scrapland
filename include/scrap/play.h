@@ -306,6 +306,8 @@ void Play_OwnRemove(void);
  * HUD of single player shows them) */
 void Play_OwnStatus(const NetRepStatus *st);
 struct cEntity *Play_Entity(void);
+/* the server time (s) the own entity is predicted for now, 0 without one */
+double Play_OwnTime(void);
 /* the death camera looks at the place of the own death (no own entity yet) */
 byte Play_DeathCamOn(void);
 /* the level runs: the camera; each frame before and after App_Frame (Watch.c) */

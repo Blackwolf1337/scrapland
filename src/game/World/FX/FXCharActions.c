@@ -4,6 +4,7 @@
  */
 #include <string.h>
 
+#include "scrap/pres.h"
 #include "scrap/gvar.h"
 #include "scrap/chartype.h"
 #include "scrap/crt.h"
@@ -1547,7 +1548,11 @@ static void GM_NewBolt(cObjElementFXGearMissile *self, int i, const vec3_t *pos,
 	const char *name = (r & 1) ? g_GearMissileThunder1Sound : g_GearMissileThunder2Sound;
 	int vol = Snd_Volume(g_GearMissileThunderSoundVol);
 	CSoundSys *snd = g_pSound;
+	/* not in the original: a -mp2 client's missile makes its own thunder (its effect runs there too: the record
+	 * of the instance's was a second one, pres.double in Police's scenes) */
+	Pres_Derive();
 	SoundSys_PlayAt(snd, name, &hit, vol);
+	Pres_Underive();
 }
 
 static uint32_t GM_PuffRamp[9] = { 0xff565656, 0xf6f6ff, 0x8282e6, 0x5e5eab, 0x44444c, 0xf0f38, 0x80070728, 0xff020219, 0xff000000 };

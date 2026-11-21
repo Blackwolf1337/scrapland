@@ -152,6 +152,10 @@ byte Watch_SendReliable(const uint8_t *data, int size);
 byte Watch_ClockReady(void);
 double Watch_InputTime(double now, double rtt, double lead);
 double Watch_ShownTime(void);
+/* tests (SCRAP_SCENE_SHOTS): the first server time in (from, to] at which layer l of the proxy of e reaches action
+ * time t (in the action it has at to) by its samples; to when it does not reach it by then, was past it at from or
+ * e is no proxy */
+double Watch_ActAt(const struct cEntity *e, int l, float t, double from, double to);
 /* the interpolation delay of the others now, s (they are drawn that long behind the newest samples) */
 double Watch_Delay(void);
 /* the welcome said the world has no single player setup (REP_WELCOME_ARENA); 0 before the welcome */
