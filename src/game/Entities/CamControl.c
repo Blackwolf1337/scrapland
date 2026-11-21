@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "scrap/camcontrol.h"
+#include "scrap/netscene.h"
 
 #define CCAMCONTROL_VFTABLE (&cCamControl_vftable.base)
 static const cCamControlVtbl cCamControl_vftable;
@@ -151,6 +152,9 @@ byte cCamControl_VarS(cEntity *self, const char *name, char **s, int set) {
 	if (!strcmp(name, "EntityLink")) {
 		if ((byte)set) {
 			CamCtl_SetTarget(self, *s);
+			/* not in the original: a player's camera of a -mp2 instance to its client (the conversor's and the
+			 * elevator's camera, include/scrap/netscene.h) */
+			NetScene_CamVar(self, name, 0.0, *s);
 		} else {
 			*s = Cam(self)->link;
 		}

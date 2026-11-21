@@ -336,6 +336,29 @@ void Play_Switch(void);
 uint32_t Play_Corrections(void);
 /* the own player gone (a travel to another instance) */
 void Play_Reset(void);
+
+/* stage 6b (src/game/App/PlayFlow.c): the flows of the scripts a -mp2 client starts for the eye at the press that
+ * starts them on the server (possession: the button of the possession with a victim the own character can take; the
+ * use with the arrow on a conversor's option Convert, an elevator's MoveUp/MoveDown/MoveTele or a metro door's
+ * Travel): the possession's flash, the camera linked to the machine or elevator, the metro's map, the HUD of a movie
+ * and no controls, as single player's scripts show them. The server's hand-over ends it (PlayFlow_Took: the server's
+ * flash, the conversor's interface, the elevator's camera link, the metro's map message, a new own entity); a refusal
+ * or none in 3 s gives it up (the camera, the controls and the HUD on foot again). Audit pred.flow:<kind>,
+ * pred.flow.took:<kind>, pred.flow.cancel:<kind>. */
+enum { PLAYFLOW_NONE, PLAYFLOW_POSS, PLAYFLOW_CONV, PLAYFLOW_ELEV, PLAYFLOW_METRO };
+void PlayFlow_Press(struct cEntity *own, uint16_t pressed, double now);
+void PlayFlow_Frame(double now);
+int PlayFlow_Pending(void);
+/* the machine, elevator or door of the started flow ("" none) */
+const char *PlayFlow_Ent(void);
+/* a fade record of the server: 1 when it is the started possession's flash already on the screen (not started again) */
+byte PlayFlow_FadeShown(uint32_t from, uint32_t to);
+/* the server's hand-over of a flow of the kind (ent: its machine, NULL any) */
+void PlayFlow_Took(int kind, const char *ent);
+void PlayFlow_Refused(void);
+void PlayFlow_Reset(void);
+/* the test verb "press <act|act2|act3|use|boost> [ticks]" of a client: the button held that many ticks (6), as a key */
+byte Play_TestPress(const char *name, int ticks);
 void Play_Close(void);
 
 #endif

@@ -1738,6 +1738,18 @@ static void TC_Line(tcBuf *b, const char *line) {
 	}
 	/* use <entity> [option]: player 0 uses the entity through its arrow (the instance's "use" line of
 	 * include/scrap/travel.h, here for single player: the same use in both) */
+	if (TC_Verb(line, "press", &arg) && g_Play) {
+		/* a -mp2 client: a button of its own player held a few ticks (include/scrap/play.h) */
+		char w[16];
+		int ticks = 0;
+		TC_Blanks(&arg);
+		if (!TC_Word(&arg, w, sizeof(w)) || (sscanf(arg, "%d", &ticks), !Play_TestPress(w, ticks))) {
+			TC_Add(b, "error: press <act|act2|act3|use|boost> [ticks]\n", -1);
+		} else {
+			TC_Add(b, "pressed\n", -1);
+		}
+		return;
+	}
 	if (TC_Verb(line, "use", &arg)) {
 		char ent[0x40], opt[0x40];
 		opt[0] = 0;
@@ -1748,6 +1760,19 @@ static void TC_Line(tcBuf *b, const char *line) {
 		TC_Word(&arg, opt, sizeof(opt));
 		Travel_TestUse(0, ent, opt);
 		TC_Add(b, "used\n", -1);
+		return;
+	}
+	/* goto <entity> [dx dz]: player 0 next to it, facing it (the instance line goto of include/scrap/travel.h) */
+	if (TC_Verb(line, "goto", &arg)) {
+		char ent[0x40];
+		float dx = 300.0f, dz = 0.0f;
+		if (!TC_Word(&arg, ent, sizeof(ent))) {
+			TC_Add(b, "error: goto <entity> [dx dz]\n", -1);
+			return;
+		}
+		sscanf(arg, "%f %f", &dx, &dz);
+		Travel_TestGoto(0, ent, dx, dz);
+		TC_Add(b, "ok\n", -1);
 		return;
 	}
 	/* kill <entity>: the entity dies hit by player 0 (the instance's "kill" line, here for single player) */

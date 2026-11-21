@@ -39,6 +39,8 @@ static float Layer_End(const cActLayer *l) {
 
 static void cActCtrl_InitModel(cActCtrl *self);
 cActCtrl *cActCtrl_ctor(cActCtrl *self, cEntity *owner, cActClass *cls) {
+	static uint32_t serials;
+	self->serial = ++serials;
 	for (int k = 0; k < ACT_LAYERS; k++) {
 		self->layers[k].time = 0.0f;
 		self->layers[k].on = 0;
@@ -640,6 +642,7 @@ void cActCtrl_Save(cActCtrl *self, cActCtrlState *s) {
 	s->rootMove = self->rootMove;
 	s->rootTime = self->rootTime;
 	s->walkSpeed = self->walkSpeed;
+	s->serial = self->serial;
 	for (int k = 0; k < ACT_LAYERS; k++) {
 		CAnimSlot *c = Ctrl_Slot(self, k);
 		s->anim[k] = c ? c->anim : NULL;
@@ -649,7 +652,10 @@ void cActCtrl_Save(cActCtrl *self, cActCtrlState *s) {
 	}
 }
 
-void cActCtrl_Restore(cActCtrl *self, const cActCtrlState *s) {
+byte cActCtrl_Restore(cActCtrl *self, const cActCtrlState *s) {
+	if (s->serial != self->serial) {
+		return 0;
+	}
 	self->defLoop = s->defLoop;
 	memcpy(self->layers, s->layers, sizeof(self->layers));
 	self->rootSum = s->rootSum;
@@ -671,6 +677,7 @@ void cActCtrl_Restore(cActCtrl *self, const cActCtrlState *s) {
 			s->anim[k]->ctrl = s->ctrl[k];
 		}
 	}
+	return 1;
 }
 
 cAction *cActCtrl_ActionAt(const cActCtrl *self, uint16_t i) {

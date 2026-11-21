@@ -185,6 +185,7 @@ struct cActCtrl {
 	float rootTime;
 	vec3_t rootMove;		/* rootSum per second */
 	float walkSpeed;		/* 0..1 between the MinSpeed and MaxSpeed of the actions */
+	uint32_t serial;		/* not in the original: a number per controller made (the rollback state's check) */
 };
 
 /* Actions/ActClass.cpp (src/game/Actions/ActClass.c) */
@@ -255,9 +256,12 @@ typedef struct cActCtrlState {
 	float rootTime, walkSpeed;
 	CAnimGroup *anim[ACT_LAYERS];	/* of the model's channels */
 	CAnimCtrl ctrl[ACT_LAYERS];
+	uint32_t serial;		/* of the controller saved */
 } cActCtrlState;
 void cActCtrl_Save(cActCtrl *self, cActCtrlState *s);
-void cActCtrl_Restore(cActCtrl *self, const cActCtrlState *s);
+/* 0 and nothing restored when s is of another controller (the entity's class changed since: a conversion, a
+ * possession, the class the server gave) */
+byte cActCtrl_Restore(cActCtrl *self, const cActCtrlState *s);
 /* the action of index i + 1 of the class (0: none) */
 cAction *cActCtrl_ActionAt(const cActCtrl *self, uint16_t i);
 /* the frame of the model's channel of layer k (the layer's time is read from it), 0 without one */

@@ -11,6 +11,7 @@
 #include "scrap/hashtable.h"
 #include "scrap/netclass.h"
 #include "scrap/party.h"
+#include "scrap/play.h"
 #include "scrap/players.h"
 #include "scrap/pres.h"
 #include "scrap/repent.h"
@@ -59,8 +60,26 @@ static cSaveVar *SaveVar_Find(const char *name) {
 /* per player its variables, a NULL value: deleted in its context */
 static cSaveVar *g_OverVars[PLAYERS_MAX];
 
-int SaveVar_OverOwner(const char *name) {
+/* the prefix of name is a player's (its row of savevar.tsv) */
+static byte SV_PlayerName(const char *name) {
 	char prefix[64];
+	const char *dot = strchr(name, '.');
+	int n = dot ? (int)(dot - name) : (int)strlen(name);
+	if (n <= 0 || n >= (int)sizeof(prefix)) {
+		return 0;
+	}
+	memcpy(prefix, name, n);
+	prefix[n] = 0;
+	/* coop: every variable is the party's story but those of data/coop/rules.def's list local (a member's own; the
+	 * story of a member's change goes to every member, Coop_SaveVarChanged); PARTY: a player's own in a free world */
+	if (Coop_On() && !Party_RuleHas("local", name)) {
+		return 0;
+	}
+	netTag_t tag = NetClass_Find(NCT_SAVEVAR, prefix);
+	return tag == NC_PLAYER || (tag == NC_PARTY && !Coop_On());
+}
+
+int SaveVar_OverOwner(const char *name) {
 	if (!g_Mp2 || !g_Instance) {
 		return -1;
 	}
@@ -68,20 +87,7 @@ int SaveVar_OverOwner(const char *name) {
 	if (i < 0 || i >= PLAYERS_MAX) {
 		return -1;
 	}
-	const char *dot = strchr(name, '.');
-	int n = dot ? (int)(dot - name) : (int)strlen(name);
-	if (n <= 0 || n >= (int)sizeof(prefix)) {
-		return -1;
-	}
-	memcpy(prefix, name, n);
-	prefix[n] = 0;
-	/* coop: every variable is the party's story but those of data/coop/rules.def's list local (a member's own; the
-	 * story of a member's change goes to every member, Coop_SaveVarChanged); PARTY: a player's own in a free world */
-	if (Coop_On() && !Party_RuleHas("local", name)) {
-		return -1;
-	}
-	netTag_t tag = NetClass_Find(NCT_SAVEVAR, prefix);
-	return tag == NC_PLAYER || (tag == NC_PARTY && !Coop_On()) ? i : -1;
+	return SV_PlayerName(name) ? i : -1;
 }
 
 static cSaveVar *SV_OverFind(int i, const char *name) {
@@ -127,17 +133,58 @@ static cSaveVar *SV_OverGet(int i, const char *name) {
 	return v;
 }
 
-void SaveVar_OverClear(int i) {
-	if (i < 0 || i >= PLAYERS_MAX) {
-		return;
-	}
-	while (g_OverVars[i]) {
-		cSaveVar *v = g_OverVars[i];
-		g_OverVars[i] = v->next;
+/* the player variables the level's start set in the world's context (GDB's Char Bishop): each joining player's */
+static cSaveVar *g_LevelVars;
+static byte sv_levelOpen;
+
+static void SV_ListFree(cSaveVar **list) {
+	while (*list) {
+		cSaveVar *v = *list;
+		*list = v->next;
 		cString_dtor(&v->value);
 		cString_dtor(&v->name);
 		operator_delete(v);
 	}
+}
+
+void SaveVar_LevelBegin(void) {
+	SV_ListFree(&g_LevelVars);
+	/* the worlds of single player's flows (the coop story keeps its party's variables) */
+	sv_levelOpen = Rep_SpFlows();
+}
+
+static void SV_LevelSet(const char *name, const char *value) {
+	cSaveVar *v = g_LevelVars;
+	while (v && strcmp(v->name, name)) {
+		v = v->next;
+	}
+	if (!v) {
+		v = operator_new(sizeof(*v));
+		cString_ctor(&v->name);
+		cString_ctor(&v->value);
+		cString_Set(&v->name, name);
+		v->next = g_LevelVars;
+		g_LevelVars = v;
+	}
+	cString_Set(&v->value, value);
+}
+
+void SaveVar_LevelGive(int i) {
+	sv_levelOpen = 0;
+	if (i < 0 || i >= PLAYERS_MAX) {
+		return;
+	}
+	for (cSaveVar *v = g_LevelVars; v; v = v->next) {
+		SV_OverSet(i, v->name, v->value ? v->value : "");
+		Con_Printf("savevars: player %d gets the level's %s = %s\n", i, v->name, v->value ? v->value : "");
+	}
+}
+
+void SaveVar_OverClear(int i) {
+	if (i < 0 || i >= PLAYERS_MAX) {
+		return;
+	}
+	SV_ListFree(&g_OverVars[i]);
 }
 
 /* the value of a variable as int, 0 if it is missing or has no value */
@@ -197,6 +244,9 @@ byte SaveVar_Set(const char *name, const char *value) {
 	if (i >= 0) {
 		SV_OverSet(i, name, value ? value : "");
 		return 1;
+	}
+	if (sv_levelOpen && SV_PlayerName(name)) {
+		SV_LevelSet(name, value ? value : "");
 	}
 	cSaveVar *v = SaveVar_Find(name);
 	if (v) {

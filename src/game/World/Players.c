@@ -257,6 +257,7 @@ void Players_Join(int i, int money) {
 	Native_GVarOverClear(i);
 	ModVar_OverClearPlayer(i);
 	SaveVar_OverClear(i);
+	SaveVar_LevelGive(i);
 	Ui_PlayerGone(i);
 }
 

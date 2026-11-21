@@ -10,10 +10,12 @@
 #include "scrap/camcontrol.h"
 #include "scrap/entity.h"
 #include "scrap/feellog.h"
+#include "scrap/input.h"
 #include "scrap/objentity.h"
 #include "scrap/platform.h"
 #include "scrap/play.h"
 #include "scrap/replicate.h"
+#include "scrap/scorer.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
 #include "scrap/world.h"
@@ -54,7 +56,7 @@ void FeelLog_Frame(void) {
 		feel.tried = 1;
 		feel.f = path && *path ? fopen(path, "w") : NULL;
 		if (feel.f) {
-			fputs("mono_ns,dt_ms,kind,x,y,z,cx,cy,cz,cyaw,input,corrections,fires\n", feel.f);
+			fputs("mono_ns,dt_ms,kind,x,y,z,cx,cy,cz,cyaw,input,corrections,fires,view\n", feel.f);
 		}
 	}
 	if (!feel.f || !g_pWorld) {
@@ -89,9 +91,27 @@ void FeelLog_Frame(void) {
 		c = ((cCamControl *)cam)->cam.pos;
 		yaw = ((cCamControl *)cam)->cam.rot.y;
 	}
-	snprintf(feel.line, sizeof(feel.line), "%c,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.4f,%.3f,%u,%u", kind, (double)p.x,
-		(double)p.y, (double)p.z, (double)c.x, (double)c.y, (double)c.z, (double)yaw, (double)in,
-		g_Play ? Play_Corrections() : 0u, feel.fires);
+	/* what a flow of the scripts changes on the screen (stage 6b, include/scrap/play.h PlayFlow_): the camera's link,
+	 * a fade, the HUD's or a menu's items, the action set */
+	char *link = NULL;
+	if (cam && Entity_IsType(cam, "Cam")) {
+		Entity_VarS(cam, "EntityLink", &link, 0);
+	}
+	uint32_t h = 5381;
+	for (const char *q = link ? link : ""; *q; q++) {
+		h = h * 33u + (byte)*q;
+	}
+	cScorer *sc = Scorer_Get(0);
+	int items = 0, fade = 0;
+	for (cScorerItem *it = sc ? sc->items : NULL; it; it = it->next) {
+		items++;
+	}
+	if (sc) {
+		fade = sc->fade.time > 0.0f || sc->fade.to[3] > 0.004f;
+	}
+	snprintf(feel.line, sizeof(feel.line), "%c,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.4f,%.3f,%u,%u,L%08xF%dH%dA%u", kind,
+		(double)p.x, (double)p.y, (double)p.z, (double)c.x, (double)c.y, (double)c.z, (double)yaw, (double)in,
+		g_Play ? Play_Corrections() : 0u, feel.fires, h, fade, items, Input_GetActionSet());
 }
 
 void FeelLog_Render(void) {
