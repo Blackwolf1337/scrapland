@@ -126,3 +126,6 @@ export AUTO_MID1_Mission_GetDataPart3='@|poll inst @ story get MissionState|Miss
 # again): no member takes damage
 export AUTO_PRE_Mission_DefeatCrazyGambler1='tough $a 1;tough $b 1' AUTO_PRE_Mission_DefeatCrazyGambler2='tough $a 1;tough $b 1'
 export AUTO_PRE_Mission_DefeatCrazyGambler3='tough $a 1;tough $b 1'
+# WhoIsDeepThroat: the teleporter down (MoveDown DM_Door_Teleporter_08 to _07) does not take its rider on -mp2 (open
+# point): pa is put at the lower teleporter after its use
+export AUTO_MID_Mission_WhoIsDeepThroat='@|-|uses DM_Door_Teleporter_08|600|pa at the teleporter down (any time);;@|wait 10||||;;@|inst @ goto $a DM_Door_Teleporter_07 0 200|player $a next to|20|pa at the lower teleporter (test line)'
