@@ -51,7 +51,7 @@
 #define PRES_HOLD_NS 1000000000ull	/* how long: then it plays and counts what it misses */
 #define PRES_GVARS 64
 #define PRES_CHARRES 64
-#define PRES_WORLD_HUD 32			/* the items of the world's scorer a joining player gets */
+#define PRES_DOUBLE_NEAR 120.0f	/* units: a sound of the same name this near the client's own one is its double */
 
 int g_PresIn;
 int g_PresDerived;
@@ -76,6 +76,8 @@ typedef struct PresRecent {
 	uint32_t hash;
 	uint64_t ns;
 	byte msg;						/* 0 the client's own, 1 a sound record, 2 inside another record (an effect, a talk) */
+	byte hasPos;
+	vec3_t pos;						/* where: a record's place, the own entity's for the client's own */
 } PresRecent;
 
 static struct {
@@ -104,18 +106,14 @@ static struct {
 									 * go to the players that join later (C code sets some of them too) */
 	int numGVars;
 	char charRes[PRES_CHARRES][32];	/* the character classes of Pres_CharRes */
-	struct {						/* the items the world's scorer 0 has (added by the level's start before any
-									 * player came: the intro's Credits): a player that joins gets them */
-		char item[48], type[48];
-		byte append;
-	} worldHud[PRES_WORLD_HUD];
-	int numWorldHud;
 	int numCharRes;
 	uint32_t sent[PRES_O_COUNT], bytes, cut;
 	/* client */
 	PresRecent recent[PRES_RECENT];
 	int fxKind;						/* of the PRES_O_FXENT record played */
 	int recOp;						/* the record being played */
+	byte recHasPos;					/* the place of the sound record being played */
+	vec3_t recPos;
 	char lastText[64];				/* the text of the last message, label or speech record (the test verb) */
 	int nextRecent;
 	uint32_t played[PRES_O_COUNT];
@@ -818,14 +816,6 @@ void Pres_Joined(int i) {
 		Pres_PutFloat(pres.musicVolume);
 		Pres_Send();
 	}
-	for (int k = 0; k < pres.numWorldHud; k++) {
-		if (Pres_BeginTo((uint64_t)1 << i, PRES_O_HUDADD)) {
-			Pres_PutStr(pres.worldHud[k].item);
-			Pres_PutStr(pres.worldHud[k].type);
-			Pres_PutInt(pres.worldHud[k].append);
-			Pres_Send();
-		}
-	}
 	if (pres.music[0] && Pres_BeginTo((uint64_t)1 << i, PRES_O_MUSIC)) {
 		Pres_PutStr(pres.music);
 		Pres_PutStr("play");
@@ -961,26 +951,7 @@ void Pres_ActionSet(const char *name) {
 	}
 }
 
-/* the world's scorer item k out of the list of Pres_Joined */
-static void Pres_WorldHudDrop(int k) {
-	pres.numWorldHud--;
-	memmove(&pres.worldHud[k], &pres.worldHud[k + 1], (size_t)(pres.numWorldHud - k) * sizeof(pres.worldHud[0]));
-}
-
 void Pres_HudAdd(const cScorer *sc, const char *item, const char *type, byte append) {
-	if (Pres_Out() && !pres.skel && sc == Scorer_GetWorld(0) && item && type) {
-		for (int k = 0; k < pres.numWorldHud; k++) {
-			if (!strcmp(pres.worldHud[k].item, item)) {
-				Pres_WorldHudDrop(k);
-				break;
-			}
-		}
-		if (pres.numWorldHud < PRES_WORLD_HUD) {
-			Str_Copy(pres.worldHud[pres.numWorldHud].item, item, sizeof(pres.worldHud[0].item));
-			Str_Copy(pres.worldHud[pres.numWorldHud].type, type, sizeof(pres.worldHud[0].type));
-			pres.worldHud[pres.numWorldHud++].append = append;
-		}
-	}
 	if (Pres_BeginHud(sc, PRES_O_HUDADD, 1)) {
 		Pres_PutStr(item);
 		Pres_PutStr(type);
@@ -990,9 +961,6 @@ void Pres_HudAdd(const cScorer *sc, const char *item, const char *type, byte app
 }
 
 void Pres_HudClear(const cScorer *sc) {
-	if (Pres_Out() && sc == Scorer_GetWorld(0)) {
-		pres.numWorldHud = 0;
-	}
 	if (Pres_BeginHud(sc, PRES_O_HUDCLEAR, 1)) {
 		Pres_Send();
 	}
@@ -1006,14 +974,6 @@ void Pres_HudShow(const cScorer *sc, byte on) {
 }
 
 void Pres_HudSet(const cScorer *sc, const char *item, const char *var, const char *s, double d) {
-	if (Pres_Out() && sc == Scorer_GetWorld(0) && item && var && !crt_stricmp(var, "DelMe") && (s ? crt_atoi(s) : d) != 0) {
-		for (int k = 0; k < pres.numWorldHud; k++) {
-			if (!strcmp(pres.worldHud[k].item, item)) {
-				Pres_WorldHudDrop(k);
-				break;
-			}
-		}
-	}
 	if (Pres_BeginHud(sc, PRES_O_HUDSET, 1)) {
 		Pres_PutStr(item);
 		Pres_PutStr(var);
@@ -1048,9 +1008,23 @@ void Pres_ClientSound(const char *name) {
 	}
 	uint32_t h = Pres_Hash(name);
 	uint64_t now = Plat_RealNs();
+	/* the place: a record's own, the client's own entity's for its own sound (the same name from another character a
+	 * few steps away, two falls at once, is no double) */
+	vec3_t at = { 0.0f, 0.0f, 0.0f };
+	byte hasPos = 0;
+	cEntity *own = msg == 0 ? Players_Local() : NULL;
+	if (msg == 1 && pres.recHasPos) {
+		at = pres.recPos;
+		hasPos = 1;
+	} else if (own) {
+		at = own->pos;
+		hasPos = 1;
+	}
 	for (int k = 0; k < PRES_RECENT; k++) {
 		const PresRecent *r = &pres.recent[k];
-		if (r->hash == h && r->msg != msg && r->ns && now - r->ns < (uint64_t)PRES_DOUBLE_MS * 1000000u) {
+		float dx = r->pos.x - at.x, dy = r->pos.y - at.y, dz = r->pos.z - at.z;
+		if (r->hash == h && r->msg != msg && r->ns && now - r->ns < (uint64_t)PRES_DOUBLE_MS * 1000000u &&
+			(!hasPos || !r->hasPos || dx * dx + dy * dy + dz * dz <= PRES_DOUBLE_NEAR * PRES_DOUBLE_NEAR)) {
 			NetAudit_Name(NA_SOUND, "pres.double:", name);
 			break;
 		}
@@ -1060,6 +1034,8 @@ void Pres_ClientSound(const char *name) {
 	r->hash = h;
 	r->ns = now;
 	r->msg = msg;
+	r->hasPos = hasPos;
+	r->pos = at;
 }
 
 cEntity *Pres_EventEnt(const char *name) {
@@ -1259,7 +1235,10 @@ static void Pres_Play(int op, NetRepReader *r) {
 		Pres_GetVec(r, &pos);
 		int vol = NetRep_GetSVar(r);
 		if (!r->bad) {
+			pres.recPos = pos;
+			pres.recHasPos = 1;
 			SoundSys_PlayAt(g_pSound, name, &pos, vol);
+			pres.recHasPos = 0;
 		}
 		break;
 	}
@@ -1279,7 +1258,10 @@ static void Pres_Play(int op, NetRepReader *r) {
 		cSoundDesc_SetPos(&d, &pos);
 		d.volume += vol;
 		d.freq = freq;
+		pres.recPos = pos;
+		pres.recHasPos = 1;
 		SoundSys_PlaySound(g_pSound, name, &d, NULL);
+		pres.recHasPos = 0;
 		break;
 	}
 	case PRES_O_ITEMSND: {

@@ -92,10 +92,18 @@ while [ $n -lt $max ]; do
 			echo "$lv|wait 15||||"
 			echo "$lv|inst $lv use \$a $g Generics_CrazyGambler_MegaDeal_Start_|player \$a uses $g .Generics_CrazyGambler_MegaDeal_Start_|10|pa starts the super deal"
 			echo "w|-|pa .* is in $arena|300|the super deal takes pa to $arena (any time)"
-			[ "$np" -ge 2 ] && echo "w|-|pb .* is in $arena|150|pb in $arena (any time)"
-			for m in $mp; do echo "w|-|$m .* is in $arena|150|$m in $arena (any time)"; done
+			# the members go to their leader (the story takes the mission's member alone: the arena is no chapter
+			# level of the coordinator)
+			[ "$np" -ge 2 ] && echo "w|inst $lv leader \$b|pb .* is in $arena|150|pb goes to its leader in $arena (any time)"
+			for m in $mp; do echo "w|inst $lv leader \$$m|$m .* is in $arena|150|$m goes to its leader in $arena (any time)"; done
 			back=$lv lv=$arena
 			echo "$lv|wait 10||||"
+			# the deal's fight starts when the player boards a ship (as the crazy gambler's combats), the members fight
+			# the red ones: AUTO_PRE/A/B/M_<deal> of chainenv.sh replace these
+			v=AUTO_PRE_$mis; [ -n "${!v}" ] || { l='switch $a'; [ "$np" -ge 2 ] && l="$l;switch \$b"; for m in $mp; do l="$l;switch \$$m"; done; printf -v "$v" '%s' "$l"; }
+			v=AUTO_A_$mis; [ -n "${!v}" ] || printf -v "$v" '%s' "1 red"
+			v=AUTO_B_$mis; [ -n "${!v}" ] || printf -v "$v" '%s' "2 red"
+			v=AUTO_M_$mis; [ -n "${!v}" ] || printf -v "$v" '%s' "2 red"
 		fi
 		pre=AUTO_PRE_$mis
 		if [ -n "${!pre}" ]; then
@@ -130,8 +138,9 @@ while [ $n -lt $max ]; do
 			echo "$lv|poll inst $lv ${endpoll%%|*}|${endpoll#*|}|${CHAP_SECS:-1500}|the next mission after $mis (won)"
 			echo "w|-|pa .* is in $back|300|the party is back in $back (any time)"
 		else
-			# (or pa takes the party's way on by a door of the mission: alone its instance stops then)
-			echo "$lv|poll inst $lv story get Mission.Library|Mission.Library = ($others)\$%travels to .* with its party%player \$a travels to .*, Door|${CHAP_SECS:-1500}|the next mission after $mis"
+			# (or pa takes the party's way on by a door of the mission or the scripts send it on: alone its instance
+			# stops then)
+			echo "$lv|poll inst $lv story get Mission.Library|Mission.Library = ($others)\$%travels to .* with its party%player \$a travels to .*, Door%mission level change of player \$a |${CHAP_SECS:-1500}|the next mission after $mis"
 		fi
 		echo "$lv|inst $lv auto \$a 0||||"
 		[ "$np" -ge 2 ] && echo "$lv|inst $lv auto \$b 0||||"

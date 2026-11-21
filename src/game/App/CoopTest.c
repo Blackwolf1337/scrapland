@@ -1054,7 +1054,9 @@ static void Cp_TestAuto(int i, NetRepInput *in, double back) {
 		}
 		return;
 	}
-	if (World_FindEntity(CP_CHECKPOINT)) {
+	/* a race: the mission's member races, a helper that stays with a ship of the mission does not (eight ships put on
+	 * one checkpoint pushed one out of the level) */
+	if (World_FindEntity(CP_CHECKPOINT) && g_Coop.pl[i].autoOn != 2) {
 		if (kind == NETREP_SHIP) {
 			Cp_TestRace(i);
 		} else {

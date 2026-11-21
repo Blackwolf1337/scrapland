@@ -32,6 +32,7 @@
 #include <limits.h>
 #include <string.h>
 
+#include "scrap/players.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -492,6 +493,19 @@ static byte Rm_AbortCameraTravelling(void) {
 	}
 	Native_SetFloat(zero, 0.0);
 	Native_Free(prev);
+	/* not in the original: on an instance the camera is the racing player's (a racer's hit runs this in the world's
+	 * context): its context for the camera's end */
+	int was = PLAYERS_NONE, own = 0;
+	if (Players_Net() && Rm_G("cameraVehicleName", vn) && Mode_EntitySeam(vn, usr) && usr->type == NV_ENT) {
+		int i = Players_Of(Native_Ent(usr));
+		if (i >= 0 && i != Players_Current()) {
+			was = Players_Enter(i);
+			own = 1;
+		}
+	}
+	Native_Free(vn);
+	Native_Free(usr);
+	Native_ErrClear();
 	Mode_CamName(0, cam);
 	byte ok = Mode_GVarSetS("MainMissionEvent", "MissionsFuncs.ShowMissionInfo") && Mode_GVarSetS("EscapeEvent", "Menu.Init") &&
 		Rm_G("cameraVehicleName", vn) && Mode_EntitySeam(vn, usr) && Mode_VSet(usr, "MoveTime", zero) &&
@@ -501,6 +515,9 @@ static byte Rm_AbortCameraTravelling(void) {
 		(!Native_True(prev) || PORT_CALL(RacerScorer, Create, NULL, "i", 0L)) &&
 		Mode_Put(RM, "cameraItemName", NULL, none) && Mode_Put(RM, "cameraVehicleName", NULL, none) &&
 		Mode_Put(RM, "prevCamera", NULL, none);
+	if (own) {
+		Players_Leave(was);
+	}
 	return Mode_Done(&t, ok);
 }
 

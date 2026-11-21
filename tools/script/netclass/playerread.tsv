@@ -191,3 +191,10 @@ Pk_BrowseItemPos	WORLD	the level's start of an instance: no player's ship there 
 # stage 5b part 1 (story chapters 1-36): the sites the chapters met
 Speech_OffVoice_E	PARTY	a Speech entry in the world's context (a voice turned off): the acting member in coop
 Rusty_StartInitialScene	PARTY	RustyFirstContact (Junkyard): the player put at Berto's scene, the acting member in coop
+Speech_RestoreMoveTime_E	PARTY	a Speech entry in the world's context (the talk's end gives the moves back): the acting member in coop
+Ui_For	MENU	an interface the scripts open in the world's context (a question after a scene): the acting member's client
+Rm_NearestDummy	PARTY	HumphreyRace (DownTown): the race's start place nearest to the player, the acting member in coop
+Rm_OnRaceStart	PARTY	HumphreyRace (DownTown): the race starts for the player who takes its start, the acting member in coop
+Rm_Racer	PARTY	HumphreyRace (DownTown): a racer placed around the player, the acting member in coop
+Plus_InitRace	PARTY	MultiplusRace (DownTown): the race against the police starts for the player, the acting member in coop
+Plus_EndOfRace	PARTY	MultiplusRace (DownTown): the race's winner against the player's ship, the acting member in coop
