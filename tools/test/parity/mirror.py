@@ -12,7 +12,8 @@ difference of one moment, an action that just changed, a door on its way, is not
            with a tolerance: the client draws the moving ones ~100 ms behind; the life of a burning thing as much
            as or a few points more than the server's)
   journal  the journal of the slot differs (names, order, values)
-  readback a journal variable reads back another value from the replica than from the server's entity
+  readback a journal variable reads back another value from the replica than from the server's entity (not the
+           blend OffMul of a replica linked to an entity the client has no replica of: it waits for its link)
 The own entity of the client (its prediction) is left out (the rail traffic is the server's since stage 2.2 and compared).
 The action times of a ship are not compared: its classes show the ship's parts with times each side derives from its
 smoothed motion (cActCtrl_UpdateShip).
@@ -128,6 +129,8 @@ def compare(srv, cli, radius, rates=None):
     own = cli.get('own', -1)
     sents = {(e['slot'], e['gen']): e for e in srv['ents']}
     cents = {(e['slot'], e['gen']): e for e in cli['ents']}
+    # the entities a replica can be linked to on the client: its replicas and the server's entity of its own slot
+    cnames = {e['name'] for e in cli['ents']} | {e['name'] for e in srv['ents'] if e['slot'] == own}
     diffs = {}
     for key, s in sents.items():
         if s['slot'] == own:
@@ -190,7 +193,10 @@ def compare(srv, cli, radius, rates=None):
                 s['name'], len(sj), len(cj), first, sj[first] if first < len(sj) else '-',
                 cj[first] if first < len(cj) else '-')
         else:
+            link = next((x[1] for x in sj if x[0] == 'LinkModel' and isinstance(x[1], str)), '')
             for x, y in zip(sj, cj):
+                if x[0] == 'OffMul' and link and link.split(',')[0] not in cnames:
+                    continue    # the blend onto a link outside the client's interest (a plate on another player's ship)
                 lag = READBACK_LAG.get(x[0])
                 if lag is not None and isinstance(x[2], (int, float)) and isinstance(y[2], (int, float)) and \
                         abs(x[2] - y[2]) <= lag:

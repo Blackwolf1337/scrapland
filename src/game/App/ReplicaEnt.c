@@ -96,7 +96,10 @@ void ReplicaEnt_Created(const char *name, const char *type) {
 		!crt_stricmp(type, TYEN_CAMPATH)) {
 		return;
 	}
-	ReplicaEnt_Count(rc.railDepth ? "client.rail.create:" : "client.script.create:", type, name);
+	/* an interface of the instance shown here (Sputnik's hangar screen, the ship editor) makes its own hidden ships
+	 * of the hangar, as single player's does: the interface's, not the world's */
+	ReplicaEnt_Count(rc.railDepth ? "client.rail.create:" : Ui_ClientIn(0) ? "client.ui.create:" : "client.script.create:", type,
+		name);
 }
 
 /* the modules of the rail traffic (the server's since stage 2.2: their calls on the client are counted apart) */
@@ -119,6 +122,9 @@ void ReplicaEnt_ModCall(const char *module, const char *func) {
 		Str_PrintfQuiet(key, sizeof(key), "%s.%s", module, func);
 		if (rail || rc.railDepth) {
 			NetAudit_Name(NA_CREATE, "client.rail.call:", key);
+		} else if (Ui_ClientIn(0)) {
+			/* a helper of the simulation an interface of the instance calls here for its own screen and ships */
+			NetAudit_Name(NA_CREATE, "client.ui.call:", key);
 		} else {
 			NetAudit_Name(NA_CREATE, "client.sim.call:", key);
 			rc.simCalls++;
@@ -565,6 +571,11 @@ void ReplicaEnt_Frame(void) {
 				e->netSlot = (uint16_t)(slot + 1);
 				ReplicaEnt_Journal(slot, e);
 				Watch_Attach(slot, e, kind, tick, st);
+				/* a ship made again under its name (another player boarded it, it came back into the interest):
+				 * the replicas linked to it (its plate) link again */
+				if (kind == NETREP_SHIP) {
+					ReplicaEnt_Relink(slot);
+				}
 			}
 		}
 		rc.creating = 0;
@@ -711,12 +722,13 @@ void ReplicaEnt_Present(cEntity *e, int kind, const NetRepState *a, const NetRep
 }
 
 cEntity *ReplicaEnt_Find(const char *name) {
-	cEntity *e = World_FindEntity(name);
+	/* the own entity first: the replica of its slot it replaced may still be in the world until the frame's end (a
+	 * link to it, the plate of a ship just boarded, would go with it) */
 	int own = Play_OwnSlot();
-	if (!e && own >= 0 && own < NETREP_MAX_ENTS && !strcmp(rc.s[own].name, name)) {
-		e = Play_Entity();
+	if (own >= 0 && own < NETREP_MAX_ENTS && !strcmp(rc.s[own].name, name) && Play_Entity()) {
+		return Play_Entity();
 	}
-	return e;
+	return World_FindEntity(name);
 }
 
 void ReplicaEnt_Reset(void) {

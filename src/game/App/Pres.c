@@ -59,7 +59,7 @@ byte g_PresHud;
 static const char *const pres_opNames[PRES_O_COUNT] = { "?", "soundat", "sound3d", "sound2d", "voiceopen", "voiceplay",
 	"voicestop", "music", "shipexpl", "fxent", "msgtext", "labeltext", "speech", "speechcancel", "chat", "head", "fade",
 	"cinema", "actionset", "hudadd", "hudclear", "hudshow", "hudset", "talk", "itemsnd", "scene", "sceneend", "campath",
-	"fxcall", "gvar", "charres" };
+	"fxcall", "gvar", "charres", "savevar" };
 
 /* a voice of a -mp2 instance's model: nothing plays, the file's length and the time it started give what the scripts
  * read (VoiceRemain), the text what the talk voice's checks read */
@@ -740,10 +740,35 @@ void Pres_CharRes(const char *name) {
 	}
 }
 
+/* the save variables of a player its client reads itself: the lives of the GDB on its HUD (StatusScorer) */
+static const char *const pres_saveVars[] = { "Player.NumLives", NULL };
+
+void Pres_SaveVar(int i, const char *name, const char *value) {
+	int k;
+	for (k = 0; pres_saveVars[k] && strcmp(pres_saveVars[k], name); k++) {
+	}
+	if (!pres_saveVars[k] || !Pres_Out() || i < 0 || i >= PLAYERS_MAX || !Pres_Online(i)) {
+		return;
+	}
+	if (Pres_BeginTo((uint64_t)1 << i, PRES_O_SAVEVAR)) {
+		Pres_PutStr(name);
+		Pres_PutStr(value);
+		Pres_Send();
+	}
+}
+
 void Pres_Joined(int i) {
 	if (!Pres_Out() || i < 0 || i >= PLAYERS_MAX || !Pres_Online(i)) {
 		return;
 	}
+	int was = Players_Enter(i);
+	for (int k = 0; pres_saveVars[k]; k++) {
+		const char *v = SaveVar_Get(pres_saveVars[k]);
+		if (v) {
+			Pres_SaveVar(i, pres_saveVars[k], v);
+		}
+	}
+	Players_Leave(was);
 	for (int k = 0; k < pres.numCharRes; k++) {
 		if (Pres_BeginTo((uint64_t)1 << i, PRES_O_CHARRES)) {
 			Pres_PutStr(pres.charRes[k]);
@@ -1108,6 +1133,7 @@ static void Pres_HudPlay(int op, NetRepReader *r) {
 	}
 	case PRES_O_HUDCLEAR:
 		cScorer_Clear(sc);
+		Ui_ClientHudCleared();
 		break;
 	case PRES_O_HUDSHOW:
 		sc->visible = NetRep_GetSVar(r) != 0;
@@ -1317,6 +1343,13 @@ static void Pres_Play(int op, NetRepReader *r) {
 		}
 		break;
 	}
+	case PRES_O_SAVEVAR:
+		NetRep_GetStr(r, name, sizeof(name));
+		NetRep_GetStr(r, s2, sizeof(s2));
+		if (!r->bad) {
+			SaveVar_Set(name, s2);
+		}
+		break;
 	case PRES_O_CHARRES:
 		NetRep_GetStr(r, name, sizeof(name));
 		/* the class with its sounds as single player loads a class it lacks (Chars.LoadRes: nothing when the

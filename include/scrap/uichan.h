@@ -119,9 +119,12 @@ byte Ui_ClientConv(const char *cls);
 /* Sputnik's screen or the ship editor closed on the client: the hangar and money to the instance; 0 when no such
  * interface of the instance is open */
 byte Ui_ClientHangar(int ui);
-/* the instance gave the player the action set (include/scrap/pres.h): after the conversor of the instance closed here,
- * the walk or racer controls back also build the client's HUD skeleton (the end of the machine's scene) */
+/* the instance gave the player the action set (include/scrap/pres.h): after the conversor of the instance closed here
+ * or the instance cleared the HUD of view 0 (a movie scorer: Sputnik, the ship editor), the walk or racer controls
+ * back also build the client's HUD skeleton (the end of the machine's scene, Sputnik.BackControl) */
 void Ui_ClientControls(const char *set);
+/* the instance cleared the HUD of view 0 */
+void Ui_ClientHudCleared(void);
 /* the mission pages open on the client: the story's values asked of the instance (1 when asked) */
 byte Ui_ClientAsk(int ui);
 

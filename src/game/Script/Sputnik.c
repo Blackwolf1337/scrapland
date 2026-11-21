@@ -21,6 +21,7 @@
  */
 #include <string.h>
 
+#include "scrap/players.h"
 #include "scrap/scrap.h"
 #include "scrap/script.h"
 #include "scrap/scriptmodes.h"
@@ -257,6 +258,10 @@ static byte Spt_BackCamera(void) {
 /* UseShip(UsrName, CharName, optId, FullOption, BoxName="Parking"): the player takes another parked ship: Sputnik
  * sucks in the player's own one first (when it is out), then Parking.UseShip */
 static byte Spt_UseShip(const nativeVal_t *a) {
+	/* not in the original: another player's own ship on an instance is not for this player */
+	if (Players_Net() && a[1].type == NV_STR && Players_OthersOwn(Native_Text(&a[1]))) {
+		return 1;
+	}
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *n = Mode_V(&t), *act = Mode_V(&t), *pos = Mode_V(&t), *life = Mode_V(&t), *params = Mode_V(&t);
 	nativeVal_t *box = Mode_V(&t), *e = Mode_V(&t);
@@ -294,7 +299,11 @@ static byte Spt_UseShip(const nativeVal_t *a) {
 
 /* ChangeShip(UsrName, CharName, optId, FullOption): the player asks Sputnik for another ship: his interface
  * animation, the player hidden */
-static byte Spt_ChangeShip(const nativeVal_t *usr) {
+static byte Spt_ChangeShip(const nativeVal_t *usr, const nativeVal_t *spt) {
+	/* not in the original: another player's Sputnik on an instance does not serve this player */
+	if (Players_Net() && spt->type == NV_STR && Players_OthersOwn(Native_Text(spt))) {
+		return 1;
+	}
 	modeVals_t t = { .n = 0 };
 	nativeVal_t *ply = Mode_V(&t), *last = Mode_V(&t);
 	return Mode_Done(&t, Mode_Import("Menu") && Mode_Import("Parking") && Mode_Import("SputnikInterface") &&
@@ -399,6 +408,9 @@ static byte Spt_FX(byte ship, const char *fx) {
 	byte ok;
 	if (ship) {
 		ok = Mode_ModGet("Parking", "PlayerShip", &e);
+	} else if (Players_Net()) {
+		/* not in the original: an instance has a Sputnik per player (Sputnik182 ...), the one of the context */
+		ok = Mode_G(SP, "spt", &e);
 	} else {
 		Native_SetStr(&name, "Sputnik");
 		ok = Mode_EntitySeam(&name, &e);
@@ -420,7 +432,7 @@ MODE_KW(Sputnik, UseShip, "OOOO|O", "UsrName", "CharName", "optId", "FullOption"
 MODE_FN(Sputnik, ChangeRelax, 3, Spt_ChangeRelax(&a[0]))
 MODE_FN(Sputnik, ByeBye, 3, Spt_SetI("Active", 0))
 MODE_FN(Sputnik, BackCamera, 3, Spt_BackCamera())
-MODE_FN(Sputnik, ChangeShip, 4, Spt_ChangeShip(&a[0]))
+MODE_FN(Sputnik, ChangeShip, 4, Spt_ChangeShip(&a[0], &a[1]))
 MODE_FN(Sputnik, CreateShip, 3, Spt_CreateShip())
 MODE_FN(Sputnik, ShowInterface, 3, Spt_ShowInterface())
 MODE_FN(Sputnik, EnterInterface, 3, Spt_EnterInterface())

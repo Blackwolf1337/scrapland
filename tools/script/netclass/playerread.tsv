@@ -131,3 +131,5 @@ Sound_UpdateMusic	ANY	the action music while the alarm is on (the instance plays
 SG_MarkWayPoint	NEAREST	the way point of the player near the entity that runs (a conversor, a door)
 Speech.LaunchedTauntEntityName	NEAREST	the taunt a police entity launches (Speech.Taunt from its logic) is the nearest player's (stage 4.2: the city's and the arenas' police)
 CharConversor.PrevConv	NEAREST	an NPC that comes back at a conversion point near the player (CharsNPC repositioning in its logic) reads the nearest player's conversor
+Parking.DtritusPlate	WORLD	the world's plate of the level's start (CreateDtritusPlate, BrowseItemPos); a player's own plate is read in its context
+Pk_BrowseItemPos	WORLD	the level's start of an instance: no player's ship there (a player's own is Parking.PlayerJoin in its context)
