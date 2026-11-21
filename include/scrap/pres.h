@@ -75,7 +75,7 @@ enum {
 	PRES_O_FADE,					/* from, to (packed colors), time */
 	PRES_O_CINEMA,					/* on, time */
 	PRES_O_ACTIONSET,				/* the set's name */
-	PRES_O_HUDADD,					/* item, type, append */
+	PRES_O_HUDADD,					/* item, type, append, level u8 (an item of the world's scorer) */
 	PRES_O_HUDCLEAR,
 	PRES_O_HUDSHOW,					/* on */
 	PRES_O_HUDSET,					/* item, var, kind u8 (1 text, 2 number), value */

@@ -122,6 +122,7 @@ typedef struct CoopState {
 		char ammoTried[CP_AMMO_TRIED][CP_NAME];	/* the ammo boxes it took last (the oldest replaced) */
 		int ammoNext;
 		double ammoAt;				/* when it was put at a box last */
+		double lifeBoxAt;			/* when it was put at a life box last */
 		int lifeWeap;				/* the weapon of the watch of the target's life (-1 none) */
 		float lifeMark;				/* the target's life when that watch began */
 		double lifeSince;			/* when */

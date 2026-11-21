@@ -198,3 +198,14 @@ Rm_OnRaceStart	PARTY	HumphreyRace (DownTown): the race starts for the player who
 Rm_Racer	PARTY	HumphreyRace (DownTown): a racer placed around the player, the acting member in coop
 Plus_InitRace	PARTY	MultiplusRace (DownTown): the race against the police starts for the player, the acting member in coop
 Plus_EndOfRace	PARTY	MultiplusRace (DownTown): the race's winner against the player's ship, the acting member in coop
+Mf_TryMsg	PARTY	MissionsFuncs.TryMsg: a level's start message when the player walks or flies (a super deal's end), the acting member in coop
+Mr_OnRaceStartC	PARTY	a MortalRace super deal or mission: the race starts for the player, the acting member in coop
+Mr_OnCheckPointC	PARTY	a MortalRace super deal or mission: the player's checkpoint, the acting member in coop
+Mr_RacerDamagedC	PARTY	a MortalRace super deal or mission: a racer hit by the player, the acting member in coop
+Mr_RacersAttackShipC	PARTY	a MortalRace super deal or mission: the racers attack the player's ship, the acting member in coop
+Mr_TakeBatonC	PARTY	a MortalRace super deal or mission: the baton taken by the player, the acting member in coop
+Dm_OnEnemyDeathC	PARTY	a DeathMatch super deal: an enemy's death by the player, the acting member in coop
+Tdm_Death	PARTY	a TeamDeathMatch super deal: a death against the player's team, the acting member in coop
+Ctf_OnVehicleDeathCallbackC	PARTY	a CTF super deal: a ship's death and the player's flag, the acting member in coop
+Ctf_TakeFlagC	PARTY	a CTF super deal: a flag taken by the player, the acting member in coop
+Steal_CreateMissionShip	PARTY	StealMayorShip (DownTown): the mayor's ship made for the player, the acting member in coop

@@ -49,7 +49,9 @@ struct cScorerItem {
 	float focusPivotX, focusPivotY;
 	byte delMe;
 	byte visible;			/* 1 */
-	byte pad_2a[2];
+	byte level;			/* ScrapC, a -mp2 client: an item of the server's world scorer, which the client's own
+				 * clears (its HUD built again) keep */
+	byte pad_2b;
 	struct cScorerItem *next;	/* in the list of the scorer */
 	int player;			/* of the scorer */
 	char *left, *right, *up, *down;	/* cStrings, the item names of the cursor moves */

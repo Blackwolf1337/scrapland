@@ -51,6 +51,8 @@
 #define PRES_HOLD_NS 1000000000ull	/* how long: then it plays and counts what it misses */
 #define PRES_GVARS 64
 #define PRES_CHARRES 64
+#define PRES_WORLD_HUD 32			/* the items of the world's scorer kept for the players that join */
+#define PRES_WORLD_VARS 16			/* the variables kept per item */
 #define PRES_DOUBLE_NEAR 120.0f	/* units: a sound of the same name this near the client's own one is its double */
 
 int g_PresIn;
@@ -71,6 +73,19 @@ typedef struct PresVoice {
 	double playAt;					/* Instance_Time when it started to play, < 0 before */
 	byte open;
 } PresVoice;
+
+/* an item of the world's scorer 0 as the instance's records made it, with the last value of each variable set */
+typedef struct PresWorldItem {
+	char item[48], type[48];
+	byte append;
+	int nvars;
+	struct {
+		char name[32];
+		byte text;
+		char s[96];
+		float d;
+	} vars[PRES_WORLD_VARS];
+} PresWorldItem;
 
 typedef struct PresRecent {
 	uint32_t hash;
@@ -106,6 +121,8 @@ static struct {
 									 * go to the players that join later (C code sets some of them too) */
 	int numGVars;
 	char charRes[PRES_CHARRES][32];	/* the character classes of Pres_CharRes */
+	PresWorldItem worldHud[PRES_WORLD_HUD];	/* the items of the world's scorer and their sets: a player that joins gets them */
+	int numWorldHud;
 	int numCharRes;
 	uint32_t sent[PRES_O_COUNT], bytes, cut;
 	/* client */
@@ -786,6 +803,8 @@ void Pres_SaveVar(int i, const char *name, const char *value) {
 	}
 }
 
+static void Pres_PutHudAdd(const char *item, const char *type, byte append, byte level);
+
 void Pres_Joined(int i) {
 	if (!Pres_Out() || i < 0 || i >= PLAYERS_MAX || !Pres_Online(i)) {
 		return;
@@ -815,6 +834,26 @@ void Pres_Joined(int i) {
 		Pres_PutStr("volume");
 		Pres_PutFloat(pres.musicVolume);
 		Pres_Send();
+	}
+	for (int k = 0; k < pres.numWorldHud; k++) {
+		const PresWorldItem *w = &pres.worldHud[k];
+		if (Pres_BeginTo((uint64_t)1 << i, PRES_O_HUDADD)) {
+			Pres_PutHudAdd(w->item, w->type, w->append, 1);
+			Pres_Send();
+		}
+		for (int v = 0; v < w->nvars; v++) {
+			if (Pres_BeginTo((uint64_t)1 << i, PRES_O_HUDSET)) {
+				Pres_PutStr(w->item);
+				Pres_PutStr(w->vars[v].name);
+				Pres_PutInt(w->vars[v].text ? 1 : 2);
+				if (w->vars[v].text) {
+					Pres_PutStr(w->vars[v].s);
+				} else {
+					Pres_PutFloat(w->vars[v].d);
+				}
+				Pres_Send();
+			}
+		}
 	}
 	if (pres.music[0] && Pres_BeginTo((uint64_t)1 << i, PRES_O_MUSIC)) {
 		Pres_PutStr(pres.music);
@@ -951,16 +990,55 @@ void Pres_ActionSet(const char *name) {
 	}
 }
 
+/* the world scorer's item of the list, NULL */
+static PresWorldItem *Pres_WorldItem(const char *item) {
+	for (int k = 0; item && k < pres.numWorldHud; k++) {
+		if (!strcmp(pres.worldHud[k].item, item)) {
+			return &pres.worldHud[k];
+		}
+	}
+	return NULL;
+}
+
+static void Pres_WorldItemDrop(PresWorldItem *w) {
+	int k = (int)(w - pres.worldHud);
+	pres.numWorldHud--;
+	memmove(w, w + 1, (size_t)(pres.numWorldHud - k) * sizeof(*w));
+}
+
+/* the records of an add and its sets: level marks an item of the world's scorer (the client's own clears keep it) */
+static void Pres_PutHudAdd(const char *item, const char *type, byte append, byte level) {
+	Pres_PutStr(item);
+	Pres_PutStr(type);
+	Pres_PutInt(append);
+	NetRep_PutU8(&pres.w, level);
+}
+
 void Pres_HudAdd(const cScorer *sc, const char *item, const char *type, byte append) {
+	byte world = sc == Scorer_GetWorld(0);
+	if (Pres_Out() && !pres.skel && world && item && type) {
+		PresWorldItem *w = Pres_WorldItem(item);
+		if (w) {
+			Pres_WorldItemDrop(w);
+		}
+		if (pres.numWorldHud < PRES_WORLD_HUD) {
+			w = &pres.worldHud[pres.numWorldHud++];
+			memset(w, 0, sizeof(*w));
+			Str_Copy(w->item, item, sizeof(w->item));
+			Str_Copy(w->type, type, sizeof(w->type));
+			w->append = append;
+		}
+	}
 	if (Pres_BeginHud(sc, PRES_O_HUDADD, 1)) {
-		Pres_PutStr(item);
-		Pres_PutStr(type);
-		Pres_PutInt(append);
+		Pres_PutHudAdd(item, type, append, world);
 		Pres_Send();
 	}
 }
 
 void Pres_HudClear(const cScorer *sc) {
+	if (Pres_Out() && sc == Scorer_GetWorld(0)) {
+		pres.numWorldHud = 0;
+	}
 	if (Pres_BeginHud(sc, PRES_O_HUDCLEAR, 1)) {
 		Pres_Send();
 	}
@@ -974,6 +1052,22 @@ void Pres_HudShow(const cScorer *sc, byte on) {
 }
 
 void Pres_HudSet(const cScorer *sc, const char *item, const char *var, const char *s, double d) {
+	PresWorldItem *w = Pres_Out() && sc == Scorer_GetWorld(0) && var ? Pres_WorldItem(item) : NULL;
+	if (w && !crt_stricmp(var, "DelMe") && (s ? crt_atoi(s) : d) != 0) {
+		Pres_WorldItemDrop(w);
+	} else if (w) {
+		int k = 0;
+		while (k < w->nvars && strcmp(w->vars[k].name, var)) {
+			k++;
+		}
+		if (k < PRES_WORLD_VARS) {
+			w->nvars += k == w->nvars;
+			Str_Copy(w->vars[k].name, var, sizeof(w->vars[k].name));
+			w->vars[k].text = s != NULL;
+			Str_Copy(w->vars[k].s, s ? s : "", sizeof(w->vars[k].s));
+			w->vars[k].d = (float)d;
+		}
+	}
 	if (Pres_BeginHud(sc, PRES_O_HUDSET, 1)) {
 		Pres_PutStr(item);
 		Pres_PutStr(var);
@@ -1182,8 +1276,10 @@ static void Pres_HudPlay(int op, NetRepReader *r) {
 		NetRep_GetStr(r, item, sizeof(item));
 		NetRep_GetStr(r, type, sizeof(type));
 		int append = NetRep_GetSVar(r);
-		if (!r->bad) {
-			cScorer_AddItem(sc, item, type, append != 0);
+		byte level = (byte)NetRep_GetU8(r);
+		cScorerItem *it = r->bad ? NULL : cScorer_AddItem(sc, item, type, append != 0);
+		if (it) {
+			it->level = level;
 		}
 		break;
 	}
